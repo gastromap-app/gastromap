@@ -3,13 +3,14 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Globe, Check } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
 const LanguageSettingsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
+    const { t, i18n } = useTranslation()
 
-    const [selectedLanguage, setSelectedLanguage] = useState('en')
     const [selectedRegion, setSelectedRegion] = useState('pl')
 
     const languages = [
@@ -41,25 +42,25 @@ const LanguageSettingsPage = () => {
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Language & Region</h1>
+                <h1 className={`text-2xl font-black ${textStyle}`}>{t('language_settings.title')}</h1>
             </div>
 
             <div className="px-5 space-y-8">
                 {/* Language Section */}
                 <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Application Language</h3>
+                    <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.app_language_title')}</h3>
                     <div className={`rounded-[32px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
                         {languages.map((lang, idx) => (
                             <button
                                 key={lang.code}
-                                onClick={() => setSelectedLanguage(lang.code)}
+                                onClick={() => i18n.changeLanguage(lang.code)}
                                 className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== languages.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
                             >
                                 <div className="flex items-center gap-4">
                                     <span className="text-2xl">{lang.flag}</span>
                                     <span className={`text-[16px] font-bold ${textStyle}`}>{lang.name}</span>
                                 </div>
-                                {selectedLanguage === lang.code && (
+                                {i18n.language === lang.code && (
                                     <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white scale-110 shadow-lg shadow-blue-500/30">
                                         <Check size={14} strokeWidth={3} />
                                     </div>
@@ -68,13 +69,13 @@ const LanguageSettingsPage = () => {
                         ))}
                     </div>
                     <p className={`mt-3 px-4 text-[12px] leading-relaxed ${subTextStyle}`}>
-                        This will change the interface language. Search results and location descriptions will still be available in their original language.
+                        {t('language_settings.language_note')}
                     </p>
                 </div>
 
                 {/* Region Section */}
                 <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Local Region</h3>
+                    <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.local_region_title')}</h3>
                     <div className={`rounded-[32px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
                         {regions.map((region, idx) => (
                             <button

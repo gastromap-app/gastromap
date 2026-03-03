@@ -490,7 +490,13 @@ const LocationDetailsPage = () => {
                 {/* Hero Image Section */}
                 {/* Hero Image Section */}
                 <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
-                    <img src={location.image} crossOrigin="anonymous" className="w-full h-full object-cover" alt={location.title} />
+                    <img
+                        src={location.image}
+                        crossOrigin="anonymous"
+                        fetchpriority="high"
+                        className="w-full h-full object-cover"
+                        alt={location.title}
+                    />
                     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent z-10" />
                     <div className="absolute inset-0 bg-black/20 z-0" />
 

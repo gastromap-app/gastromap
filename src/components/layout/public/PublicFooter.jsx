@@ -1,41 +1,23 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Instagram, Twitter, Linkedin } from 'lucide-react'
 
 const PublicFooter = () => (
     <div className="bg-slate-50 dark:bg-slate-950 transition-colors duration-500 mt-auto">
         <footer className="relative bg-black text-white py-12 md:py-20 rounded-t-[30px] md:rounded-t-[40px] overflow-hidden">
-            {/* Aurora Background Effect - Blue Theme */}
-            <div className="absolute inset-0 pointer-events-none opacity-60">
-                <motion.div
-                    animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.6, 0.3],
-                        backgroundColor: ["#1d4ed8", "#1e40af", "#1d4ed8"] // Blue-700 to Blue-800
-                    }}
-                    transition={{
-                        duration: 15,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                    className="absolute top-[-50%] left-[-20%] w-[80%] h-[150%] rounded-full blur-[120px]"
-                />
-                <motion.div
-                    animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [0.2, 0.5, 0.2],
-                        backgroundColor: ["#2563eb", "#1e3a8a", "#2563eb"] // Blue-600 to Blue-900
-                    }}
-                    transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 2
-                    }}
-                    className="absolute bottom-[-50%] right-[-20%] w-[80%] h-[150%] rounded-full blur-[120px]"
-                />
-            </div>
+
+            {/* Static CSS Gradient Background — no JS, no GPU */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                aria-hidden="true"
+                style={{
+                    background: `
+                        radial-gradient(ellipse 90% 80% at -10% 120%, rgba(29,78,216,0.45) 0%, transparent 55%),
+                        radial-gradient(ellipse 70% 60% at 110% 110%, rgba(37,99,235,0.30) 0%, transparent 50%),
+                        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(99,102,241,0.15) 0%, transparent 60%)
+                    `
+                }}
+            />
 
             <div className="w-full relative z-10 px-4 md:px-8">
                 <div className="flex flex-col lg:flex-row justify-between items-start gap-12">
@@ -57,10 +39,6 @@ const PublicFooter = () => (
                         </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12 md:gap-12 w-full lg:w-auto">
-                        {/* 
-                      Note: Using real Links here so they basically work in SPA navigation. 
-                      Need to ensure these routes exist in App.jsx.
-                     */}
                         {[
                             {
                                 head: "Product", links: [

@@ -3,9 +3,31 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/pwa-icon-192.png" />
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- Theme detection FIRST to prevent flash -->
+  <script>
+    (function () {
+      const theme = localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let actualTheme = 'light';
+      if (theme === 'dark' || (theme === 'auto' && systemDark) || (!theme && systemDark)) {
+        actualTheme = 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', actualTheme);
+      if (actualTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
+  <!-- Preload Critical LCP Image (single, correct tag) -->
+  <link rel="preload" as="image"
+    href="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1600&auto=format&fit=crop"
+    fetchpriority="high" crossorigin="anonymous">
+
+  <link rel="icon" type="image/png" href="/pwa-icon-192.png" />
 
   <!-- SEO Meta Tags -->
   <title>GastroMap — Умный гид по ресторанам и ИИ-помощник в выборе еды</title>
@@ -38,24 +60,6 @@
   <meta name="theme-color" content="#0f172a" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="mobile-web-app-capable" content="yes" />
-
-  <script>
-    (function () {
-      const theme = localStorage.getItem('theme');
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      let actualTheme = 'light';
-
-      if (theme === 'dark' || (theme === 'auto' && systemDark) || (!theme && systemDark)) {
-        actualTheme = 'dark';
-      }
-
-      document.documentElement.setAttribute('data-theme', actualTheme);
-      if (actualTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      }
-    })();
-  </script>
 </head>
 
 <body>

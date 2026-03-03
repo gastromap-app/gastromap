@@ -52,13 +52,41 @@ export default defineConfig({
             }
           },
           {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
+            handler: 'CacheFirst',
             options: {
               cacheName: 'unsplash-images-cache',
               expiration: {
-                maxEntries: 50,
+                maxEntries: 60,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/i\.pravatar\.cc\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'avatar-images-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -66,11 +94,38 @@ export default defineConfig({
             }
           }
         ]
-
       }
     })
-
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React - always needed
+          'react-core': ['react', 'react-dom'],
+          // Router
+          'react-router': ['react-router-dom'],
+          // Heavy animation library
+          'framer-motion': ['framer-motion'],
+          // WebGL animation (isolated chunk)
+          'aurora-webgl': ['/src/components/ui/aurora-webgl.jsx'],
+          // Icons (large library)
+          'lucide': ['lucide-react'],
+          // Admin (never needed on public routes)
+          'admin': [
+            '/src/features/admin/layout/AdminLayout.jsx',
+            '/src/features/admin/pages/AdminDashboardPage.jsx',
+          ],
+          // Dashboard
+          'dashboard': [
+            '/src/features/dashboard/pages/DashboardPage.jsx',
+          ],
+        }
+      }
+    },
+    // Raise the chunk warning threshold
+    chunkSizeWarningLimit: 600,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -82,4 +137,3 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
   },
 })
-

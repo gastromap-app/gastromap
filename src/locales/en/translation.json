@@ -1,0 +1,8 @@
+{
+    "language_settings": {
+        "title": "Language & Region",
+        "app_language_title": "Application Language",
+        "local_region_title": "Local Region",
+        "language_note": "This will change the interface language. Search results and location descriptions will still be available in their original language."
+    }
+}

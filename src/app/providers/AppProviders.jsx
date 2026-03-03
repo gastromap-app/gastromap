@@ -22,7 +22,7 @@ export const AppProviders = ({ children, includeRouter = true }) => {
     )
 
     if (includeRouter) {
-        return <BrowserRouter>{content}</BrowserRouter>
+        return <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{content}</BrowserRouter>
     }
 
     return content

@@ -1,8 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
+
 
 // --- Animations (Apple-like Springs) ---
 const SPRING_TRANSITION = { type: "spring", stiffness: 100, damping: 20 }
@@ -26,7 +28,6 @@ const staggerContainer = {
 
 // Reuseable subtle Apple border/shadow classes
 const surfaceApple = "bg-white dark:bg-[#1C1C1E] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.02)] border border-black/[0.03] dark:border-white/[0.04]"
-const bgAppleBase = "bg-[#F5F5F7] dark:bg-black"
 
 // --- Component: Hero (Bento) ---
 const BentoHero = () => {
@@ -55,11 +56,11 @@ const BentoHero = () => {
             clearInterval(statTimer)
             clearInterval(listTimer)
         }
-    }, [])
+    }, [reviews.length])
 
     return (
-        <section className={`pt-24 md:pt-32 pb-12 md:pb-20 ${bgAppleBase} transition-colors duration-500`}>
-            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
+        <section className={`pt-24 md:pt-32 pb-12 md:pb-20 transition-colors duration-500 relative z-10`}>
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-6">
                     {/* Main Banner */}
                     <motion.div
@@ -92,22 +93,26 @@ const BentoHero = () => {
                         </div>
                     </motion.div>
 
+                    {/* Sidebar Area (Photo + Review) */}
                     <div className="lg:col-span-5 flex flex-col gap-4 md:gap-6">
                         {/* Immersive Photo Card */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1, ...SPRING_TRANSITION }}
-                            className="flex-1 bg-[#1C1C1E] rounded-[32px] md:rounded-[40px] relative overflow-hidden group min-h-[200px] md:min-h-[300px]"
-                        >
-                            <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2940&auto=format&fit=crop" alt="Hidden Bar" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-[2s] ease-out" />
+                        <div className="flex-1 bg-[#1C1C1E] rounded-[32px] md:rounded-[40px] relative overflow-hidden group min-h-[200px] md:min-h-[300px] animate-in fade-in zoom-in-95 duration-1000 fill-mode-both">
+                            <img
+                                src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1600&auto=format&fit=crop"
+                                alt="Hero Background"
+                                fetchpriority="high"
+                                crossOrigin="anonymous"
+                                loading="eager"
+                                decoding="async"
+                                className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-[2s] ease-out"
+                            />
                             <div className="absolute bottom-6 left-6 right-6 z-10 flex items-end justify-between">
                                 <div className="bg-white/20 backdrop-blur-2xl border border-white/20 px-5 py-3 rounded-[24px] text-white/90">
                                     <h3 className="font-semibold text-lg tracking-tight leading-tight">The Aviary</h3>
                                     <p className="text-sm text-white/70 font-medium">Chicago, IL</p>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
 
                         {/* Review / Stats Card */}
                         <motion.div
@@ -224,11 +229,11 @@ const BentoHero = () => {
                                         className="absolute inset-0 space-y-2"
                                     >
                                         <div className="bg-[#F5F5F7] dark:bg-white/5 p-3 rounded-[16px] flex items-center gap-3 border border-green-500/20">
-                                            <CheckCircle2 size={14} className="text-green-500" />
+                                            <CheckCircle size={14} className="text-green-500" />
                                             <span className="text-xs font-semibold text-black/80 dark:text-white/80">Cafe Leon</span>
                                         </div>
                                         <div className="bg-[#F5F5F7] dark:bg-white/5 p-3 rounded-[16px] flex items-center gap-3 opacity-50">
-                                            <CheckCircle2 size={14} className="text-green-500" />
+                                            <CheckCircle size={14} className="text-green-500" />
                                             <span className="text-xs font-semibold text-black/80 dark:text-white/80">Bottega</span>
                                         </div>
                                     </motion.div>
@@ -294,62 +299,13 @@ const BentoHero = () => {
                     </motion.div>
                 </motion.div>
             </div>
-        </section>
-    )
-}
-
-// --- Component: Features Grid ---
-const FeaturesGrid = () => {
-    const features = [
-        { icon: Heart, title: "Bio-Sync AI", desc: "Integrates with your daily activity to suggest the perfect meal." },
-        { icon: User, title: "Dine With Me", desc: "Find friends or colleagues nearby who are ready for lunch." },
-        { icon: Award, title: "Earn Rewards", desc: "Get badges and recognition for contributing to the community." },
-        { icon: Zap, title: "Anti-Decision", desc: "Group swipe mechanic to instantly solve the 'where to eat' debate." },
-        { icon: Shield, title: "Community Vetted", desc: "All locations are proposed by locals and verified by moderators." },
-        { icon: Globe, title: "100% Free", desc: "Unrestricted access to the global map and all intelligent features." }
-    ]
-
-    return (
-        <section className={`py-20 md:py-32 bg-white dark:bg-[#000000]`}>
-            <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8">
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    variants={fadeInUp}
-                    className="text-center mb-16 md:mb-24"
-                >
-                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white leading-[1.1]">
-                        Thoughtfully crafted. <br className="hidden sm:block" />
-                        <span className="text-blue-600 dark:text-blue-500">Powerfully intelligent.</span>
-                    </h2>
-                </motion.div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-8 md:gap-x-12">
-                    {features.map((f, i) => (
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={fadeInUp}
-                            key={i}
-                            className="flex flex-col items-center text-center px-4"
-                        >
-                            <div className="w-16 h-16 bg-[#F5F5F7] dark:bg-[#1C1C1E] rounded-[22px] flex items-center justify-center text-black/80 dark:text-white/80 mb-6 mx-auto">
-                                <f.icon size={26} strokeWidth={1.5} />
-                            </div>
-                            <h3 className="font-semibold text-xl mb-3 text-black/90 dark:text-white tracking-tight">{f.title}</h3>
-                            <p className="text-base text-black/50 dark:text-white/50 leading-relaxed font-medium">{f.desc}</p>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-        </section>
+        </section >
     )
 }
 
 // --- Component: Collection ---
 const CollectionPreview = () => (
-    <section className={`py-20 md:py-32 ${bgAppleBase}`}>
+    <section className="py-12 md:py-24 relative z-10">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
             <motion.div
                 initial="hidden"
@@ -373,13 +329,18 @@ const CollectionPreview = () => (
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
             >
                 {[
-                    { title: "Venice", sub: "La Delicaze del Caffe", img: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2947&auto=format&fit=crop" },
-                    { title: "New York", sub: "The Blind Tiger", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2940&auto=format&fit=crop" },
-                    { title: "Madrid", sub: "Mercardo San Miguel", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=2874&auto=format&fit=crop" },
-                    { title: "Tokyo", sub: "Sushi Arai", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=2940&auto=format&fit=crop" }
+                    { title: "Venice", sub: "La Delicaze del Caffe", img: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&auto=format&fit=crop" },
+                    { title: "New York", sub: "The Blind Tiger", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800&auto=format&fit=crop" },
+                    { title: "Madrid", sub: "Mercardo San Miguel", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800&auto=format&fit=crop" },
+                    { title: "Tokyo", sub: "Sushi Arai", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800&auto=format&fit=crop" }
                 ].map((item, i) => (
                     <motion.div key={i} variants={fadeInUp} className="group relative h-[350px] md:h-[480px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-[#1C1C1E] cursor-pointer">
-                        <img src={item.img} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-90" />
+                        <img
+                            src={item.img}
+                            alt={item.title}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105 opacity-90"
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 text-white">
                             <h3 className="text-sm font-semibold uppercase tracking-widest text-white/50 mb-1">{item.title}</h3>
@@ -394,71 +355,73 @@ const CollectionPreview = () => (
 
 // --- Component: Pricing ---
 const Pricing = () => (
-    <section className="py-20 md:py-32 bg-white dark:bg-[#000000]">
-        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8">
-            <motion.div
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeInUp}
-                className="text-center mb-16 md:mb-24"
-            >
-                <div className="bg-blue-500/10 dark:bg-blue-500/20 w-fit mx-auto px-4 py-2 rounded-full text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 flex items-center gap-2">
-                    <Heart size={16} /> Community First
-                </div>
-                <h2 className="text-3xl md:text-5xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white">
-                    100% Free. <br className="hidden sm:block" />
-                    <span className="text-blue-600 dark:text-blue-500">Support the community.</span>
-                </h2>
-                <p className="text-lg md:text-xl font-medium text-black/50 dark:text-white/50 max-w-2xl mx-auto">
-                    GastroMap is built by locals for travelers. Enjoy full access forever, or become a supporter.
-                </p>
-            </motion.div>
-            <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch"
-            >
-                {/* Explorer (Free) */}
-                <motion.div variants={fadeInUp} className={`p-8 md:p-10 rounded-[40px] flex flex-col ${surfaceApple}`}>
-                    <div className="text-xs font-semibold text-black/40 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
-                    <div className="text-5xl font-semibold tracking-tight mb-2 text-black/90 dark:text-white">Free</div>
-                    <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
-                    <ul className="space-y-5 mb-12 text-sm font-medium text-black/70 dark:text-white/70 flex-1">
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Add & Review Places</li>
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Full AI Guidance</li>
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Earn Points & Badges</li>
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> "Dine With Me" Radar</li>
-                    </ul>
-                    <Link to="/auth/signup">
-                        <Button className="w-full bg-[#F5F5F7] hover:bg-blue-50 text-blue-600 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-blue-900/20 rounded-full h-14 font-medium transition-colors">
-                            Join for Free
+    <section id="pricing" className="py-12 md:py-24 relative z-10">
+        <div className="mx-4 lg:mx-8 rounded-[40px] py-16 md:py-24 bg-white dark:bg-[#1C1C1E] shadow-sm relative overflow-hidden">
+            <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={fadeInUp}
+                    className="text-center mb-16 md:mb-24"
+                >
+                    <div className="bg-blue-500/10 dark:bg-blue-500/20 w-fit mx-auto px-4 py-2 rounded-full text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 flex items-center gap-2">
+                        <Heart size={16} /> Community First
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white">
+                        100% Free. <br className="hidden sm:block" />
+                        <span className="text-blue-600 dark:text-blue-500">Support the community.</span>
+                    </h2>
+                    <p className="text-lg md:text-xl font-medium text-black/50 dark:text-white/50 max-w-2xl mx-auto">
+                        GastroMap is built by locals for travelers. Enjoy full access forever, or become a supporter.
+                    </p>
+                </motion.div>
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-50px" }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch"
+                >
+                    {/* Explorer (Free) */}
+                    <motion.div variants={fadeInUp} className={`p-8 md:p-10 rounded-[40px] flex flex-col ${surfaceApple}`}>
+                        <div className="text-xs font-semibold text-black/40 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
+                        <div className="text-5xl font-semibold tracking-tight mb-2 text-black/90 dark:text-white">Free</div>
+                        <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
+                        <ul className="space-y-5 mb-12 text-sm font-medium text-black/70 dark:text-white/70 flex-1">
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Add & Review Places</li>
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Full AI Guidance</li>
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Earn Points & Badges</li>
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> "Dine With Me" Radar</li>
+                        </ul>
+                        <Link to="/auth/signup">
+                            <Button className="w-full bg-[#F5F5F7] hover:bg-blue-50 text-blue-600 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-blue-900/20 rounded-full h-14 font-medium transition-colors">
+                                Join for Free
+                            </Button>
+                        </Link>
+                    </motion.div>
+
+                    {/* Supporter (Highlighted) */}
+                    <motion.div variants={fadeInUp} className="bg-gradient-to-br from-blue-900 to-black text-white p-8 md:p-10 rounded-[40px] shadow-2xl flex flex-col relative overflow-hidden">
+                        {/* Background glow */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
+
+                        <div className="absolute top-8 right-8 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white backdrop-blur-md">Optional</div>
+                        <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-6">Supporter</div>
+                        <div className="text-5xl font-semibold tracking-tight mb-2">$5<span className="text-lg text-white/40 font-medium">/mo</span></div>
+                        <p className="text-sm font-medium text-white/50 mb-10">Help keep the servers running.</p>
+                        <ul className="space-y-5 mb-12 text-sm font-medium text-white/90 flex-1 relative z-10">
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Exclusive "Supporter" Badge</li>
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Early access to new features</li>
+                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Skip the moderation queue</li>
+                            <li className="flex items-center gap-3"><Heart className="w-5 h-5 text-rose-400" /> Developer gratitude</li>
+                        </ul>
+                        <Button className="w-full bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 rounded-full h-14 font-medium transition-all relative z-10">
+                            Become a Supporter
                         </Button>
-                    </Link>
+                    </motion.div>
                 </motion.div>
-
-                {/* Supporter (Highlighted) */}
-                <motion.div variants={fadeInUp} className="bg-gradient-to-br from-blue-900 to-black text-white p-8 md:p-10 rounded-[40px] shadow-2xl flex flex-col relative overflow-hidden">
-                    {/* Background glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-
-                    <div className="absolute top-8 right-8 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white backdrop-blur-md">Optional</div>
-                    <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-6">Supporter</div>
-                    <div className="text-5xl font-semibold tracking-tight mb-2">$5<span className="text-lg text-white/40 font-medium">/mo</span></div>
-                    <p className="text-sm font-medium text-white/50 mb-10">Help keep the servers running.</p>
-                    <ul className="space-y-5 mb-12 text-sm font-medium text-white/90 flex-1 relative z-10">
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Exclusive "Supporter" Badge</li>
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Early access to new features</li>
-                        <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Skip the moderation queue</li>
-                        <li className="flex items-center gap-3"><Heart className="w-5 h-5 text-rose-400" /> Developer gratitude</li>
-                    </ul>
-                    <Button className="w-full bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 rounded-full h-14 font-medium transition-all relative z-10">
-                        Become a Supporter
-                    </Button>
-                </motion.div>
-            </motion.div>
+            </div>
         </div>
     </section>
 )
@@ -473,13 +436,17 @@ const FAQ = () => {
 
     const questions = [
         { q: 'Is GastroMap really free?', a: 'Yes! Access to the global map, AI features, and community tools is 100% free. We believe finding great food should not be behind a paywall.' },
-        { q: 'How do I add a new place?', a: 'Simply register for a free account, click "Add a Place", and fill out the details. Our community moderators will review it, and you will earn points when it goes live!' },
-        { q: 'How does the Bio-Sync AI work?', a: 'It utilizes advanced machine learning combined with optional Apple Health / Google Fit data to recommend meals based on your daily activity level.' },
-        { q: 'Why is there a Supporter tier?', a: 'GastroMap is built by a small team. The optional Supporter tier helps us keep the servers running and independent from intrusive ads.' }
+        { q: 'How does the Bio-Sync AI work?', a: 'It utilizes advanced machine learning combined with optional Apple Health or Google Fit data to recommend meals based on your real-time daily activity and fatigue levels.' },
+        { q: 'How does the "Dine With Me" radar work?', a: 'It securely highlights nearby friends or colleagues who have also opted in for a meal, allowing you to instantly connect and map out shared restaurant preferences.' },
+        { q: 'Can I use GastroMap while traveling abroad?', a: 'Yes! This app is being built exactly for a global community. We welcome contributions from everywhere and want everyone to find their perfect gastro location, no matter what country they are in.' },
+        { q: 'What makes the routing different from typical maps?', a: 'Your route is crafted by our AI GastroGuide based on your preferences, weather, mood, distance, promotions, recommendations, and 10+ other parameters to offer exactly what you want. *Note: AI models can make mistakes, so verifying information is recommended.' },
+        { q: 'How do I add a new place?', a: 'Simply register for a free account, click "Add a Place", and fill out the details. Our community moderators will review it, and you will earn reputation points when it goes live.' },
+        { q: 'Can I become part of the community and help moderate content?', a: 'Yes, of course! Since our app is built as a free platform by a small independent team, we warmly welcome any help in operating, promoting, and improving the application together.' },
+        { q: 'Why is there a Supporter tier?', a: 'GastroMap is built by a small independent team. The optional Supporter tier helps us keep the servers running, develop new features faster, and remain independent from intrusive ads.' }
     ]
 
     return (
-        <section className={`py-20 md:py-32 ${bgAppleBase}`}>
+        <section id="faq" className="py-12 md:py-24 relative z-10">
             <div className="w-full max-w-[800px] mx-auto px-4 md:px-8">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-black/90 dark:text-white">
@@ -497,7 +464,7 @@ const FAQ = () => {
                             >
                                 <div className="flex justify-between items-center">
                                     <span className={`font-semibold text-lg transition-colors ${isOpen ? 'text-black/90 dark:text-white' : 'text-black/70 dark:text-white/70'}`}>{item.q}</span>
-                                    <ChevronDown size={20} className={`text-black/30 dark:text-white/30 transition-transform duration-300 ease-[cubic-bezier(0.87,0,0.13,1)] ${isOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown size={20} className={`text-black/30 dark:text-white/30 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.87,0,0.13,1)] ${isOpen ? 'rotate-180' : ''}`} />
                                 </div>
                                 <AnimatePresence>
                                     {isOpen && (
@@ -524,12 +491,19 @@ const FAQ = () => {
 
 export default function LandingPage() {
     return (
-        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen">
-            <BentoHero />
-            <FeaturesGrid />
-            <CollectionPreview />
-            <Pricing />
-            <FAQ />
+        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen relative overflow-hidden">
+            {/* Subtle CSS Gradient Background */}
+            <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true" style={{
+                background: 'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59,130,246,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(16,185,129,0.05) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,0.03) 0%, transparent 70%)'
+            }} />
+
+            {/* Content Layers */}
+            <div className="relative z-10">
+                <BentoHero />
+                <CollectionPreview />
+                <Pricing />
+                <FAQ />
+            </div>
 
             {/* Global style overrides needed for mask-gradients */}
             <style dangerouslySetInnerHTML={{

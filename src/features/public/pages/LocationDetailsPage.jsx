@@ -13,6 +13,9 @@ import { useTheme } from '@/hooks/useTheme'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
+import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useOpenStatus } from '@/hooks/useOpenStatus'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -23,8 +26,13 @@ const LocationDetailsPage = () => {
     // Find location from global mocks
     const location = MOCK_LOCATIONS.find(loc => loc.id === id) || MOCK_LOCATIONS[0]
 
-    const [isSaved, setIsSaved] = useState(false)
-    const [isVisited, setIsVisited] = useState(false)
+    // Connect to real stores
+    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { prefs, addVisited } = useUserPrefsStore()
+    const isSaved = isFavorite(location?.id)
+    const isVisited = prefs.lastVisited?.includes(location?.id)
+    const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
+
     const [activeTab, setActiveTab] = useState('Overview')
     const [showScrollHint, setShowScrollHint] = useState(true)
 
@@ -67,7 +75,7 @@ const LocationDetailsPage = () => {
         <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                    { icon: Clock, label: "Hours Today", value: location.openingHours, color: "bg-blue-500/10 text-blue-500" },
+                    { icon: Clock, label: openLabel || "Hours Today", value: location.openingHours, color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
                     { icon: Phone, label: "Contact", value: "+48 123 456 789", color: "bg-green-500/10 text-green-500" },
                     { icon: MessageSquare, label: "Total Reviews", value: "245 Verified", color: "bg-purple-500/10 text-purple-500" },
                     { icon: Navigation, label: "Direction", value: "0.8 km Near", color: "bg-orange-500/10 text-orange-500" }
@@ -473,14 +481,16 @@ const LocationDetailsPage = () => {
                     </button>
                     <div className="flex gap-2.5">
                         <button
-                            onClick={() => setIsVisited(!isVisited)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all ${isVisited ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            onClick={() => addVisited(location.id)}
+                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isVisited ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            aria-label="Mark as visited"
                         >
-                            <CheckCircle2 size={22} className={isVisited ? "animate-bounce" : ""} />
+                            <CheckCircle2 size={22} className={isVisited ? "fill-white" : ""} />
                         </button>
                         <button
-                            onClick={() => setIsSaved(!isSaved)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all ${isSaved ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            onClick={() => toggleFavorite(location.id)}
+                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isSaved ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            aria-label="Save location"
                         >
                             <Heart size={20} fill={isSaved ? "currentColor" : "none"} />
                         </button>

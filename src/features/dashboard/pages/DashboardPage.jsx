@@ -10,6 +10,7 @@ import MapTab from '../components/MapTab'
 import FilterModal from '../components/FilterModal'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
+import { useDebounce } from '@/hooks/useDebounce'
 
 // --- MOBILE COMPONENTS ---
 const MarqueeTitle = ({ title, theme }) => {
@@ -117,6 +118,13 @@ const DashboardPage = () => {
     const isDark = theme === 'dark'
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const debouncedSearch = useDebounce(searchQuery, 300)
+
+    // Apply search to store when debounced value changes
+    useEffect(() => {
+        const { setSearchQuery: storeSetSearch } = useLocationsStore.getState()
+        storeSetSearch(debouncedSearch)
+    }, [debouncedSearch])
 
     const countries = [
         { name: 'Poland', cities: '3 cities', places: '211 places', image: 'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop', newCount: 9 },
@@ -248,6 +256,8 @@ const DashboardPage = () => {
                     countries={countries}
                     theme={theme}
                     setIsFilterOpen={setIsFilterOpen}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
                 />
             </div>
         </PageTransition>
@@ -255,7 +265,7 @@ const DashboardPage = () => {
 }
 
 // --- DESKTOP VIEW COMPONENT ---
-const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen }) => {
+const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
     const { toggleTheme } = useTheme()
     const navigate = useNavigate()
     const [greeting, setGreeting] = useState('Good Morning')
@@ -305,11 +315,16 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                         <input
                             type="text"
                             placeholder="Sushi, Pasta, or 'Best burger'..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className={`w-full h-16 pl-14 pr-6 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${theme === 'light' ? 'bg-white shadow-xl focus:border-blue-500' : 'bg-white/10 backdrop-blur-md text-white border-white/10 focus:border-blue-500'
                                 }`}
                         />
                     </div>
-                    <button className="h-16 px-8 rounded-[24px] bg-blue-600 text-white font-bold text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">
+                    <button
+                        onClick={() => navigate(searchQuery ? `/explore?q=${encodeURIComponent(searchQuery)}` : '/explore')}
+                        className="h-16 px-8 rounded-[24px] bg-blue-600 text-white font-bold text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all"
+                    >
                         Search
                     </button>
                 </div>

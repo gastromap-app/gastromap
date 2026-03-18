@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WifiOff, Wifi } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * OfflineIndicator — thin banner that appears when the user loses connectivity.
@@ -9,6 +10,7 @@ import { WifiOff, Wifi } from 'lucide-react'
  * Mounts invisibly on the top edge to avoid layout shift.
  */
 export function OfflineIndicator() {
+    const { t } = useTranslation()
     const [isOnline, setIsOnline] = useState(navigator.onLine)
     const [showBackOnline, setShowBackOnline] = useState(false)
 
@@ -57,12 +59,12 @@ export function OfflineIndicator() {
                     {isOnline ? (
                         <>
                             <Wifi size={13} />
-                            Back online
+                            {t('pwa.back_online')}
                         </>
                     ) : (
                         <>
                             <WifiOff size={13} />
-                            No internet · Showing cached content
+                            {t('pwa.offline')}
                         </>
                     )}
                 </motion.div>

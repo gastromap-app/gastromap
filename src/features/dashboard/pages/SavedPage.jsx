@@ -5,6 +5,7 @@ import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
 // ─── Location card (compact horizontal) ──────────────────────────────────
 function SavedCard({ loc, index, onUnsave }) {
@@ -80,6 +81,7 @@ function SavedCard({ loc, index, onUnsave }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 function EmptyState({ isDark }) {
+    const { t } = useTranslation()
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -98,10 +100,10 @@ function EmptyState({ isDark }) {
             </div>
 
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Nothing saved yet
+                {t('saved.empty_title')}
             </h2>
             <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                Tap the heart on any place to save it here for later.
+                {t('saved.empty_desc')}
             </p>
 
             <Link
@@ -109,7 +111,7 @@ function EmptyState({ isDark }) {
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-500/25"
             >
                 <Compass size={16} />
-                Explore places
+                {t('saved.explore_cta')}
                 <ArrowRight size={14} />
             </Link>
         </motion.div>
@@ -118,6 +120,7 @@ function EmptyState({ isDark }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 const SavedPage = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
@@ -131,11 +134,11 @@ const SavedPage = () => {
             {/* Header */}
             <div className="mb-6">
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Saved
+                    {t('saved.title')}
                 </h1>
                 {savedLocations.length > 0 && (
                     <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                        {savedLocations.length} {savedLocations.length === 1 ? 'place' : 'places'} saved
+                        {t('saved.places_saved', { count: savedLocations.length })}
                     </p>
                 )}
             </div>

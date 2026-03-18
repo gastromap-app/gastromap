@@ -4,5 +4,122 @@
         "app_language_title": "Język aplikacji",
         "local_region_title": "Lokalny Region",
         "language_note": "Zmieni to język interfejsu. Wyniki wyszukiwania i opisy lokalizacji będą nadal dostępne w ich oryginalnym języku."
+    },
+    "nav": {
+        "overview": "Przegląd",
+        "explore": "Odkryj",
+        "ai_guide": "GastroGuide",
+        "saved": "Zapisane",
+        "visited": "Odwiedzone"
+    },
+    "dashboard": {
+        "greeting_morning": "Dzień dobry",
+        "greeting_afternoon": "Dzień dobry",
+        "greeting_evening": "Dobry wieczór",
+        "tagline": "Co dziś jemy?",
+        "search_placeholder": "Sushi, pizza, 'Najlepszy burger'…",
+        "explore_countries": "Odkryj kraje",
+        "recommended": "Polecane dla Ciebie",
+        "trending": "Na czasie",
+        "view_all": "Zobacz wszystkie"
+    },
+    "explore": {
+        "discover": "Odkryj",
+        "places_found": "Znaleziono {{count}} miejsc",
+        "search_in": "Szukaj w {{city}}…",
+        "no_results": "Brak wyników",
+        "no_results_for": "Brak wyników dla \u201E{{query}}\u201C",
+        "clear_filters": "Usuń filtry",
+        "sort": "Sortuj",
+        "top_rated": "Najwyżej oceniane",
+        "price_asc": "Cena ↑",
+        "price_desc": "Cena ↓",
+        "a_to_z": "A → Z"
+    },
+    "location": {
+        "open_now": "Otwarte",
+        "closed": "Zamknięte",
+        "closing_soon": "Wkrótce zamknięte",
+        "save": "Zapisz",
+        "saved": "Zapisano",
+        "visited": "Odwiedzone",
+        "mark_visited": "Oznacz jako odwiedzone",
+        "overview": "Przegląd",
+        "menu": "Menu",
+        "reviews": "Opinie",
+        "photos": "Zdjęcia",
+        "notes": "Notatki",
+        "view_details": "Zobacz szczegóły →",
+        "book_table": "Zarezerwuj stolik",
+        "get_directions": "Prowadź mnie"
+    },
+    "reviews": {
+        "based_on": "Na podstawie {{count}} opinii",
+        "write_review": "Napisz opinię",
+        "rate_experience": "Oceń swoje wrażenia",
+        "submit": "Wyślij opinię",
+        "no_reviews": "Brak opinii. Bądź pierwszy!",
+        "verified": "Zweryfikowano",
+        "placeholder": "Podziel się szczegółami swojej wizyty…"
+    },
+    "saved": {
+        "title": "Zapisane",
+        "places_saved": "{{count}} zapisanych miejsc",
+        "empty_title": "Brak zapisanych miejsc",
+        "empty_desc": "Dotknij serduszka przy miejscu, aby je zapisać.",
+        "explore_cta": "Odkryj miejsca"
+    },
+    "visited": {
+        "title": "Odwiedzone",
+        "diary": "Twój osobisty dziennik kulinarny",
+        "count_one": "{{count}} odwiedzone miejsce — tak trzymać!",
+        "count_other": "{{count}} odwiedzone miejsca — tak trzymać!",
+        "empty_title": "Brak wizyt",
+        "empty_desc": "Otwórz miejsce i dotknij 'Oznacz jako odwiedzone', aby śledzić swoją podróż kulinarną.",
+        "start_cta": "Zacznij odkrywać"
+    },
+    "ai": {
+        "placeholder": "Wiadomość do GastroGuide…",
+        "typing": "GastroGuide myśli…"
+    },
+    "onboarding": {
+        "skip": "Pomiń",
+        "continue": "Dalej",
+        "start": "Zacznij odkrywać",
+        "step_hint": "Krok {{current}} z {{total}} · Możesz to zmienić później w Profilu",
+        "cuisines_title": "Co lubisz jeść?",
+        "cuisines_desc": "Wybierz wszystkie, które pasują — spersonalizujemy Twój feed.",
+        "dietary": "Wymagania dietetyczne",
+        "vibes_title": "Jaki klimat lubisz?",
+        "vibes_desc": "Wybierz jedną lub więcej atmosfer.",
+        "budget_title": "Jaki masz budżet?",
+        "budget_desc": "Wybierz wszystkie przedziały cenowe."
+    },
+    "pwa": {
+        "install_title": "Dodaj GastroMap do ekranu głównego",
+        "install_ios": "Dotknij Udostępnij → 'Dodaj do ekranu głównego' w Safari",
+        "install_desc": "Szybkie uruchomienie, dostęp offline, bez App Store",
+        "install_btn": "Zainstaluj",
+        "later": "Później",
+        "offline": "Brak internetu · Wyświetlam dane z pamięci podręcznej",
+        "back_online": "Połączono ponownie",
+        "update_title": "Dostępna aktualizacja!",
+        "offline_ready": "Gotowe do użycia offline",
+        "update_btn": "Aktualizuj"
+    },
+    "common": {
+        "loading": "Ładowanie…",
+        "error": "Coś poszło nie tak",
+        "retry": "Spróbuj ponownie",
+        "back": "Wstecz",
+        "close": "Zamknij",
+        "save": "Zapisz",
+        "cancel": "Anuluj",
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "share": "Udostępnij",
+        "search": "Szukaj",
+        "filter": "Filtruj",
+        "all": "Wszystkie"
     }
 }

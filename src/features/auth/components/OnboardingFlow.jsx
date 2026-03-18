@@ -5,6 +5,7 @@ import {
     Coffee, UtensilsCrossed, Wine, Fish, Leaf, Flame
 } from 'lucide-react'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useTranslation } from 'react-i18next'
 
 // ─── Step data ────────────────────────────────────────────────────────────
 const CUISINES = [
@@ -84,6 +85,7 @@ function ProgressDots({ total, current }) {
 
 // ─── Step 1: Cuisines ─────────────────────────────────────────────────────
 function StepCuisines({ value, onChange }) {
+    const { t } = useTranslation()
     const toggle = (id) =>
         onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
 
@@ -91,10 +93,10 @@ function StepCuisines({ value, onChange }) {
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">
-                    What do you love to eat?
+                    {t('onboarding.cuisines_title')}
                 </h2>
                 <p className="text-white/50 text-sm font-medium mt-1">
-                    Pick all that apply — we'll personalise your feed.
+                    {t('onboarding.cuisines_desc')}
                 </p>
             </div>
 
@@ -109,7 +111,7 @@ function StepCuisines({ value, onChange }) {
 
             <div>
                 <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-2">
-                    Dietary needs
+                    {t('onboarding.dietary')}
                 </p>
                 <div className="flex flex-wrap gap-2">
                     {DIETARY.map((d) => (
@@ -125,6 +127,7 @@ function StepCuisines({ value, onChange }) {
 
 // ─── Step 2: Vibe ─────────────────────────────────────────────────────────
 function StepVibes({ value, onChange }) {
+    const { t } = useTranslation()
     const toggle = (id) =>
         onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
 
@@ -132,10 +135,10 @@ function StepVibes({ value, onChange }) {
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">
-                    What's your dining vibe?
+                    {t('onboarding.vibes_title')}
                 </h2>
                 <p className="text-white/50 text-sm font-medium mt-1">
-                    Choose one or more atmospheres you enjoy.
+                    {t('onboarding.vibes_desc')}
                 </p>
             </div>
 
@@ -168,6 +171,7 @@ function StepVibes({ value, onChange }) {
 
 // ─── Step 3: Budget ───────────────────────────────────────────────────────
 function StepBudget({ value, onChange }) {
+    const { t } = useTranslation()
     const toggle = (id) =>
         onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
 
@@ -175,10 +179,10 @@ function StepBudget({ value, onChange }) {
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">
-                    What's your budget range?
+                    {t('onboarding.budget_title')}
                 </h2>
                 <p className="text-white/50 text-sm font-medium mt-1">
-                    Select all budgets you're comfortable with.
+                    {t('onboarding.budget_desc')}
                 </p>
             </div>
 
@@ -226,6 +230,7 @@ const TOTAL_STEPS = 3
  * @param {{ onComplete: () => void }} props
  */
 export function OnboardingFlow({ onComplete }) {
+    const { t } = useTranslation()
     const { updatePrefs } = useUserPrefsStore()
 
     const [step, setStep] = useState(0)
@@ -282,7 +287,7 @@ export function OnboardingFlow({ onComplete }) {
                     onClick={handleFinish}
                     className="text-xs font-bold text-white/30 hover:text-white/60 transition-colors"
                 >
-                    Skip
+                    {t('onboarding.skip')}
                 </button>
             </div>
 
@@ -321,18 +326,18 @@ export function OnboardingFlow({ onComplete }) {
                     {step === TOTAL_STEPS - 1 ? (
                         <>
                             <Sparkles size={16} />
-                            Start exploring
+                            {t('onboarding.start')}
                         </>
                     ) : (
                         <>
-                            Continue
+                            {t('onboarding.continue')}
                             <ArrowRight size={16} />
                         </>
                     )}
                 </button>
 
                 <p className="text-center text-xs text-white/20 font-medium mt-3">
-                    Step {step + 1} of {TOTAL_STEPS} · You can change this later in Profile
+                    {t('onboarding.step_hint', { current: step + 1, total: TOTAL_STEPS })}
                 </p>
             </div>
         </div>

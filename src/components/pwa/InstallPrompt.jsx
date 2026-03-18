@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X, Sparkles, Share } from 'lucide-react'
 import { usePWA } from '@/hooks/usePWA'
+import { useTranslation } from 'react-i18next'
 
 /**
  * InstallPrompt — smart PWA install banner.
@@ -11,6 +12,7 @@ import { usePWA } from '@/hooks/usePWA'
  * Disappears permanently once dismissed or installed.
  */
 export function InstallPrompt() {
+    const { t } = useTranslation()
     const { isInstallable, isInstalled, installPWA } = usePWA()
     const [visible, setVisible] = useState(false)
     const [isDismissed, setIsDismissed] = useState(false)
@@ -76,12 +78,12 @@ export function InstallPrompt() {
                                 {/* Text */}
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-black text-white text-base leading-tight">
-                                        Add GastroMap to Home Screen
+                                        {t('pwa.install_title')}
                                     </h3>
                                     <p className="text-white/50 text-xs font-medium mt-1 leading-relaxed">
                                         {isIOS
-                                            ? 'Tap Share → "Add to Home Screen" in Safari'
-                                            : 'Instant launch, offline access, no App Store needed'}
+                                            ? t('pwa.install_ios')
+                                            : t('pwa.install_desc')}
                                     </p>
                                 </div>
 
@@ -114,13 +116,13 @@ export function InstallPrompt() {
                                         className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest py-3 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-500/30"
                                     >
                                         <Download size={14} />
-                                        Install App
+                                        {t('pwa.install_btn')}
                                     </button>
                                     <button
                                         onClick={handleDismiss}
                                         className="px-4 py-3 rounded-2xl bg-white/8 hover:bg-white/15 text-white/60 text-xs font-bold transition-colors"
                                     >
-                                        Later
+                                        {t('pwa.later')}
                                     </button>
                                 </div>
                             )}

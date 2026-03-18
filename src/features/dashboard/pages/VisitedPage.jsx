@@ -5,6 +5,7 @@ import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock } from 'lucide-re
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
 // ─── Visited card ─────────────────────────────────────────────────────────
 function VisitedCard({ loc, index }) {
@@ -83,6 +84,7 @@ function VisitedCard({ loc, index }) {
 
 // ─── Stats banner ─────────────────────────────────────────────────────────
 function VisitedStats({ count, isDark }) {
+    const { t } = useTranslation()
     return (
         <div className={`flex items-center gap-4 p-4 rounded-2xl mb-6 ${
             isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100'
@@ -92,10 +94,7 @@ function VisitedStats({ count, isDark }) {
             </div>
             <div>
                 <p className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {count} {count === 1 ? 'place' : 'places'}
-                </p>
-                <p className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    visited so far — keep exploring!
+                    {t(count === 1 ? 'visited.count_one' : 'visited.count_other', { count })}
                 </p>
             </div>
         </div>
@@ -104,6 +103,7 @@ function VisitedStats({ count, isDark }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 function EmptyState({ isDark }) {
+    const { t } = useTranslation()
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -121,10 +121,10 @@ function EmptyState({ isDark }) {
             </div>
 
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                No visits yet
+                {t('visited.empty_title')}
             </h2>
             <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                Open a place and tap "Mark as Visited" to track your food journey.
+                {t('visited.empty_desc')}
             </p>
 
             <Link
@@ -132,7 +132,7 @@ function EmptyState({ isDark }) {
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-2xl transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
             >
                 <Compass size={16} />
-                Start exploring
+                {t('visited.start_cta')}
                 <ArrowRight size={14} />
             </Link>
         </motion.div>
@@ -141,6 +141,7 @@ function EmptyState({ isDark }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 const VisitedPage = () => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
@@ -157,11 +158,11 @@ const VisitedPage = () => {
             {/* Header */}
             <div className="mb-6">
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Visited
+                    {t('visited.title')}
                 </h1>
                 {visitedLocations.length > 0 && (
                     <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                        Your personal food diary
+                        {t('visited.diary')}
                     </p>
                 )}
             </div>

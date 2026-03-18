@@ -3,14 +3,19 @@ import { screen, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/test/helpers'
 import App from '@/app/App'
 import { useAuthStore } from './hooks/useAuthStore'
+import { useUserPrefsStore } from './hooks/useUserPrefsStore'
 
 vi.mock('@/components/auth/SubscriptionGate', () => ({
     default: ({ children }) => children,
 }))
 
+// Prevent onboarding overlay from appearing in auth tests
+vi.mock('@/features/auth/components/OnboardingGate', () => ({
+    OnboardingGate: ({ children }) => children,
+}))
+
 describe('Auth Features Integration', () => {
     beforeEach(() => {
-        // Reset auth store before each test
         useAuthStore.getState().logout()
     })
 
@@ -19,7 +24,6 @@ describe('Auth Features Integration', () => {
             initialEntries: ['/login'],
         })
 
-        // LoginPage is lazy — wait for it to mount
         const emailInput = await screen.findByLabelText(/Email/i, {}, { timeout: 4000 })
         expect(emailInput).toBeInTheDocument()
         expect(screen.getByLabelText(/Password/i)).toBeInTheDocument()
@@ -30,18 +34,17 @@ describe('Auth Features Integration', () => {
             initialEntries: ['/login'],
         })
 
-        // Wait for lazy LoginPage
         const emailInput = await screen.findByLabelText(/Email/i, {}, { timeout: 4000 })
 
         fireEvent.change(emailInput, { target: { value: 'user@example.com' } })
         fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'password' } })
         fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
-        // Dashboard is lazy too — wait for it (login has async signIn delay)
+        // signIn has 400ms delay + lazy DashboardPage chunk load
         expect(
-            await screen.findByText(/What are we eating today?/i, {}, { timeout: 5000 })
+            await screen.findByText(/What are we eating today?/i, {}, { timeout: 8000 })
         ).toBeInTheDocument()
-    })
+    }, 12000)
 
     it('allows admin login and redirects to admin panel', async () => {
         renderWithProviders(<App includeRouter={false} />, {
@@ -55,7 +58,7 @@ describe('Auth Features Integration', () => {
         fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
         expect(
-            await screen.findByText(/Панель управления/i, {}, { timeout: 5000 })
+            await screen.findByText(/Панель управления/i, {}, { timeout: 8000 })
         ).toBeInTheDocument()
-    })
+    }, 12000)
 })

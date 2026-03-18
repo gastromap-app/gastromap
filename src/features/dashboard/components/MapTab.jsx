@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Navigation as NavIcon } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
@@ -8,176 +8,301 @@ import { Link } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import { useLocationsStore } from '../../public/hooks/useLocationsStore'
 
-// Fix for default Leaflet markers not showing in React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
+// ─── Fix Leaflet default icon paths ──────────────────────────────────────
+import icon from 'leaflet/dist/images/marker-icon.png'
+import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+L.Marker.prototype.options.icon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
-});
-L.Marker.prototype.options.icon = DefaultIcon;
+})
 
-// Component to handle map resize and theme updates
+// ─── Category → emoji + color ─────────────────────────────────────────────
+const CATEGORY_CONFIG = {
+    'Cafe':       { emoji: '☕', color: '#f97316' },
+    'Restaurant': { emoji: '🍽️', color: '#3b82f6' },
+    'Fine Dining':{ emoji: '🎩', color: '#8b5cf6' },
+    'Bar':        { emoji: '🍸', color: '#ec4899' },
+    'Bakery':     { emoji: '🥐', color: '#eab308' },
+    'Fast Food':  { emoji: '🍔', color: '#ef4444' },
+    default:      { emoji: '📍', color: '#6b7280' },
+}
+
+function getCategoryConfig(category) {
+    return CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG.default
+}
+
+// ─── Custom teardrop marker with rating badge ─────────────────────────────
+function makeMarkerIcon(loc, highlighted = false) {
+    const { emoji, color } = getCategoryConfig(loc.category)
+    const size = highlighted ? 48 : 40
+    const ratingBg = loc.rating >= 4.7 ? '#2563eb' : '#374151'
+
+    return L.divIcon({
+        className: '',
+        html: `
+            <div style="
+                position:relative;
+                width:${size}px;height:${size}px;
+                background:${color};
+                border-radius:50% 50% 50% 0;
+                transform:rotate(-45deg);
+                box-shadow:0 4px 12px rgba(0,0,0,0.35);
+                border:2.5px solid white;
+                cursor:pointer;
+                ${highlighted ? 'outline:3px solid white;outline-offset:2px;' : ''}
+            ">
+                <div style="
+                    position:absolute;inset:0;
+                    display:flex;align-items:center;justify-content:center;
+                    transform:rotate(45deg);
+                    font-size:${highlighted ? 18 : 16}px;line-height:1;
+                ">${emoji}</div>
+                ${loc.rating ? `
+                <div style="
+                    position:absolute;bottom:-6px;right:-6px;
+                    transform:rotate(45deg);
+                    background:${ratingBg};color:white;
+                    font-size:9px;font-weight:900;
+                    padding:2px 4px;border-radius:6px;
+                    border:1.5px solid white;
+                    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+                    white-space:nowrap;
+                ">★${loc.rating}</div>` : ''}
+            </div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 4, size],
+        popupAnchor: [size / 2 - 4, -size],
+    })
+}
+
+// ─── Cluster bubble ───────────────────────────────────────────────────────
+function makeClusterIcon(count) {
+    const size = count > 9 ? 44 : 38
+    return L.divIcon({
+        className: '',
+        html: `<div style="
+            width:${size}px;height:${size}px;
+            background:rgba(37,99,235,0.90);
+            border:3px solid white;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            color:white;font-size:13px;font-weight:900;
+            box-shadow:0 4px 14px rgba(37,99,235,0.45);
+        ">${count}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+    })
+}
+
+// ─── Grid-based clustering ────────────────────────────────────────────────
+function clusterLocations(locations, zoom) {
+    if (zoom >= 15 || locations.length <= 3) {
+        return locations.map((loc) => ({ locations: [loc], center: loc.coordinates }))
+    }
+    const gridSize = zoom >= 13 ? 0.005 : zoom >= 11 ? 0.015 : 0.04
+    const grid = new Map()
+    locations.forEach((loc) => {
+        if (!loc.coordinates) return
+        const key = `${Math.floor(loc.coordinates.lng / gridSize)}:${Math.floor(loc.coordinates.lat / gridSize)}`
+        if (!grid.has(key)) grid.set(key, [])
+        grid.get(key).push(loc)
+    })
+    return Array.from(grid.values()).map((group) => ({
+        locations: group,
+        center: {
+            lat: group.reduce((s, l) => s + l.coordinates.lat, 0) / group.length,
+            lng: group.reduce((s, l) => s + l.coordinates.lng, 0) / group.length,
+        },
+    }))
+}
+
+// ─── Map helpers ──────────────────────────────────────────────────────────
 const MapUpdater = ({ theme }) => {
     const map = useMap()
-    useEffect(() => {
-        setTimeout(() => {
-            map.invalidateSize()
-        }, 300)
-    }, [map])
+    useEffect(() => { setTimeout(() => map.invalidateSize(), 300) }, [map, theme])
     return null
 }
 
-
-// Sub-component to handle map interactions like FlyTo
 const LocationController = ({ userPos, trigger }) => {
     const map = useMap()
     useEffect(() => {
-        if (userPos && trigger) {
-            map.flyTo(userPos, 15, { duration: 1.5 })
-        }
-    }, [userPos, trigger, map])
+        if (userPos && trigger) map.flyTo(userPos, 15, { duration: 1.5 })
+    }, [map, userPos, trigger])
     return null
 }
 
+const ZoomTracker = ({ onZoomChange }) => {
+    useMapEvents({ zoomend: (e) => onZoomChange(e.target.getZoom()) })
+    return null
+}
+
+// ─── Popup card ───────────────────────────────────────────────────────────
+function PopupCard({ loc }) {
+    return (
+        <div className="w-48 overflow-hidden rounded-2xl" style={{ fontFamily: 'inherit' }}>
+            <div className="h-28 relative overflow-hidden">
+                <img src={loc.image} alt={loc.title} className="w-full h-full object-cover" loading="lazy" />
+                <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded-full text-[10px] font-black flex items-center gap-0.5 shadow">
+                    <Star size={8} className="text-blue-600 fill-blue-600" /> {loc.rating}
+                </div>
+                <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
+            </div>
+            <div className="p-3">
+                <h3 className="font-black text-gray-900 text-sm leading-tight truncate">{loc.title}</h3>
+                <div className="flex items-center justify-between mt-1 mb-2.5">
+                    <span className="text-[10px] text-gray-500 font-semibold">{loc.category}</span>
+                    <span className="text-[10px] font-bold text-gray-600">{loc.priceLevel}</span>
+                </div>
+                <Link
+                    to={`/location/${loc.id}`}
+                    className="block text-center text-[11px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors"
+                >
+                    View details →
+                </Link>
+            </div>
+        </div>
+    )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────
 const MapTab = ({ activeFilter = 'All' }) => {
     const { theme } = useTheme()
-    const { locations, filteredLocations: storeFiltered } = useLocationsStore()
+    const { filteredLocations: storeFiltered } = useLocationsStore()
     const [userPos, setUserPos] = React.useState(null)
     const [locateTrigger, setLocateTrigger] = React.useState(0)
+    const [zoom, setZoom] = React.useState(14)
+    const [selectedId, setSelectedId] = React.useState(null)
 
-    // Get User Location on mount
     useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    setUserPos([pos.coords.latitude, pos.coords.longitude])
-                },
-                (err) => console.log(err),
-                { enableHighAccuracy: true }
-            )
-        }
+        navigator.geolocation?.getCurrentPosition(
+            (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+            () => {},
+            { enableHighAccuracy: true }
+        )
     }, [])
 
     const handleLocateMe = () => {
         if (userPos) {
-            setLocateTrigger(prev => prev + 1)
+            setLocateTrigger((n) => n + 1)
         } else {
-            // Retry fetching if not yet found
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    setUserPos([pos.coords.latitude, pos.coords.longitude])
-                    setLocateTrigger(prev => prev + 1)
-                }
-            )
+            navigator.geolocation?.getCurrentPosition((pos) => {
+                setUserPos([pos.coords.latitude, pos.coords.longitude])
+                setLocateTrigger((n) => n + 1)
+            })
         }
     }
 
-    // Default center (Krakow) or User Pos
-    const defaultCenter = [50.0614, 19.9366]
-
-    // Custom Tile Layers for Light/Dark modes
-    const lightTiles = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-    const darkTiles = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-
-    // Apply Filter (respecting activeFilter prop if provided, else using store)
     const displayLocations = activeFilter === 'All'
         ? storeFiltered
-        : storeFiltered.filter(loc => loc.category === activeFilter)
+        : storeFiltered.filter((loc) => loc.category === activeFilter)
 
-    // Pulsing User Marker Icon
+    const clusters = useMemo(
+        () => clusterLocations(displayLocations, zoom),
+        [displayLocations, zoom]
+    )
+
+    const lightTiles = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+    const darkTiles  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+
     const userIcon = L.divIcon({
-        className: 'user-marker-icon',
-        html: `<div class="relative w-4 h-4">
-                 <div class="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-75"></div>
-                 <div class="absolute inset-0 bg-blue-600 rounded-full border-2 border-white shadow-md"></div>
+        className: '',
+        html: `<div style="position:relative;width:20px;height:20px;">
+                 <div style="position:absolute;inset:0;background:#3b82f6;border-radius:50%;animation:ping 1s cubic-bezier(0,0,0.2,1) infinite;opacity:0.6;"></div>
+                 <div style="position:absolute;inset:2px;background:#2563eb;border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(37,99,235,0.6);"></div>
                </div>`,
         iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
+        iconAnchor: [10, 10],
+    })
 
     return (
-        <div className="w-full h-[600px] rounded-[32px] overflow-hidden shadow-xl border border-white/20 relative z-0 group">
-
-            {/* Locate Me Floating Button */}
-            {/* Locate Me Floating Button */}
+        <div className="w-full h-[600px] rounded-[32px] overflow-hidden shadow-xl border border-white/20 relative z-0">
+            {/* Locate Me */}
             <button
                 onClick={handleLocateMe}
+                aria-label="Locate me"
                 className={`
-                    absolute top-1/2 -translate-y-1/2 right-4 md:top-4 md:right-4 md:translate-y-0 z-[500] 
-                    p-2.5 rounded-full shadow-lg backdrop-blur-md border transition-all active:scale-95
+                    absolute top-4 right-4 z-[500] p-2.5 rounded-full shadow-lg
+                    backdrop-blur-md border transition-all active:scale-95
                     ${theme === 'dark'
-                        ? 'bg-black/50 border-white/20 text-white hover:bg-black/70'
-                        : 'bg-white/90 border-white/50 text-blue-600 hover:bg-white'}
+                        ? 'bg-black/60 border-white/20 text-white hover:bg-black/80'
+                        : 'bg-white/95 border-white/60 text-blue-600 hover:bg-white'}
                 `}
-                title="Show my location"
             >
-                <NavIcon size={20} className={userPos ? (theme === 'dark' ? "fill-white/80" : "fill-blue-600") : ""} />
+                <NavIcon size={20} className={userPos ? (theme === 'dark' ? 'fill-white/80' : 'fill-blue-600') : ''} />
             </button>
 
+            {/* Location count */}
+            <div className={`
+                absolute bottom-12 left-4 z-[500]
+                px-3 py-1.5 rounded-full text-xs font-black shadow-lg backdrop-blur-md border
+                ${theme === 'dark'
+                    ? 'bg-black/60 border-white/20 text-white/70'
+                    : 'bg-white/90 border-white/60 text-gray-700'}
+            `}>
+                {displayLocations.length} place{displayLocations.length !== 1 ? 's' : ''}
+            </div>
+
             <MapContainer
-                center={defaultCenter}
+                center={[50.0614, 19.9366]}
                 zoom={14}
-                scrollWheelZoom={true}
+                scrollWheelZoom
                 zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
-                className="z-0"
             >
                 <ZoomControl position="bottomright" />
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                     url={theme === 'dark' ? darkTiles : lightTiles}
                 />
                 <MapUpdater theme={theme} />
                 <LocationController userPos={userPos} trigger={locateTrigger} />
+                <ZoomTracker onZoomChange={setZoom} />
 
-                {/* User Location Marker */}
                 {userPos && (
                     <Marker position={userPos} icon={userIcon}>
-                        <Popup className="custom-popup" closeButton={false}>
-                            <div className="px-2 py-1 text-xs font-bold text-center">
-                                You are here 📍
-                            </div>
+                        <Popup closeButton={false}>
+                            <div className="px-2 py-1 text-xs font-bold text-center text-gray-700">📍 You are here</div>
                         </Popup>
                     </Marker>
                 )}
 
-                {displayLocations.map((loc) => {
-                    if (!loc.coordinates) return null;
+                {clusters.map((cluster, i) => {
+                    const pos = [cluster.center.lat, cluster.center.lng]
+                    if (cluster.locations.length > 1) {
+                        return (
+                            <Marker key={`cl-${i}`} position={pos} icon={makeClusterIcon(cluster.locations.length)}>
+                                <Popup closeButton={false}>
+                                    <div className="p-2 space-y-1 max-h-48 overflow-y-auto w-40">
+                                        {cluster.locations.map((loc) => (
+                                            <Link key={loc.id} to={`/location/${loc.id}`}
+                                                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <span className="text-lg">{getCategoryConfig(loc.category).emoji}</span>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold text-gray-900 truncate">{loc.title}</p>
+                                                    <p className="text-[10px] text-gray-400">★ {loc.rating}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        )
+                    }
+                    const loc = cluster.locations[0]
+                    if (!loc.coordinates) return null
                     return (
                         <Marker
                             key={loc.id}
-                            position={[loc.coordinates.lat, loc.coordinates.lng]}
-                            icon={L.divIcon({
-                                className: 'custom-icon',
-                                html: `<div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-lg transform hover:scale-110 transition-transform ${loc.category === 'Cafe' ? 'bg-orange-400' :
-                                    loc.category === 'Dining' ? 'bg-blue-500' : 'bg-purple-500'
-                                    }">
-                                    ${loc.category === 'Cafe' ? '☕' : loc.category === 'Dining' ? '🍽️' : '🍸'}
-                                </div>`,
-                                iconSize: [32, 32],
-                                iconAnchor: [16, 16],
-                                popupAnchor: [0, -20]
-                            })}
+                            position={pos}
+                            icon={makeMarkerIcon(loc, selectedId === loc.id)}
+                            eventHandlers={{ click: () => setSelectedId(loc.id) }}
                         >
-                            <Popup className="custom-popup" closeButton={false}>
-                                <div className="w-48 p-1">
-                                    <div className="h-24 rounded-t-xl overflow-hidden relative mb-2">
-                                        <img src={loc.image} alt={loc.title} className="w-full h-full object-cover" />
-                                        <div className="absolute top-1 right-1 bg-white/90 px-1.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                                            <Star size={8} className="text-yellow-500 fill-yellow-500" /> {loc.rating}
-                                        </div>
-                                    </div>
-                                    <h3 className="font-bold text-gray-900 text-sm leading-tight mb-1">{loc.title}</h3>
-                                    <div className="flex justify-between items-center text-[10px] text-gray-500 mb-2">
-                                        <span>{loc.category}</span>
-                                        <span>{loc.price}</span>
-                                    </div>
-                                    <Link to={`/location/${loc.id}`} className="btn btn-xs btn-primary w-full text-white">View</Link>
-                                </div>
+                            <Popup
+                                closeButton={false}
+                                eventHandlers={{ remove: () => setSelectedId(null) }}
+                            >
+                                <PopupCard loc={loc} />
                             </Popup>
                         </Marker>
                     )

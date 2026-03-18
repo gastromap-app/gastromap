@@ -37,6 +37,24 @@ export const useAIChatStore = create(
                 return message
             },
 
+            /**
+             * Update the last message in the list — used for streaming token delivery.
+             * Finds the most recent message with the given role and replaces its content.
+             */
+            updateLastMessage: (role, content, extras = {}) => {
+                set((state) => {
+                    const messages = [...state.messages]
+                    // Walk from end to find the last message with this role
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                        if (messages[i].role === role) {
+                            messages[i] = { ...messages[i], content, ...extras }
+                            break
+                        }
+                    }
+                    return { messages }
+                })
+            },
+
             setTyping: (isTyping) => set({ isTyping }),
 
             setError: (error) => set({ error }),

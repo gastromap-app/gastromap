@@ -1,20 +1,25 @@
 import { useCallback } from 'react'
 import { useAIChatStore } from '@/features/shared/hooks/useAIChatStore'
-import { useAIQueryMutation } from '@/shared/api/queries'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { analyzeQueryStream, analyzeQuery } from '@/shared/api/ai.api'
+import { config } from '@/shared/config/env'
 
 /**
- * useAIChat — GastroGuide conversation logic.
+ * useAIChat — GastroGuide conversation logic with Claude API streaming.
  *
- * Combines:
- *   - useAIChatStore     (message history, typing state)
- *   - useAIQueryMutation (API call to AI service)
- *   - useUserPrefsStore  (user context for personalised responses)
+ * When VITE_AI_API_KEY is set:
+ *   • Uses analyzeQueryStream for real-time token delivery
+ *   • Updates the last assistant message in-place as chunks arrive
+ *   • Passes last 8 messages as multi-turn history context
+ *
+ * When no API key:
+ *   • Falls back to local gastroIntelligence scoring engine (zero API cost)
  *
  * @returns {{
  *   messages: Array,
  *   isTyping: boolean,
  *   error: string|null,
+ *   isStreaming: boolean,
  *   sendMessage: (text: string) => Promise<void>,
  *   clearHistory: () => void,
  * }}
@@ -25,6 +30,7 @@ export function useAIChat() {
         isTyping,
         error,
         addMessage,
+        updateLastMessage,
         setTyping,
         setError,
         clearError,
@@ -33,7 +39,6 @@ export function useAIChat() {
     } = useAIChatStore()
 
     const { prefs } = useUserPrefsStore()
-    const aiMutation = useAIQueryMutation()
 
     const sendMessage = useCallback(async (text) => {
         if (!text?.trim() || isTyping) return
@@ -42,32 +47,58 @@ export function useAIChat() {
         addMessage('user', text.trim())
         setTyping(true)
 
-        try {
-            const response = await aiMutation.mutateAsync({
-                message: text.trim(),
-                context: { preferences: prefs },
-            })
+        // Build conversation history for multi-turn context
+        const history = messages
+            .slice(-8)
+            .map((m) => ({
+                role: m.role === 'assistant' ? 'assistant' : 'user',
+                content: m.content,
+            }))
 
-            addMessage('assistant', response.content, {
-                matches: response.matches,
-                intent: response.intent,
-            })
+        const context = { preferences: prefs, history }
+
+        try {
+            if (config.ai.apiKey) {
+                // ── Streaming path (Claude API) ──────────────────────────────
+                // Add an empty assistant message that will fill with streamed chunks
+                addMessage('assistant', '…')
+                let accumulated = ''
+
+                const result = await analyzeQueryStream(text.trim(), context, (chunk) => {
+                    accumulated += chunk
+                    // Strip the trailing JSON block from live display
+                    const display = accumulated.replace(/\{"matches":\[.*?\]\}\s*$/s, '').trim()
+                    updateLastMessage('assistant', display || '…')
+                })
+
+                // Final update — parsed content + resolved location cards
+                updateLastMessage('assistant', result.content, {
+                    matches: result.matches,
+                    intent: result.intent,
+                })
+            } else {
+                // ── Non-streaming fallback (local engine) ────────────────────
+                const response = await analyzeQuery(text.trim(), context)
+                addMessage('assistant', response.content, {
+                    matches: response.matches,
+                    intent: response.intent,
+                })
+            }
 
             trimHistory()
         } catch (err) {
-            setError(err.message ?? 'Ошибка ответа GastroGuide')
-            addMessage('assistant', 'Произошла ошибка. Попробуйте ещё раз.', {
-                isError: true,
-            })
+            setError(err.message ?? 'GastroGuide не отвечает. Попробуйте ещё раз.')
+            addMessage('assistant', 'Произошла ошибка. Попробуйте ещё раз.', { isError: true })
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, addMessage, setTyping, setError, clearError, trimHistory, aiMutation])
+    }, [isTyping, prefs, messages, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory])
 
     return {
         messages,
         isTyping,
         error,
+        isStreaming: isTyping && Boolean(config.ai.apiKey),
         sendMessage,
         clearHistory,
     }

@@ -390,7 +390,10 @@ const LocationsPage = () => {
             </motion.div>
 
             {/* ── DESKTOP VIEW ──────────────────────────────────────────── */}
-            <div className="hidden md:block px-[10px] pt-24 pb-6 relative z-10">
+            {/* Wraps in absolute+overflow-y-auto so the grid scrolls within the
+                fixed inset-0 root that is required by the mobile map/sheet layout. */}
+            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10">
+                <div className="w-full max-w-7xl mx-auto px-8 pt-24 pb-10">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
                     {/* Hero */}
@@ -536,6 +539,7 @@ const LocationsPage = () => {
                         )}
                     </div>
                 </motion.div>
+                </div>
             </div>
         </div>
     )

@@ -1,9 +1,18 @@
 import React, { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import PublicLayout from '@/components/layout/PublicLayout'
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard'
 import { ErrorBoundary, MapErrorFallback, AIChatErrorFallback, RouteErrorFallback } from '@/app/ErrorBoundary'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+
+// ─── Admin guard — must be non-lazy so auth check runs before chunk loads ──
+const RequireAdmin = () => {
+    const { user, isAuthenticated } = useAuthStore()
+    if (!isAuthenticated) return <Navigate to="/login" replace />
+    if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
+    return <Outlet />
+}
 
 // ─── CRITICAL PUBLIC PAGES (no lazy loading) ───────────────────────────────
 import LandingPage from '@/features/public/pages/LandingPage'
@@ -120,16 +129,18 @@ export const AppRouter = () => {
                     />
                 </Route>
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<AdminDashboardPage />} />
-                    <Route path="locations" element={<AdminLocationsPage />} />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
-                    <Route path="moderation" element={<AdminModerationPage />} />
-                    <Route path="ai" element={<AdminAIPage />} />
-                    <Route path="stats" element={<AdminStatsPage />} />
-                    <Route path="settings" element={<AdminSettingsPage />} />
+                {/* Admin Routes — protected: requires role === 'admin' */}
+                <Route element={<RequireAdmin />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboardPage />} />
+                        <Route path="locations" element={<AdminLocationsPage />} />
+                        <Route path="users" element={<AdminUsersPage />} />
+                        <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+                        <Route path="moderation" element={<AdminModerationPage />} />
+                        <Route path="ai" element={<AdminAIPage />} />
+                        <Route path="stats" element={<AdminStatsPage />} />
+                        <Route path="settings" element={<AdminSettingsPage />} />
+                    </Route>
                 </Route>
 
                 {/* Fallback */}

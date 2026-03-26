@@ -57,6 +57,12 @@ const ProfilePage = () => {
 
     // State for Feedback
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+    const [toast, setToast] = useState(null)
+
+    const showToast = (msg) => {
+        setToast(msg)
+        setTimeout(() => setToast(null), 3500)
+    }
 
     // Styling
     const textStyle = isDark ? "text-white" : "text-gray-900"
@@ -111,12 +117,12 @@ const ProfilePage = () => {
                             const registration = await navigator.serviceWorker.getRegistration();
                             if (registration) {
                                 await registration.update();
-                                alert('Checking for updates... If a new version is available, it will download in the background.');
+                                showToast('Checking for updates… New version will download in the background.');
                             } else {
-                                alert('Service Worker not registered. PWA might not be installed.');
+                                showToast('Service Worker not registered. PWA might not be installed.');
                             }
                         } else {
-                            alert('Offline mode not supported by this browser.');
+                            showToast('Offline mode is not supported by this browser.');
                         }
                     }
                 },
@@ -127,6 +133,20 @@ const ProfilePage = () => {
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
             <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} theme={theme} />
+
+            {/* Inline toast */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 24 }}
+                        className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white bg-gray-900/95 backdrop-blur-md border border-white/10 max-w-xs text-center"
+                    >
+                        {toast}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Profile Header - Compact */}
             <div className="pt-24 px-6 flex flex-col items-center text-center">

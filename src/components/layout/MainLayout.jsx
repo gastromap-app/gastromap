@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { UniversalHeader } from './UniversalHeader'
 import GastroGuideChat from '@/features/public/components/GastroGuideChat'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import AuroraBackground from '@/components/ui/aurora-background'
@@ -13,28 +12,20 @@ export function MainLayout() {
     const { theme } = useTheme()
     const [isChatOpen, setIsChatOpen] = useState(false)
     const location = useLocation()
-    const isProfile = location.pathname === '/profile'
     const isAIGuide = location.pathname === '/ai-guide'
     const isExplore = location.pathname.startsWith('/explore')
-    const hasSearch = !isProfile && !isAIGuide && !isExplore
 
     return (
         <AuroraBackground theme={theme}>
             <div className="flex flex-col min-h-screen text-foreground relative">
                 <UniversalHeader />
+                {/* No AnimatePresence wrapper here — each page owns its entry animation
+                    via PageTransition. The old mode="wait" pattern broke because
+                    <Outlet /> switches to the new component immediately on route change,
+                    causing the new page to animate inside the *exiting* motion.div,
+                    then re-mount blank in the entering one. */}
                 <main className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? 'pb-0' : 'pb-24'} md:pb-0`}>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={location.pathname}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                            className="w-full h-full"
-                        >
-                            <Outlet />
-                        </motion.div>
-                    </AnimatePresence>
+                    <Outlet />
                 </main>
                 <BottomNav />
 

@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { cn } from '@/lib/utils'
 import { translate } from '@/utils/translation'
+import LazyImage from '@/components/ui/LazyImage'
 
 export default function LocationCard({ location }) {
     const navigate = useNavigate()
@@ -17,7 +18,7 @@ export default function LocationCard({ location }) {
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
-                <img
+                <LazyImage
                     src={location.image}
                     alt={location.title}
                     crossOrigin="anonymous"

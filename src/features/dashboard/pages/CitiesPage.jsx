@@ -146,7 +146,7 @@ const CitiesPage = () => {
             </motion.div>
 
             {/* --- DESKTOP VIEW --- */}
-            <div className="hidden md:block px-[10px] pt-24 pb-6">
+            <div className="hidden md:block max-w-7xl mx-auto px-8 pt-24 pb-10">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

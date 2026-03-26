@@ -10,6 +10,7 @@ import MapTab from '../components/MapTab'
 import FilterModal from '../components/FilterModal'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
+import { DashboardCardSkeleton } from '@/components/ui/Skeleton'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 
@@ -118,6 +119,12 @@ const DashboardPage = () => {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const [isLoading, setIsLoading] = useState(true)
+    useEffect(() => {
+        const t = setTimeout(() => setIsLoading(false), 700)
+        return () => clearTimeout(t)
+    }, [])
+
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const debouncedSearch = useDebounce(searchQuery, 300)
@@ -220,11 +227,18 @@ const DashboardPage = () => {
                     </div>
 
                     <div className="flex gap-[12px] overflow-x-auto pb-6 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory">
-                        {recommended.map((loc) => (
-                            <div key={loc.id} className="snap-center">
-                                <LocationCardMobile loc={loc} type="recommended" />
-                            </div>
-                        ))}
+                        {isLoading
+                            ? Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="snap-center flex-shrink-0">
+                                    <DashboardCardSkeleton isDark={isDark} />
+                                </div>
+                            ))
+                            : recommended.map((loc) => (
+                                <div key={loc.id} className="snap-center">
+                                    <LocationCardMobile loc={loc} type="recommended" />
+                                </div>
+                            ))
+                        }
                     </div>
                 </div>
 
@@ -241,11 +255,18 @@ const DashboardPage = () => {
                     </div>
 
                     <div className="flex gap-[12px] overflow-x-auto pb-6 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory">
-                        {[...locations].reverse().slice(0, 5).map((loc) => (
-                            <div key={loc.id} className="snap-center">
-                                <LocationCardMobile loc={loc} type="trending" />
-                            </div>
-                        ))}
+                        {isLoading
+                            ? Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="snap-center flex-shrink-0">
+                                    <DashboardCardSkeleton isDark={isDark} />
+                                </div>
+                            ))
+                            : [...locations].reverse().slice(0, 5).map((loc) => (
+                                <div key={loc.id} className="snap-center">
+                                    <LocationCardMobile loc={loc} type="trending" />
+                                </div>
+                            ))
+                        }
                     </div>
                 </div>
             </div>

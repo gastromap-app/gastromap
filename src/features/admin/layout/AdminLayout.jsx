@@ -123,8 +123,8 @@ export default function AdminLayout() {
 
     return (
         <div className="flex h-screen bg-[#FDFDFD] dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-200">
-            {/* Desktop Sidebar */}
-            <motion.aside animate={{ width: isCollapsed ? 100 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col relative z-30">
+            {/* Desktop Sidebar — explicit h-screen so SidebarContent h-full resolves */}
+            <motion.aside animate={{ width: isCollapsed ? 100 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col h-screen relative z-30 flex-shrink-0">
                 <SidebarContent collapsed={isCollapsed} />
                 <button onClick={() => setIsCollapsed(!isCollapsed)} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -144,12 +144,12 @@ export default function AdminLayout() {
                 )}
             </AnimatePresence>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 relative">
+            {/* Main Content Area — explicit h-screen + overflow-hidden makes height chain reliable */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-                {/* Top Header */}
-                <header className="h-20 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-20 transition-all">
+                {/* Top Header — flex-none, NOT sticky (scroll is on <main>, header is always visible) */}
+                <header className="flex-none h-20 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 lg:px-10 z-20 transition-all relative">
                     <div className="flex items-center gap-6">
                         <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2.5 text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm" aria-label="Open menu">
                             <Menu size={20} />

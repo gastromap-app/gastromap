@@ -13,6 +13,11 @@ import { useTheme } from '@/hooks/useTheme'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
+import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useOpenStatus } from '@/hooks/useOpenStatus'
+import { useReviewsStore } from '@/features/dashboard/hooks/useReviewsStore'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -23,8 +28,19 @@ const LocationDetailsPage = () => {
     // Find location from global mocks
     const location = MOCK_LOCATIONS.find(loc => loc.id === id) || MOCK_LOCATIONS[0]
 
-    const [isSaved, setIsSaved] = useState(false)
-    const [isVisited, setIsVisited] = useState(false)
+    // Connect to real stores
+    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { prefs, addVisited } = useUserPrefsStore()
+    const { user } = useAuthStore()
+    const isSaved = isFavorite(location?.id)
+    const isVisited = prefs.lastVisited?.includes(location?.id)
+    const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
+
+    // Reviews
+    const { getReviews, getAggregate, addReview } = useReviewsStore()
+    const reviews = getReviews(location?.id)
+    const aggregate = getAggregate(location?.id)
+
     const [activeTab, setActiveTab] = useState('Overview')
     const [showScrollHint, setShowScrollHint] = useState(true)
 
@@ -67,7 +83,7 @@ const LocationDetailsPage = () => {
         <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                    { icon: Clock, label: "Hours Today", value: location.openingHours, color: "bg-blue-500/10 text-blue-500" },
+                    { icon: Clock, label: openLabel || "Hours Today", value: location.openingHours, color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
                     { icon: Phone, label: "Contact", value: "+48 123 456 789", color: "bg-green-500/10 text-green-500" },
                     { icon: MessageSquare, label: "Total Reviews", value: "245 Verified", color: "bg-purple-500/10 text-purple-500" },
                     { icon: Navigation, label: "Direction", value: "0.8 km Near", color: "bg-orange-500/10 text-orange-500" }
@@ -304,94 +320,149 @@ const LocationDetailsPage = () => {
         )
     }
 
-    const renderReviews = () => (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-8 items-center bg-blue-600/5 p-10 rounded-[40px] border border-blue-500/10">
-                <div className="text-center md:text-left space-y-1">
-                    <p className="text-6xl font-black text-blue-500">4.9</p>
-                    <div className="flex gap-1 justify-center md:justify-start">
-                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="text-yellow-400 fill-yellow-400" />)}
-                    </div>
-                    <p className={`text-xs font-black uppercase tracking-widest ${subTextStyle}`}>Based on 245 reviews</p>
-                </div>
-                <div className="flex-1 space-y-2 w-full">
-                    {[5, 4, 3, 2, 1].map(lvl => (
-                        <div key={lvl} className="flex items-center gap-3 w-full">
-                            <span className={`text-[10px] font-black w-3 ${textStyle}`}>{lvl}</span>
-                            <div className="h-1.5 flex-1 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-600 rounded-full" style={{ width: lvl === 5 ? '85%' : '5%' }} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+    const handleSubmitReview = () => {
+        if (!newReview.text.trim()) return
+        addReview(location.id, {
+            authorName: user?.name || 'Anonymous',
+            rating: newReview.rating,
+            text: newReview.text,
+        })
+        setNewReview({ rating: 5, text: '' })
+        setIsWritingReview(false)
+    }
 
-            {/* User Review Input */}
-            <div className={`p-8 rounded-[40px] border border-dashed transition-all ${isWritingReview ? 'border-blue-500 bg-blue-500/5' : 'border-gray-200 dark:border-white/10'}`}>
-                {!isWritingReview ? (
-                    <button
-                        onClick={() => setIsWritingReview(true)}
-                        className="w-full flex items-center justify-center gap-3 py-4 text-blue-500 font-black hover:scale-[1.01] transition-transform"
-                    >
-                        <Plus size={20} /> Write your review
-                    </button>
-                ) : (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h4 className={`font-black ${textStyle}`}>Rate your experience</h4>
-                            <button onClick={() => setIsWritingReview(false)} className="text-gray-400"><X size={20} /></button>
-                        </div>
-                        <div className="flex gap-2">
+    const renderReviews = () => {
+        const maxDist = Math.max(...Object.values(aggregate.distribution), 1)
+        return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                {/* Aggregate score */}
+                <div className="flex flex-col md:flex-row gap-8 items-center bg-blue-600/5 p-10 rounded-[40px] border border-blue-500/10">
+                    <div className="text-center md:text-left space-y-1 flex-shrink-0">
+                        <p className="text-6xl font-black text-blue-500">{aggregate.average || '—'}</p>
+                        <div className="flex gap-1 justify-center md:justify-start">
                             {[1, 2, 3, 4, 5].map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setNewReview({ ...newReview, rating: s })}
-                                    className={`transition-all ${s <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                                >
-                                    <Star size={24} fill={s <= newReview.rating ? "currentColor" : "none shadow-md"} />
-                                </button>
+                                <Star key={s} size={16} className={s <= Math.round(aggregate.average) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 fill-gray-300'} />
                             ))}
                         </div>
-                        <textarea
-                            value={newReview.text}
-                            onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
-                            placeholder="Share the details of your visit..."
-                            className={`w-full p-6 rounded-3xl border bg-transparent outline-none focus:border-blue-500 transition-colors h-32 text-sm font-medium ${isDark ? 'border-white/10 text-white' : 'border-gray-100 text-gray-900'}`}
-                        />
-                        <button className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl flex items-center justify-center gap-2">
-                            <Send size={18} /> Submit Review
-                        </button>
+                        <p className={`text-xs font-black uppercase tracking-widest ${subTextStyle}`}>
+                            Based on {aggregate.count} {aggregate.count === 1 ? 'review' : 'reviews'}
+                        </p>
                     </div>
-                )}
-            </div>
+                    {/* Distribution bars */}
+                    <div className="flex-1 space-y-2 w-full">
+                        {[5, 4, 3, 2, 1].map(lvl => {
+                            const count = aggregate.distribution[lvl] ?? 0
+                            const pct = aggregate.count > 0 ? Math.round((count / aggregate.count) * 100) : 0
+                            return (
+                                <div key={lvl} className="flex items-center gap-3 w-full">
+                                    <span className={`text-[11px] font-black w-3 ${textStyle}`}>{lvl}</span>
+                                    <div className="h-1.5 flex-1 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className="h-full bg-blue-600 rounded-full"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${pct}%` }}
+                                            transition={{ duration: 0.6, ease: 'easeOut', delay: (5 - lvl) * 0.06 }}
+                                        />
+                                    </div>
+                                    <span className={`text-[10px] font-bold w-6 text-right ${subTextStyle}`}>{count}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
 
-            {/* List of reviews */}
-            <div className="space-y-4">
-                {[
-                    { name: "John Doe", rating: 5, date: "2 days ago", text: "Truly the best atmosphere in Krakow. The pasta was cooked to perfection and service was top notch." },
-                    { name: "Elena S.", rating: 4, date: "1 week ago", text: "Bit crowded on weekends, but worth the wait. The Tiramisu is life changing." }
-                ].map((rev, i) => (
-                    <div key={i} className={`p-8 rounded-[40px] border ${cardBg}`}>
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-600">
-                                    <User size={24} />
-                                </div>
-                                <div>
-                                    <p className={`font-black ${textStyle}`}>{rev.name}</p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{rev.date}</p>
-                                </div>
+                {/* Write review */}
+                <div className={`p-8 rounded-[40px] border border-dashed transition-all ${isWritingReview ? 'border-blue-500 bg-blue-500/5' : 'border-gray-200 dark:border-white/10'}`}>
+                    {!isWritingReview ? (
+                        <button
+                            onClick={() => setIsWritingReview(true)}
+                            className="w-full flex items-center justify-center gap-3 py-4 text-blue-500 font-black hover:scale-[1.01] transition-transform"
+                        >
+                            <Plus size={20} /> Write your review
+                        </button>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center">
+                                <h4 className={`font-black ${textStyle}`}>Rate your experience</h4>
+                                <button onClick={() => setIsWritingReview(false)} className="text-gray-400"><X size={20} /></button>
                             </div>
-                            <div className="flex gap-1">
-                                {[...Array(rev.rating)].map((_, j) => <Star key={j} size={14} className="text-yellow-400 fill-yellow-400" />)}
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={() => setNewReview({ ...newReview, rating: s })}
+                                        className={`transition-all active:scale-90 ${s <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    >
+                                        <Star size={28} fill={s <= newReview.rating ? 'currentColor' : 'none'} />
+                                    </button>
+                                ))}
                             </div>
+                            <textarea
+                                value={newReview.text}
+                                onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
+                                placeholder="Share the details of your visit..."
+                                className={`w-full p-6 rounded-3xl border bg-transparent outline-none focus:border-blue-500 transition-colors h-32 text-sm font-medium resize-none ${isDark ? 'border-white/10 text-white placeholder:text-white/30' : 'border-gray-100 text-gray-900'}`}
+                            />
+                            <button
+                                onClick={handleSubmitReview}
+                                disabled={!newReview.text.trim()}
+                                className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed'}`}
+                            >
+                                <Send size={18} /> Submit Review
+                            </button>
                         </div>
-                        <p className={`text-lg leading-relaxed ${subTextStyle}`}>{rev.text}</p>
-                    </div>
-                ))}
-            </div>
-        </motion.div>
-    )
+                    )}
+                </div>
+
+                {/* Review list */}
+                <div className="space-y-4">
+                    <AnimatePresence initial={false}>
+                        {reviews.length === 0 ? (
+                            <div className="text-center py-10">
+                                <p className={`text-sm font-medium ${subTextStyle}`}>No reviews yet. Be the first!</p>
+                            </div>
+                        ) : reviews.map((rev, i) => (
+                            <motion.div
+                                key={rev.id}
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ delay: i * 0.05 }}
+                                className={`p-8 rounded-[40px] border ${cardBg}`}
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-600">
+                                            <User size={22} />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className={`font-black ${textStyle}`}>{rev.authorName}</p>
+                                                {rev.verified && (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                                        Verified
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                                {new Date(rev.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-0.5">
+                                        {[1, 2, 3, 4, 5].map(s => (
+                                            <Star key={s} size={13} className={s <= rev.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'} />
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className={`leading-relaxed text-sm font-medium ${subTextStyle}`}>{rev.text}</p>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            </motion.div>
+        )
+    }
 
     const renderPhotos = () => (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -473,14 +544,16 @@ const LocationDetailsPage = () => {
                     </button>
                     <div className="flex gap-2.5">
                         <button
-                            onClick={() => setIsVisited(!isVisited)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all ${isVisited ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            onClick={() => addVisited(location.id)}
+                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isVisited ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            aria-label="Mark as visited"
                         >
-                            <CheckCircle2 size={22} className={isVisited ? "animate-bounce" : ""} />
+                            <CheckCircle2 size={22} className={isVisited ? "fill-white" : ""} />
                         </button>
                         <button
-                            onClick={() => setIsSaved(!isSaved)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all ${isSaved ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            onClick={() => toggleFavorite(location.id)}
+                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isSaved ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            aria-label="Save location"
                         >
                             <Heart size={20} fill={isSaved ? "currentColor" : "none"} />
                         </button>

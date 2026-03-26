@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, Mail, UserCircle, Save, Utensils, Sparkles, Heart } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useTranslation } from 'react-i18next'
 
 const ProfileEditPage = () => {
+    const { t } = useTranslation()
     const { user: authUser, updateProfile } = useAuthStore()
     const user = authUser || {
         name: 'Alex Johnson',
@@ -57,7 +59,7 @@ const ProfileEditPage = () => {
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Edit Profile</h1>
+                <h1 className={`text-2xl font-black ${textStyle}`}>{t('profile_edit.title')}</h1>
             </div>
 
             <div className="px-5 space-y-6">
@@ -75,10 +77,10 @@ const ProfileEditPage = () => {
 
                 {/* Basic Info */}
                 <div className={`p-6 rounded-[32px] border ${cardBg} space-y-5`}>
-                    <h3 className={`text-[11px] font-black uppercase tracking-widest ml-2 mb-2 ${subTextStyle}`}>Basic Information</h3>
+                    <h3 className={`text-[11px] font-black uppercase tracking-widest ml-2 mb-2 ${subTextStyle}`}>{t('profile_edit.basic_info')}</h3>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>Full Name</label>
+                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.full_name')}</label>
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
                             <input
@@ -86,13 +88,13 @@ const ProfileEditPage = () => {
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all focus:border-blue-500 ${inputBg} ${textStyle}`}
-                                placeholder="Enter your name"
+                                placeholder={t('profile_edit.name_placeholder')}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>Email Address</label>
+                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.email')}</label>
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
                             <input
@@ -100,18 +102,18 @@ const ProfileEditPage = () => {
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all focus:border-blue-500 ${inputBg} ${textStyle}`}
-                                placeholder="Enter your email"
+                                placeholder={t('profile_edit.email_placeholder')}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>Bio</label>
+                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.bio')}</label>
                         <textarea
                             value={formData.bio}
                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                             className={`w-full p-4 rounded-2xl text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
-                            placeholder="Tell us about yourself"
+                            placeholder={t('profile_edit.bio_placeholder')}
                         />
                     </div>
                 </div>
@@ -120,14 +122,14 @@ const ProfileEditPage = () => {
                 <div className={`p-6 rounded-[32px] border ${cardBg} space-y-6`}>
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles size={16} className="text-yellow-500" />
-                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${subTextStyle}`}>Taste Profile DNA</h3>
+                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${subTextStyle}`}>{t('profile_edit.taste_dna')}</h3>
                     </div>
 
                     {/* Foodie DNA Input */}
                     <div className="space-y-4">
                         <div className="flex flex-col gap-1">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Foodie DNA & Preferences</label>
-                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>Describe your tastes, allergies, or what you crave most. GastroGuide uses this to personalize recommendations.</p>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.dna_label')}</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.dna_hint')}</p>
                         </div>
                         <div className="relative group">
                             <div className="absolute top-4 left-4 text-blue-500 opacity-50 group-focus-within:opacity-100 transition-opacity">
@@ -146,7 +148,7 @@ const ProfileEditPage = () => {
                                     }
                                 })}
                                 className={`w-full pl-12 pr-4 py-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-32 resize-none ${inputBg} ${textStyle}`}
-                                placeholder="E.g., I love spicy Asian food, authentic Italian pasta, and quiet specialty coffee shops. I'm vegan and avoid cilantro..."
+                                placeholder={t('profile_edit.dna_placeholder')}
                             />
                         </div>
                     </div>
@@ -154,8 +156,8 @@ const ProfileEditPage = () => {
                     {/* Atmosphere Editor */}
                     <div className="space-y-4">
                         <div className="flex flex-col gap-1">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Atmosphere Style</label>
-                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>What kind of vibe do you prefer? Quiet, vibrant, romantic, or perfect for work?</p>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.atm_label')}</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.atm_hint')}</p>
                         </div>
                         <textarea
                             value={formData.preferences?.longTerm?.atmospherePreference || ''}
@@ -170,15 +172,15 @@ const ProfileEditPage = () => {
                                 }
                             })}
                             className={`w-full p-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
-                            placeholder="E.g., I prefer quiet, hidden places with dim lighting and jazz. Perfect for long reading sessions..."
+                            placeholder={t('profile_edit.atm_placeholder')}
                         />
                     </div>
 
                     {/* Features Editor */}
                     <div className="space-y-4">
                         <div className="flex flex-col gap-1">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Must-have Features</label>
-                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>Any specific requirements like high-speed WiFi, pet-friendly, or outdoor seating?</p>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.features_label')}</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.features_hint')}</p>
                         </div>
                         <textarea
                             value={formData.preferences?.longTerm?.features || ''}
@@ -193,7 +195,7 @@ const ProfileEditPage = () => {
                                 }
                             })}
                             className={`w-full p-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
-                            placeholder="E.g., High-speed WiFi is a must. Also, I usually travel with my dog, so pet-friendly places only please..."
+                            placeholder={t('profile_edit.features_placeholder')}
                         />
                     </div>
                 </div>
@@ -204,7 +206,7 @@ const ProfileEditPage = () => {
                     className="w-full py-4 rounded-[24px] bg-blue-600 text-white font-black flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-[0.98] transition-all"
                 >
                     <Save size={18} />
-                    Save Changes
+                    {t('profile_edit.save')}
                 </button>
             </div>
         </div>

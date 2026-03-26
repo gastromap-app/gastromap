@@ -1,14 +1,162 @@
 import React from 'react'
-import { Heart } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
+import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
-const SavedPage = () => {
+// ─── Location card (compact horizontal) ──────────────────────────────────
+function SavedCard({ loc, index, onUnsave }) {
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
     return (
-        <div className="w-full max-w-7xl mx-auto px-[2.5vw] h-[100dvh] flex flex-col relative z-10 pt-24 overscroll-none overflow-y-auto scrollbar-hide">
-            <div className="flex flex-col items-center justify-center text-center space-y-4 py-20">
-                <Heart size={48} className="text-red-500 opacity-50" />
-                <h2 className="text-xl font-black text-white">Your Saved Places</h2>
-                <p className="text-white/40 text-sm">Save places to see them here.</p>
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.06, duration: 0.35, ease: 'easeOut' }}
+            className={`group relative flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
+                isDark
+                    ? 'bg-white/5 border border-white/10 hover:bg-white/8'
+                    : 'bg-white border border-gray-100 hover:shadow-md'
+            }`}
+        >
+            {/* Image */}
+            <Link to={`/location/${loc.id}`} className="flex-shrink-0">
+                <div className="w-20 h-20 rounded-xl overflow-hidden">
+                    <img
+                        src={loc.image}
+                        alt={loc.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                </div>
+            </Link>
+
+            {/* Info */}
+            <Link to={`/location/${loc.id}`} className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {loc.title}
+                        </h3>
+                        <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                            {loc.cuisine} · {loc.category}
+                        </p>
+                    </div>
+
+                    {/* Rating pill */}
+                    <div className="flex-shrink-0 flex items-center gap-1 bg-blue-600/10 px-2 py-1 rounded-xl">
+                        <Star size={10} className="text-blue-600 fill-blue-600" />
+                        <span className="text-[11px] font-black text-blue-600">{loc.rating}</span>
+                    </div>
+                </div>
+
+                {/* Meta row */}
+                <div className="flex items-center gap-3 mt-2">
+                    <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        {loc.priceLevel}
+                    </span>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
+                        isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                        {loc.vibe}
+                    </span>
+                </div>
+            </Link>
+
+            {/* Unsave button */}
+            <button
+                onClick={(e) => { e.stopPropagation(); onUnsave(loc.id) }}
+                className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/20 transition-colors active:scale-90"
+                aria-label="Remove from saved"
+            >
+                <Heart size={14} className="text-red-500 fill-red-500" />
+            </button>
+        </motion.div>
+    )
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────
+function EmptyState({ isDark }) {
+    const { t } = useTranslation()
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col items-center justify-center text-center py-24 px-6"
+        >
+            {/* Icon with glow */}
+            <div className="relative mb-8">
+                <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl scale-150" />
+                <div className={`relative w-24 h-24 rounded-[32px] flex items-center justify-center ${
+                    isDark ? 'bg-white/5 border border-white/10' : 'bg-red-50 border border-red-100'
+                }`}>
+                    <Heart size={40} className="text-red-400" />
+                </div>
             </div>
+
+            <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t('saved.empty_title')}
+            </h2>
+            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                {t('saved.empty_desc')}
+            </p>
+
+            <Link
+                to="/explore"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-500/25"
+            >
+                <Compass size={16} />
+                {t('saved.explore_cta')}
+                <ArrowRight size={14} />
+            </Link>
+        </motion.div>
+    )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────
+const SavedPage = () => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
+    const { favoriteIds, toggleFavorite } = useFavoritesStore()
+    const { locations } = useLocationsStore()
+
+    const savedLocations = locations.filter((loc) => favoriteIds.includes(loc.id))
+
+    return (
+        <div className="w-full max-w-2xl mx-auto px-4 pb-32 pt-24 min-h-[100dvh] relative z-10">
+            {/* Header */}
+            <div className="mb-6">
+                <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {t('saved.title')}
+                </h1>
+                {savedLocations.length > 0 && (
+                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        {t('saved.places_saved', { count: savedLocations.length })}
+                    </p>
+                )}
+            </div>
+
+            {savedLocations.length === 0 ? (
+                <EmptyState isDark={isDark} />
+            ) : (
+                <div className="space-y-3">
+                    {savedLocations.map((loc, i) => (
+                        <SavedCard
+                            key={loc.id}
+                            loc={loc}
+                            index={i}
+                            onUnsave={toggleFavorite}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }

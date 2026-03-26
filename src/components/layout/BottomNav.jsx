@@ -4,19 +4,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Map, Sparkles, Heart, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
 export function BottomNav() {
     const location = useLocation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const [isCompact] = useState(true)
+    const { t } = useTranslation()
 
     const navItems = [
-        { icon: Home, label: 'Overview', path: '/dashboard' },
-        { icon: Map, label: 'Explore', path: '/explore' },
-        { icon: Sparkles, label: 'GastroGuide', path: '/ai-guide' },
-        { icon: Heart, label: 'Saved', path: '/saved' },
-        { icon: CheckCircle, label: 'Visited', path: '/visited' },
+        { icon: Home, label: t('nav.overview'), path: '/dashboard' },
+        { icon: Map, label: t('nav.explore'), path: '/explore' },
+        { icon: Sparkles, label: t('nav.ai_guide'), path: '/ai-guide' },
+        { icon: Heart, label: t('nav.saved'), path: '/saved' },
+        { icon: CheckCircle, label: t('nav.visited'), path: '/visited' },
     ]
 
     // Hide bottom nav on AI Guide page (mobile only)

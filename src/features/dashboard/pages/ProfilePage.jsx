@@ -9,9 +9,11 @@ import {
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 // Simple Feedback Modal Component nested for convenience
 const FeedbackModal = ({ isOpen, onClose, theme }) => {
+    const { t } = useTranslation()
     const isDark = theme === 'dark'
     if (!isOpen || typeof document === 'undefined') return null
 
@@ -26,17 +28,17 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                     className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
                 >
-                    <h3 className="text-2xl font-bold mb-2">Send Feedback</h3>
-                    <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>We'd love to hear your thoughts, suggestions, or bug reports.</p>
+                    <h3 className="text-2xl font-bold mb-2">{t('profile.feedback_title')}</h3>
+                    <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('profile.feedback_desc')}</p>
 
                     <textarea
                         className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                        placeholder="Type your message here..."
+                        placeholder={t('profile.feedback_placeholder')}
                     />
 
                     <div className="flex gap-3 mt-6">
-                        <button onClick={onClose} className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>Cancel</button>
-                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700">Send</button>
+                        <button onClick={onClose} className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{t('common.cancel')}</button>
+                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700">{t('profile.send')}</button>
                     </div>
                 </motion.div>
             </div>
@@ -46,6 +48,7 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 }
 
 const ProfilePage = () => {
+    const { t } = useTranslation()
     const { user: authUser } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
     const { theme } = useTheme()
@@ -62,10 +65,10 @@ const ProfilePage = () => {
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
     const stats = [
-        { label: 'Level', val: 'Expert', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
-        { label: 'Visited', val: '12', icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
-        { label: 'Reviews', val: '8', icon: Utensils, color: 'text-green-500 bg-green-500/10' },
-        { label: 'Reward', val: 'Coffee', icon: Coffee, color: 'text-purple-500 bg-purple-500/10' },
+        { label: t('profile.level'), val: 'Expert', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
+        { label: t('profile.visited'), val: '12', icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
+        { label: t('profile.reviews'), val: '8', icon: Utensils, color: 'text-green-500 bg-green-500/10' },
+        { label: t('profile.reward'), val: 'Coffee', icon: Coffee, color: 'text-purple-500 bg-purple-500/10' },
     ]
 
     const contributions = [
@@ -75,34 +78,34 @@ const ProfilePage = () => {
 
     const menuItems = [
         {
-            section: "Account",
+            section: t('profile.section_account'),
             items: [
-                { icon: User, label: "Personal Information", link: "/profile/edit" },
-                { icon: Globe, label: "Language & Region", link: "/profile/language", value: "English" },
-                { icon: Lock, label: "Security & Privacy", link: "/profile/security" },
+                { icon: User, label: t('profile.personal_info'), link: "/profile/edit" },
+                { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: "English" },
+                { icon: Lock, label: t('profile.security'), link: "/profile/security" },
             ]
         },
         {
-            section: "Support & Feedback",
+            section: t('profile.section_support'),
             items: [
-                { icon: MessageSquare, label: "Send Feedback", action: () => setIsFeedbackOpen(true) },
-                { icon: HelpCircle, label: "Help Center", link: "/help" },
+                { icon: MessageSquare, label: t('profile.send_feedback'), action: () => setIsFeedbackOpen(true) },
+                { icon: HelpCircle, label: t('profile.help_center'), link: "/help" },
             ]
         },
         {
-            section: "Legal & Privacy",
+            section: t('profile.section_legal'),
             items: [
-                { icon: FileText, label: "Terms of Service", link: "/terms" },
-                { icon: Shield, label: "Privacy Policy", link: "/privacy" },
-                { icon: UserX, label: "Request Data Deletion (GDPR)", link: "/privacy/delete-request" },
+                { icon: FileText, label: t('profile.terms'), link: "/terms" },
+                { icon: Shield, label: t('profile.privacy_policy'), link: "/privacy" },
+                { icon: UserX, label: t('profile.gdpr'), link: "/privacy/delete-request" },
             ]
         },
         {
-            section: "Application",
+            section: t('profile.section_app'),
             items: [
                 {
                     icon: Shield,
-                    label: "Check for Updates",
+                    label: t('profile.check_updates'),
                     action: async () => {
                         if ('serviceWorker' in navigator) {
                             const registration = await navigator.serviceWorker.getRegistration();
@@ -164,9 +167,9 @@ const ProfilePage = () => {
             {/* My Contributions Section */}
             <div className="px-5 mt-8">
                 <div className="flex items-center justify-between mb-4 px-2">
-                    <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>My Contributions</h3>
+                    <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.contributions')}</h3>
                     <Link to="/dashboard/add-place" className="flex items-center gap-1.5 text-xs font-bold text-blue-500 hover:text-blue-600">
-                        <PlusCircle size={14} /> Add Place
+                        <PlusCircle size={14} /> {t('profile.add_place')}
                     </Link>
                 </div>
                 <div className={`rounded-[24px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
@@ -189,7 +192,7 @@ const ProfilePage = () => {
                                 <div className="text-right">
                                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${item.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                                         }`}>
-                                        {item.status}
+                                        {item.status === 'Approved' ? t('profile.approved') : t('profile.pending')}
                                     </span>
                                     {item.status === 'Approved' && (
                                         <p className="text-[10px] font-black text-blue-500 mt-1">{item.points}</p>
@@ -199,7 +202,7 @@ const ProfilePage = () => {
                         ))
                     ) : (
                         <div className="p-6 text-center">
-                            <p className={`text-sm ${subTextStyle}`}>You haven't added any places yet.</p>
+                            <p className={`text-sm ${subTextStyle}`}>{t('profile.no_contributions')}</p>
                         </div>
                     )}
                 </div>
@@ -212,36 +215,36 @@ const ProfilePage = () => {
                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
                             <Utensils size={18} />
                         </div>
-                        <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>Taste Profile</h3>
+                        <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.taste_profile')}</h3>
                     </div>
 
                     <div className="space-y-6">
                         {/* Foodie DNA Section */}
                         <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Foodie DNA & Preferences</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.foodie_dna_label')}</label>
                             <div className={`p-4 rounded-2xl border ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50/50 border-blue-100/50'}`}>
                                 <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.foodieDNA || "No preferences set yet. Edit your profile to describe your culinary DNA."}
+                                    {user.preferences?.longTerm?.foodieDNA || t('profile.no_dna')}
                                 </p>
                             </div>
                         </div>
 
                         {/* Preferred Atmosphere */}
                         <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Atmosphere Style</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.atmosphere_label')}</label>
                             <div className={`p-4 rounded-2xl border ${isDark ? 'bg-purple-500/5 border-purple-500/10' : 'bg-purple-50/50 border-purple-100/50'}`}>
                                 <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.atmospherePreference || "No atmosphere preferred yet. How about something cozy?"}
+                                    {user.preferences?.longTerm?.atmospherePreference || t('profile.no_atmosphere')}
                                 </p>
                             </div>
                         </div>
 
                         {/* Must-have Features */}
                         <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Must-have Features</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.features_label')}</label>
                             <div className={`p-4 rounded-2xl border ${isDark ? 'bg-green-500/5 border-green-500/10' : 'bg-green-50/50 border-green-100/50'}`}>
                                 <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.features || "No specific features required yet. WiFi? Outdoor seating?"}
+                                    {user.preferences?.longTerm?.features || t('profile.no_features')}
                                 </p>
                             </div>
                         </div>
@@ -253,7 +256,7 @@ const ProfilePage = () => {
             <div className="px-5 mt-8">
                 <div className="flex items-center justify-between mb-4 px-2">
                     <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle} flex items-center gap-2`}>
-                        <Sparkles size={16} className="text-amber-500" /> Labs & Social
+                        <Sparkles size={16} className="text-amber-500" /> {t('profile.labs')}
                     </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,15 +267,15 @@ const ProfilePage = () => {
                                 <Sparkles size={20} />
                             </div>
                             <div>
-                                <h4 className={`text-base font-bold ${textStyle}`}>Bio-Sync AI</h4>
-                                <p className="text-xs text-blue-500 font-bold tracking-wide uppercase">Coming Soon</p>
+                                <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.biosync_title')}</h4>
+                                <p className="text-xs text-blue-500 font-bold tracking-wide uppercase">{t('profile.biosync_coming')}</p>
                             </div>
                         </div>
                         <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
-                            Connect your wearable to get personalized restaurant recommendations based on your current physical state and energy levels.
+                            {t('profile.biosync_desc')}
                         </p>
                         <button className="mt-4 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs relative z-10 hover:bg-blue-500/30 transition-colors">
-                            Join Waitlist
+                            {t('profile.biosync_btn')}
                         </button>
                     </div>
 
@@ -283,15 +286,15 @@ const ProfilePage = () => {
                                 <Users size={20} />
                             </div>
                             <div>
-                                <h4 className={`text-base font-bold ${textStyle}`}>Dine With Me</h4>
-                                <p className="text-xs text-purple-500 font-bold tracking-wide uppercase">Beta</p>
+                                <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.dine_title')}</h4>
+                                <p className="text-xs text-purple-500 font-bold tracking-wide uppercase">{t('profile.dine_beta')}</p>
                             </div>
                         </div>
                         <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
-                            Find a dining buddy! Match with fellow foodies nearby who share your taste Profile and are looking for company.
+                            {t('profile.dine_desc')}
                         </p>
                         <button className="mt-4 px-4 py-2 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-xs relative z-10 hover:bg-purple-500/30 transition-colors">
-                            Find a Buddy
+                            {t('profile.dine_btn')}
                         </button>
                     </div>
                 </div>
@@ -330,7 +333,7 @@ const ProfilePage = () => {
             <div className="px-5 mt-8">
                 <button className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}>
                     <LogOut size={18} />
-                    Sign Out
+                    {t('profile.sign_out')}
                 </button>
 
                 <div className="text-center mt-6">

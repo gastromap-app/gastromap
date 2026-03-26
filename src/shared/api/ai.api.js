@@ -1,5 +1,5 @@
 /**
- * AI / GastroIntelligence API
+ * AI / GastroIntelligence API via OpenRouter
  *
  * Two modes:
  *  1. PRODUCTION — OpenRouter API (free models) when VITE_OPENROUTER_API_KEY is set.
@@ -357,7 +357,7 @@ async function fetchOpenRouter(messages, { stream = false, withTools = true, mod
     return res
 }
 
-// ─── Intent detection (lightweight, no LLM needed) ────────────────────────
+// ─── Intent Detection ────────────────────────────────────────────────────────
 
 /**
  * @param {string} text
@@ -514,6 +514,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().apiKey) {
         try {
+            const model = config.ai.model || 'deepseek/deepseek-chat-v3-0324:free'
             const historyMessages = (context.history ?? [])
                 .slice(-8)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -543,7 +544,14 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
             if (err.status === 401) throw new ApiError('Invalid OpenRouter API key.', 401, 'AUTH_ERROR')
             console.warn('[GastroAI] OpenRouter streaming error, falling back:', err.message)
         }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (err) {
+        console.warn('[GastroAI] Failed to fetch OpenRouter models:', err.message)
+        return config.ai.freeModels.concat(config.ai.premiumModels)
     }
+}
 
     // Fallback: single-shot local engine
     return analyzeQuery(message, context)

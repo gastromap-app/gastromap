@@ -135,7 +135,7 @@ const AdminUsersPage = () => {
                             <s.icon size={18} className="lg:w-7 lg:h-7" />
                         </div>
                         <div className="text-center sm:text-left relative z-10 min-w-0">
-                            <p className="text-[8px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-0.5">{s.label}</p>
+                            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-0.5">{s.label}</p>
                             <p className="text-sm lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter truncate">{s.val}</p>
                         </div>
                     </div>

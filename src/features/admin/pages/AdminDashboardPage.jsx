@@ -68,7 +68,7 @@ const AdminDashboardPage = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-2 w-full sm:w-auto p-1 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/20 dark:border-slate-800/50">
+                <div className="flex gap-2 w-full sm:w-auto p-1.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/20 dark:border-slate-800/50">
                     <button
                         onClick={() => navigate('/admin/locations?import=true')}
                         className="flex-1 sm:px-6 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -94,7 +94,7 @@ const AdminDashboardPage = () => {
                 {/* Statistics Box - Left Column */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 rounded-[32px] overflow-hidden shadow-sm">
-                        <div className="p-1 lg:p-5 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
+                        <div className="p-3 lg:p-5 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
                             <div className="flex items-center gap-3 pl-2">
                                 <BarChart3 size={18} className="text-indigo-500" />
                                 <h2 className="text-[10px] lg:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">Аналитика</h2>
@@ -115,7 +115,7 @@ const AdminDashboardPage = () => {
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <div className="p-1 lg:p-5 grid grid-cols-2 gap-3">
+                                    <div className="p-3 lg:p-5 grid grid-cols-2 gap-3">
                                         {stats.map((stat, i) => (
                                             <StatCard key={i} {...stat} delay={i} />
                                         ))}
@@ -154,9 +154,9 @@ const AdminDashboardPage = () => {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <Clock size={20} className="text-slate-400" />
-                                <h2 className="text-[10px] lg:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">Recent Activity</h2>
+                                <h2 className="text-[10px] lg:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">Последние действия</h2>
                             </div>
-                            <button onClick={() => navigate('/admin/users')} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">View All</button>
+                            <button onClick={() => navigate('/admin/users')} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">Все</button>
                         </div>
                         <div className="space-y-3">
                             {[

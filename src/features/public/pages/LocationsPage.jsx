@@ -10,7 +10,6 @@ import {
 import { useTheme } from '@/hooks/useTheme'
 import FilterModal from '@/features/dashboard/components/FilterModal'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { PageTransition } from '@/components/ui/PageTransition'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -251,7 +250,13 @@ const LocationsPage = () => {
     const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
 
     return (
-        <PageTransition className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
+        // Using a plain div here (not PageTransition) because:
+        // 1. This page uses `fixed inset-0` children (map layer, bottom sheet).
+        //    Wrapping them in a motion.div with scale/y transforms breaks `position:fixed`
+        //    — fixed elements inside a CSS-transformed parent are positioned relative
+        //    to that parent, not the viewport.
+        // 2. The individual child elements already have their own motion animations.
+        <div className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Map layer ─────────────────────────────────────── */}
@@ -532,7 +537,7 @@ const LocationsPage = () => {
                     </div>
                 </motion.div>
             </div>
-        </PageTransition>
+        </div>
     )
 }
 

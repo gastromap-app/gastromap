@@ -143,7 +143,6 @@ export const MOCK_LOCATIONS = [
         ],
         ai_context: 'The go-to spot for casual drinks with a view. Perfect for groups and parties. Gets very busy after 22:00. Budget-friendly — perfect for long evenings without spending much.',
     },
-]
 
     // ── KRAKOW ──────────────────────────────────────────────────────────────
 
@@ -429,7 +428,7 @@ export const MOCK_LOCATIONS = [
     {
         id: '13',
         title: 'E. Wedel Chocolate Lounge',
-        description: 'Historic 1894 chocolate brand's elegant cafe — famous for thick hot drinking chocolate.',
+        description: 'Historic 1851 chocolate brand\'s elegant cafe — famous for thick hot drinking chocolate.',
         address: 'ul. Szpitalna 8, 00-031 Warszawa',
         city: 'Warsaw',
         country: 'Poland',

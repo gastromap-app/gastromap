@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
                     ))}
 
                     {/* Divider indicating gap to current user if user is far down */}
-                    <div className="h-12 flex items-center justify-center bg-black-[0.02] dark:bg-white/[0.02]">
+                    <div className="h-12 flex items-center justify-center bg-black/[0.02] dark:bg-white/[0.02]">
                         <div className="flex gap-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />

@@ -12,6 +12,22 @@ import React from 'react'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { I18nextProvider } from 'react-i18next'
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import en from '../locales/en/translation.json'
+import pl from '../locales/pl/translation.json'
+
+// Initialise i18n once for the entire test suite
+if (!i18n.isInitialized) {
+    i18n.use(initReactI18next).init({
+        lng: 'en',
+        fallbackLng: 'en',
+        resources: { en: { translation: en }, pl: { translation: pl } },
+        interpolation: { escapeValue: false },
+        initImmediate: false,
+    })
+}
 
 /**
  * Create a fresh QueryClient for each test — avoids state leaking between tests.
@@ -44,11 +60,13 @@ export function renderWithProviders(ui, options = {}) {
 
     function Wrapper({ children }) {
         return (
-            <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={initialEntries}>
-                    {children}
-                </MemoryRouter>
-            </QueryClientProvider>
+            <I18nextProvider i18n={i18n}>
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter initialEntries={initialEntries}>
+                        {children}
+                    </MemoryRouter>
+                </QueryClientProvider>
+            </I18nextProvider>
         )
     }
 
@@ -64,6 +82,8 @@ export function renderWithProviders(ui, options = {}) {
  */
 export function renderWithRouter(ui, { initialEntries = ['/'] } = {}) {
     return render(
-        <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+        <I18nextProvider i18n={i18n}>
+            <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+        </I18nextProvider>
     )
 }

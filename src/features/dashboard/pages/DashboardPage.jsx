@@ -11,6 +11,7 @@ import FilterModal from '../components/FilterModal'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useTranslation } from 'react-i18next'
 
 // --- MOBILE COMPONENTS ---
 const MarqueeTitle = ({ title, theme }) => {
@@ -110,6 +111,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
 
 // --- MAIN PAGE ---
 const DashboardPage = () => {
+    const { t } = useTranslation()
     const { user: authUser } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
     const { locations } = useLocationsStore()
@@ -142,6 +144,7 @@ const DashboardPage = () => {
 
     return (
         <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
+            <div data-testid="dashboard-page" className="contents">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* MOBILE VIEW (Horizontal Sliders) */}
@@ -150,14 +153,14 @@ const DashboardPage = () => {
                 {/* Search Bar Section */}
                 <div className="space-y-4 mb-4">
                     <h2 className={`text-xl font-black tracking-tight leading-tight ${textStyle}`}>
-                        What are we eating <span className="text-blue-500">today?</span>
+                        {t('dashboard.tagline')}
                     </h2>
                     <div className="flex gap-2">
                         <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${isDark ? 'bg-white/5 border-white/10 shadow-none' : 'bg-white border-gray-100 shadow-xl shadow-blue-500/5'}`}>
                             <SearchIcon size={18} className="text-blue-500 mr-3" />
                             <input
                                 type="text"
-                                placeholder="Sushi, Pasta, or 'Best burger'..."
+                                placeholder={t('dashboard.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -176,11 +179,11 @@ const DashboardPage = () => {
                 <div className="space-y-4">
                     <div className="flex justify-between items-end">
                         <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>Explore by Country</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">Discover culinary traditions</p>
+                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
+                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
                         </div>
                         <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
-                            View All
+                            {t('dashboard.view_all')}
                         </button>
                     </div>
 
@@ -208,11 +211,11 @@ const DashboardPage = () => {
                 <div className="space-y-4">
                     <div className="flex justify-between items-end">
                         <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>Recommended for you</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">Perfect spots to match your taste.</p>
+                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.recommended')}</h3>
+                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.perfect_spots')}</p>
                         </div>
                         <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
-                            View All
+                            {t('dashboard.view_all')}
                         </button>
                     </div>
 
@@ -229,11 +232,11 @@ const DashboardPage = () => {
                 <div className="space-y-4 pb-10">
                     <div className="flex justify-between items-end">
                         <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>Trending in Krakow</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">Hot spots everyone is talking about.</p>
+                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.trending')}</h3>
+                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.hot_spots')}</p>
                         </div>
                         <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
-                            View All
+                            {t('dashboard.view_all')}
                         </button>
                     </div>
 
@@ -260,24 +263,26 @@ const DashboardPage = () => {
                     setSearchQuery={setSearchQuery}
                 />
             </div>
+            </div>
         </PageTransition>
     )
 }
 
 // --- DESKTOP VIEW COMPONENT ---
 const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
+    const { t } = useTranslation()
     const { toggleTheme } = useTheme()
     const navigate = useNavigate()
-    const [greeting, setGreeting] = useState('Good Morning')
+    const [greeting, setGreeting] = useState('')
     const [activeTab, setActiveTab] = useState('overview')
     const [activeFilter, setActiveFilter] = useState('All')
 
     useEffect(() => {
         const hour = new Date().getHours()
-        if (hour < 12) setGreeting('Good Morning')
-        else if (hour < 18) setGreeting('Good Afternoon')
-        else setGreeting('Good Evening')
-    }, [])
+        if (hour < 12) setGreeting(t('dashboard.greeting_morning'))
+        else if (hour < 18) setGreeting(t('dashboard.greeting_afternoon'))
+        else setGreeting(t('dashboard.greeting_evening'))
+    }, [t])
 
     const glassStyle = theme === 'light'
         ? "bg-white/40 border-white/40 text-gray-900 shadow-sm hover:bg-white/60"
@@ -304,7 +309,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                     <h1 className={`text-4xl md:text-5xl font-bold tracking-tight ${textStyle}`}>
                         {greeting}, <span className="text-blue-600">{authUser.name.split(' ')[0]}</span>
                     </h1>
-                    <p className={`text-lg ${subTextStyle}`}>What are we eating today?</p>
+                    <p className={`text-lg ${subTextStyle}`}>{t('dashboard.tagline')}</p>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-4 items-center mt-[20px]">
@@ -314,7 +319,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                         </div>
                         <input
                             type="text"
-                            placeholder="Sushi, Pasta, or 'Best burger'..."
+                            placeholder={t('dashboard.search_placeholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className={`w-full h-16 pl-14 pr-6 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${theme === 'light' ? 'bg-white shadow-xl focus:border-blue-500' : 'bg-white/10 backdrop-blur-md text-white border-white/10 focus:border-blue-500'
@@ -325,7 +330,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                         onClick={() => navigate(searchQuery ? `/explore?q=${encodeURIComponent(searchQuery)}` : '/explore')}
                         className="h-16 px-8 rounded-[24px] bg-blue-600 text-white font-bold text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all"
                     >
-                        Search
+                        {t('dashboard.search_btn')}
                     </button>
                 </div>
 
@@ -380,8 +385,8 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                     <motion.div variants={itemVariants} className="space-y-5">
                         <div className="flex justify-between items-end px-1">
                             <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>Explore by Country</h3>
-                                <p className={`text-sm ${subTextStyle}`}>Discover culinary traditions</p>
+                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
+                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.culinary_traditions')}</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -409,10 +414,10 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                     <motion.div variants={itemVariants} className="space-y-5">
                         <div className="flex justify-between items-end px-1">
                             <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>Recommended for you</h3>
-                                <p className={`text-sm ${subTextStyle}`}>Perfect spots to match your taste.</p>
+                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.recommended')}</h3>
+                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.perfect_spots')}</p>
                             </div>
-                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">View all</button>
+                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">{t('dashboard.view_all')}</button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                             {recommended.map((item) => (
@@ -452,10 +457,10 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                     <motion.div variants={itemVariants} className="space-y-5">
                         <div className="flex justify-between items-end px-1">
                             <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>Trending in Krakow</h3>
-                                <p className={`text-sm ${subTextStyle}`}>Hot spots everyone is talking about.</p>
+                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.trending')}</h3>
+                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.hot_spots')}</p>
                             </div>
-                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">View all</button>
+                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">{t('dashboard.view_all')}</button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                             {[...locations].reverse().slice(0, 3).map((item) => (

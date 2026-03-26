@@ -30,8 +30,8 @@ export const MaintenanceGuard = ({ children }) => {
                 </div>
 
                 <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-6">
-                    {isDown ? 'Система временно' : 'Идут технические'} <br />
-                    <span className="text-indigo-600">{isDown ? 'недоступна.' : 'работы.'}</span>
+                    {isDown ? 'System temporarily' : 'Maintenance'} <br />
+                    <span className="text-indigo-600">{isDown ? 'unavailable.' : 'in progress.'}</span>
                 </h1>
 
                 <p className="text-slate-500 font-medium text-lg leading-relaxed mb-10 italic">
@@ -40,10 +40,10 @@ export const MaintenanceGuard = ({ children }) => {
 
                 <div className="space-y-4">
                     <Link to="/" className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                        <ArrowLeft size={18} /> Вернуться на главную
+                        <ArrowLeft size={18} /> Back to Home
                     </Link>
                     <button className="w-full h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all">
-                        <MessageCircle size={18} /> Связаться с поддержкой
+                        <MessageCircle size={18} /> Contact Support
                     </button>
                 </div>
 

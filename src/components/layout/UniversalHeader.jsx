@@ -11,8 +11,9 @@ export function UniversalHeader() {
     const navigate = useNavigate()
     const { user: authUser } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
+    const location = useLocation()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
-    const isAdmin = true // Placeholder for admin check
+    const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'
 
     const [isScrolled, setIsScrolled] = useState(false)
@@ -74,7 +75,7 @@ export function UniversalHeader() {
                                         className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md transition-all border group bg-blue-600 border-blue-500/50 text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95`}
                                     >
                                         <Download size={16} className="group-hover:bounce" />
-                                        <span className="text-[10px] font-black uppercase tracking-tighter hidden sm:inline">Скачать</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tighter hidden sm:inline">Download</span>
                                     </button>
                                 )}
                                 {isAdmin && (

@@ -2,10 +2,11 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Info, Tag, Coffee, CheckCircle2, ChevronRight, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 export default function AddPlacePage() {
     const navigate = useNavigate()
+    const { t } = useTranslation()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
 
@@ -47,22 +48,24 @@ export default function AddPlacePage() {
                     <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8">
                         <CheckCircle2 size={40} />
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Заведение отправлено!</h2>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">
+                        {t('add_place.success_title')}
+                    </h2>
                     <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-10">
-                        Спасибо за ваш вклад в сообщество GastroMap. Наша команда модераторов проверит информацию, и вы получите пуш-уведомление, как только место появится на карте!
+                        {t('add_place.success_desc')}
                     </p>
                     <div className="flex flex-col gap-4">
                         <button
                             onClick={() => { setIsSuccess(false); setTags([]) }}
                             className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg active:scale-95"
                         >
-                            Добавить еще одно
+                            {t('add_place.add_another')}
                         </button>
                         <button
                             onClick={() => navigate('/dashboard')}
                             className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all active:scale-95"
                         >
-                            Вернуться на главную
+                            {t('add_place.back_home')}
                         </button>
                     </div>
                 </motion.div>
@@ -81,10 +84,10 @@ export default function AddPlacePage() {
                     <MapPin size={24} />
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
-                    Добавить Заведение
+                    {t('add_place.title')}
                 </h1>
                 <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-                    Поделитесь своей находкой с сообществом. Получите баллы рейтинга после успешной модерации.
+                    {t('add_place.description')}
                 </p>
             </motion.div>
 
@@ -99,46 +102,54 @@ export default function AddPlacePage() {
                 <section>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm">1</span>
-                        Основная информация
+                        {t('add_place.section_basic')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 md:col-span-2">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Название места *</label>
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                                {t('add_place.name_label')}
+                            </label>
                             <input
                                 required
                                 type="text"
-                                placeholder="Например: The Artisan Bakery"
+                                placeholder={t('add_place.name_placeholder')}
                                 className="w-full h-14 px-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Тип заведения *</label>
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                                {t('add_place.type_label')}
+                            </label>
                             <div className="relative">
                                 <Coffee className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <select required className="w-full h-14 pl-12 pr-5 appearance-none bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium text-slate-700 dark:text-slate-200">
-                                    <option value="">Выберите тип...</option>
-                                    <option value="Restaurant">Ресторан</option>
-                                    <option value="Cafe">Кофейня</option>
-                                    <option value="Bar">Бар</option>
-                                    <option value="StreetFood">Стритфуд</option>
+                                    <option value="">{t('add_place.type_placeholder')}</option>
+                                    <option value="Restaurant">{t('add_place.type_restaurant')}</option>
+                                    <option value="Cafe">{t('add_place.type_cafe')}</option>
+                                    <option value="Bar">{t('add_place.type_bar')}</option>
+                                    <option value="StreetFood">{t('add_place.type_streetfood')}</option>
                                 </select>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Город *</label>
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                                {t('add_place.city_label')}
+                            </label>
                             <input
                                 required
                                 type="text"
-                                placeholder="Например: Москва"
+                                placeholder={t('add_place.city_placeholder')}
                                 className="w-full h-14 px-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400"
                             />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Точный адрес *</label>
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                                {t('add_place.address_label')}
+                            </label>
                             <input
                                 required
                                 type="text"
-                                placeholder="Например: ул. Ленина, 10"
+                                placeholder={t('add_place.address_placeholder')}
                                 className="w-full h-14 px-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400"
                             />
                         </div>
@@ -151,18 +162,18 @@ export default function AddPlacePage() {
                 <section>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm">2</span>
-                        Секреты для своих
+                        {t('add_place.section_insider')}
                     </h3>
                     <div className="grid grid-cols-1 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center justify-between">
-                                Insider Tip (Советуй как бро)
-                                <span className="text-xs font-normal text-slate-400">Необязательно</span>
+                                {t('add_place.tip_label')}
+                                <span className="text-xs font-normal text-slate-400">{t('add_place.optional')}</span>
                             </label>
                             <div className="relative">
                                 <Info className="absolute left-5 top-5 text-slate-400" size={18} />
                                 <textarea
-                                    placeholder="Например: приходите до 9 утра за свежими круассанами, и просите столик у окна."
+                                    placeholder={t('add_place.tip_placeholder')}
                                     className="w-full py-4 pl-12 pr-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 min-h-[120px] resize-none"
                                 />
                             </div>
@@ -170,12 +181,12 @@ export default function AddPlacePage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center justify-between">
-                                Must Try (Что обязательно заказать)
-                                <span className="text-xs font-normal text-slate-400">Необязательно</span>
+                                {t('add_place.must_try_label')}
+                                <span className="text-xs font-normal text-slate-400">{t('add_place.optional')}</span>
                             </label>
                             <input
                                 type="text"
-                                placeholder="Например: Миндальный круассан и флэт уайт"
+                                placeholder={t('add_place.must_try_placeholder')}
                                 className="w-full h-14 px-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400"
                             />
                         </div>
@@ -188,10 +199,12 @@ export default function AddPlacePage() {
                 <section>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm">3</span>
-                        Атмосфера
+                        {t('add_place.section_vibe')}
                     </h3>
                     <div className="space-y-4">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Теги (нажмите Enter)</label>
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                            {t('add_place.tags_label')}
+                        </label>
                         <div className="relative">
                             <Tag className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
@@ -199,7 +212,7 @@ export default function AddPlacePage() {
                                 value={tagInput}
                                 onChange={(e) => setTagInput(e.target.value)}
                                 onKeyDown={handleAddTag}
-                                placeholder="Например: Cozy, Датский стиль, Для работы..."
+                                placeholder={t('add_place.tags_placeholder')}
                                 className="w-full h-14 pl-12 pr-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400"
                             />
                         </div>
@@ -237,11 +250,11 @@ export default function AddPlacePage() {
                         {isSubmitting ? (
                             <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <>Отправить на модерацию <ChevronRight size={20} /></>
+                            <>{t('add_place.submit_btn')} <ChevronRight size={20} /></>
                         )}
                     </button>
                     <p className="text-center text-xs font-medium text-slate-400 mt-4">
-                        Добавляя заведение, вы соглашаетесь с правилами сообщества GastroMap.
+                        {t('add_place.submit_notice')}
                     </p>
                 </div>
             </motion.form>

@@ -97,6 +97,50 @@ function DefaultErrorUI({ error, onReset }) {
     )
 }
 
+// ─── Route-level fallback ─────────────────────────────────────────────────
+
+/**
+ * Compact fallback for a single route — keeps the shell (nav, layout) visible.
+ */
+export function RouteErrorFallback({ error, reset }) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 p-8 text-center">
+            <div className="w-16 h-16 rounded-[28px] bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
+                <AlertTriangle className="text-red-500" size={28} />
+            </div>
+            <div className="space-y-2">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Something went wrong
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-xs">
+                    This page encountered an error. Try refreshing or go back.
+                </p>
+                {import.meta.env.DEV && error?.message && (
+                    <pre className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-left text-[11px] text-red-600 dark:text-red-400 overflow-auto max-h-24 font-mono">
+                        {error.message}
+                    </pre>
+                )}
+            </div>
+            <div className="flex gap-3">
+                <button
+                    onClick={reset}
+                    className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all active:scale-95"
+                >
+                    <RefreshCw size={14} />
+                    Retry
+                </button>
+                <a
+                    href="/"
+                    className="h-10 px-5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all active:scale-95"
+                >
+                    <Home size={14} />
+                    Home
+                </a>
+            </div>
+        </div>
+    )
+}
+
 // ─── Specialised fallbacks ────────────────────────────────────────────────
 
 /**

@@ -10,11 +10,12 @@ import {
 import { useTheme } from '@/hooks/useTheme'
 import FilterModal from '@/features/dashboard/components/FilterModal'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { PageTransition } from '@/components/ui/PageTransition'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
+import LazyImage from '@/components/ui/LazyImage'
+import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
 
 // ─── Category config ──────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -57,10 +58,9 @@ const MobileCard = memo(function MobileCard({ item, isDark, textStyle, subTextSt
             className={`relative flex flex-col p-3 rounded-[32px] overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
         >
             <div className="relative h-48 w-full rounded-[24px] overflow-hidden mb-3">
-                <img
+                <LazyImage
                     src={item.image}
                     alt={item.title}
-                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -128,10 +128,9 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
             }`}
         >
             <div className="relative h-56 mb-5 rounded-[28px] overflow-hidden">
-                <img
+                <LazyImage
                     src={item.image}
                     alt={item.title}
-                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 {/* Rating */}
@@ -239,6 +238,12 @@ const LocationsPage = () => {
         return () => resetFilters()
     }, [])
 
+    const [isLoading, setIsLoading] = useState(true)
+    useEffect(() => {
+        const t = setTimeout(() => setIsLoading(false), 600)
+        return () => clearTimeout(t)
+    }, [city])
+
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sheetMode, setSheetMode] = useState('full')
@@ -252,7 +257,13 @@ const LocationsPage = () => {
     const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
 
     return (
-        <PageTransition className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
+        // Using a plain div here (not PageTransition) because:
+        // 1. This page uses `fixed inset-0` children (map layer, bottom sheet).
+        //    Wrapping them in a motion.div with scale/y transforms breaks `position:fixed`
+        //    — fixed elements inside a CSS-transformed parent are positioned relative
+        //    to that parent, not the viewport.
+        // 2. The individual child elements already have their own motion animations.
+        <div className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Map layer ─────────────────────────────────────── */}
@@ -361,7 +372,13 @@ const LocationsPage = () => {
                         </div>
 
                         {/* Cards */}
-                        {filteredLocations.length === 0 ? (
+                        {isLoading ? (
+                            <div className="space-y-5">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <LocationCardMobileSkeleton key={i} isDark={isDark} />
+                                ))}
+                            </div>
+                        ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
                             <motion.div
@@ -386,7 +403,10 @@ const LocationsPage = () => {
             </motion.div>
 
             {/* ── DESKTOP VIEW ──────────────────────────────────────────── */}
-            <div className="hidden md:block px-[10px] pt-24 pb-6 relative z-10">
+            {/* Wraps in absolute+overflow-y-auto so the grid scrolls within the
+                fixed inset-0 root that is required by the mobile map/sheet layout. */}
+            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10">
+                <div className="w-full max-w-7xl mx-auto px-8 pt-24 pb-10">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
                     {/* Hero */}
@@ -510,6 +530,12 @@ const LocationsPage = () => {
                     <div className="mt-8 min-h-[400px]">
                         {activeTab === 'map' ? (
                             <MapTab activeFilter={activeCategory} />
+                        ) : isLoading ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <LocationCardDesktopSkeleton key={i} isDark={isDark} />
+                                ))}
+                            </div>
                         ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
@@ -532,8 +558,9 @@ const LocationsPage = () => {
                         )}
                     </div>
                 </motion.div>
+                </div>
             </div>
-        </PageTransition>
+        </div>
     )
 }
 

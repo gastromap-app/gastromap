@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import PublicLayout from '@/components/layout/PublicLayout'
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard'
-import { ErrorBoundary, MapErrorFallback, AIChatErrorFallback } from '@/app/ErrorBoundary'
+import { ErrorBoundary, MapErrorFallback, AIChatErrorFallback, RouteErrorFallback } from '@/app/ErrorBoundary'
 
 // ─── CRITICAL PUBLIC PAGES (no lazy loading) ───────────────────────────────
 import LandingPage from '@/features/public/pages/LandingPage'
@@ -88,10 +88,10 @@ export const AppRouter = () => {
 
                 {/* App Routes (With App Shell) wrapped in MaintenanceGuard */}
                 <Route element={<MaintenanceGuard><MainLayout /></MaintenanceGuard>}>
-                    <Route path="/explore" element={<ExploreWrapper />} />
-                    <Route path="/explore/:country" element={<ExploreWrapper />} />
-                    <Route path="/explore/:country/:city" element={<ExploreWrapper />} />
-                    <Route path="/location/:id" element={<LocationDetailsPage />} />
+                    <Route path="/explore" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
+                    <Route path="/explore/:country" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
+                    <Route path="/explore/:country/:city" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
+                    <Route path="/location/:id" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><LocationDetailsPage /></ErrorBoundary>} />
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/dashboard/add-place" element={<AddPlacePage />} />
                     <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />

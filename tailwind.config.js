@@ -75,6 +75,10 @@ export default {
                 }
             },
             keyframes: {
+                shimmer: {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(100%)' },
+                },
                 'aurora-1': {
                     '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
                     '50%': { transform: 'translate(50px, 30px) scale(1.2)' }

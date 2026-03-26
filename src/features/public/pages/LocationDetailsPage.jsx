@@ -17,6 +17,7 @@ import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import { useReviewsStore } from '@/features/dashboard/hooks/useReviewsStore'
+import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const LocationDetailsPage = () => {
@@ -185,7 +186,7 @@ const LocationDetailsPage = () => {
                 {/* Bento Style Gallery Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-[300px] md:h-[600px]">
                     <div className="col-span-2 md:col-span-6 rounded-[24px] md:rounded-[48px] overflow-hidden group cursor-pointer relative shadow-lg">
-                        <img
+                        <LazyImage
                             src={location.image}
                             alt={location.title}
                             crossOrigin="anonymous"
@@ -195,19 +196,19 @@ const LocationDetailsPage = () => {
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
-                        <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
+                        <LazyImage src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
-                        <img src="https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
+                        <LazyImage src="https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
                     </div>
 
                     <div className="col-span-1 md:col-span-4 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
-                        <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
+                        <LazyImage src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
                     </div>
 
                     <div className="col-span-1 md:col-span-8 rounded-[24px] md:rounded-[40px] overflow-hidden relative group cursor-pointer shadow-lg">
-                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
+                        <LazyImage src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
                         <div className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
                             <Camera size={24} className="mb-1" />
                             <span className="text-xl font-black">+24</span>
@@ -275,7 +276,7 @@ const LocationDetailsPage = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {[1, 2].map(i => (
                             <div key={i} className="aspect-[3/4] rounded-3xl overflow-hidden border border-gray-100 dark:border-white/10 relative group bg-black">
-                                <img src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=1970&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="menu page" />
+                                <LazyImage src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=1970&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="menu page" />
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <ImageIcon className="text-white opacity-40" />
                                 </div>
@@ -468,7 +469,7 @@ const LocationDetailsPage = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
                 <div key={i} className="aspect-square rounded-[32px] overflow-hidden group cursor-pointer relative bg-gray-100">
-                    <img src={`https://images.unsplash.com/photo-${1517248135467 + i}-4c7edcad34c4?q=80&w=400&fit=crop`} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="gallery" />
+                    <LazyImage src={`https://images.unsplash.com/photo-${1517248135467 + i}-4c7edcad34c4?q=80&w=400&fit=crop`} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="gallery" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
             ))}
@@ -563,12 +564,13 @@ const LocationDetailsPage = () => {
                 {/* Hero Image Section */}
                 {/* Hero Image Section */}
                 <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
-                    <img
+                    <LazyImage
                         src={location.image}
                         crossOrigin="anonymous"
                         fetchpriority="high"
                         className="w-full h-full object-cover"
                         alt={location.title}
+                        rootMargin="0px"
                     />
                     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent z-10" />
                     <div className="absolute inset-0 bg-black/20 z-0" />

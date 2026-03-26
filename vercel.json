@@ -4,8 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "vite",
-  "retries": 3,
-  "forceStaticMode": true,
   "headers": [
     {
       "source": "/assets/(.*)",

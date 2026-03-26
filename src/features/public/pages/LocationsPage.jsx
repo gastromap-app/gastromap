@@ -15,6 +15,7 @@ import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
+import LazyImage from '@/components/ui/LazyImage'
 
 // ─── Category config ──────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -57,10 +58,9 @@ const MobileCard = memo(function MobileCard({ item, isDark, textStyle, subTextSt
             className={`relative flex flex-col p-3 rounded-[32px] overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
         >
             <div className="relative h-48 w-full rounded-[24px] overflow-hidden mb-3">
-                <img
+                <LazyImage
                     src={item.image}
                     alt={item.title}
-                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -128,10 +128,9 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
             }`}
         >
             <div className="relative h-56 mb-5 rounded-[28px] overflow-hidden">
-                <img
+                <LazyImage
                     src={item.image}
                     alt={item.title}
-                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 {/* Rating */}

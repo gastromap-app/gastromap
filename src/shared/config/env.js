@@ -14,12 +14,16 @@ export const config = {
         },
     },
 
-    // ─── AI / LLM ─────────────────────────────────────────────────────────────
+    // ─── AI / LLM (OpenRouter — free models) ─────────────────────────────────
     ai: {
-        model: import.meta.env.VITE_AI_MODEL ?? 'claude-sonnet-4-6',
-        apiKey: import.meta.env.VITE_AI_API_KEY ?? '',
+        openRouterKey: import.meta.env.VITE_OPENROUTER_API_KEY ?? '',
+        model: import.meta.env.VITE_AI_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
+        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'qwen/qwen3-coder:free',
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
+        get isConfigured() {
+            return Boolean(this.openRouterKey)
+        },
     },
 
     // ─── Map ──────────────────────────────────────────────────────────────────

@@ -5,11 +5,12 @@ import { analyzeQueryStream, analyzeQuery } from '@/shared/api/ai.api'
 import { config } from '@/shared/config/env'
 
 /**
- * useAIChat — GastroGuide conversation logic with Claude API streaming.
+ * useAIChat — GastroGuide conversation logic with OpenRouter streaming.
  *
- * When VITE_AI_API_KEY is set:
- *   • Uses analyzeQueryStream for real-time token delivery
- *   • Updates the last assistant message in-place as chunks arrive
+ * When VITE_OPENROUTER_API_KEY is set:
+ *   • Uses analyzeQueryStream with word-by-word streaming effect
+ *   • Model calls search_locations / get_location_details tools first,
+ *     then generates a response using retrieved data
  *   • Passes last 8 messages as multi-turn history context
  *
  * When no API key:
@@ -58,7 +59,7 @@ export function useAIChat() {
         const context = { preferences: prefs, history }
 
         try {
-            if (config.ai.apiKey) {
+            if (config.ai.openRouterKey) {
                 // ── Streaming path (Claude API) ──────────────────────────────
                 // Add an empty assistant message that will fill with streamed chunks
                 addMessage('assistant', '…')
@@ -98,7 +99,7 @@ export function useAIChat() {
         messages,
         isTyping,
         error,
-        isStreaming: isTyping && Boolean(config.ai.apiKey),
+        isStreaming: isTyping && Boolean(config.ai.openRouterKey),
         sendMessage,
         clearHistory,
     }

@@ -175,6 +175,7 @@ const DashboardPage = () => {
                         </div>
                         <button
                             onClick={() => setIsFilterOpen(true)}
+                            aria-label="Open filters"
                             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-transparent'}`}
                         >
                             <SlidersHorizontal size={18} />

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, memo } from 'react'
+import React, { useState, useEffect, useRef, memo } from 'react'
 import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
@@ -77,6 +78,7 @@ const MobileCard = memo(function MobileCard({ item, isDark, textStyle, subTextSt
                 {/* Save button */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
+                    aria-label={saved ? 'Remove from favorites' : 'Add to favorites'}
                     className={`absolute top-3 right-3 w-10 h-10 rounded-xl backdrop-blur-md flex items-center justify-center border active:scale-90 transition-all ${
                         saved ? 'bg-red-500 border-red-400 text-white' : 'bg-white/20 border-white/30 text-white'
                     }`}
@@ -244,6 +246,14 @@ const LocationsPage = () => {
         return () => clearTimeout(t)
     }, [city])
 
+    const scrollContainerRef = useRef(null)
+    const virtualizer = useVirtualizer({
+        count: isLoading ? 0 : filteredLocations.length,
+        getScrollElement: () => scrollContainerRef.current,
+        estimateSize: () => 342,
+        overscan: 3,
+    })
+
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sheetMode, setSheetMode] = useState('full')
@@ -336,6 +346,7 @@ const LocationsPage = () => {
 
                     {/* Sheet content */}
                     <motion.div
+                        ref={scrollContainerRef}
                         className="flex-1 overflow-y-auto pt-2 pb-32 px-[4vw] scrollbar-hide overscroll-contain touch-pan-y"
                         animate={{ opacity: sheetMode === 'full' ? 1 : 0, filter: sheetMode === 'full' ? 'blur(0px)' : 'blur(10px)' }}
                         transition={{ duration: 0.3 }}
@@ -381,22 +392,30 @@ const LocationsPage = () => {
                         ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
-                            <motion.div
-                                initial="hidden"
-                                animate="visible"
-                                variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
-                                className="space-y-5"
-                            >
-                                {filteredLocations.map((item) => (
-                                    <MobileCard
-                                        key={item.id}
-                                        item={item}
-                                        isDark={isDark}
-                                        textStyle={textStyle}
-                                        subTextStyle={subTextStyle}
-                                    />
+                            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                                {virtualizer.getVirtualItems().map((virtualRow) => (
+                                    <div
+                                        key={virtualRow.key}
+                                        data-index={virtualRow.index}
+                                        ref={virtualizer.measureElement}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            transform: `translateY(${virtualRow.start}px)`,
+                                            paddingBottom: '20px',
+                                        }}
+                                    >
+                                        <MobileCard
+                                            item={filteredLocations[virtualRow.index]}
+                                            isDark={isDark}
+                                            textStyle={textStyle}
+                                            subTextStyle={subTextStyle}
+                                        />
+                                    </div>
                                 ))}
-                            </motion.div>
+                            </div>
                         )}
                     </motion.div>
                 </div>
@@ -447,6 +466,8 @@ const LocationsPage = () => {
                             <div className="relative">
                                 <button
                                     onClick={() => setSortOpen((o) => !o)}
+                                    aria-label="Sort locations"
+                                    aria-expanded={sortOpen}
                                     className={`h-16 px-6 rounded-[24px] flex items-center gap-2 font-bold text-sm border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
                                 >
                                     <ArrowUpDown size={18} className="text-blue-500" />
@@ -481,6 +502,7 @@ const LocationsPage = () => {
 
                             <button
                                 onClick={() => setIsFilterOpen(true)}
+                                aria-label="Open filters"
                                 className={`h-16 w-16 rounded-[24px] flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
                             >
                                 <SlidersHorizontal size={22} />
@@ -495,6 +517,8 @@ const LocationsPage = () => {
                             {['overview', 'map'].map((tab) => (
                                 <button
                                     key={tab}
+                                    role="tab"
+                                    aria-selected={activeTab === tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`relative px-10 py-3 rounded-full text-base font-bold capitalize transition-all z-10 ${activeTab === tab ? 'text-blue-600' : 'text-white hover:bg-white/10'}`}
                                 >

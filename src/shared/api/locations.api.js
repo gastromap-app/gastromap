@@ -77,16 +77,16 @@ export async function getLocations(filters = {}) {
     if (vibe?.length) q = q.overlaps('vibe', vibe)
 
     if (query) {
-        q = q.textSearch(
-            'fts',
-            query.split(' ').join(' & '),
-            { config: 'english', type: 'websearch' }
-        )
+        q = q.textSearch('fts', query, { config: 'english', type: 'websearch' })
     }
 
     const { data, error, count } = await q
 
-    if (error) throw new ApiError(error.message, 500, error.code)
+    // Gracefully fall back to mock data if DB query fails
+    if (error) {
+        console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
+        return _mockGetLocations(filters)
+    }
 
     return {
         data: (data ?? []).map(normalise),

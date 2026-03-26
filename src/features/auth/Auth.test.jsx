@@ -42,7 +42,7 @@ describe('Auth Features Integration', () => {
 
         // signIn has 400ms delay + lazy DashboardPage chunk load
         expect(
-            await screen.findByText(/What are we eating today?/i, {}, { timeout: 8000 })
+            await screen.findByTestId('dashboard-page', {}, { timeout: 8000 })
         ).toBeInTheDocument()
     }, 12000)
 

@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
+import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 
 const StatCard = ({ title, value, icon: Icon, color, delay }) => (
     <motion.div
@@ -46,12 +47,13 @@ const QuickAction = ({ icon: Icon, label, color, description }) => (
 const AdminDashboardPage = () => {
     const navigate = useNavigate()
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
+    const locations = useLocationsStore(s => s.locations)
 
     const stats = [
-        { title: 'Локаций', value: '456', icon: MapPin, color: 'bg-orange-500' },
-        { title: 'Пользователей', value: '1,284', icon: Users, color: 'bg-blue-500' },
-        { title: 'Подписок', value: '890', icon: MessageSquare, color: 'bg-emerald-500' },
-        { title: 'Просмотры', value: '45.2k', icon: Eye, color: 'bg-purple-500' },
+        { title: 'Locations', value: locations.length > 0 ? locations.length.toLocaleString() : '—', icon: MapPin, color: 'bg-orange-500' },
+        { title: 'Users', value: '1,284', icon: Users, color: 'bg-blue-500' },
+        { title: 'Subscriptions', value: '890', icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: 'Page Views', value: '45.2k', icon: Eye, color: 'bg-purple-500' },
     ]
 
     return (
@@ -133,9 +135,12 @@ const AdminDashboardPage = () => {
                                 <Sparkles size={16} className="text-indigo-400" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">GastroAI</span>
                             </div>
-                            <h4 className="text-base font-bold leading-tight mb-5">Бранчи по выходным стали популярнее на 24%</h4>
-                            <button className="flex items-center gap-2 text-[10px] font-bold text-white/60 hover:text-white transition-colors group uppercase tracking-widest">
-                                Посмотреть отчет <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            <h4 className="text-base font-bold leading-tight mb-5">Weekend brunch venues up 24% in popularity</h4>
+                            <button
+                                onClick={() => navigate('/admin/stats')}
+                                className="flex items-center gap-2 text-[10px] font-bold text-white/60 hover:text-white transition-colors group uppercase tracking-widest"
+                            >
+                                View report <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
                     </div>
@@ -149,15 +154,15 @@ const AdminDashboardPage = () => {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <Clock size={20} className="text-slate-400" />
-                                <h2 className="text-[10px] lg:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">Последняя активность</h2>
+                                <h2 className="text-[10px] lg:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">Recent Activity</h2>
                             </div>
-                            <button className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">Смотреть все</button>
+                            <button onClick={() => navigate('/admin/users')} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">View All</button>
                         </div>
                         <div className="space-y-3">
                             {[
-                                { user: 'Дмитрий С.', action: 'добавил фото в Pasta Bar', time: '2М НАЗАД', initial: 'D' },
-                                { user: 'Анна К.', action: 'активировала VIP подписку', time: '12М НАЗАД', initial: 'A' },
-                                { user: 'Система', action: 'обновление базы данных', time: '1Ч НАЗАД', initial: 'S' },
+                                { user: 'Dmitri S.', action: 'added photo to Pasta Bar', time: '2M AGO', initial: 'D' },
+                                { user: 'Anna K.', action: 'activated Premium subscription', time: '12M AGO', initial: 'A' },
+                                { user: 'System', action: 'database sync completed', time: '1H AGO', initial: 'S' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between p-2 lg:p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-[20px] border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
                                     <div className="flex items-center gap-5 min-w-0">

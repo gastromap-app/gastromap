@@ -89,7 +89,7 @@ const CitiesPage = () => {
     )
 
     return (
-        <div className="h-[100dvh] bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
+        <div data-lenis-prevent className="h-[100dvh] bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
 
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
             <motion.div

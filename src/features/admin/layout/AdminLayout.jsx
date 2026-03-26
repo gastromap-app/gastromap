@@ -269,7 +269,7 @@ export default function AdminLayout() {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
+                <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
                     <div className="max-w-[1600px] mx-auto min-h-full">
                         <Outlet />
                     </div>

@@ -15,6 +15,7 @@ import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
+import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
 
 // ─── Category config ──────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -237,6 +238,12 @@ const LocationsPage = () => {
         return () => resetFilters()
     }, [])
 
+    const [isLoading, setIsLoading] = useState(true)
+    useEffect(() => {
+        const t = setTimeout(() => setIsLoading(false), 600)
+        return () => clearTimeout(t)
+    }, [city])
+
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sheetMode, setSheetMode] = useState('full')
@@ -365,7 +372,13 @@ const LocationsPage = () => {
                         </div>
 
                         {/* Cards */}
-                        {filteredLocations.length === 0 ? (
+                        {isLoading ? (
+                            <div className="space-y-5">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <LocationCardMobileSkeleton key={i} isDark={isDark} />
+                                ))}
+                            </div>
+                        ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
                             <motion.div
@@ -517,6 +530,12 @@ const LocationsPage = () => {
                     <div className="mt-8 min-h-[400px]">
                         {activeTab === 'map' ? (
                             <MapTab activeFilter={activeCategory} />
+                        ) : isLoading ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <LocationCardDesktopSkeleton key={i} isDark={isDark} />
+                                ))}
+                            </div>
                         ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (

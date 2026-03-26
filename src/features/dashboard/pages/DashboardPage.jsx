@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck } from 'lucide-react'
@@ -15,22 +16,18 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 
 // --- MOBILE COMPONENTS ---
+// Proper seamless marquee: two copies of the text side-by-side, animate x from 0 to -50%
 const MarqueeTitle = ({ title, theme }) => {
     if (!title) return null
     return (
         <div className="overflow-hidden whitespace-nowrap relative">
             <motion.div
-                animate={{
-                    x: [0, -100, 0],
-                }}
-                transition={{
-                    duration: 10,
-                    repeat: Infinity,
-                    ease: "linear",
-                }}
-                className={`inline-block text-base font-black leading-tight ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                className={`inline-flex text-base font-black leading-tight ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}
             >
-                {title}
+                <span className="pr-12">{title}</span>
+                <span className="pr-12">{title}</span>
             </motion.div>
         </div>
     )
@@ -39,6 +36,8 @@ const MarqueeTitle = ({ title, theme }) => {
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const saved = isFavorite(loc?.id)
 
     if (!loc) return null
 
@@ -100,9 +99,10 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 {/* Heart Button */}
                 <button
                     className="flex-shrink-0 p-1 mb-0.5 active:scale-90 transition-transform"
-                    onClick={(e) => { e.stopPropagation(); }}
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(loc.id) }}
+                    aria-label={saved ? 'Remove from saved' : 'Save place'}
                 >
-                    <Heart size={20} className="text-red-500 stroke-[2.2]" />
+                    <Heart size={20} className={saved ? 'text-red-500 fill-red-500' : 'text-gray-300 stroke-[2.2]'} />
                 </button>
             </div>
         </div>
@@ -119,11 +119,8 @@ const DashboardPage = () => {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const [isLoading, setIsLoading] = useState(true)
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 700)
-        return () => clearTimeout(timer)
-    }, [])
+    // Use the real loading state from the store (set by initialize() when fetching from Supabase)
+    const isLoading = useLocationsStore(s => s.isLoading)
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -146,11 +143,20 @@ const DashboardPage = () => {
         { name: 'Czechia',     slug: 'czechia',     image: 'https://images.unsplash.com/photo-1541849546-216549ae216d?q=80&w=2070&auto=format&fit=crop', newCount: 6 },
     ]
 
-    // Top-rated places from the real data store (falls back to mock gracefully)
+    // Top-rated places
     const recommended = useMemo(
         () => [...locations].sort((a, b) => b.rating - a.rating).slice(0, 5),
         [locations]
     )
+
+    // "Trending" — most recently added, different from recommended top-5
+    const trending = useMemo(() => {
+        const topIds = new Set(recommended.map(l => l.id))
+        return [...locations]
+            .filter(l => !topIds.has(l.id))
+            .slice(-5)
+            .reverse()
+    }, [locations, recommended])
 
     const textStyle = theme === 'light' ? "text-gray-900" : "text-white"
 
@@ -263,7 +269,7 @@ const DashboardPage = () => {
                                     <DashboardCardSkeleton isDark={isDark} />
                                 </div>
                             ))
-                            : [...locations].reverse().slice(0, 5).map((loc) => (
+                            : trending.map((loc) => (
                                 <div key={loc.id} className="snap-center">
                                     <LocationCardMobile loc={loc} type="trending" />
                                 </div>

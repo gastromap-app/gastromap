@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import { config } from '@/shared/config/env'
 
 // ─── Supabase Client ──────────────────────────────────────────────────────
-export const supabase = createClient(config.supabase.url, config.supabase.anonKey)
+export const supabase = config.supabase.isConfigured
+    ? createClient(config.supabase.url, config.supabase.anonKey)
+    : null
 
 /**
  * Generic API error — carries HTTP status for consistent error handling

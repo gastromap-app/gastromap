@@ -105,61 +105,58 @@ export const useLocationsStore = create((set, get) => ({
 
     // ─── Filter setters ───────────────────────────────────────────────────
 
-    setCategory: (activeCategory) => {
-        set({ activeCategory })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, activeCategory }) }))
-    },
+    setCategory: (activeCategory) =>
+        set(state => ({
+            activeCategory,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategory }),
+        })),
 
-    setSearchQuery: (searchQuery) => {
-        set({ searchQuery })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, searchQuery }) }))
-    },
+    setSearchQuery: (searchQuery) =>
+        set(state => ({
+            searchQuery,
+            filteredLocations: applyAllFilters(state.locations, { ...state, searchQuery }),
+        })),
 
-    setPriceLevels: (activePriceLevels) => {
-        set({ activePriceLevels })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, activePriceLevels }) }))
-    },
+    setPriceLevels: (activePriceLevels) =>
+        set(state => ({
+            activePriceLevels,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activePriceLevels }),
+        })),
 
-    setMinRating: (minRating) => {
-        set({ minRating })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, minRating }) }))
-    },
+    setMinRating: (minRating) =>
+        set(state => ({
+            minRating,
+            filteredLocations: applyAllFilters(state.locations, { ...state, minRating }),
+        })),
 
-    setVibes: (activeVibes) => {
-        set({ activeVibes })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, activeVibes }) }))
-    },
+    setVibes: (activeVibes) =>
+        set(state => ({
+            activeVibes,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeVibes }),
+        })),
 
-    setSortBy: (sortBy) => {
-        set({ sortBy })
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }) }))
-    },
+    setSortBy: (sortBy) =>
+        set(state => ({
+            sortBy,
+            filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }),
+        })),
 
     /**
-     * Apply multiple filter changes at once — avoids multiple re-renders.
+     * Apply multiple filter changes at once — single set() call, one re-render.
      * @param {Partial<LocationFiltersState>} updates
      */
-    applyFilters: (updates = {}) => {
-        set(updates)
-        set((state) => ({ filteredLocations: applyAllFilters(state.locations, state) }))
-    },
+    applyFilters: (updates = {}) =>
+        set(state => {
+            const next = { ...state, ...updates }
+            return { ...updates, filteredLocations: applyAllFilters(state.locations, next) }
+        }),
 
-    /** Reset all filters to defaults */
-    resetFilters: () => {
-        set({ ...DEFAULT_FILTERS })
-        set((state) => ({ filteredLocations: state.locations }))
-    },
-
-    /** Derived: number of active filters (for badge on filter button) */
-    get activeFilterCount() {
-        const s = get()
-        let count = 0
-        if (s.activeCategory !== 'All') count++
-        if (s.activePriceLevels.length) count++
-        if (s.minRating != null) count++
-        if (s.activeVibes.length) count++
-        return count
-    },
+    /** Reset all filters to defaults — single re-render */
+    resetFilters: () =>
+        set(state => ({
+            ...DEFAULT_FILTERS,
+            filteredLocations: state.locations,
+        })),
 
     // ─── Data mutations (used by Admin) ──────────────────────────────────
 

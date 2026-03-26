@@ -27,14 +27,14 @@ export default function AdminLayout() {
     }, [location.pathname])
 
     const navItems = [
-        { icon: LayoutDashboard, label: 'Overview', path: '/admin' },
-        { icon: MapPin, label: 'Locations', path: '/admin/locations' },
-        { icon: Users, label: 'Users', path: '/admin/users' },
-        { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },
-        { icon: Bot, label: 'AI Agents', path: '/admin/ai' },
-        { icon: ShieldCheck, label: 'Moderation', path: '/admin/moderation' },
-        { icon: BarChart3, label: 'Analytics', path: '/admin/stats' },
-        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+        { icon: LayoutDashboard, label: 'Overview',       path: '/admin' },
+        { icon: MapPin,          label: 'Locations',      path: '/admin/locations' },
+        { icon: Users,           label: 'Users',          path: '/admin/users' },
+        { icon: CreditCard,      label: 'Subscriptions',  path: '/admin/subscriptions' },
+        { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
+        { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
+        { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },
+        { icon: Settings,        label: 'Settings',       path: '/admin/settings' },
     ]
 
     const notifications = [

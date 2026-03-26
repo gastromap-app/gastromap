@@ -128,14 +128,7 @@ export const AppRouter = () => {
                         />
                         <Route path="/saved" element={<SavedPage />} />
                         <Route path="/visited" element={<VisitedPage />} />
-                        <Route
-                            path="/map"
-                            element={
-                                <ErrorBoundary fallback={({ error, reset }) => <MapErrorFallback error={error} reset={reset} />}>
-                                    <div className="p-4">Map View (Coming Soon)</div>
-                                </ErrorBoundary>
-                            }
-                        />
+                        <Route path="/map" element={<Navigate to="/explore" replace />} />
                     </Route>
                 </Route>
 

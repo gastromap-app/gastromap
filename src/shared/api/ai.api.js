@@ -1,54 +1,48 @@
 /**
- * AI / GastroIntelligence API
+ * AI / GastroIntelligence API via OpenRouter
  *
- * Two modes:
- *  1. PRODUCTION — Claude API via @anthropic-ai/sdk when VITE_AI_API_KEY is set.
- *     Uses RAG-lite: injects a curated location catalogue into the system prompt so
- *     Claude can make factual recommendations without hallucinating restaurant names.
+ * Features:
+ * - Unified API for 300+ models (free & premium)
+ * - Streaming support
+ * - Multi-turn conversation history
+ * - RAG-lite with location catalogue
+ * - Automatic fallback to free models
  *
- *  2. DEVELOPMENT FALLBACK — local scoring engine when API key is absent.
- *     Enables full offline dev without burning API credits.
- *
- * ⚠️ SECURITY NOTE:
- *   VITE_AI_API_KEY is embedded in the client bundle at build time.
- *   For production, proxy all Claude calls through a server-side edge function
- *   (Cloudflare Worker, Vercel Edge, etc.) and remove the key from VITE_ env vars.
- *
- * The public interface (analyzeQuery, analyzeQueryStream) is stable — components
- * never import from this file directly, they go through @/shared/api/queries.
+ * SECURITY:
+ * - API key stored in VITE_OPENROUTER_API_KEY
+ * - For production, proxy through edge function
  */
 
-import Anthropic from '@anthropic-ai/sdk'
 import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { config } from '@/shared/config/env'
 import { ApiError } from './client'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 
-// ─── Anthropic client (lazy, only when key present) ───────────────────────
+// ─── OpenRouter API Client ───────────────────────────────────────────────────
 
-let _client = null
-
-function getClient() {
-    if (!config.ai.apiKey) return null
-    if (!_client) {
-        _client = new Anthropic({
-            apiKey: config.ai.apiKey,
-            // dangerouslyAllowBrowser: true — required when calling from a browser context.
-            // Remove this line once the API is proxied through a server-side edge function.
-            dangerouslyAllowBrowser: true,
-        })
-    }
-    return _client
-}
-
-// ─── RAG-lite: build a compact location catalogue for the system prompt ───
+const OPENROUTER_BASE_URL = config.ai.openRouter.baseUrl
 
 /**
- * Serialize the location catalogue into a compact string Claude can reason over.
+ * Build headers for OpenRouter API
+ * Includes app metadata for ranking & analytics
+ */
+function buildHeaders() {
+    return {
+        'Authorization': `Bearer ${config.ai.openRouter.apiKey}`,
+        'HTTP-Referer': config.ai.openRouter.siteUrl,
+        'X-Title': config.ai.openRouter.appName,
+        'Content-Type': 'application/json',
+    }
+}
+
+// ─── Location Catalogue (RAG-lite) ──────────────────────────────────────────
+
+/**
+ * Serialize the location catalogue into a compact string for the AI model.
  * Keeps token count low by only including fields relevant to recommendations.
  */
-function buildLocationCatalogue() {
-    return MOCK_LOCATIONS.map((loc) =>
+function buildLocationCatalogue(locations = MOCK_LOCATIONS) {
+    return locations.map((loc) =>
         [
             `ID:${loc.id}`,
             `Name:${loc.title}`,
@@ -69,11 +63,11 @@ function buildLocationCatalogue() {
  * Build the GastroGuide system prompt.
  * @param {Object} [userPrefs]  - prefs from useUserPrefsStore
  */
-function buildSystemPrompt(userPrefs = {}) {
+function buildSystemPrompt(userPrefs = {}, locations = MOCK_LOCATIONS) {
     const { favoriteCuisines = [], vibePreference = [], priceRange = [] } = userPrefs
 
     const prefSection = [
-        favoriteCuisines.length ? `Favourite cuisines: ${favoriteCuisines.join(', ')}` : '',
+        favoriteCuisines.length ? `Favorite cuisines: ${favoriteCuisines.join(', ')}` : '',
         vibePreference.length ? `Preferred vibes: ${vibePreference.join(', ')}` : '',
         priceRange.length ? `Budget range: ${priceRange.join(', ')}` : '',
     ].filter(Boolean).join('\n')
@@ -84,21 +78,22 @@ PERSONALITY
 - Friendly, enthusiastic, and concise (max 3 sentences per response)
 - Always give concrete place names from the catalogue below — never invent venues
 - When you recommend a place, always end with its ID so the app can link to it
+- Use the language the user writes in (Polish, English, Ukrainian, etc.)
 
 USER PREFERENCES
 ${prefSection || 'No preferences set yet — make varied recommendations'}
 
 LOCATION CATALOGUE (Krakow)
-${buildLocationCatalogue()}
+${buildLocationCatalogue(locations)}
 
 RESPONSE FORMAT
-Respond in plain conversational English. When you recommend specific places from the catalogue, append a JSON block at the very end of your message (on its own line) listing the IDs of recommended locations, like this:
+Respond in plain conversational text. When you recommend specific places from the catalogue, append a JSON block at the very end of your message (on its own line) listing the IDs of recommended locations, like this:
 {"matches":["1","3"]}
 
 If the user asks something not related to dining, gently redirect them. Never make up locations not in the catalogue.`
 }
 
-// ─── Intent detection (lightweight, no LLM needed) ────────────────────────
+// ─── Intent Detection ────────────────────────────────────────────────────────
 
 /**
  * @param {string} text
@@ -115,10 +110,10 @@ function detectIntent(text) {
     return 'general'
 }
 
-// ─── Parse matches from Claude response ───────────────────────────────────
+// ─── Parse matches from response ───────────────────────────────────────────
 
 /**
- * Extract content text and matched location IDs from Claude's response.
+ * Extract content text and matched location IDs from AI response.
  * @param {string} rawText
  * @returns {{ content: string, matchIds: string[] }}
  */
@@ -162,10 +157,10 @@ function resolveMatches(ids) {
  */
 
 /**
- * Analyze a user query and return a GastroGuide response.
+ * Analyze a user query and return a GastroGuide response via OpenRouter.
  *
- * Uses Claude API when VITE_AI_API_KEY is set, otherwise falls back to the
- * local gastroIntelligence scoring engine (for offline dev / demo mode).
+ * Uses OpenRouter API when VITE_OPENROUTER_API_KEY is set, otherwise falls back to
+ * the local gastroIntelligence scoring engine (for offline dev / demo mode).
  *
  * @param {string} message
  * @param {{ preferences?: Object, history?: Array }} [context]
@@ -177,27 +172,79 @@ export async function analyzeQuery(message, context = {}) {
     }
 
     const intent = detectIntent(message)
-    const client = getClient()
+    const hasOpenRouterKey = Boolean(config.ai.openRouter.apiKey)
 
-    // ── Claude API path ────────────────────────────────────────────────────
-    if (client) {
+    // ── OpenRouter API path ────────────────────────────────────────────────────
+    if (hasOpenRouterKey) {
         try {
-            // Build conversation history for multi-turn context
+            const model = config.ai.model || 'deepseek/deepseek-chat-v3-0324:free'
             const historyMessages = (context.history ?? [])
-                .slice(-8) // last 4 exchanges = 8 messages
+                .slice(-8)
                 .filter((m) => m.role === 'user' || m.role === 'assistant')
                 .map((m) => ({ role: m.role, content: m.content }))
 
-            const allMessages = [
-                ...historyMessages,
-                { role: 'user', content: message },
-            ]
+            const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: buildHeaders(),
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        { role: 'system', content: buildSystemPrompt(context.preferences) },
+                        ...historyMessages,
+                        { role: 'user', content: message },
+                    ],
+                    max_tokens: config.ai.maxResponseTokens,
+                    temperature: 0.7,
+                }),
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                if (response.status === 401) {
+                    throw new ApiError('Invalid OpenRouter API key. Check VITE_OPENROUTER_API_KEY.', 401, 'OPENROUTER_AUTH')
+                }
+                if (response.status === 429) {
+                    throw new ApiError('OpenRouter rate limit reached. Try again shortly.', 429, 'OPENROUTER_RATE_LIMIT')
+                }
+                throw new ApiError(`OpenRouter API error: ${response.status} - ${errorText}`, response.status, 'OPENROUTER_ERROR')
+            }
+
+            const data = await response.json()
+            const rawText = data.choices?.[0]?.message?.content || ''
+            const { content, matchIds } = parseResponse(rawText)
+
+            return {
+                content,
+                matches: resolveMatches(matchIds),
+                intent,
+            }
+        } catch (err) {
+            if (err instanceof ApiError) {
+                throw err
+            }
+            console.warn('[GastroAI] OpenRouter API error, falling back to local engine:', err.message)
+        }
+    }
+
+    // ── Legacy Anthropic path (backward compatibility) ───────────────────────
+    if (config.ai.apiKey) {
+        try {
+            const Anthropic = (await import('@anthropic-ai/sdk')).default
+            const client = new Anthropic({
+                apiKey: config.ai.apiKey,
+                dangerouslyAllowBrowser: true,
+            })
+
+            const historyMessages = (context.history ?? [])
+                .slice(-8)
+                .filter((m) => m.role === 'user' || m.role === 'assistant')
+                .map((m) => ({ role: m.role, content: m.content }))
 
             const response = await client.messages.create({
                 model: config.ai.model,
                 max_tokens: config.ai.maxResponseTokens,
                 system: buildSystemPrompt(context.preferences),
-                messages: allMessages,
+                messages: historyMessages.concat({ role: 'user', content: message }),
             })
 
             const rawText = response.content
@@ -213,15 +260,7 @@ export async function analyzeQuery(message, context = {}) {
                 intent,
             }
         } catch (err) {
-            // Surface auth / rate-limit errors; silently fall through for network issues
-            if (err.status === 401) {
-                throw new ApiError('Invalid Claude API key. Check VITE_AI_API_KEY.', 401, 'CLAUDE_AUTH')
-            }
-            if (err.status === 429) {
-                throw new ApiError('Claude API rate limit reached. Try again shortly.', 429, 'CLAUDE_RATE_LIMIT')
-            }
-            // Fall through to local engine on any other error
-            console.warn('[GastroAI] Claude API error, falling back to local engine:', err.message)
+            console.warn('[GastroAI] Anthropic API error, falling back to local engine:', err.message)
         }
     }
 
@@ -236,7 +275,7 @@ export async function analyzeQuery(message, context = {}) {
 }
 
 /**
- * Streaming variant — yields text chunks as they arrive from Claude.
+ * Streaming variant — yields text chunks as they arrive from OpenRouter.
  * Falls back to a single-shot response when streaming is unavailable.
  *
  * @param {string} message
@@ -250,35 +289,67 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
     }
 
     const intent = detectIntent(message)
-    const client = getClient()
+    const hasOpenRouterKey = Boolean(config.ai.openRouter.apiKey)
 
-    if (client) {
+    if (hasOpenRouterKey) {
         try {
+            const model = config.ai.model || 'deepseek/deepseek-chat-v3-0324:free'
             const historyMessages = (context.history ?? [])
                 .slice(-8)
                 .filter((m) => m.role === 'user' || m.role === 'assistant')
                 .map((m) => ({ role: m.role, content: m.content }))
 
-            let fullText = ''
-
-            const stream = await client.messages.stream({
-                model: config.ai.model,
-                max_tokens: config.ai.maxResponseTokens,
-                system: buildSystemPrompt(context.preferences),
-                messages: [
-                    ...historyMessages,
-                    { role: 'user', content: message },
-                ],
+            const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: buildHeaders(),
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        { role: 'system', content: buildSystemPrompt(context.preferences) },
+                        ...historyMessages,
+                        { role: 'user', content: message },
+                    ],
+                    max_tokens: config.ai.maxResponseTokens,
+                    temperature: 0.7,
+                    stream: true,
+                }),
             })
 
-            for await (const chunk of stream) {
-                if (
-                    chunk.type === 'content_block_delta' &&
-                    chunk.delta?.type === 'text_delta'
-                ) {
-                    fullText += chunk.delta.text
-                    onChunk?.(chunk.delta.text)
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new ApiError(`OpenRouter API error: ${response.status} - ${errorText}`, response.status, 'OPENROUTER_ERROR')
+            }
+
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let fullText = ''
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    const chunk = decoder.decode(value)
+                    const lines = chunk.split('\n').filter((line) => line.startsWith('data: '))
+
+                    for (const line of lines) {
+                        const data = line.slice(6)
+                        if (data === '[DONE]') continue
+
+                        try {
+                            const parsed = JSON.parse(data)
+                            const content = parsed.choices?.[0]?.delta?.content || ''
+                            if (content) {
+                                fullText += content
+                                onChunk(fullText)
+                            }
+                        } catch {
+                            // Skip malformed JSON
+                        }
+                    }
                 }
+            } finally {
+                reader.releaseLock()
             }
 
             const { content, matchIds } = parseResponse(fullText)
@@ -289,13 +360,51 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 intent,
             }
         } catch (err) {
-            if (err.status === 401) {
-                throw new ApiError('Invalid Claude API key.', 401, 'CLAUDE_AUTH')
-            }
-            console.warn('[GastroAI] Streaming error, falling back to single-shot:', err.message)
+            console.warn('[GastroAI] OpenRouter streaming error, falling back to non-streaming:', err.message)
+            // Fall back to non-streaming
+            return await analyzeQuery(message, context)
         }
     }
 
-    // Fallback: non-streaming
-    return analyzeQuery(message, context)
+    // Fallback to non-streaming
+    return await analyzeQuery(message, context)
+}
+
+/**
+ * Get available models from OpenRouter
+ * @returns {Promise<Array>} List of models
+ */
+export async function getAvailableModels() {
+    if (!config.ai.openRouter.apiKey) {
+        return config.ai.freeModels.concat(config.ai.premiumModels)
+    }
+
+    try {
+        const response = await fetch(`${OPENROUTER_BASE_URL}/models`, {
+            headers: buildHeaders(),
+        })
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch models: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (err) {
+        console.warn('[GastroAI] Failed to fetch OpenRouter models:', err.message)
+        return config.ai.freeModels.concat(config.ai.premiumModels)
+    }
+}
+
+/**
+ * Test connection to OpenRouter
+ * @returns {Promise<boolean>}
+ */
+export async function testConnection() {
+    try {
+        await analyzeQuery('Test', { preferences: {} })
+        return true
+    } catch {
+        return false
+    }
 }

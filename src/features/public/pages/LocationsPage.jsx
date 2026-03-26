@@ -6,7 +6,7 @@ import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
     Coffee, Wine, Store, Navigation, List, ChevronUp,
-    ArrowUpDown, X, SearchX
+    ArrowUpDown, X, SearchX, AlertCircle
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import FilterModal from '@/features/dashboard/components/FilterModal'
@@ -178,6 +178,27 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
         </motion.div>
     )
 })
+
+// ─── Error state ──────────────────────────────────────────────────────────
+function ErrorState({ isDark }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center py-20 text-center"
+        >
+            <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-6 ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
+                <AlertCircle size={36} className="text-red-400" />
+            </div>
+            <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Failed to load venues
+            </h3>
+            <p className={`text-sm font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                Check your connection and try again.
+            </p>
+        </motion.div>
+    )
+}
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 function EmptyState({ query, isDark }) {
@@ -387,6 +408,8 @@ const LocationsPage = () => {
                                     <LocationCardMobileSkeleton key={i} isDark={isDark} />
                                 ))}
                             </div>
+                        ) : isError ? (
+                            <ErrorState isDark={isDark} />
                         ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
@@ -558,6 +581,8 @@ const LocationsPage = () => {
                                     <LocationCardDesktopSkeleton key={i} isDark={isDark} />
                                 ))}
                             </div>
+                        ) : isError ? (
+                            <ErrorState isDark={isDark} />
                         ) : filteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (

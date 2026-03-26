@@ -10,6 +10,7 @@ import {
     Instagram, Facebook, Twitter, ExternalLink, Globe
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
@@ -26,8 +27,10 @@ const LocationDetailsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    // Find location from global mocks
-    const location = MOCK_LOCATIONS.find(loc => loc.id === id) || MOCK_LOCATIONS[0]
+    // Find location in store (populated from OSM API or mock fallback)
+    const storeLocations = useLocationsStore(s => s.locations)
+    const allLocations = storeLocations.length ? storeLocations : MOCK_LOCATIONS
+    const location = allLocations.find(loc => loc.id === id) ?? allLocations[0]
 
     // Connect to real stores
     const { isFavorite, toggleFavorite } = useFavoritesStore()

@@ -60,8 +60,14 @@ describe('Auto-Translation System', () => {
             expect(detected).toBe('pl')
         })
 
-        it('should detect Ukrainian', () => {
-            const detected = detectLanguage('Привіт, як справи?')
+        it('should detect Ukrainian (with unique chars: і, ї, є)', () => {
+            // Use text with uniquely Ukrainian characters
+            const detected = detectLanguage('Привіт! Як справи? Їжте смачно.')
+            expect(detected).toBe('uk')
+        })
+
+        it('should detect Ukrainian with і', () => {
+            const detected = detectLanguage('Світ і краса')
             expect(detected).toBe('uk')
         })
 

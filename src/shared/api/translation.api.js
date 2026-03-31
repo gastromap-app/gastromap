@@ -35,16 +35,13 @@ export const TRANSLATABLE_FIELDS = [
 
 /**
  * Translate text to target language
- * @param {string} text - Text to translate
- * @param {string} targetLang - Target language code (en, pl, uk, ru)
- * @param {string} sourceLang - Source language code (optional, auto-detect)
- * @returns {Promise<string>} Translated text
  */
-export async function translateText(text, targetLang, sourceLang = 'auto') {
+export async function translateText(text, targetLang) {
     if (!text || typeof text !== 'string') {
         return text
     }
     
+    const sourceLanguage = sourceLang || 'auto'
     const targetLanguage = SUPPORTED_LANGUAGES[targetLang]?.name || targetLang
     
     const prompt = `Translate the following text to ${targetLanguage}. 
@@ -64,15 +61,12 @@ Text to translate:
         return response?.answer?.trim() || text
     } catch (error) {
         console.error('[Translation API] Error translating text:', error)
-        return text // Return original on error
+        return text
     }
 }
 
 /**
- * Translate array of strings (e.g., what_to_try)
- * @param {Array<string>} texts - Array of texts to translate
- * @param {string} targetLang - Target language
- * @returns {Promise<Array<string>>} Translated array
+ * Translate array of strings
  */
 export async function translateArray(texts, targetLang) {
     if (!Array.isArray(texts)) {
@@ -88,10 +82,6 @@ export async function translateArray(texts, targetLang) {
 
 /**
  * Translate all translatable fields of a location
- * @param {Object} locationData - Location data object
- * @param {string} targetLang - Target language
- * @param {string} sourceLang - Source language (optional)
- * @returns {Promise<Object>} Translated location data
  */
 export async function translateLocation(locationData, targetLang, sourceLang = 'auto') {
     if (!locationData) {
@@ -100,7 +90,6 @@ export async function translateLocation(locationData, targetLang, sourceLang = '
     
     const translated = { ...locationData }
     
-    // Translate text fields
     for (const field of TRANSLATABLE_FIELDS) {
         if (locationData[field]) {
             if (Array.isArray(locationData[field])) {
@@ -116,9 +105,6 @@ export async function translateLocation(locationData, targetLang, sourceLang = '
 
 /**
  * Auto-translate location to all supported languages
- * @param {Object} locationData - Location data
- * @param {string} sourceLang - Source language (optional, auto-detect)
- * @returns {Promise<Object>} Location with all translations
  */
 export async function autoTranslateAll(locationData, sourceLang = 'auto') {
     if (!locationData) {
@@ -130,7 +116,6 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
         translations: {}
     }
     
-    // Translate to each supported language
     const translations = {}
     
     for (const [langCode, langInfo] of Object.entries(SUPPORTED_LANGUAGES)) {
@@ -149,7 +134,6 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
             }
         } catch (error) {
             console.error(`[Translation API] Failed to translate to ${langCode}:`, error)
-            // Store partial translation on error
             translations[langCode] = {
                 title: locationData.title,
                 description: locationData.description,
@@ -164,9 +148,6 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
 
 /**
  * Save translations to database
- * @param {string} locationId - Location ID
- * @param {Object} translations - Translations object
- * @returns {Promise<void>}
  */
 export async function saveTranslations(locationId, translations) {
     try {
@@ -194,8 +175,6 @@ export async function saveTranslations(locationId, translations) {
 
 /**
  * Get translations for a location
- * @param {string} locationId - Location ID
- * @returns {Promise<Object|null>} Translations object
  */
 export async function getTranslations(locationId) {
     try {
@@ -207,7 +186,6 @@ export async function getTranslations(locationId) {
         
         if (error) {
             if (error.code === 'PGRST116') {
-                // No translations found
                 return null
             }
             throw error
@@ -222,13 +200,9 @@ export async function getTranslations(locationId) {
 
 /**
  * Get location with translations for specific language
- * @param {string} locationId - Location ID
- * @param {string} lang - Language code
- * @returns {Promise<Object|null>} Location with translations
  */
 export async function getLocationWithTranslation(locationId, lang) {
     try {
-        // Get location
         const { data: location, error: locError } = await supabase
             .from('locations')
             .select('*')
@@ -238,11 +212,9 @@ export async function getLocationWithTranslation(locationId, lang) {
         if (locError) throw locError
         if (!location) return null
         
-        // Get translations
         const translations = await getTranslations(locationId)
         
         if (translations && translations[lang]) {
-            // Merge translations with original data
             const translated = {
                 ...location,
                 ...translations[lang]
@@ -259,9 +231,6 @@ export async function getLocationWithTranslation(locationId, lang) {
 
 /**
  * Batch translate multiple locations
- * @param {Array<Object>} locations - Array of location data
- * @param {string} targetLang - Target language
- * @returns {Promise<Array<Object>>} Translated locations
  */
 export async function batchTranslate(locations, targetLang) {
     if (!Array.isArray(locations)) {
@@ -278,33 +247,32 @@ export async function batchTranslate(locations, targetLang) {
 }
 
 /**
- * Detect language of text (simple heuristic)
+ * Detect language of text (heuristic with Unicode ranges)
  * @param {string} text - Text to analyze
  * @returns {string} Detected language code
  */
 export function detectLanguage(text) {
-    if (!text) return 'en'
+    if (!text || typeof text !== 'string') return 'en'
     
-    const cyrillic = /[\u0400-\u04FF]/
-    const polish = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/
+    const lowerText = text.toLowerCase()
     
-    if (polish.test(text)) return 'pl'
-    if (cyrillic.test(text)) {
-        // Distinguish Ukrainian and Russian
-        const ukrainian = /ієґюяії/
-        if (ukrainian.test(text.toLowerCase())) return 'uk'
-        return 'ru'
-    }
+    // Polish characters
+    const polish = /[ąćęłńóśźż]/
+    if (polish.test(lowerText)) return 'pl'
+    
+    // Ukrainian unique characters: і, ї, є, ґ (Unicode: U+0456, U+0457, U+0454, U+0491)
+    const ukrainianUnique = /[ієїґ]/
+    if (ukrainianUnique.test(lowerText)) return 'uk'
+    
+    // Russian: Cyrillic without Ukrainian unique chars
+    const cyrillic = /[а-яё]/
+    if (cyrillic.test(lowerText)) return 'ru'
     
     return 'en'
 }
 
 /**
  * Enable auto-translation on location create/update
- * Call this from locations.api.js createLocation and updateLocation
- * @param {Object} locationData - Location data
- * @param {boolean} autoTranslate - Enable auto-translation
- * @returns {Promise<Object>} Location with translations
  */
 export async function processLocationTranslations(locationData, autoTranslate = true) {
     if (!autoTranslate || !config.ai.isOpenRouterConfigured) {
@@ -318,7 +286,6 @@ export async function processLocationTranslations(locationData, autoTranslate = 
         return result
     } catch (error) {
         console.error('[Translation API] Auto-translation failed:', error)
-        // Return original data on error (non-blocking)
         return locationData
     }
 }

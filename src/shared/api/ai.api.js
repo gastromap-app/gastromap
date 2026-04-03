@@ -29,18 +29,19 @@ import { useAppConfigStore } from '@/store/useAppConfigStore'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 /**
- * Cascading free models for production (proxy mode).
- * The proxy tries these in order until one succeeds.
+ * Cascading free models for production.
+ * Ordered by reliability and availability - models less likely to be rate-limited first.
+ * The system tries these in order until one succeeds.
  */
 const MODEL_CASCADE = [
-    'mistralai/devstral-2512:free',
-    'mistralai/mistral-small-3.1:free',
-    'z-ai/glm-4.5-air:free',
-    'openai/gpt-oss-20b:free',
-    'nvidia/nemotron-nano-9b-v2:free',
-    'minimax/minimax-m2.5:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'qwen/qwen3-coder:free',
+    'nvidia/nemotron-nano-9b-v2:free',      // Often available, very fast
+    'z-ai/glm-4.5-air:free',                 // Good availability
+    'mistralai/mistral-small-3.1:free',      // Reliable multilingual
+    'openai/gpt-oss-20b:free',               // OpenAI open-weight
+    'minimax/minimax-m2.5:free',             // Large context
+    'mistralai/devstral-2512:free',          // Good but often rate-limited
+    'meta-llama/llama-3.3-70b-instruct:free', // Often rate-limited
+    'qwen/qwen3-coder:free',                 // Last resort, often rate-limited
 ]
 
 /**
@@ -376,33 +377,36 @@ export const DEFAULT_PROMPTS = {
 
 /**
  * Send a chat completion request to OpenRouter.
- * Automatically retries on 429 with the fallback model.
+ * Automatically tries multiple models in cascade on rate-limit errors.
  *
  * @param {Array}   messages
  * @param {boolean} stream
  * @param {boolean} withTools   include tool definitions
  * @param {string}  [modelOverride]
- * @returns {Promise<Response>}
+ * @returns {Promise<{response: Response, modelUsed: string}>}
  */
 async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride } = {}) {
     const { apiKey, model: activeModel, fallbackModel } = getActiveAIConfig()
-    const model = modelOverride ?? activeModel
     const useProxy = config.ai.useProxy
 
-    // In production, the proxy handles cascading model rotation.
-    // In dev (direct OpenRouter), we cascade locally.
-    const cascade = useProxy
-        ? [model]
-        : [model, ...(fallbackModel && fallbackModel !== model ? [fallbackModel] : [])]
+    // Build cascade: start with preferred model, then try all others
+    const preferredModel = modelOverride ?? activeModel
+    const cascade = [preferredModel]
 
-    // Add full cascade for direct calls when no model override
-    if (!useProxy && !modelOverride) {
-        for (const m of MODEL_CASCADE) {
-            if (!cascade.includes(m)) cascade.push(m)
+    // Add fallback model if different
+    if (fallbackModel && fallbackModel !== preferredModel && !cascade.includes(fallbackModel)) {
+        cascade.push(fallbackModel)
+    }
+
+    // Always add all cascade models (even in proxy mode - proxy might not handle cascade)
+    for (const m of MODEL_CASCADE) {
+        if (!cascade.includes(m)) {
+            cascade.push(m)
         }
     }
 
     let lastError = null
+    let lastStatus = 0
 
     for (let i = 0; i < cascade.length; i++) {
         const currentModel = cascade[i]
@@ -426,29 +430,50 @@ async function fetchOpenRouter(messages, { stream = false, withTools = true, mod
             headers['X-Title'] = 'GastroMap'
         }
 
-        const res = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-        })
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+            })
 
-        if (res.ok) return res
+            if (res.ok) {
+                return { response: res, modelUsed: currentModel }
+            }
 
-        // Only retry on rate-limit or server errors
-        if (res.status !== 429 && res.status !== 500 && res.status !== 502 && res.status !== 503) {
+            lastStatus = res.status
+
+            // Parse error to get details
             const errBody = await res.json().catch(() => ({}))
-            const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
-            throw Object.assign(new Error(msg), { status: res.status })
-        }
+            lastError = errBody
 
-        lastError = await res.json().catch(() => ({}))
-        console.warn(`[GastroAI] Model ${currentModel} returned ${res.status}, trying next...`)
+            // Only retry on rate-limit or server errors
+            if (res.status !== 429 && res.status !== 500 && res.status !== 502 && res.status !== 503) {
+                const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
+                throw Object.assign(new Error(msg), { status: res.status, errorData: errBody })
+            }
+
+            console.warn(`[GastroAI] Model ${currentModel} returned ${res.status}, trying next model...`)
+        } catch (err) {
+            // If it's a network error or non-retryable error, throw
+            if (!err.status || (err.status !== 429 && err.status !== 500 && err.status !== 502 && err.status !== 503)) {
+                throw err
+            }
+            console.warn(`[GastroAI] Model ${currentModel} failed:`, err.message)
+        }
     }
 
-    // All models exhausted
-    const msg = lastError?.error?.message ?? 'All AI models are currently rate-limited'
-    throw Object.assign(new Error(msg), { status: 503 })
+    // All models exhausted - provide helpful error message
+    const errorMsg = lastError?.error?.message || 'All AI models are currently rate-limited. Please try again in a few minutes or add your own OpenRouter API key in Admin Settings.'
+    throw Object.assign(new Error(errorMsg), {
+        status: lastStatus || 503,
+        errorData: lastError,
+        allModelsTried: cascade
+    })
 }
+
+// Export cascade for Admin test panel
+export { MODEL_CASCADE }
 
 // ─── Intent Detection ────────────────────────────────────────────────────────
 
@@ -475,11 +500,11 @@ function detectIntent(text) {
  *  2. If tool_calls → execute locally → send results back → get final text.
  *
  * @param {Array} messages  Full messages array incl. system prompt
- * @returns {{ text: string, usedLocations: Array }}
+ * @returns {{ text: string, usedLocations: Array, modelUsed: string }}
  */
 async function runAgentPass(messages) {
     // First call: detect tool calls
-    const res = await fetchOpenRouter(messages, { stream: false, withTools: true })
+    const { response: res, modelUsed } = await fetchOpenRouter(messages, { stream: false, withTools: true })
     const data = await res.json()
     const choice = data.choices?.[0]
 
@@ -490,7 +515,7 @@ async function runAgentPass(messages) {
 
     // No tool calls — return text directly
     if (finishReason !== 'tool_calls' || !assistantMsg.tool_calls?.length) {
-        return { text: assistantMsg.content ?? '', usedLocations: [] }
+        return { text: assistantMsg.content ?? '', usedLocations: [], modelUsed }
     }
 
     // Execute tool calls
@@ -535,11 +560,11 @@ async function runAgentPass(messages) {
         ...toolResults,       // tool result messages
     ]
 
-    const finalRes = await fetchOpenRouter(finalMessages, { stream: false, withTools: false })
+    const { response: finalRes } = await fetchOpenRouter(finalMessages, { stream: false, withTools: false })
     const finalData = await finalRes.json()
     const finalContent = finalData.choices?.[0]?.message?.content ?? ''
 
-    return { text: finalContent, usedLocations }
+    return { text: finalContent, usedLocations, modelUsed }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────
@@ -643,4 +668,58 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     // Fallback: single-shot local engine
     return analyzeQuery(message, context)
+}
+
+// ─── Test Helper (for Admin Panel) ────────────────────────────────────────
+
+/**
+ * Test AI connectivity with a simple query.
+ * Uses the full model cascade to find an available model.
+ *
+ * @param {string} message - Test message
+ * @param {string} [preferredModel] - Optional preferred model to try first
+ * @returns {Promise<{ ok: boolean, text: string, modelUsed: string, latency: number, error?: string }>}
+ */
+export async function testAIConnection(message, preferredModel) {
+    const startTime = performance.now()
+
+    try {
+        const { apiKey } = getActiveAIConfig()
+        const useProxy = config.ai.useProxy
+
+        if (!apiKey && !useProxy) {
+            return {
+                ok: false,
+                text: 'No API key configured. Add your OpenRouter API key in Settings or set VITE_OPENROUTER_API_KEY.',
+                modelUsed: 'none',
+                latency: 0,
+            }
+        }
+
+        const messages = [
+            { role: 'system', content: 'You are a helpful assistant. Keep responses under 2 sentences.' },
+            { role: 'user', content: message },
+        ]
+
+        const { response, modelUsed } = await fetchOpenRouter(messages, {
+            stream: false,
+            withTools: false,
+            modelOverride: preferredModel,
+        })
+
+        const data = await response.json()
+        const text = data.choices?.[0]?.message?.content || '(no response)'
+        const latency = Math.round(performance.now() - startTime)
+
+        return { ok: true, text, modelUsed, latency }
+    } catch (err) {
+        const latency = Math.round(performance.now() - startTime)
+        return {
+            ok: false,
+            text: err.message || 'Unknown error',
+            modelUsed: err.allModelsTried?.join(' → ') || 'unknown',
+            latency,
+            error: err.message,
+        }
+    }
 }

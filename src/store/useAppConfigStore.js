@@ -13,8 +13,8 @@ export const useAppConfigStore = create(
 
             // ─── AI model config (overrides env vars at runtime) ───────────────
             aiApiKey: '',                                              // overrides VITE_OPENROUTER_API_KEY
-            aiPrimaryModel: 'meta-llama/llama-3.3-70b-instruct:free', // overrides VITE_AI_MODEL
-            aiFallbackModel: 'qwen/qwen3-coder:free',                 // overrides VITE_AI_MODEL_FALLBACK
+            aiPrimaryModel: 'nvidia/nemotron-nano-9b-v2:free',        // overrides VITE_AI_MODEL
+            aiFallbackModel: 'z-ai/glm-4.5-air:free',                 // overrides VITE_AI_MODEL_FALLBACK
             aiGuideActive: true,
             aiAssistantActive: true,
             aiGuideTemp: 0.7,

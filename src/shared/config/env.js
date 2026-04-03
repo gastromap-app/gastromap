@@ -17,8 +17,9 @@ export const config = {
     // ─── AI / LLM (OpenRouter — free models, cascading) ──────────────────────
     ai: {
         openRouterKey: import.meta.env.VITE_OPENROUTER_API_KEY ?? '',
-        model: import.meta.env.VITE_AI_MODEL ?? 'mistralai/devstral-2512:free',
-        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'mistralai/mistral-small-3.1:free',
+        // Default to models that are more reliably available
+        model: import.meta.env.VITE_AI_MODEL ?? 'nvidia/nemotron-nano-9b-v2:free',
+        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'z-ai/glm-4.5-air:free',
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
         proxyUrl: '/api/ai/chat',

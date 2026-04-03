@@ -58,7 +58,7 @@ Text to translate:
             maxTokens: 1000
         })
         
-        return response?.answer?.trim() || text
+        return response?.content?.trim() || text
     } catch (error) {
         console.error('[Translation API] Error translating text:', error)
         return text

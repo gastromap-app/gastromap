@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import React, { Suspense, lazy, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import PublicLayout from '@/components/layout/PublicLayout'
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard'
@@ -7,17 +7,45 @@ import { ErrorBoundary, MapErrorFallback, AIChatErrorFallback, RouteErrorFallbac
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 // ─── Auth guards — must be non-lazy so check runs before chunk loads ──────
+const AuthLoader = () => (
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7] dark:bg-black">
+        <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+    </div>
+)
+
 const RequireAuth = () => {
-    const { isAuthenticated } = useAuthStore()
+    const { isAuthenticated, isLoading } = useAuthStore()
+    if (isLoading) return <AuthLoader />
     if (!isAuthenticated) return <Navigate to="/login" replace />
     return <Outlet />
 }
 
 const RequireAdmin = () => {
-    const { user, isAuthenticated } = useAuthStore()
+    const { user, isAuthenticated, isLoading } = useAuthStore()
+    if (isLoading) return <AuthLoader />
     if (!isAuthenticated) return <Navigate to="/login" replace />
     if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
     return <Outlet />
+}
+
+// ─── Post-confirmation redirect — when Supabase resolves auth from URL hash ─
+const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/features', '/pricing', '/about', '/contact'])
+
+const AuthRedirect = () => {
+    const { isAuthenticated, user, isLoading } = useAuthStore()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const didRedirect = useRef(false)
+
+    useEffect(() => {
+        if (isLoading || didRedirect.current) return
+        if (isAuthenticated && PUBLIC_PATHS.has(location.pathname)) {
+            didRedirect.current = true
+            navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
+        }
+    }, [isAuthenticated, isLoading, user, location.pathname, navigate])
+
+    return null
 }
 
 // ─── CRITICAL PUBLIC PAGES (no lazy loading) ───────────────────────────────
@@ -74,6 +102,7 @@ const PageLoader = () => (
 export const AppRouter = () => {
     return (
         <Suspense fallback={<PageLoader />}>
+            <AuthRedirect />
             <Routes>
                 {/* Standalone Pages */}
                 <Route path="/login" element={<LoginPage />} />

@@ -10,7 +10,9 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocations } from '@/shared/api/queries'
+import { useAdminStats, useRecentLocations, useRecentActivity } from '@/shared/api/queries'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const StatCard = ({ title, value, icon: Icon, color, delay }) => (
     <motion.div
@@ -52,7 +54,7 @@ const AdminDashboardPage = () => {
     const stats = [
         { title: 'Locations', value: locations.length > 0 ? locations.length.toLocaleString() : '—', icon: MapPin, color: 'bg-orange-500' },
         { title: 'Users', value: '1,284', icon: Users, color: 'bg-blue-500' },
-        { title: 'Subscriptions', value: '890', icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: 'Supporters', value: '890', icon: MessageSquare, color: 'bg-emerald-500' },
         { title: 'Page Views', value: '45.2k', icon: Eye, color: 'bg-purple-500' },
     ]
 
@@ -159,12 +161,43 @@ const AdminDashboardPage = () => {
                             <button onClick={() => navigate('/admin/users')} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest">Все</button>
                         </div>
                         <div className="space-y-3">
-                            {[
-                                { user: 'Dmitri S.', action: 'added photo to Pasta Bar', time: '2M AGO', initial: 'D' },
-                                { user: 'Anna K.', action: 'activated Premium subscription', time: '12M AGO', initial: 'A' },
-                                { user: 'System', action: 'database sync completed', time: '1H AGO', initial: 'S' },
-                            ].map((item, i) => (
+                            {recentActivities.length > 0 ? recentActivities.slice(0, 5).map((item, i) => (
                                 <div key={i} className="flex items-center justify-between p-2 lg:p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-[20px] border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
+                                    <div className="flex items-center gap-5 min-w-0">
+                                        <div className="w-12 h-12 rounded-[18px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center font-bold text-xs text-slate-400">
+                                            {item.user_name?.charAt(0) || 'U'}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[13px] font-bold text-slate-900 dark:text-white leading-none mb-1.5">{item.user_name || 'User'}</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate opacity-60 leading-none">{item.action_text || item.activity_type}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-slate-300 whitespace-nowrap ml-4 uppercase tracking-widest">{formatTimeAgo(item.created_at)}</span>
+                                </div>
+                            )) : (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 lg:p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-[20px] border border-transparent">
+                                        <div className="flex items-center gap-5 min-w-0">
+                                            <div className="w-12 h-12 rounded-[18px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center font-bold text-xs text-slate-400">
+                                                —
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[13px] font-bold text-slate-900 dark:text-white leading-none mb-1.5">No activity yet</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate opacity-60 leading-none">Activity will appear here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default AdminDashboardPage
                                     <div className="flex items-center gap-5 min-w-0">
                                         <div className="w-12 h-12 rounded-[18px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center font-bold text-xs text-slate-400">
                                             {item.initial}

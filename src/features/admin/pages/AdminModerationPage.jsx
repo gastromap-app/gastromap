@@ -5,50 +5,44 @@ import {
     MoreVertical, MapPin, User, Calendar, MessageSquare, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-// Mock Data for Moderation Queue
-const initialQueue = [
-    {
-        id: 1,
-        name: "The Artisan Bakery",
-        type: "Cafe",
-        city: "Berlin",
-        author: "Alex_Foodie",
-        date: "2025-03-01",
-        status: "PENDING_MODERATION",
-        insiderTip: "Get there before 9 AM for the fresh croissants.",
-        mustTry: "Almond Croissant",
-        tags: ["Cozy", "Breakfast", "Pastries"]
-    },
-    {
-        id: 2,
-        name: "Neon Ramen",
-        type: "Restaurant",
-        city: "Tokyo",
-        author: "TokyoEats",
-        date: "2025-02-28",
-        status: "PENDING_MODERATION",
-        insiderTip: "Ask for the secret spicy oil blend.",
-        mustTry: "Spicy Miso Ramen",
-        tags: ["Spicy", "Late Night", "Loud"]
-    },
-    {
-        id: 3,
-        name: "Secret Garden Bar",
-        type: "Bar",
-        city: "London",
-        author: "SarahDrinks",
-        date: "2025-02-27",
-        status: "REVISION_REQUESTED",
-        insiderTip: "Knock three times on the green door.",
-        mustTry: "Botanical Gin Fizz",
-        tags: ["Hidden", "Cocktails"],
-        adminComment: "Please provide a more exact street address or cross-street. 'Behind the green door' is too vague."
-    }
-]
+import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {
-    const [queue, setQueue] = useState(initialQueue)
+    const { data: pendingReviews = [], isLoading: loadingReviews } = usePendingReviews()
+    const { data: pendingLocations = [], isLoading: loadingLocs } = usePendingLocations()
+    const updateReviewStatus = useUpdateReviewStatusMutation()
+    const updateLocationStatus = useUpdateLocationStatusMutation()
+
+    // Combine both into a unified queue
+    const queue = [
+        ...pendingReviews.map(r => ({
+            ...r,
+            queueType: 'review',
+            name: r.location_name || 'Unknown Location',
+            type: 'Review',
+            city: r.location_city || '\u2014',
+            author: r.user_name || r.user_email || 'Anonymous',
+            date: r.created_at,
+            insiderTip: r.review_text?.substring(0, 100) || '\u2014',
+            mustTry: `Rating: ${r.rating}/5`,
+            tags: r.rating >= 4 ? ['High Rating'] : ['Needs Attention'],
+            status: 'PENDING_MODERATION'
+        })),
+        ...pendingLocations.map(l => ({
+            ...l,
+            queueType: 'location',
+            name: l.name,
+            type: l.category || 'Location',
+            city: l.city || '\u2014',
+            author: l.created_by || 'System',
+            date: l.created_at,
+            insiderTip: l.insider_tip || '\u2014',
+            mustTry: l.must_try || '\u2014',
+            tags: l.tags || [],
+            status: 'PENDING_MODERATION'
+        }))
+    ]
+
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedItem, setSelectedItem] = useState(null)
     const [revisionNote, setRevisionNote] = useState('')
@@ -302,7 +296,7 @@ export default function AdminModerationPage() {
                                         Закрыть
                                     </button>
                                     <button
-                                        onClick={() => handleApprove(selectedItem.id)}
+                                        onClick={() => handleApprove(selectedItem)}
                                         className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/30 transition-all active:scale-95"
                                     >
                                         <CheckCircle2 size={18} />
@@ -315,5 +309,7 @@ export default function AdminModerationPage() {
                 )}
             </AnimatePresence>
         </div>
+    )
+}
     )
 }

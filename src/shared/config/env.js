@@ -14,15 +14,23 @@ export const config = {
         },
     },
 
-    // ─── AI / LLM (OpenRouter — free models) ─────────────────────────────────
+    // ─── AI / LLM (OpenRouter — free models, cascading) ──────────────────────
     ai: {
         openRouterKey: import.meta.env.VITE_OPENROUTER_API_KEY ?? '',
-        model: import.meta.env.VITE_AI_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
-        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'qwen/qwen3-coder:free',
+        model: import.meta.env.VITE_AI_MODEL ?? 'mistralai/devstral-2512:free',
+        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'mistralai/mistral-small-3.1:free',
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
+        proxyUrl: '/api/ai/chat',
         get isConfigured() {
             return Boolean(this.openRouterKey)
+        },
+        get isOpenRouterConfigured() {
+            return Boolean(this.openRouterKey)
+        },
+        /** In production the key is absent from the client bundle — use the proxy */
+        get useProxy() {
+            return !this.openRouterKey && import.meta.env.PROD
         },
     },
 

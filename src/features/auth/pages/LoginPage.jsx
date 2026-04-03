@@ -142,6 +142,7 @@ const LoginPage = () => {
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
                                     id="password"
+                                    name="password"
                                     type={showPassword ? "text" : "password"}
                                     required
                                     className="w-full h-12 pl-12 pr-12 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
@@ -181,23 +182,7 @@ const LoginPage = () => {
                         </motion.button>
                     </form>
 
-                    <motion.div variants={itemVariants} className="mt-8 text-center space-y-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-bold tracking-wider">Or continue with</span></div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors font-medium text-sm text-gray-700">
-                                <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true"><path d="M12.0003 20.45c4.6657 0 8.4497-3.784 8.4497-8.4497 0-.743-.066-1.472-.191-2.179h-8.2587v4.12h4.721c-.204 1.1-.823 2.035-1.748 2.654l2.82 2.188c1.65-1.52 2.602-3.757 2.602-6.326 0-5.83-4.733-10.563-10.563-10.563-3.411 0-6.49 1.584-8.473 4.053l2.977 2.308c1.233-2.071 3.475-3.461 6.059-3.461z" fill="#EA4335" /><path d="M12.0003 3.55c3.411 0 6.49 1.584 8.473 4.053l-2.977 2.308c-1.233-2.071-3.475-3.461-6.059-3.461-4.6657 0-8.4497 3.784-8.4497 8.4497 0 .743.066 1.472.191 2.179h8.2587v-4.12h-4.721c.204-1.1.823-2.035 1.748-2.654l-2.82-2.188c-1.65 1.52-2.602 3.757-2.602 6.326 0 5.83 4.733 10.563 10.563 10.563 3.411 0 6.49-1.584 8.473-4.053l2.977-2.308c-1.233 2.071-3.475 3.461-6.059 3.461z" fill="#34A853" /><path d="M3.738 8.017l2.82 2.188c1.233-2.071 3.475-3.461 6.059-3.461-2.584 0-4.826 1.39-6.059 3.461" fill="#4285F4" /><path d="M20.258 16.483l-2.82-2.188c.925-.619 1.544-1.554 1.748-2.654" fill="#FBBC05" /></svg>
-                                Google
-                            </button>
-                            <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors font-medium text-sm text-gray-700">
-                                <svg viewBox="0 0 24 24" className="w-5 h-5 text-black" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.78 1.18-.19 2.31-.89 3.51-.84 1.54.06 2.77.79 3.45 1.89-.9.49-2.5 1.15-2.5 3.24-.04 2.5 2.18 3.39 2.25 3.41-1.25 2.59-3.09 4.25-4.59 4.49zM12.01 4.22c-.22-1.39.81-2.92 2.17-3.47.16 1.48-.95 3.01-2.17 3.47z" /></svg>
-                                Apple
-                            </button>
-                        </div>
-
+                    <motion.div variants={itemVariants} className="mt-8 text-center">
                         <p className="text-gray-500 text-sm">
                             Don't have an account? <Link to="/auth/signup" className="font-bold text-blue-600 hover:text-blue-700">Sign up free</Link>
                         </p>

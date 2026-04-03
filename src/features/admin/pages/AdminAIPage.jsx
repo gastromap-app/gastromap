@@ -8,97 +8,97 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { config } from '@/shared/config/env'
 
-// ─── Available OpenRouter free models ────────────────────────────────────────
+// ─── Available OpenRouter free models (March 2026) ──────────────────────────
 
 const FREE_MODELS = [
+    {
+        id: 'mistralai/devstral-2512:free',
+        name: 'Devstral 2',
+        provider: 'Mistral',
+        context: '256K',
+        languages: 'EN / RU / PL / UA',
+        badge: 'Recommended',
+        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
+        description: 'Best agentic model with strong tool use. Excellent for chat and recommendations.',
+        toolUse: true,
+    },
+    {
+        id: 'mistralai/mistral-small-3.1:free',
+        name: 'Mistral Small 3.1',
+        provider: 'Mistral',
+        context: '131K',
+        languages: 'EN / RU / PL / UA',
+        badge: 'Best Multilingual',
+        badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+        description: 'Reliable multilingual model with strong reasoning. Great fallback option.',
+        toolUse: true,
+    },
+    {
+        id: 'z-ai/glm-4.5-air:free',
+        name: 'GLM-4.5-Air',
+        provider: 'Z.AI',
+        context: '128K',
+        languages: 'EN / RU / PL',
+        badge: 'Fast',
+        badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
+        description: 'Fast hybrid thinking mode. Good balance of speed and quality.',
+        toolUse: true,
+    },
+    {
+        id: 'openai/gpt-oss-20b:free',
+        name: 'GPT-OSS 20B',
+        provider: 'OpenAI',
+        context: '128K',
+        languages: 'EN / multilingual',
+        badge: 'Apache 2.0',
+        badgeColor: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+        description: 'OpenAI open-weight model. Strong function calling and reasoning.',
+        toolUse: true,
+    },
+    {
+        id: 'nvidia/nemotron-nano-9b-v2:free',
+        name: 'Nemotron Nano 9B v2',
+        provider: 'NVIDIA',
+        context: '128K',
+        languages: 'EN / multilingual',
+        badge: 'Fastest',
+        badgeColor: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        description: 'Lightning-fast responses. Perfect for quick queries.',
+        toolUse: true,
+    },
+    {
+        id: 'minimax/minimax-m2.5:free',
+        name: 'MiniMax M2.5',
+        provider: 'MiniMax',
+        context: '256K',
+        languages: 'EN / multilingual',
+        badge: 'Large Context',
+        badgeColor: 'bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400',
+        description: 'Large context window for long conversations.',
+        toolUse: true,
+    },
     {
         id: 'meta-llama/llama-3.3-70b-instruct:free',
         name: 'Llama 3.3 70B',
         provider: 'Meta',
         context: '131K',
         languages: 'EN / RU / PL',
-        badge: 'Recommended',
-        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
-        description: 'Best balance of quality and speed. Excellent for chat, recommendations, and tool use.',
+        badge: 'Reliable',
+        badgeColor: 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400',
+        description: 'Well-known model. May be rate-limited during peak hours.',
         toolUse: true,
     },
     {
         id: 'qwen/qwen3-coder:free',
-        name: 'Qwen3 480B',
+        name: 'Qwen3 Coder',
         provider: 'Alibaba',
         context: '262K',
-        languages: '100+ incl. RU / PL',
-        badge: 'Best Multilingual',
-        badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-        description: 'Largest context window. Superior multilingual support for Russian, Polish and more.',
-        toolUse: true,
-    },
-    {
-        id: 'openai/gpt-oss-120b:free',
-        name: 'GPT-OSS 120B',
-        provider: 'OpenAI',
-        context: '131K',
-        languages: 'EN / multilingual',
-        badge: 'Best Tool Use',
-        badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
-        description: 'Optimized for tool use, function calling and complex reasoning tasks.',
-        toolUse: true,
-    },
-    {
-        id: 'google/gemma-3-27b-it:free',
-        name: 'Gemma 3 27B',
-        provider: 'Google',
-        context: '131K',
-        languages: 'EN / multilingual',
-        badge: 'Fast',
-        badgeColor: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
-        description: 'Lightweight and fast. Good for quick responses and simple queries.',
-        toolUse: false,
-    },
-    {
-        id: 'deepseek/deepseek-r1:free',
-        name: 'DeepSeek R1',
-        provider: 'DeepSeek',
-        context: '131K',
-        languages: 'EN / ZH',
-        badge: 'Reasoning',
+        languages: '100+ incl. RU / PL / UA',
+        badge: 'Large Context',
         badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
-        description: 'Strong chain-of-thought reasoning. Best for complex analytical queries.',
-        toolUse: false,
-    },
-    // ─── NEW: Stable free models ─────────────────────────────────────────────
-    {
-        id: 'stepfun/step-3.5-flash:free',
-        name: 'Step 3.5 Flash',
-        provider: 'StepFun',
-        context: '256K',
-        languages: 'EN / multilingual',
-        badge: 'Fastest',
-        badgeColor: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400',
-        description: 'Lightning-fast responses (1-2 sec). Perfect for quick chats and simple queries.',
-        toolUse: true,
-    },
-    {
-        id: 'nvidia/nemotron-3-nano-30b-a3b:free',
-        name: 'Nemotron 3 Nano',
-        provider: 'NVIDIA',
-        context: '256K',
-        languages: 'EN / multilingual',
-        badge: 'Balanced',
-        badgeColor: 'bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400',
-        description: 'Great balance of speed and quality (3-5 sec). Reliable for everyday use.',
-        toolUse: true,
-    },
-    {
-        id: 'qwen/qwen3-next-80b-a3b-instruct:free',
-        name: 'Qwen3 Next 80B',
-        provider: 'Alibaba',
-        context: '262K',
-        languages: '100+ incl. RU / PL',
-        badge: 'Quality',
-        badgeColor: 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400',
-        description: 'High-quality responses with excellent multilingual support. Best for detailed recommendations.',
+        description: 'Largest context window. Strong multilingual. Often rate-limited.',
         toolUse: true,
     },
 ]
@@ -249,7 +249,8 @@ const AdminAIPage = () => {
 
     // ── Test model call (simple direct fetch, no tool use, just verify connectivity)
     const handleTest = async () => {
-        if (!testMessage.trim() || !apiKey) return
+        const useProxy = config.ai.useProxy
+        if (!testMessage.trim() || (!apiKey && !useProxy)) return
 
         setTesting(true)
         setTestResult(null)
@@ -258,14 +259,17 @@ const AdminAIPage = () => {
         const startTime = performance.now()
 
         try {
-            const response = await fetch(OPENROUTER_URL, {
+            const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
+            const headers = { 'Content-Type': 'application/json' }
+            if (!useProxy) {
+                headers['Authorization'] = `Bearer ${apiKey}`
+                headers['HTTP-Referer'] = window.location.origin
+                headers['X-Title'] = 'GastroMap Admin'
+            }
+
+            const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': window.location.origin,
-                    'X-Title': 'GastroMap Admin',
-                    'Content-Type': 'application/json',
-                },
+                headers,
                 body: JSON.stringify({
                     model: modelId,
                     messages: [
@@ -285,12 +289,14 @@ const AdminAIPage = () => {
 
             const data = await response.json()
             const text = data.choices?.[0]?.message?.content || '(no response)'
+            // Show which model the proxy actually used (may differ from requested due to cascade)
+            const actualModel = data._model_used || modelId
 
             setTestResult({
                 ok: true,
                 text,
                 latency,
-                model: modelId,
+                model: actualModel,
             })
         } catch (err) {
             const latency = Math.round(performance.now() - startTime)
@@ -558,10 +564,10 @@ const AdminAIPage = () => {
                         />
                         <button
                             onClick={handleTest}
-                            disabled={testing || !testMessage.trim() || !apiKey}
+                            disabled={testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)}
                             className={cn(
                                 'px-6 py-3 rounded-xl font-bold text-white flex items-center gap-2 transition-all active:scale-95',
-                                testing || !testMessage.trim() || !apiKey
+                                testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)
                                     ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
                                     : 'bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20'
                             )}

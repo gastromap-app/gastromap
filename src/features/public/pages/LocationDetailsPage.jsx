@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -7,7 +7,7 @@ import {
     Calendar, Users, Lock, Sparkles, Lightbulb,
     UtensilsCrossed, Camera, User, ChevronRight, CheckCircle2,
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
-    Instagram, Facebook, Twitter, ExternalLink, Globe
+    Instagram, Facebook, Twitter, ExternalLink, Globe, X
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
@@ -17,9 +17,9 @@ import { translate } from '@/utils/translation'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
-import { useReviewsStore } from '@/features/dashboard/hooks/useReviewsStore'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useCreateReviewMutation, useLocationReviews } from '@/shared/api/queries'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -42,10 +42,29 @@ const LocationDetailsPage = () => {
     const isVisited = prefs.lastVisited?.includes(location?.id)
     const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
 
-    // Reviews
-    const { getReviews, getAggregate, addReview } = useReviewsStore()
-    const reviews = getReviews(location?.id)
-    const aggregate = getAggregate(location?.id)
+    // Reviews — Supabase
+    const { data: allReviews = [] } = useLocationReviews(location?.id)
+    const createReview = useCreateReviewMutation()
+    const reviews = useMemo(
+        () => allReviews.filter((r) => r.status === 'published'),
+        [allReviews]
+    )
+
+    // Compute aggregate from Supabase reviews
+    const aggregate = useMemo(() => {
+        if (!reviews.length) return { average: 0, count: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }
+        const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        reviews.forEach((r) => {
+            const rating = Math.round(r.rating)
+            if (dist[rating] !== undefined) dist[rating]++
+        })
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        return {
+            average: Math.round(avg * 10) / 10,
+            count: reviews.length,
+            distribution: dist,
+        }
+    }, [reviews])
 
     const [activeTab, setActiveTab] = useState('Overview')
     const [showScrollHint, setShowScrollHint] = useState(true)
@@ -352,11 +371,12 @@ const LocationDetailsPage = () => {
     }
 
     const handleSubmitReview = () => {
-        if (!newReview.text.trim()) return
-        addReview(location.id, {
-            authorName: user?.name || 'Anonymous',
+        if (!newReview.text.trim() || !user?.id) return
+        createReview.mutate({
+            userId: user.id,
+            locationId: location.id,
             rating: newReview.rating,
-            text: newReview.text,
+            reviewText: newReview.text,
         })
         setNewReview({ rating: 5, text: '' })
         setIsWritingReview(false)
@@ -468,15 +488,10 @@ const LocationDetailsPage = () => {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <p className={`font-black ${textStyle}`}>{rev.authorName}</p>
-                                                {rev.verified && (
-                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                                        Verified
-                                                    </span>
-                                                )}
+                                                <p className={`font-black ${textStyle}`}>{rev.profiles?.name || rev.user_name || 'Anonymous'}</p>
                                             </div>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
-                                                {new Date(rev.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                {new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                             </p>
                                         </div>
                                     </div>
@@ -486,7 +501,7 @@ const LocationDetailsPage = () => {
                                         ))}
                                     </div>
                                 </div>
-                                <p className={`leading-relaxed text-sm font-medium ${subTextStyle}`}>{rev.text}</p>
+                                <p className={`leading-relaxed text-sm font-medium ${subTextStyle}`}>{rev.review_text}</p>
                             </motion.div>
                         ))}
                     </AnimatePresence>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
     MapPin, Users, BarChart3, ArrowLeft, LogOut,
-    LayoutDashboard, CreditCard, Bot, ChevronRight,
+    LayoutDashboard, Heart, Bot, ChevronRight,
     Menu, X, Bell, Search, Sun, Moon, PanelsTopLeft,
     ChevronLeft, Settings, HelpCircle, Activity, Shield, ShieldCheck
 } from 'lucide-react'
@@ -30,7 +30,7 @@ export default function AdminLayout() {
         { icon: LayoutDashboard, label: 'Overview',       path: '/admin' },
         { icon: MapPin,          label: 'Locations',      path: '/admin/locations' },
         { icon: Users,           label: 'Users',          path: '/admin/users' },
-        { icon: CreditCard,      label: 'Subscriptions',  path: '/admin/subscriptions' },
+        { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
         { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
         { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
         { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },

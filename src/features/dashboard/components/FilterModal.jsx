@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Star, RotateCcw } from 'lucide-react'
+import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
@@ -218,10 +218,10 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Best Time to Visit</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
-                                        { id: 'morning',    label: 'Morning', icon: '🌅' },
-                                        { id: 'day',        label: 'Day',     icon: '☀️' },
-                                        { id: 'evening',    label: 'Evening', icon: '🌙' },
-                                        { id: 'late_night', label: 'Night',   icon: '✨' },
+                                        { id: 'morning',    label: 'Morning', Icon: Sunrise, iconClass: 'text-orange-400' },
+                                        { id: 'day',        label: 'Day',     Icon: Sun, iconClass: 'text-yellow-500' },
+                                        { id: 'evening',    label: 'Evening', Icon: Sunset, iconClass: 'text-orange-500' },
+                                        { id: 'late_night', label: 'Night',   Icon: Sparkles, iconClass: 'text-indigo-400' },
                                     ].map(time => {
                                         const isActive = selectedFeatures.includes(time.id)
                                         return (
@@ -230,7 +230,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                 onClick={() => toggleFeature(time.id)}
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
-                                                <span className="text-xl">{time.icon}</span>
+                                                <time.Icon size={20} className={time.iconClass} />
                                                 <span className="text-[11px] font-bold">{time.label}</span>
                                             </button>
                                         )

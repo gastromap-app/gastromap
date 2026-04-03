@@ -5,7 +5,7 @@ import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
-import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck } from 'lucide-react'
+import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import MapTab from '../components/MapTab'
 import FilterModal from '../components/FilterModal'
@@ -75,15 +75,13 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                         {loc.subtitle || 'Authentic flavors and vibes'}
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                        {/* Best Time Indicator - Subtle Emoji */}
+                        {/* Best Time Indicator - SVG Icons */}
                         {loc.best_time && loc.best_time.length > 0 && (
-                            <div className="flex items-center gap-1 mr-1">
-                                <span className="text-[10px]" title="Best time to visit">
-                                    {loc.best_time.includes('morning') && '🌅'}
-                                    {loc.best_time.includes('day') && '☀️'}
-                                    {loc.best_time.includes('evening') && '🌙'}
-                                    {loc.best_time.includes('late_night') && '✨'}
-                                </span>
+                            <div className="flex items-center gap-1 mr-1" title="Best time to visit">
+                                {loc.best_time.includes('morning') && <Sunrise size={12} className="text-orange-400" />}
+                                {loc.best_time.includes('day') && <Sun size={12} className="text-yellow-500" />}
+                                {loc.best_time.includes('evening') && <Sunset size={12} className="text-orange-500" />}
+                                {loc.best_time.includes('late_night') && <Sparkles size={12} className="text-indigo-400" />}
                             </div>
                         )}
 

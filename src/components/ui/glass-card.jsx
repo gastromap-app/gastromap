@@ -9,8 +9,12 @@ const GlassCard = React.forwardRef(({ className, children, hoverEffect = true, .
         <Component
             ref={ref}
             className={cn(
-                "bg-white/60 backdrop-blur-md border border-white/40 shadow-sm rounded-2xl relative overflow-hidden",
-                hoverEffect && "hover:bg-white/80 hover:shadow-md cursor-pointer transition-all duration-300",
+                "backdrop-blur-md border shadow-sm rounded-2xl relative overflow-hidden transition-all duration-200",
+                // Light mode: white background with good contrast
+                "bg-white/80 border-gray-200/50",
+                // Dark mode: darker background
+                "dark:bg-black/40 dark:border-white/10",
+                hoverEffect && "hover:bg-white/90 dark:hover:bg-black/60 cursor-pointer hover:shadow-md",
                 className
             )}
             whileHover={props.onClick && hoverEffect ? { y: -4 } : {}}
@@ -18,7 +22,7 @@ const GlassCard = React.forwardRef(({ className, children, hoverEffect = true, .
             {...props}
         >
             {/* Subtle shine for light mode */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
 
             {children}
         </Component>

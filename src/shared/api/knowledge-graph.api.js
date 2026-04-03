@@ -1,669 +1,426 @@
 /**
- * Knowledge Graph API — Семантический поиск и онтология
+ * Knowledge Graph API - Cuisines, Dishes, Ingredients with semantic embeddings
  * 
- * Использует pgvector для семантического поиска
- * и Knowledge Graph для связей между сущностями
+ * This enables Gastro AI to have deep culinary knowledge for better recommendations.
+ * Uses Supabase with pgvector for semantic search.
  */
 
-import { supabase, ApiError } from './client'
-import { config } from '@/shared/config/env'
+import { supabase } from './client'
+import { simulateDelay, ApiError } from './client'
 
-const USE_SUPABASE = config.supabase.isConfigured
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EMBEDDINGS: Генерация векторных представлений
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 /**
- * Сгенерировать embedding для текста
- * @param {string} text - Текст для эмбеддинга
- * @returns {Promise<number[]>} - Вектор размерности 768
+ * @typedef {Object} Cuisine
+ * @property {string} id
+ * @property {string} name - e.g. "Italian", "Japanese"
+ * @property {string} description
+ * @property {string[]} aliases - e.g. ["Italiana", "Italia"]
+ * @property {string[]} typical_dishes - e.g. ["pasta", "pizza", "risotto"]
+ * @property {string[]} key_ingredients - e.g. ["olive oil", "tomatoes", "parmesan"]
+ * @property {string} flavor_profile - e.g. "herbal, savory, rich"
+ * @property {string} region - e.g. "Mediterranean"
+ * @property {number[]} embedding - Vector embedding for semantic search
+ * @property {string} created_at
+ * @property {string} updated_at
  */
-export async function generateEmbedding(text) {
-    if (!config.ai.openRouterKey) {
-        throw new ApiError('OpenRouter API key not configured', 500, 'NO_API_KEY')
+
+/**
+ * @typedef {Object} Dish
+ * @property {string} id
+ * @property {string} name - e.g. "Carbonara"
+ * @property {string} cuisine_id
+ * @property {string} description
+ * @property {string[]} ingredients - Key ingredients
+ * @property {string} preparation_style - e.g. "pasta", "grilled", "raw"
+ * @property {string[]} dietary_tags - e.g. ["vegetarian", "gluten-free"]
+ * @property {string} flavor_notes - e.g. "creamy, rich, savory"
+ * @property {string} best_pairing - e.g. "white wine, crusty bread"
+ * @property {number[]} embedding
+ * @property {string} created_at
+ */
+
+/**
+ * @typedef {Object} Ingredient
+ * @property {string} id
+ * @property {string} name - e.g. "Truffle Oil"
+ * @property {string} category - e.g. "oil", "spice", "vegetable"
+ * @property {string} flavor_profile - e.g. "earthy, intense, aromatic"
+ * @property {string[]} common_pairings - Ingredients that go well with it
+ * @property {string[]} dietary_info - e.g. ["vegan", "gluten-free"]
+ * @property {string} season - e.g. "fall", "year-round"
+ * @property {number[]} embedding
+ * @property {string} created_at
+ */
+
+// ─── Mock Data for Development ──────────────────────────────────────────────
+
+const mockCuisines = [
+    {
+        id: '1',
+        name: 'Italian',
+        description: 'Classic Italian cuisine known for regional diversity, fresh ingredients, and simple preparations that highlight quality.',
+        aliases: ['Italiana', 'Italia'],
+        typical_dishes: ['pasta', 'pizza', 'risotto', 'osso buco', 'tiramisu'],
+        key_ingredients: ['olive oil', 'tomatoes', 'garlic', 'basil', 'parmesan', 'mozzarella'],
+        flavor_profile: 'herbal, savory, rich',
+        region: 'Mediterranean',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    },
+    {
+        id: '2',
+        name: 'Japanese',
+        description: 'Refined cuisine emphasizing seasonal ingredients, precise techniques, and beautiful presentation.',
+        aliases: ['Nihon', 'Japan'],
+        typical_dishes: ['sushi', 'ramen', 'tempura', 'sashimi', 'tonkatsu'],
+        key_ingredients: ['soy sauce', 'miso', 'rice', 'fish', 'seaweed', 'wasabi'],
+        flavor_profile: 'umami, delicate, balanced',
+        region: 'East Asian',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    },
+    {
+        id: '3',
+        name: 'French',
+        description: 'Sophisticated cuisine with emphasis on technique, sauces, and high-quality ingredients.',
+        aliases: ['Française', 'France'],
+        typical_dishes: ['coq au vin', 'boeuf bourguignon', 'croissant', 'crème brûlée', 'ratatouille'],
+        key_ingredients: ['butter', 'cream', 'wine', 'herbs', 'cheese'],
+        flavor_profile: 'rich, buttery, complex',
+        region: 'Western European',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    },
+    {
+        id: '4',
+        name: 'Polish',
+        description: 'Hearty Eastern European cuisine with warming soups, dumplings, and preserved meats.',
+        aliases: ['Polska', 'Poland'],
+        typical_dishes: ['pierogi', 'bigos', 'żurek', 'kielbasa', 'placki ziemniaczane'],
+        key_ingredients: ['potatoes', 'cabbage', 'mushrooms', 'pork', 'sour cream'],
+        flavor_profile: 'hearty, savory, comforting',
+        region: 'Eastern European',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    },
+]
+
+const mockDishes = [
+    {
+        id: '1',
+        name: 'Carbonara',
+        cuisine_id: '1',
+        description: 'Classic Roman pasta dish with eggs, pecorino, guanciale, and black pepper.',
+        ingredients: ['spaghetti', 'guanciale', 'eggs', 'pecorino romano', 'black pepper'],
+        preparation_style: 'pasta',
+        dietary_tags: [],
+        flavor_notes: 'creamy, rich, savory, peppery',
+        best_pairing: 'crisp white wine, crusty bread',
+        created_at: new Date().toISOString(),
+    },
+    {
+        id: '2',
+        name: 'Sushi Omakase',
+        cuisine_id: '2',
+        description: 'Chef\'s choice sushi selection, showcasing the freshest fish of the day.',
+        ingredients: ['rice', 'fish', 'nori', 'wasabi', 'soy sauce'],
+        preparation_style: 'raw',
+        dietary_tags: ['gluten-free option'],
+        flavor_notes: 'fresh, clean, umami',
+        best_pairing: 'sake, green tea',
+        created_at: new Date().toISOString(),
+    },
+]
+
+const mockIngredients = [
+    {
+        id: '1',
+        name: 'Truffle Oil',
+        category: 'oil',
+        flavor_profile: 'earthy, intense, aromatic, luxurious',
+        common_pairings: ['pasta', 'risotto', 'eggs', 'potatoes', 'mushrooms'],
+        dietary_info: ['vegan', 'gluten-free'],
+        season: 'year-round',
+        created_at: new Date().toISOString(),
+    },
+    {
+        id: '2',
+        name: 'Yuzu',
+        category: 'citrus',
+        flavor_profile: 'floral, tart, aromatic, complex',
+        common_pairings: ['fish', 'cocktails', 'desserts', 'sauces'],
+        dietary_info: ['vegan', 'gluten-free'],
+        season: 'fall-winter',
+        created_at: new Date().toISOString(),
+    },
+]
+
+// ─── Cuisines API ───────────────────────────────────────────────────────────
+
+export async function getCuisines() {
+    if (!supabase) return mockCuisines
+    const { data, error } = await supabase
+        .from('knowledge_cuisines')
+        .select('*')
+        .order('name', { ascending: true })
+    if (error) {
+        console.warn('[KnowledgeGraph] getCuisines error, using mock:', error.message)
+        return mockCuisines
     }
-
-    try {
-        // Используем бесплатную модель для генерации эмбеддингов
-        // В production лучше использовать специализированный embedding API
-        const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${config.ai.openRouterKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'X-Title': 'GastroMap Knowledge Graph',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'openai/text-embedding-3-small',
-                input: text,
-                dimensions: 768,
-            }),
-        })
-
-        if (!response.ok) {
-            const error = await response.text()
-            throw new ApiError(`Embedding API error: ${error}`, response.status)
-        }
-
-        const data = await response.json()
-        return data.data?.[0]?.embedding || []
-    } catch (error) {
-        console.error('[generateEmbedding] Error:', error)
-        throw error
-    }
+    return data || []
 }
 
-/**
- * Сгенерировать embedding для ресторана на основе всех полей
- * @param {Object} location - Объект ресторана
- * @returns {Promise<number[]>} - Вектор
- */
-export async function generateLocationEmbedding(location) {
-    const text = [
-        location.title,
-        location.description,
-        location.cuisine,
-        location.city,
-        location.country,
-        ...(location.vibe || []),
-        ...(location.tags || []),
-        ...(location.ai_keywords || []),
-        location.ai_context,
-        location.insider_tip,
-    ].filter(Boolean).join(' | ')
-
-    return generateEmbedding(text)
+export async function getCuisineById(id) {
+    if (!supabase) return mockCuisines.find(c => c.id === id)
+    const { data, error } = await supabase
+        .from('knowledge_cuisines')
+        .select('*')
+        .eq('id', id)
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
+    return data
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SEMANTIC SEARCH: Семантический поиск
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Семантический поиск ресторанов
- * @param {string} query - Поисковый запрос
- * @param {Object} options - Опции
- * @returns {Promise<Array>} - Результаты поиска
- */
-export async function semanticSearch(query, options = {}) {
-    if (!USE_SUPABASE) {
-        throw new ApiError('Supabase not configured', 500, 'NO_SUPABASE')
+export async function createCuisine(cuisine) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...cuisine, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
-
-    const {
-        limit = 20,
-        threshold = 0.7,
-        filters = {},
-    } = options
-
-    try {
-        // 1. Генерируем embedding для запроса
-        const queryEmbedding = await generateEmbedding(query)
-
-        // 2. Ищем похожие рестораны через RPC функцию
-        const { data, error } = await supabase.rpc('search_locations_by_embedding', {
-            query_embedding: queryEmbedding,
-            match_threshold: threshold,
-            match_count: limit,
-        })
-
-        if (error) {
-            console.error('[semanticSearch] Supabase error:', error)
-            throw new ApiError(`Search error: ${error.message}`, 500, error.code)
-        }
-
-        // 3. Применяем дополнительные фильтры если есть
-        let results = data || []
-
-        if (filters.category && filters.category !== 'All') {
-            results = results.filter(r => r.category === filters.category)
-        }
-
-        if (filters.city) {
-            results = results.filter(r => r.city?.toLowerCase().includes(filters.city.toLowerCase()))
-        }
-
-        if (filters.minRating != null) {
-            results = results.filter(r => r.rating >= filters.minRating)
-        }
-
-        if (filters.priceLevel?.length) {
-            results = results.filter(r => filters.priceLevel.includes(r.price_level))
-        }
-
-        return results
-    } catch (error) {
-        console.error('[semanticSearch] Error:', error)
-        throw error
-    }
+    const { data, error } = await supabase
+        .from('knowledge_cuisines')
+        .insert([cuisine])
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    return data
 }
 
-/**
- * Найти похожие рестораны
- * @param {string} locationId - ID ресторана для поиска похожих
- * @param {Object} options - Опции
- * @returns {Promise<Array>} - Похожие рестораны
- */
-export async function findSimilarLocations(locationId, options = {}) {
-    if (!USE_SUPABASE) {
-        throw new ApiError('Supabase not configured', 500, 'NO_SUPABASE')
+export async function updateCuisine(id, updates) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...updates, id }
     }
-
-    const {
-        threshold = 0.8,
-        limit = 10,
-    } = options
-
-    try {
-        const { data, error } = await supabase.rpc('find_similar_locations', {
-            target_location_id: locationId,
-            similarity_threshold: threshold,
-            max_results: limit,
-        })
-
-        if (error) {
-            console.error('[findSimilarLocations] Supabase error:', error)
-            throw new ApiError(`Search error: ${error.message}`, 500, error.code)
-        }
-
-        return data || []
-    } catch (error) {
-        console.error('[findSimilarLocations] Error:', error)
-        throw error
-    }
+    const { data, error } = await supabase
+        .from('knowledge_cuisines')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    return data
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// KNOWLEDGE GRAPH: Онтология
-// ─────────────────────────────────────────────────────────────────────────────
+export async function deleteCuisine(id) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { success: true }
+    }
+    const { error } = await supabase
+        .from('knowledge_cuisines')
+        .delete()
+        .eq('id', id)
+    if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    return { success: true }
+}
+
+// ─── Dishes API ─────────────────────────────────────────────────────────────
+
+export async function getDishes(cuisineId = null) {
+    if (!supabase) {
+        return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
+    }
+    let query = supabase.from('knowledge_dishes').select('*, cuisine:knowledge_cuisines(name)')
+    if (cuisineId) query = query.eq('cuisine_id', cuisineId)
+    const { data, error } = await query.order('name', { ascending: true })
+    if (error) {
+        console.warn('[KnowledgeGraph] getDishes error, using mock:', error.message)
+        return mockDishes
+    }
+    return data || []
+}
+
+export async function createDish(dish) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...dish, id: Date.now().toString(), created_at: new Date().toISOString() }
+    }
+    const { data, error } = await supabase
+        .from('knowledge_dishes')
+        .insert([dish])
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    return data
+}
+
+export async function updateDish(id, updates) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...updates, id }
+    }
+    const { data, error } = await supabase
+        .from('knowledge_dishes')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    return data
+}
+
+export async function deleteDish(id) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { success: true }
+    }
+    const { error } = await supabase
+        .from('knowledge_dishes')
+        .delete()
+        .eq('id', id)
+    if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    return { success: true }
+}
+
+// ─── Ingredients API ────────────────────────────────────────────────────────
+
+export async function getIngredients(category = null) {
+    if (!supabase) {
+        return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
+    }
+    let query = supabase.from('knowledge_ingredients').select('*')
+    if (category) query = query.eq('category', category)
+    const { data, error } = await query.order('name', { ascending: true })
+    if (error) {
+        console.warn('[KnowledgeGraph] getIngredients error, using mock:', error.message)
+        return mockIngredients
+    }
+    return data || []
+}
+
+export async function createIngredient(ingredient) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...ingredient, id: Date.now().toString(), created_at: new Date().toISOString() }
+    }
+    const { data, error } = await supabase
+        .from('knowledge_ingredients')
+        .insert([ingredient])
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    return data
+}
+
+export async function updateIngredient(id, updates) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...updates, id }
+    }
+    const { data, error } = await supabase
+        .from('knowledge_ingredients')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    return data
+}
+
+export async function deleteIngredient(id) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { success: true }
+    }
+    const { error } = await supabase
+        .from('knowledge_ingredients')
+        .delete()
+        .eq('id', id)
+    if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    return { success: true }
+}
+
+// ─── Semantic Search (requires pgvector) ─────────────────────────────────────
 
 /**
- * Получить все кухни с иерархией
- * @returns {Promise<Array>} - Список кухонь
+ * Search cuisines semantically using vector similarity.
+ * Falls back to text search if embeddings not available.
  */
-export async function getCuisinesTree() {
-    if (!USE_SUPABASE) {
-        return []
+export async function searchCuisinesSemantic(query, limit = 5) {
+    if (!supabase) {
+        // Fallback to text search on mock data
+        const q = query.toLowerCase()
+        return mockCuisines.filter(c =>
+            c.name.toLowerCase().includes(q) ||
+            c.aliases?.some(a => a.toLowerCase().includes(q)) ||
+            c.typical_dishes?.some(d => d.toLowerCase().includes(q)) ||
+            c.key_ingredients?.some(i => i.toLowerCase().includes(q))
+        ).slice(0, limit)
     }
 
-    try {
-        const { data, error } = await supabase
-            .from('cuisines')
+    // Try semantic search via RPC function
+    const { data, error } = await supabase.rpc('search_cuisines_semantic', {
+        query_text: query,
+        match_limit: limit
+    })
+
+    if (error) {
+        // Fallback to basic text search
+        const { data: textData } = await supabase
+            .from('knowledge_cuisines')
             .select('*')
-            .order('name')
-
-        if (error) throw error
-
-        // Строим иерархию
-        const byId = {}
-        const roots = []
-
-        data.forEach(cuisine => {
-            byId[cuisine.id] = { ...cuisine, children: [] }
-        })
-
-        data.forEach(cuisine => {
-            if (cuisine.parent_id && byId[cuisine.parent_id]) {
-                byId[cuisine.parent_id].children.push(byId[cuisine.id])
-            } else if (!cuisine.parent_id) {
-                roots.push(byId[cuisine.id])
-            }
-        })
-
-        return roots
-    } catch (error) {
-        console.error('[getCuisinesTree] Error:', error)
-        return []
+            .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+            .limit(limit)
+        return textData || []
     }
+
+    return data || []
 }
 
 /**
- * Поиск кухонь по названию
- * @param {string} query - Поисковый запрос
- * @returns {Promise<Array>} - Найденные кухни
+ * Get cuisine context for AI - enriches AI responses with culinary knowledge
  */
-export async function searchCuisines(query) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
+export async function getAIContextForQuery(query) {
     try {
-        const { data, error } = await supabase
-            .from('cuisines')
-            .select('*')
-            .ilike('name', `%${query}%`)
-            .limit(20)
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[searchCuisines] Error:', error)
-        return []
-    }
-}
-
-/**
- * Получить блюда по кухне
- * @param {string} cuisineId - ID кухни
- * @returns {Promise<Array>} - Список блюд
- */
-export async function getDishesByCuisine(cuisineId) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('dishes')
-            .select(`
-                *,
-                ingredients:dish_ingredients(
-                    ingredient:ingredients(*)
-                )
-            `)
-            .eq('cuisine_id', cuisineId)
-            .order('name')
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[getDishesByCuisine] Error:', error)
-        return []
-    }
-}
-
-/**
- * Поиск блюд по ингредиентам
- * @param {string[]} ingredientNames - Названия ингредиентов
- * @returns {Promise<Array>} - Найденные блюда
- */
-export async function searchDishesByIngredients(ingredientNames) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('dishes')
-            .select(`
-                *,
-                cuisine:cuisines(name),
-                ingredients:dish_ingredients(
-                    ingredient:ingredients(name, category)
-                )
-            `)
-            .in('ingredients', ingredientNames)
-            .limit(50)
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[searchDishesByIngredients] Error:', error)
-        return []
-    }
-}
-
-/**
- * Получить настроения (vibes)
- * @returns {Promise<Array>} - Список настроений
- */
-export async function getVibes() {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('vibes')
-            .select('*')
-            .order('name')
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[getVibes] Error:', error)
-        return []
-    }
-}
-
-/**
- * Получить теги
- * @param {string} category - Категория тегов (опционально)
- * @returns {Promise<Array>} - Список тегов
- */
-export async function getTags(category = null) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        let query = supabase.from('tags').select('*')
-
-        if (category) {
-            query = query.eq('category', category)
-        }
-
-        const { data, error } = await query.order('name')
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[getTags] Error:', error)
-        return []
-    }
-}
-
-/**
- * Получить ингредиенты по категории
- * @param {string} category - Категория
- * @returns {Promise<Array>} - Список ингредиентов
- */
-export async function getIngredientsByCategory(category) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('ingredients')
-            .select('*')
-            .eq('category', category)
-            .order('name')
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[getIngredientsByCategory] Error:', error)
-        return []
-    }
-}
-
-/**
- * Поиск ингредиентов по названию
- * @param {string} query - Поисковый запрос
- * @returns {Promise<Array>} - Найденные ингредиенты
- */
-export async function searchIngredients(query) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('ingredients')
-            .select('*')
-            .ilike('name', `%${query}%`)
-            .limit(20)
-
-        if (error) throw error
-        return data || []
-    } catch (error) {
-        console.error('[searchIngredients] Error:', error)
-        return []
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GRAPH QUERIES: Сложные запросы к Knowledge Graph
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Найти рестораны по блюду или ингредиенту
- * @param {string} searchQuery - "паста с трюфелями", "веганский бургер"
- * @returns {Promise<Array>} - Рестораны с блюдами
- */
-export async function findRestaurantsByDish(searchQuery) {
-    if (!USE_SUPABASE) {
-        return []
-    }
-
-    try {
-        // 1. Ищем ингредиенты по запросу
-        const ingredients = await searchIngredients(searchQuery)
-        const ingredientIds = ingredients.map(i => i.id)
-
-        if (ingredientIds.length === 0) {
-            return []
-        }
-
-        // 2. Находим блюда с этими ингредиентами
-        const { data: dishes, error: dishesError } = await supabase
-            .from('dish_ingredients')
-            .select('dish_id')
-            .in('ingredient_id', ingredientIds)
-
-        if (dishesError) throw dishesError
-
-        const dishIds = [...new Set(dishes.map(d => d.dish_id))]
-
-        if (dishIds.length === 0) {
-            return []
-        }
-
-        // 3. Находим рестораны с этими блюдами
-        const { data: locations, error: locationsError } = await supabase
-            .from('location_dishes')
-            .select(`
-                location_id,
-                dish_id,
-                is_signature,
-                price,
-                locations:location_id (
-                    id,
-                    title,
-                    description,
-                    city,
-                    rating,
-                    price_level,
-                    image
-                )
-            `)
-            .in('dish_id', dishIds)
-            .eq('available', true)
-
-        if (locationsError) throw locationsError
-
-        return locations || []
-    } catch (error) {
-        console.error('[findRestaurantsByDish] Error:', error)
-        return []
-    }
-}
-
-/**
- * Получить полный профиль ресторана с KG данными
- * @param {string} locationId - ID ресторана
- * @returns {Promise<Object>} - Полный профиль
- */
-export async function getLocationWithKG(locationId) {
-    if (!USE_SUPABASE) {
-        return null
-    }
-
-    try {
-        // Получаем основной профиль
-        const { data: location, error: locError } = await supabase
-            .from('locations')
-            .select('*')
-            .eq('id', locationId)
-            .single()
-
-        if (locError || !location) {
-            throw new ApiError('Location not found', 404, 'LOCATION_NOT_FOUND')
-        }
-
-        // Получаем кухни
-        const { data: cuisines } = await supabase
-            .from('location_cuisines')
-            .select(`
-                is_primary,
-                confidence_score,
-                cuisine:cuisines(*)
-            `)
-            .eq('location_id', locationId)
-
-        // Получаем блюда
-        const { data: dishes } = await supabase
-            .from('location_dishes')
-            .select(`
-                is_signature,
-                price,
-                available,
-                dish:dishes(*)
-            `)
-            .eq('location_id', locationId)
-
-        // Получаем настроения
-        const { data: vibes } = await supabase
-            .from('location_vibes')
-            .select(`
-                strength,
-                vibe:vibes(*)
-            `)
-            .eq('location_id', locationId)
-
-        // Получаем теги
-        const { data: tags } = await supabase
-            .from('location_tags')
-            .select(`
-                tag:tags(*)
-            `)
-            .eq('location_id', locationId)
+        const cuisines = await searchCuisinesSemantic(query, 3)
+        
+        if (cuisines.length === 0) return null
 
         return {
-            ...location,
-            cuisines: cuisines || [],
-            dishes: dishes || [],
-            vibes: vibes || [],
-            tags: tags || [],
+            relevantCuisines: cuisines.map(c => ({
+                name: c.name,
+                typical_dishes: c.typical_dishes,
+                key_ingredients: c.key_ingredients,
+                flavor_profile: c.flavor_profile,
+            })),
+            contextNote: `Based on your query, relevant culinary traditions include: ${cuisines.map(c => c.name).join(', ')}.`,
         }
-    } catch (error) {
-        console.error('[getLocationWithKG] Error:', error)
-        throw error
+    } catch (err) {
+        console.warn('[KnowledgeGraph] getAIContext error:', err.message)
+        return null
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN: Управление онтологией
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Statistics ─────────────────────────────────────────────────────────────
 
-/**
- * Создать новую кухню
- * @param {Object} cuisineData - Данные кухни
- * @returns {Promise<Object>} - Созданная кухня
- */
-export async function createCuisine(cuisineData) {
-    if (!USE_SUPABASE) {
-        throw new ApiError('Supabase not configured', 500, 'NO_SUPABASE')
-    }
-
-    try {
-        // Генерируем embedding если есть описание
-        let embedding = null
-        if (cuisineData.description) {
-            embedding = await generateEmbedding(cuisineData.description)
+export async function getKnowledgeStats() {
+    if (!supabase) {
+        return {
+            cuisines: mockCuisines.length,
+            dishes: mockDishes.length,
+            ingredients: mockIngredients.length,
         }
-
-        const { data, error } = await supabase
-            .from('cuisines')
-            .insert({
-                ...cuisineData,
-                embedding,
-            })
-            .select()
-            .single()
-
-        if (error) throw error
-        return data
-    } catch (error) {
-        console.error('[createCuisine] Error:', error)
-        throw error
-    }
-}
-
-/**
- * Обновить кухню
- * @param {string} cuisineId - ID кухни
- * @param {Object} updates - Данные для обновления
- * @returns {Promise<Object>} - Обновлённая кухня
- */
-export async function updateCuisine(cuisineId, updates) {
-    if (!USE_SUPABASE) {
-        throw new ApiError('Supabase not configured', 500, 'NO_SUPABASE')
     }
 
-    try {
-        // Генерируем embedding если обновили описание
-        if (updates.description) {
-            updates.embedding = await generateEmbedding(updates.description)
-        }
+    const [cuisines, dishes, ingredients] = await Promise.all([
+        supabase.from('knowledge_cuisines').select('id', { count: 'exact', head: true }),
+        supabase.from('knowledge_dishes').select('id', { count: 'exact', head: true }),
+        supabase.from('knowledge_ingredients').select('id', { count: 'exact', head: true }),
+    ])
 
-        const { data, error } = await supabase
-            .from('cuisines')
-            .update(updates)
-            .eq('id', cuisineId)
-            .select()
-            .single()
-
-        if (error) throw error
-        return data
-    } catch (error) {
-        console.error('[updateCuisine] Error:', error)
-        throw error
+    return {
+        cuisines: cuisines.count || 0,
+        dishes: dishes.count || 0,
+        ingredients: ingredients.count || 0,
     }
-}
-
-/**
- * Удалить кухню
- * @param {string} cuisineId - ID кухни
- * @returns {Promise<void>}
- */
-export async function deleteCuisine(cuisineId) {
-    if (!USE_SUPABASE) {
-        throw new ApiError('Supabase not configured', 500, 'NO_SUPABASE')
-    }
-
-    try {
-        const { error } = await supabase
-            .from('cuisines')
-            .delete()
-            .eq('id', cuisineId)
-
-        if (error) throw error
-    } catch (error) {
-        console.error('[deleteCuisine] Error:', error)
-        throw error
-    }
-}
-
-// Экспорт для удобства
-export default {
-    // Embeddings
-    generateEmbedding,
-    generateLocationEmbedding,
-    
-    // Semantic Search
-    semanticSearch,
-    findSimilarLocations,
-    
-    // Knowledge Graph
-    getCuisinesTree,
-    searchCuisines,
-    getDishesByCuisine,
-    searchDishesByIngredients,
-    getVibes,
-    getTags,
-    getIngredientsByCategory,
-    searchIngredients,
-    
-    // Graph Queries
-    findRestaurantsByDish,
-    getLocationWithKG,
-    
-    // Admin
-    createCuisine,
-    updateCuisine,
-    deleteCuisine,
 }

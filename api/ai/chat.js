@@ -13,16 +13,17 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 /**
  * Free models with tool-use support, ordered by quality.
  * More models = lower chance of all being rate-limited simultaneously.
+ * Updated: April 2026 — verified active on OpenRouter.
  */
 const MODEL_CASCADE = [
-    'mistralai/devstral-2512:free',            // Mistral Devstral 2 — best agentic
-    'mistralai/mistral-small-3.1:free',        // Mistral Small 3.1 — reliable
-    'z-ai/glm-4.5-air:free',                   // GLM-4.5-Air — strong reasoning
-    'openai/gpt-oss-20b:free',                 // GPT-OSS 20B — Apache 2.0
-    'nvidia/nemotron-nano-9b-v2:free',         // Nemotron Nano 9B v2 — fast
+    'meta-llama/llama-3.3-70b-instruct:free',  // Llama 3.3 70B — best quality
+    'qwen/qwen3-coder:free',                   // Qwen3 Coder — strong reasoning
+    'z-ai/glm-4.5-air:free',                   // GLM-4.5-Air — fast & capable
     'minimax/minimax-m2.5:free',               // MiniMax M2.5 — productive
-    'meta-llama/llama-3.3-70b-instruct:free',  // Llama 3.3 70B — fallback
-    'qwen/qwen3-coder:free',                   // Qwen3 Coder — last resort
+    'google/gemma-3-27b-it:free',              // Gemma 3 27B — Google quality
+    'google/gemma-3-12b-it:free',              // Gemma 3 12B — balanced
+    'openai/gpt-oss-20b:free',                 // GPT-OSS 20B — Apache 2.0
+    'nvidia/nemotron-nano-9b-v2:free',         // Nemotron Nano 9B v2 — fastest
 ]
 
 export default async function handler(req, res) {
@@ -85,9 +86,10 @@ export default async function handler(req, res) {
             lastError = data
             usedModel = currentModel
 
-            // Only retry on 429 (rate limit) or 5xx (server errors)
+            // Only retry on 429 (rate limit), 5xx (server errors),
+            // or 400/404 (model unavailable/invalid — try next model)
             const status = response.status
-            if (status !== 429 && status !== 500 && status !== 502 && status !== 503) {
+            if (status !== 429 && status !== 500 && status !== 502 && status !== 503 && status !== 400 && status !== 404) {
                 // Non-retryable error — return immediately
                 return res.status(status).json(data)
             }

@@ -49,14 +49,33 @@ const QuickAction = ({ icon: Icon, label, color, description }) => (
 const AdminDashboardPage = () => {
     const navigate = useNavigate()
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
-    const locations = useLocationsStore(s => s.locations)
+    const { user } = useAuthStore()
+
+    const { data: locations = [], isLoading: loadingLocations } = useLocations()
+    const { data: adminStats } = useAdminStats()
+    const { data: recentActivities = [] } = useRecentActivity(10)
+
+    const totalUsers = adminStats?.users?.total || '—'
+    const totalSupporters = adminStats?.users?.supporters || '—'
+    const pageViews = adminStats?.engagement?.total_visits || '—'
 
     const stats = [
-        { title: 'Locations', value: locations.length > 0 ? locations.length.toLocaleString() : '—', icon: MapPin, color: 'bg-orange-500' },
-        { title: 'Users', value: '1,284', icon: Users, color: 'bg-blue-500' },
-        { title: 'Supporters', value: '890', icon: MessageSquare, color: 'bg-emerald-500' },
-        { title: 'Page Views', value: '45.2k', icon: Eye, color: 'bg-purple-500' },
+        { title: 'Locations', value: loadingLocations ? '...' : (locations.length || '—'), icon: MapPin, color: 'bg-orange-500' },
+        { title: 'Users', value: totalUsers, icon: Users, color: 'bg-blue-500' },
+        { title: 'Supporters', value: totalSupporters, icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-purple-500' },
     ]
+
+    const formatTimeAgo = (timestamp) => {
+        if (!timestamp) return '—'
+        const diff = Date.now() - new Date(timestamp).getTime()
+        const mins = Math.floor(diff / 60000)
+        if (mins < 2) return '2M AGO'
+        if (mins < 60) return `${mins}M AGO`
+        const hours = Math.floor(mins / 60)
+        if (hours < 24) return `${hours}H AGO`
+        return `${Math.floor(hours / 24)}D AGO`
+    }
 
     return (
         <div className="space-y-8 pb-20">

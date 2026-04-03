@@ -46,6 +46,12 @@ export default function AdminModerationPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedItem, setSelectedItem] = useState(null)
     const [revisionNote, setRevisionNote] = useState('')
+    const [toast, setToast] = useState(null)
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type })
+        setTimeout(() => setToast(null), 3000)
+    }
 
     const filteredQueue = queue.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,24 +59,72 @@ export default function AdminModerationPage() {
         item.author.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const handleApprove = (id) => {
-        setQueue(queue.filter(item => item.id !== id))
-        setSelectedItem(null)
-        // In real app: call API to change status to ACTIVE, award points, send notification
+    const handleApprove = async (item) => {
+        try {
+            if (item.queueType === 'review') {
+                await updateReviewStatus.mutateAsync({
+                    reviewId: item.id,
+                    status: 'approved'
+                })
+            } else {
+                await updateLocationStatus.mutateAsync({
+                    id: item.id,
+                    status: 'active'
+                })
+            }
+            setSelectedItem(null)
+            showToast(`${item.queueType === 'review' ? 'Отзыв' : 'Заведение'} успешно одобрено!`, 'success')
+        } catch (error) {
+            console.error('Approval error:', error)
+            showToast('Ошибка при одобрении. Попробуйте снова.', 'error')
+        }
     }
 
-    const handleRequestRevision = (id) => {
+    const handleRequestRevision = async (item) => {
         if (!revisionNote.trim()) return;
-        setQueue(queue.map(item =>
-            item.id === id ? { ...item, status: 'REVISION_REQUESTED', adminComment: revisionNote } : item
-        ))
-        setSelectedItem(null)
-        setRevisionNote('')
-        // In real app: call API to change status to REVISION_REQUESTED, save comment, notify user
+        try {
+            if (item.queueType === 'review') {
+                await updateReviewStatus.mutateAsync({
+                    reviewId: item.id,
+                    status: 'revision_requested',
+                    comment: revisionNote
+                })
+            } else {
+                await updateLocationStatus.mutateAsync({
+                    id: item.id,
+                    status: 'revision_requested'
+                })
+            }
+            setSelectedItem(null)
+            setRevisionNote('')
+            showToast('Запрос на правку отправлен автору', 'success')
+        } catch (error) {
+            console.error('Revision request error:', error)
+            showToast('Ошибка при отправке запроса. Попробуйте снова.', 'error')
+        }
     }
 
     return (
         <div className="space-y-8 pb-12 animate-in fade-in duration-500">
+            {/* Toast notification */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className={cn(
+                            "fixed top-4 right-4 z-[100] px-6 py-3 rounded-xl shadow-2xl font-semibold text-sm",
+                            toast.type === 'success'
+                                ? "bg-emerald-500 text-white"
+                                : "bg-rose-500 text-white"
+                        )}
+                    >
+                        {toast.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header Section */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -276,7 +330,7 @@ export default function AdminModerationPage() {
                                             />
                                             <div className="flex justify-end">
                                                 <button
-                                                    onClick={() => handleRequestRevision(selectedItem.id)}
+                                                    onClick={() => handleRequestRevision(selectedItem)}
                                                     disabled={!revisionNote.trim()}
                                                     className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >

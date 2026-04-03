@@ -112,6 +112,97 @@ export async function signOut() {
 }
 
 /**
+ * Request password reset email.
+ * @param {string} email - User's email address
+ */
+export async function resetPassword(email) {
+    // ── Mock ──
+    if (!USE_SUPABASE) {
+        await simulateDelay(500)
+        if (!email) throw new ApiError('Email is required', 400, 'VALIDATION_ERROR')
+        return { success: true, message: 'Password reset email sent' }
+    }
+
+    // ── Supabase ──
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+    if (error) throw new ApiError(error.message, 400, 'RESET_ERROR')
+    return { success: true, message: 'Password reset email sent' }
+}
+
+/**
+ * Update password after reset.
+ * @param {string} newPassword - New password
+ */
+export async function updatePassword(newPassword) {
+    // ── Mock ──
+    if (!USE_SUPABASE) {
+        await simulateDelay(300)
+        if (!newPassword || newPassword.length < 6) {
+            throw new ApiError('Password must be at least 6 characters', 400, 'WEAK_PASSWORD')
+        }
+        return { success: true, message: 'Password updated' }
+    }
+
+    // ── Supabase ──
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR')
+    return { success: true, message: 'Password updated' }
+}
+
+/**
+ * Resend email verification.
+ */
+export async function resendVerification(email) {
+    // ── Mock ──
+    if (!USE_SUPABASE) {
+        await simulateDelay(300)
+        return { success: true, message: 'Verification email sent' }
+    }
+
+    // ── Supabase ──
+    const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: window.location.origin },
+    })
+    if (error) throw new ApiError(error.message, 400, 'RESEND_ERROR')
+    return { success: true, message: 'Verification email sent' }
+}
+
+/**
+ * Upload avatar to Supabase storage.
+ * @param {string} userId - User ID
+ * @param {File} file - Image file
+ */
+export async function uploadAvatar(userId, file) {
+    // ── Mock ──
+    if (!USE_SUPABASE) {
+        await simulateDelay(500)
+        // Return a fake URL for mock
+        return { url: URL.createObjectURL(file), path: `avatars/${userId}/${file.name}` }
+    }
+
+    // ── Supabase ──
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${userId}/${Date.now()}.${fileExt}`
+    const filePath = `avatars/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
+
+    if (uploadError) throw new ApiError(uploadError.message, 400, 'UPLOAD_ERROR')
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+    return { url: publicUrl, path: filePath }
+}
+
+/**
  * Update user profile fields (name, avatar).
  */
 export async function updateProfile(userId, updates) {

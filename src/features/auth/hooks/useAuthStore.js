@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { signIn, signUp, signOut, updateProfile, subscribeToAuthChanges } from '@/shared/api/auth.api'
+import { signIn, signUp, signOut, updateProfile, subscribeToAuthChanges, resetPassword, updatePassword, resendVerification, uploadAvatar } from '@/shared/api/auth.api'
 
 /**
  * useAuthStore — session & identity.
@@ -95,6 +95,62 @@ export const useAuthStore = create(
                     set({ user: { ...user, ...updated } })
                 } catch (err) {
                     set({ error: err.message })
+                }
+            },
+
+            // ─── Password Reset ─────────────────────────────────────────────
+
+            requestPasswordReset: async (email) => {
+                set({ isLoading: true, error: null })
+                try {
+                    const result = await resetPassword(email)
+                    set({ isLoading: false })
+                    return { success: true, message: result.message }
+                } catch (err) {
+                    set({ error: err.message, isLoading: false })
+                    return { success: false, error: err.message }
+                }
+            },
+
+            setNewPassword: async (newPassword) => {
+                set({ isLoading: true, error: null })
+                try {
+                    const result = await updatePassword(newPassword)
+                    set({ isLoading: false })
+                    return { success: true, message: result.message }
+                } catch (err) {
+                    set({ error: err.message, isLoading: false })
+                    return { success: false, error: err.message }
+                }
+            },
+
+            resendVerificationEmail: async (email) => {
+                set({ isLoading: true, error: null })
+                try {
+                    const result = await resendVerification(email)
+                    set({ isLoading: false })
+                    return { success: true, message: result.message }
+                } catch (err) {
+                    set({ error: err.message, isLoading: false })
+                    return { success: false, error: err.message }
+                }
+            },
+
+            // ─── Avatar Upload ──────────────────────────────────────────────
+
+            uploadAvatar: async (file) => {
+                const { user } = get()
+                if (!user) return { success: false, error: 'Not authenticated' }
+                set({ isLoading: true, error: null })
+                try {
+                    const { url } = await uploadAvatar(user.id, file)
+                    // Update profile with new avatar URL
+                    const updated = await updateProfile(user.id, { avatar: url })
+                    set({ user: { ...user, ...updated }, isLoading: false })
+                    return { success: true, url }
+                } catch (err) {
+                    set({ error: err.message, isLoading: false })
+                    return { success: false, error: err.message }
                 }
             },
 

@@ -62,6 +62,8 @@ const LocationDetailsPage = lazy(() => import('@/features/public/pages/LocationD
 // ─── LAZY: Auth pages ──────────────────────────────────────────────────────
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const SignUpPage = lazy(() => import('@/features/auth/pages/SignUpPage'))
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'))
 
 // ─── LAZY: Dashboard pages ─────────────────────────────────────────────────
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
@@ -107,6 +109,8 @@ export const AppRouter = () => {
                 {/* Standalone Pages */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/auth/signup" element={<SignUpPage />} />
+                <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
                 {/* Public Routes (Wrapped in PublicLayout) */}
                 <Route element={<PublicLayout />}>

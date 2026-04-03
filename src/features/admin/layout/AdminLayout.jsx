@@ -34,6 +34,7 @@ export default function AdminLayout() {
         { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
         { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
         { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
+        { icon: Bell,            label: 'Notifications',  path: '/admin/notifications' },
         { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },
         { icon: Settings,        label: 'Settings',       path: '/admin/settings' },
     ]

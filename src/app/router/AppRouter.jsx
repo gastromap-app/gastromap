@@ -92,6 +92,7 @@ const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'
 const AdminSubscriptionsPage = lazy(() => import('@/features/admin/pages/AdminSubscriptionsPage'))
 const AdminAIPage = lazy(() => import('@/features/admin/pages/AdminAIPage'))
 const AdminKnowledgeGraphPage = lazy(() => import('@/features/admin/pages/AdminKnowledgeGraphPage'))
+const AdminNotificationsPage = lazy(() => import('@/features/admin/pages/AdminNotificationsPage'))
 const AdminStatsPage = lazy(() => import('@/features/admin/pages/AdminStatsPage'))
 const AdminSettingsPage = lazy(() => import('@/features/admin/pages/AdminSettingsPage'))
 
@@ -176,6 +177,7 @@ export const AppRouter = () => {
                         <Route path="moderation" element={<AdminModerationPage />} />
                         <Route path="ai" element={<AdminAIPage />} />
                         <Route path="knowledge" element={<AdminKnowledgeGraphPage />} />
+                        <Route path="notifications" element={<AdminNotificationsPage />} />
                         <Route path="stats" element={<AdminStatsPage />} />
                         <Route path="settings" element={<AdminSettingsPage />} />
                     </Route>

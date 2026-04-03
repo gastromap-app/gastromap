@@ -29,6 +29,21 @@ import { useAppConfigStore } from '@/store/useAppConfigStore'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 /**
+ * Cascading free models for production (proxy mode).
+ * The proxy tries these in order until one succeeds.
+ */
+const MODEL_CASCADE = [
+    'mistralai/devstral-2512:free',
+    'mistralai/mistral-small-3.1:free',
+    'z-ai/glm-4.5-air:free',
+    'openai/gpt-oss-20b:free',
+    'nvidia/nemotron-nano-9b-v2:free',
+    'minimax/minimax-m2.5:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'qwen/qwen3-coder:free',
+]
+
+/**
  * Get active AI config — admin store overrides env vars at runtime.
  * Admin can change model/key in AdminAIPage without redeploying.
  */
@@ -320,41 +335,67 @@ When recommending places, format your response naturally — mention the name, w
 async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride } = {}) {
     const { apiKey, model: activeModel, fallbackModel } = getActiveAIConfig()
     const model = modelOverride ?? activeModel
+    const useProxy = config.ai.useProxy
 
-    const body = {
-        model,
-        messages,
-        max_tokens: config.ai.maxResponseTokens,
-        stream,
-    }
-    if (withTools) {
-        body.tools = TOOLS
-        body.tool_choice = 'auto'
-    }
+    // In production, the proxy handles cascading model rotation.
+    // In dev (direct OpenRouter), we cascade locally.
+    const cascade = useProxy
+        ? [model]
+        : [model, ...(fallbackModel && fallbackModel !== model ? [fallbackModel] : [])]
 
-    const res = await fetch(OPENROUTER_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://gastromap.app',
-            'X-Title': 'GastroMap',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    })
-
-    // On rate limit, retry with fallback model (only once)
-    if (res.status === 429 && !modelOverride) {
-        return fetchOpenRouter(messages, { stream, withTools, modelOverride: fallbackModel })
+    // Add full cascade for direct calls when no model override
+    if (!useProxy && !modelOverride) {
+        for (const m of MODEL_CASCADE) {
+            if (!cascade.includes(m)) cascade.push(m)
+        }
     }
 
-    if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}))
-        const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
-        throw Object.assign(new Error(msg), { status: res.status })
+    let lastError = null
+
+    for (let i = 0; i < cascade.length; i++) {
+        const currentModel = cascade[i]
+
+        const body = {
+            model: currentModel,
+            messages,
+            max_tokens: config.ai.maxResponseTokens,
+            stream,
+        }
+        if (withTools) {
+            body.tools = TOOLS
+            body.tool_choice = 'auto'
+        }
+
+        const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
+        const headers = { 'Content-Type': 'application/json' }
+        if (!useProxy) {
+            headers['Authorization'] = `Bearer ${apiKey}`
+            headers['HTTP-Referer'] = 'https://gastromap.app'
+            headers['X-Title'] = 'GastroMap'
+        }
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+        })
+
+        if (res.ok) return res
+
+        // Only retry on rate-limit or server errors
+        if (res.status !== 429 && res.status !== 500 && res.status !== 502 && res.status !== 503) {
+            const errBody = await res.json().catch(() => ({}))
+            const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
+            throw Object.assign(new Error(msg), { status: res.status })
+        }
+
+        lastError = await res.json().catch(() => ({}))
+        console.warn(`[GastroAI] Model ${currentModel} returned ${res.status}, trying next...`)
     }
 
-    return res
+    // All models exhausted
+    const msg = lastError?.error?.message ?? 'All AI models are currently rate-limited'
+    throw Object.assign(new Error(msg), { status: 503 })
 }
 
 // ─── Intent Detection ────────────────────────────────────────────────────────
@@ -512,7 +553,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     const intent = detectIntent(message)
 
-    if (getActiveAIConfig().apiKey) {
+    if (getActiveAIConfig().apiKey || config.ai.useProxy) {
         try {
             const model = config.ai.model || 'deepseek/deepseek-chat-v3-0324:free'
             const historyMessages = (context.history ?? [])

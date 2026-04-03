@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, useUpdateLocationStatusMutation, usePendingLocations } from '@/shared/api/queries'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -55,12 +55,12 @@ const AdminLocationsPage = () => {
     const location = useLocation()
     const navigate = useNavigate()
 
-    const [locationsList, setLocationsList] = useState([
-        { id: 1, name: 'Zen Garden', category: 'Restaurant', cuisine: 'Китайская', city: 'Krakow', country: 'Poland', status: 'Active', rating: 4.8, description: 'Лучший дзен в Кракове', address: 'ul. Kanonicza 12', special_labels: ['Китайская'] },
-        { id: 2, name: 'Coffee Hub', category: 'Cafe', cuisine: 'Французская', city: 'Warsaw', country: 'Poland', status: 'Pending', rating: 4.5, description: 'Кофе и работа', address: 'ul. Marszałkowska 8', special_labels: ['Вкусные десерты'] },
-        { id: 3, name: 'Pasta Viva', category: 'Restaurant', cuisine: 'Итальянская', city: 'Berlin', country: 'Germany', status: 'Active', rating: 4.2, description: 'Итальянская страсть', address: 'Müllerstraße 15', special_labels: ['Итальянская'] },
-        { id: 4, name: 'Sushi Wave', category: 'Sushi', cuisine: 'Японская', city: 'Krakow', country: 'Poland', status: 'Draft', rating: 0.0, description: 'Японская волна', address: 'ul. Grodzka 3', special_labels: ['Японская'] },
-    ])
+    const { data: locationsList = [], isLoading: loadingLocations } = useLocations()
+    const createLocMutation = useCreateLocationMutation()
+    const updateLocMutation = useUpdateLocationMutation()
+    const deleteLocMutation = useDeleteLocationMutation()
+    const updateLocStatusMutation = useUpdateLocationStatusMutation()
+    const { data: pendingLocations = [] } = usePendingLocations()
 
     const handleCreateNew = () => {
         const emptyLocation = {
@@ -144,12 +144,33 @@ const AdminLocationsPage = () => {
 
 
     const stats = [
-        { label: 'Всего', val: '456', icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
-        { label: 'В очереди', val: '12', icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-        { label: 'Сегодня', val: '+5', icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
+        { label: 'Всего', val: locationsList.length.toString(), icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
+        { label: 'В очереди', val: pendingLocations.length.toString(), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
+        { label: 'Active', val: locationsList.filter(l => l.status === 'Active').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
     ]
 
-    const handleApprove = (id) => setLocationsList(prev => prev.map(l => l.id === id ? { ...l, status: 'Active' } : l))
+    const handleApprove = (id) => {
+        updateLocStatusMutation.mutate({ id, status: 'Active' })
+    }
+
+    const handleDelete = (id) => {
+        if (confirm('Удалить этот объект?')) deleteLocMutation.mutate(id)
+    }
+
+    const handleSave = () => {
+        if (selectedLocation.id === 'NEW') {
+            createLocMutation.mutate(formData, { onSuccess: () => setIsSlideOverOpen(false) })
+        } else {
+            updateLocMutation.mutate({ id: selectedLocation.id, updates: formData }, { onSuccess: () => setIsSlideOverOpen(false) })
+        }
+    }
+
+    const filteredLocations = locationsList.filter(loc =>
+        !searchQuery ||
+        loc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
     const categories = [
         'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
@@ -369,7 +390,7 @@ const AdminLocationsPage = () => {
                     <AnimatePresence mode="wait">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={view}>
                             {view === 'list' && (
-                                viewMode === 'list' ? renderListView(locationsList) : (
+                                viewMode === 'list' ? renderListView(filteredLocations) : (
                                     <div className="h-[600px] w-full p-4 lg:p-10">
                                         <MapTab />
                                     </div>
@@ -377,7 +398,7 @@ const AdminLocationsPage = () => {
                             )}
                             {view === 'moderation' && (
                                 <div className="p-8 lg:p-14 space-y-6">
-                                    {locationsList.filter(l => l.status === 'Pending').map(loc => (
+                                    {pendingLocations.length > 0 ? pendingLocations.map(loc => (
                                         <div key={loc.id} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-indigo-500/10 transition-all">
                                             <div className="flex items-center gap-6">
                                                 <div className="w-16 h-16 rounded-[24px] bg-white dark:bg-slate-800 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform"><Building2 size={24} /></div>
@@ -388,10 +409,16 @@ const AdminLocationsPage = () => {
                                             </div>
                                             <div className="flex gap-3 w-full sm:w-auto">
                                                 <button onClick={() => handleApprove(loc.id)} className="flex-1 sm:px-8 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">Одобрить</button>
-                                                <button className="flex-1 sm:px-8 py-3.5 bg-white dark:bg-slate-800 text-red-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 transition-all">Отмена</button>
+                                                <button onClick={() => handleDelete(loc.id)} className="flex-1 sm:px-8 py-3.5 bg-white dark:bg-slate-800 text-red-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 transition-all">Удалить</button>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="text-center py-20">
+                                            <AlertCircle size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                                            <p className="text-lg font-bold text-slate-400">Очередь пуста</p>
+                                            <p className="text-sm text-slate-400 mt-1">Нет объектов на модерации</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </motion.div>
@@ -938,8 +965,8 @@ const AdminLocationsPage = () => {
 
                             {/* Footer */}
                             <div className="p-6 lg:p-10 border-t border-slate-50 dark:border-slate-800/50 flex gap-4 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl relative z-10">
-                                <button className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] lg:rounded-[24px] font-bold text-[10px] lg:text-[11px] uppercase tracking-[0.2em] shadow-2xl active:scale-[0.97] transition-all hover:shadow-indigo-500/20 border-none outline-none">
-                                    {selectedLocation.id === 'NEW' ? 'Создать объект' : 'Сохранить изменения'}
+                                <button onClick={handleSave} disabled={createLocMutation.isPending || updateLocMutation.isPending} className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] lg:rounded-[24px] font-bold text-[10px] lg:text-[11px] uppercase tracking-[0.2em] shadow-2xl active:scale-[0.97] transition-all hover:shadow-indigo-500/20 border-none outline-none disabled:opacity-50">
+                                    {createLocMutation.isPending || updateLocMutation.isPending ? 'Сохранение...' : (selectedLocation.id === 'NEW' ? 'Создать объект' : 'Сохранить изменения')}
                                 </button>
                                 <button onClick={() => setIsSlideOverOpen(false)} className="px-6 lg:px-10 py-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-[20px] lg:rounded-[24px] font-bold text-[10px] lg:text-[11px] uppercase tracking-[0.2em] hover:text-slate-900 dark:hover:text-white transition-all border-none outline-none">Отмена</button>
                             </div>

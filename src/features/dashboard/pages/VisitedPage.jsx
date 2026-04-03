@@ -1,16 +1,17 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock } from 'lucide-react'
-import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock, Trash2 } from 'lucide-react'
+import { useUserVisitsWithLocations, useDeleteVisitMutation } from '@/shared/api/queries'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 
 // ─── Visited card ─────────────────────────────────────────────────────────
-function VisitedCard({ loc, index }) {
+function VisitedCard({ visit, index, onDelete }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const loc = visit.locations
 
     return (
         <motion.div
@@ -20,7 +21,7 @@ function VisitedCard({ loc, index }) {
         >
             <Link
                 to={`/location/${loc.id}`}
-                className={`group flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
+                className={`group relative flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
                     isDark
                         ? 'bg-white/5 border border-white/10 hover:bg-white/8'
                         : 'bg-white border border-gray-100 hover:shadow-md'
@@ -50,33 +51,41 @@ function VisitedCard({ loc, index }) {
                                 {loc.title}
                             </h3>
                             <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                                {loc.cuisine} · {loc.category}
+                                {loc.category}
                             </p>
                         </div>
 
                         <div className="flex-shrink-0 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-xl">
                             <Star size={10} className="text-emerald-500 fill-emerald-500" />
-                            <span className="text-[11px] font-black text-emerald-600">{loc.rating}</span>
+                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.rating}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 mt-2">
-                        <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                            {loc.priceLevel}
+                        <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                            <Clock size={10} />
+                            {new Date(visit.visited_at).toLocaleDateString()}
                         </span>
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
-                            isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
-                        }`}>
-                            {loc.vibe}
-                        </span>
-                        {loc.openingHours && (
-                            <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                                <Clock size={10} />
-                                {loc.openingHours}
+                        {visit.review_text && (
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg line-clamp-1 ${
+                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                {visit.review_text}
                             </span>
                         )}
                     </div>
                 </div>
+
+                {/* Delete button */}
+                <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(visit.id) }}
+                    className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
+                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400' : 'bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-500'
+                    }`}
+                    aria-label="Delete visit"
+                >
+                    <Trash2 size={14} />
+                </button>
             </Link>
         </motion.div>
     )
@@ -145,13 +154,42 @@ const VisitedPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const { prefs } = useUserPrefsStore()
-    const { locations } = useLocationsStore()
+    const { user } = useAuthStore()
+    const { data: visits = [], isLoading } = useUserVisitsWithLocations(user?.id)
+    const deleteVisitMutation = useDeleteVisitMutation()
 
-    // lastVisited is an array of location IDs in order of visit
-    const visitedLocations = (prefs.lastVisited ?? [])
-        .map((id) => locations.find((loc) => loc.id === id))
-        .filter(Boolean)
+    const handleDelete = (visitId) => {
+        deleteVisitMutation.mutate({ visitId, userId: user.id })
+    }
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="w-full max-w-2xl mx-auto px-4 pb-32 pt-24 min-h-[100dvh] relative z-10">
+                <div className="mb-6">
+                    <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {t('visited.title')}
+                    </h1>
+                </div>
+                <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                        <div
+                            key={i}
+                            className={`flex gap-4 p-4 rounded-2xl ${
+                                isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-100'
+                            }`}
+                        >
+                            <div className={`w-20 h-20 rounded-xl animate-pulse ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                            <div className="flex-1 space-y-2">
+                                <div className={`h-4 w-32 rounded animate-pulse ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                                <div className={`h-3 w-20 rounded animate-pulse ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="w-full max-w-2xl mx-auto px-4 pb-32 pt-24 min-h-[100dvh] relative z-10">
@@ -160,21 +198,21 @@ const VisitedPage = () => {
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {t('visited.title')}
                 </h1>
-                {visitedLocations.length > 0 && (
+                {visits.length > 0 && (
                     <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
                         {t('visited.diary')}
                     </p>
                 )}
             </div>
 
-            {visitedLocations.length === 0 ? (
+            {visits.length === 0 ? (
                 <EmptyState isDark={isDark} />
             ) : (
                 <>
-                    <VisitedStats count={visitedLocations.length} isDark={isDark} />
+                    <VisitedStats count={visits.length} isDark={isDark} />
                     <div className="space-y-3">
-                        {visitedLocations.map((loc, i) => (
-                            <VisitedCard key={loc.id} loc={loc} index={i} />
+                        {visits.map((visit, i) => (
+                            <VisitedCard key={visit.id} visit={visit} index={i} onDelete={handleDelete} />
                         ))}
                     </div>
                 </>

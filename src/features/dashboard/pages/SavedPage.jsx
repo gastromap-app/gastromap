@@ -2,15 +2,16 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
-import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shared/api/queries'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 
 // ─── Location card (compact horizontal) ──────────────────────────────────
-function SavedCard({ loc, index, onUnsave }) {
+function SavedCard({ favorite, index, onRemove }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const loc = favorite.locations
 
     return (
         <motion.div
@@ -69,7 +70,7 @@ function SavedCard({ loc, index, onUnsave }) {
 
             {/* Unsave button */}
             <button
-                onClick={(e) => { e.stopPropagation(); onUnsave(loc.id) }}
+                onClick={(e) => { e.stopPropagation(); onRemove(loc.id) }}
                 className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/20 transition-colors active:scale-90"
                 aria-label="Remove from saved"
             >
@@ -124,10 +125,13 @@ const SavedPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const { favoriteIds, toggleFavorite } = useFavoritesStore()
-    const { locations } = useLocationsStore()
+    const { user } = useAuthStore()
+    const { data: favorites = [], isLoading } = useUserFavoritesWithLocations(user?.id)
+    const removeFavorite = useRemoveFavoriteMutation()
 
-    const savedLocations = locations.filter((loc) => favoriteIds.includes(loc.id))
+    const handleRemove = (locationId) => {
+        removeFavorite.mutate({ userId: user.id, locationId })
+    }
 
     return (
         <div className="w-full max-w-2xl mx-auto px-4 pb-32 pt-24 min-h-[100dvh] relative z-10">
@@ -136,23 +140,27 @@ const SavedPage = () => {
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {t('saved.title')}
                 </h1>
-                {savedLocations.length > 0 && (
+                {!isLoading && favorites.length > 0 && (
                     <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                        {t('saved.places_saved', { count: savedLocations.length })}
+                        {t('saved.places_saved', { count: favorites.length })}
                     </p>
                 )}
             </div>
 
-            {savedLocations.length === 0 ? (
+            {isLoading ? (
+                <div className="flex items-center justify-center py-24">
+                    <div className={`w-8 h-8 border-2 border-t-blue-600 rounded-full animate-spin ${isDark ? 'border-white/10' : 'border-gray-200'}`} />
+                </div>
+            ) : favorites.length === 0 ? (
                 <EmptyState isDark={isDark} />
             ) : (
                 <div className="space-y-3">
-                    {savedLocations.map((loc, i) => (
+                    {favorites.map((favorite, i) => (
                         <SavedCard
-                            key={loc.id}
-                            loc={loc}
+                            key={favorite.location_id}
+                            favorite={favorite}
                             index={i}
-                            onUnsave={toggleFavorite}
+                            onRemove={handleRemove}
                         />
                     ))}
                 </div>

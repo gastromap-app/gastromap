@@ -41,8 +41,12 @@ export const useAuthStore = create(
                     }
                 )
 
-                // Store unsubscribe so logout can clean it up (optional)
-                set({ _unsubscribeAuth: unsubscribe, isLoading: false })
+                // Safety timeout — if Supabase is unreachable, stop loading after 5s
+                const timeout = setTimeout(() => {
+                    if (get().isLoading) set({ isLoading: false })
+                }, 5000)
+
+                set({ _unsubscribeAuth: unsubscribe, _authTimeout: timeout })
             },
 
             login: async (email, password) => {

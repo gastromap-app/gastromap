@@ -1,14 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, Mail, UserCircle, Save, Utensils, Sparkles, Heart } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useTranslation } from 'react-i18next'
+import { useUserPreferences, useUpdatePreferencesMutation } from '@/shared/api/queries'
 
 const ProfileEditPage = () => {
     const { t } = useTranslation()
     const { user: authUser, updateProfile } = useAuthStore()
+    const { data: preferences = {}, isLoading: loadingPrefs } = useUserPreferences(authUser?.id)
+    const updatePrefs = useUpdatePreferencesMutation()
+
     const user = authUser || {
         name: 'Alex Johnson',
         email: 'alex@gastromap.com',
@@ -38,13 +42,34 @@ const ProfileEditPage = () => {
         }
     })
 
+    // Initialize form from Supabase preferences when loaded
+    useEffect(() => {
+        if (!loadingPrefs && preferences && Object.keys(preferences).length > 0) {
+            setFormData((prev) => ({
+                ...prev,
+                preferences: {
+                    ...prev.preferences,
+                    longTerm: {
+                        ...prev.preferences?.longTerm,
+                        ...preferences.longTerm
+                    }
+                }
+            }))
+        }
+    }, [preferences, loadingPrefs])
+
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const inputBg = isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        // Existing local update
         updateProfile(formData)
+        // Sync to Supabase
+        if (authUser?.id) {
+            await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })
+        }
         navigate('/profile')
     }
 
@@ -62,6 +87,11 @@ const ProfileEditPage = () => {
                 <h1 className={`text-2xl font-black ${textStyle}`}>{t('profile_edit.title')}</h1>
             </div>
 
+            {loadingPrefs ? (
+                <div className="flex items-center justify-center py-20">
+                    <div className={`text-sm font-bold ${subTextStyle}`}>Loading preferences...</div>
+                </div>
+            ) : (
             <div className="px-5 space-y-6">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center mb-8">
@@ -209,6 +239,7 @@ const ProfileEditPage = () => {
                     {t('profile_edit.save')}
                 </button>
             </div>
+            )}
         </div>
     )
 }

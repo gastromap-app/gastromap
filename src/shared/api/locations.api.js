@@ -360,10 +360,58 @@ function _mockDelete(id) {
     if (index !== -1) MOCK_LOCATIONS.splice(index, 1)
 }
 
+// ─── Aliases & derived queries ──────────────────────────────────────────────
+
+/** Alias for getLocation — used by useLocation(id) hook via queries.js */
+export const getLocationById = getLocation
+
+/** Distinct categories list (for filter dropdowns). */
+export async function getCategories() {
+    if (!USE_SUPABASE) return MOCK_CATEGORIES
+
+    const { data, error } = await supabase
+        .from('locations')
+        .select('category')
+        .eq('status', 'active')
+
+    if (error) {
+        console.warn('[locations.api] Failed to fetch categories, using mocks:', error.message)
+        return MOCK_CATEGORIES
+    }
+
+    const unique = [...new Set((data ?? []).map(r => r.category).filter(Boolean))]
+    return ['All', ...unique.sort()]
+}
+
+/** Locations within radiusKm of given coordinates (Haversine filter). */
+export async function getLocationsNearby(coords, radiusKm = 2) {
+    if (!coords?.lat || !coords?.lng) return { data: [], total: 0, hasMore: false }
+
+    const { data: all } = await getLocations({ limit: 500 })
+
+    const R = 6371 // Earth radius in km
+    const filtered = (all ?? []).filter(loc => {
+        const dLat = (loc.coordinates.lat - coords.lat) * Math.PI / 180
+        const dLng = (loc.coordinates.lng - coords.lng) * Math.PI / 180
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(coords.lat * Math.PI / 180) *
+            Math.cos(loc.coordinates.lat * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2
+        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return d <= radiusKm
+    })
+
+    return { data: filtered, total: filtered.length, hasMore: false }
+}
+
 export default {
     getLocations,
     getLocation,
+    getLocationById,
     getLocationTranslated,
+    getCategories,
+    getLocationsNearby,
     createLocation,
     updateLocation,
     deleteLocation,

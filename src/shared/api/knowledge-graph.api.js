@@ -7,6 +7,46 @@
 
 import { supabase } from './client'
 import { simulateDelay, ApiError } from './client'
+import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { config } from '@/shared/config/env'
+
+// ─── Embedding Generation ───────────────────────────────────────────────────
+
+/**
+ * Generate embedding for text using OpenRouter's text-embedding-3-small model.
+ * @param {string} text - Text to embed
+ * @returns {Promise<number[]>} 768-dimensional vector
+ */
+async function generateEmbedding(text) {
+    const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+    
+    if (!apiKey) {
+        throw new Error('OpenRouter API key not configured')
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': 'https://gastromap.app',
+            'X-Title': 'GastroMap',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: 'openai/text-embedding-3-small',
+            input: text,
+            dimensions: 768,
+        }),
+    })
+
+    if (!response.ok) {
+        throw new Error(`Embedding API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.data?.[0]?.embedding || []
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -161,7 +201,7 @@ const mockIngredients = [
 export async function getCuisines() {
     if (!supabase) return mockCuisines
     const { data, error } = await supabase
-        .from('knowledge_cuisines')
+        .from('cuisines')
         .select('*')
         .order('name', { ascending: true })
     if (error) {
@@ -174,7 +214,7 @@ export async function getCuisines() {
 export async function getCuisineById(id) {
     if (!supabase) return mockCuisines.find(c => c.id === id)
     const { data, error } = await supabase
-        .from('knowledge_cuisines')
+        .from('cuisines')
         .select('*')
         .eq('id', id)
         .single()
@@ -188,7 +228,7 @@ export async function createCuisine(cuisine) {
         return { ...cuisine, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
     const { data, error } = await supabase
-        .from('knowledge_cuisines')
+        .from('cuisines')
         .insert([cuisine])
         .select()
         .single()
@@ -202,7 +242,7 @@ export async function updateCuisine(id, updates) {
         return { ...updates, id }
     }
     const { data, error } = await supabase
-        .from('knowledge_cuisines')
+        .from('cuisines')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -217,7 +257,7 @@ export async function deleteCuisine(id) {
         return { success: true }
     }
     const { error } = await supabase
-        .from('knowledge_cuisines')
+        .from('cuisines')
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
@@ -230,7 +270,7 @@ export async function getDishes(cuisineId = null) {
     if (!supabase) {
         return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
     }
-    let query = supabase.from('knowledge_dishes').select('*, cuisine:knowledge_cuisines(name)')
+    let query = supabase.from('dishes').select('*, cuisine:cuisines(name)')
     if (cuisineId) query = query.eq('cuisine_id', cuisineId)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
@@ -246,7 +286,7 @@ export async function createDish(dish) {
         return { ...dish, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
     const { data, error } = await supabase
-        .from('knowledge_dishes')
+        .from('dishes')
         .insert([dish])
         .select()
         .single()
@@ -260,7 +300,7 @@ export async function updateDish(id, updates) {
         return { ...updates, id }
     }
     const { data, error } = await supabase
-        .from('knowledge_dishes')
+        .from('dishes')
         .update(updates)
         .eq('id', id)
         .select()
@@ -275,7 +315,7 @@ export async function deleteDish(id) {
         return { success: true }
     }
     const { error } = await supabase
-        .from('knowledge_dishes')
+        .from('dishes')
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
@@ -288,7 +328,7 @@ export async function getIngredients(category = null) {
     if (!supabase) {
         return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
     }
-    let query = supabase.from('knowledge_ingredients').select('*')
+    let query = supabase.from('ingredients').select('*')
     if (category) query = query.eq('category', category)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
@@ -304,7 +344,7 @@ export async function createIngredient(ingredient) {
         return { ...ingredient, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
     const { data, error } = await supabase
-        .from('knowledge_ingredients')
+        .from('ingredients')
         .insert([ingredient])
         .select()
         .single()
@@ -318,7 +358,7 @@ export async function updateIngredient(id, updates) {
         return { ...updates, id }
     }
     const { data, error } = await supabase
-        .from('knowledge_ingredients')
+        .from('ingredients')
         .update(updates)
         .eq('id', id)
         .select()
@@ -333,7 +373,7 @@ export async function deleteIngredient(id) {
         return { success: true }
     }
     const { error } = await supabase
-        .from('knowledge_ingredients')
+        .from('ingredients')
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
@@ -359,15 +399,19 @@ export async function searchCuisinesSemantic(query, limit = 5) {
     }
 
     // Try semantic search via RPC function
-    const { data, error } = await supabase.rpc('search_cuisines_semantic', {
-        query_text: query,
-        match_limit: limit
+    // Generate embedding for the query
+    const embedding = await generateEmbedding(query)
+    
+    const { data, error } = await supabase.rpc('search_cuisines_by_embedding', {
+        query_embedding: embedding,
+        match_threshold: 0.7,
+        match_count: limit
     })
 
     if (error) {
         // Fallback to basic text search
         const { data: textData } = await supabase
-            .from('knowledge_cuisines')
+            .from('cuisines')
             .select('*')
             .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
             .limit(limit)
@@ -413,9 +457,9 @@ export async function getKnowledgeStats() {
     }
 
     const [cuisines, dishes, ingredients] = await Promise.all([
-        supabase.from('knowledge_cuisines').select('id', { count: 'exact', head: true }),
-        supabase.from('knowledge_dishes').select('id', { count: 'exact', head: true }),
-        supabase.from('knowledge_ingredients').select('id', { count: 'exact', head: true }),
+        supabase.from('cuisines').select('id', { count: 'exact', head: true }),
+        supabase.from('dishes').select('id', { count: 'exact', head: true }),
+        supabase.from('ingredients').select('id', { count: 'exact', head: true }),
     ])
 
     return {

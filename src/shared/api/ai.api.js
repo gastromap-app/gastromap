@@ -295,7 +295,7 @@ function executeTool(name, args) {
 
 // ─── System prompt (compact — no location list injected) ──────────────────
 
-function buildSystemPrompt(userPrefs = {}) {
+async function buildSystemPrompt(userPrefs = {}, queryContext = null) {
     const { favoriteCuisines = [], vibePreference = [], priceRange = [], dietaryRestrictions = [] } = userPrefs
 
     const prefLines = [
@@ -304,6 +304,23 @@ function buildSystemPrompt(userPrefs = {}) {
         priceRange.length ? `Budget: ${priceRange.join(', ')}` : '',
         dietaryRestrictions.length ? `Dietary restrictions: ${dietaryRestrictions.join(', ')}` : '',
     ].filter(Boolean).join('\n')
+
+    // Fetch knowledge graph context if query is provided
+    let knowledgeContext = ''
+    if (queryContext) {
+        try {
+            const { getAIContextForQuery } = await import('./knowledge-graph.api')
+            const kgContext = await getAIContextForQuery(queryContext)
+            if (kgContext?.relevantCuisines?.length) {
+                const cuisines = kgContext.relevantCuisines.map(c => 
+                    `${c.name}: typical dishes (${c.typical_dishes?.slice(0, 3).join(', ')})`
+                ).join('; ')
+                knowledgeContext = `\n\nCULINARY KNOWLEDGE:\n${cuisines}\n${kgContext.contextNote}`
+            }
+        } catch (err) {
+            // Silently continue without knowledge context
+        }
+    }
 
     return `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
 
@@ -314,8 +331,9 @@ CORE RULES:
 - Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
 - Respond in the same language the user writes in (Russian, English, Polish — match their language).
 - Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
-
-${prefLines ? `USER PREFERENCES:\n${prefLines}` : ''}
+- When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+${knowledgeContext}
+${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
 
 When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.`
 }
@@ -519,8 +537,9 @@ export async function analyzeQuery(message, context = {}) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
+            const systemPrompt = await buildSystemPrompt(context.preferences, message)
             const messages = [
-                { role: 'system', content: buildSystemPrompt(context.preferences) },
+                { role: 'system', content: systemPrompt },
                 ...historyMessages,
                 { role: 'user', content: message },
             ]
@@ -561,8 +580,9 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
+            const systemPrompt = await buildSystemPrompt(context.preferences, message)
             const messages = [
-                { role: 'system', content: buildSystemPrompt(context.preferences) },
+                { role: 'system', content: systemPrompt },
                 ...historyMessages,
                 { role: 'user', content: message },
             ]

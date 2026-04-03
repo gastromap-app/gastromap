@@ -4,7 +4,7 @@ import {
     MapPin, Users, BarChart3, ArrowLeft, LogOut,
     LayoutDashboard, Heart, Bot, ChevronRight,
     Menu, X, Bell, Search, Sun, Moon, PanelsTopLeft,
-    ChevronLeft, Settings, HelpCircle, Activity, Shield, ShieldCheck
+    ChevronLeft, Settings, HelpCircle, Activity, Shield, ShieldCheck, Brain
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -32,6 +32,7 @@ export default function AdminLayout() {
         { icon: Users,           label: 'Users',          path: '/admin/users' },
         { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
         { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
+        { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
         { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
         { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },
         { icon: Settings,        label: 'Settings',       path: '/admin/settings' },

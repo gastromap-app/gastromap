@@ -357,3 +357,117 @@ export function useUpdatePreferencesMutation() {
         },
     })
 }
+
+// ─── Knowledge Graph ───
+import {
+    getCuisines, getCuisineById, createCuisine, updateCuisine, deleteCuisine,
+    getDishes, createDish, updateDish, deleteDish,
+    getIngredients, createIngredient, updateIngredient, deleteIngredient,
+    getKnowledgeStats, searchCuisinesSemantic, getAIContextForQuery,
+} from './knowledge-graph.api'
+
+export function useCuisines() {
+    return useQuery({ queryKey: ['knowledge-cuisines'], queryFn: getCuisines, staleTime: 5 * 60_000 })
+}
+
+export function useCuisine(id) {
+    return useQuery({ queryKey: ['knowledge-cuisine', id], queryFn: () => getCuisineById(id), enabled: !!id, staleTime: 5 * 60_000 })
+}
+
+export function useCreateCuisineMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: createCuisine,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
+    })
+}
+
+export function useUpdateCuisineMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: ({ id, updates }) => updateCuisine(id, updates),
+        onSuccess: (_, { id }) => {
+            qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
+            qc.invalidateQueries({ queryKey: ['knowledge-cuisine', id] })
+        },
+    })
+}
+
+export function useDeleteCuisineMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: deleteCuisine,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
+    })
+}
+
+export function useDishes(cuisineId = null) {
+    return useQuery({ queryKey: ['knowledge-dishes', cuisineId], queryFn: () => getDishes(cuisineId), staleTime: 5 * 60_000 })
+}
+
+export function useCreateDishMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: createDish,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+    })
+}
+
+export function useUpdateDishMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: ({ id, updates }) => updateDish(id, updates),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+    })
+}
+
+export function useDeleteDishMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: deleteDish,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+    })
+}
+
+export function useIngredients(category = null) {
+    return useQuery({ queryKey: ['knowledge-ingredients', category], queryFn: () => getIngredients(category), staleTime: 5 * 60_000 })
+}
+
+export function useCreateIngredientMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: createIngredient,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+    })
+}
+
+export function useUpdateIngredientMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: ({ id, updates }) => updateIngredient(id, updates),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+    })
+}
+
+export function useDeleteIngredientMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: deleteIngredient,
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+    })
+}
+
+export function useKnowledgeStats() {
+    return useQuery({ queryKey: ['knowledge-stats'], queryFn: getKnowledgeStats, staleTime: 60_000 })
+}
+
+export function useSearchCuisinesSemantic(query, enabled = true) {
+    return useQuery({
+        queryKey: ['knowledge-cuisines-semantic', query],
+        queryFn: () => searchCuisinesSemantic(query),
+        enabled: enabled && !!query,
+        staleTime: 5 * 60_000,
+    })
+}
+
+export { getAIContextForQuery }

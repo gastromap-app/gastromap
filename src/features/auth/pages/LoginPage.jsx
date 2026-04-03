@@ -160,10 +160,10 @@ const LoginPage = () => {
 
                         <motion.div variants={itemVariants} className="flex justify-between items-center text-sm">
                             <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                <input type="checkbox" name="remember" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                                 <span className="text-gray-500 group-hover:text-gray-700 transition-colors">Remember me</span>
                             </label>
-                            <a href="#" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</a>
+                            <Link to="/auth/forgot-password" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</Link>
                         </motion.div>
 
                         <motion.button

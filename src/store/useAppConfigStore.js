@@ -20,6 +20,10 @@ export const useAppConfigStore = create(
             aiGuideTemp: 0.7,
             aiAssistantTemp: 0.4,
 
+            // Custom system prompts (empty = use defaults from ai.api.js)
+            aiGuideSystemPrompt: '',
+            aiAssistantSystemPrompt: '',
+
             updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
             setAppStatus: (status) => set({ appStatus: status }),
         }),

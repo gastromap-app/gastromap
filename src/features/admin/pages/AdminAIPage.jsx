@@ -4,11 +4,13 @@ import {
     Bot, MessageSquare, Zap, Shield, Settings,
     Save, Play, Pause, RefreshCw, Sliders, Brain,
     CheckCircle2, ChevronDown, ChevronUp, Send,
-    Loader2, AlertCircle, Eye, EyeOff, Star, Globe, Cpu
+    Loader2, AlertCircle, Eye, EyeOff, Star, Globe, Cpu,
+    FileText, RotateCcw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
+import { DEFAULT_PROMPTS } from '@/shared/api/ai.api'
 
 // ─── Available OpenRouter free models (March 2026) ──────────────────────────
 
@@ -199,6 +201,10 @@ const AdminAIPage = () => {
     const [guideTemp, setGuideTemp] = useState(appConfig.aiGuideTemp ?? 0.7)
     const [assistantTemp, setAssistantTemp] = useState(appConfig.aiAssistantTemp ?? 0.4)
 
+    // ── System Prompts
+    const [guidePrompt, setGuidePrompt] = useState(appConfig.aiGuideSystemPrompt ?? '')
+    const [assistantPrompt, setAssistantPrompt] = useState(appConfig.aiAssistantSystemPrompt ?? '')
+
     // ── Agents
     const [agentActive, setAgentActive] = useState({
         guide: appConfig.aiGuideActive ?? true,
@@ -242,6 +248,8 @@ const AdminAIPage = () => {
             aiPrimaryModel: primaryModel,
             aiFallbackModel: fallbackModel,
             aiApiKey: apiKey,
+            aiGuideSystemPrompt: guidePrompt,
+            aiAssistantSystemPrompt: assistantPrompt,
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
@@ -534,6 +542,82 @@ const AdminAIPage = () => {
                             <span className="font-mono font-bold text-indigo-600">{assistantTemp.toFixed(1)}</span>
                             <span>Creative (2)</span>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* System Prompts */}
+            <section className="mb-10">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <FileText className="text-indigo-500" size={24} />
+                    System Prompts
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    Customize AI behavior. Leave empty to use default prompts. Changes take effect immediately after saving.
+                </p>
+                <div className="space-y-6">
+                    {/* GastroGuide Prompt */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
+                                    <MessageSquare className="text-indigo-500" size={18} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-900 dark:text-white">GastroGuide</h3>
+                                    <p className="text-xs text-slate-500">User-facing dining assistant</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setGuidePrompt(DEFAULT_PROMPTS.guide)}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                            >
+                                <RotateCcw size={12} />
+                                Reset to Default
+                            </button>
+                        </div>
+                        <textarea
+                            value={guidePrompt}
+                            onChange={(e) => setGuidePrompt(e.target.value)}
+                            placeholder={DEFAULT_PROMPTS.guide}
+                            rows={6}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                        />
+                        <p className="text-xs text-slate-400 mt-2">
+                            {guidePrompt.length} characters {guidePrompt.length === 0 && '(using default)'}
+                        </p>
+                    </div>
+
+                    {/* GastroAssistant Prompt */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                                    <Brain className="text-emerald-500" size={18} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-900 dark:text-white">GastroAssistant</h3>
+                                    <p className="text-xs text-slate-500">Background agent for search & personalization</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setAssistantPrompt(DEFAULT_PROMPTS.assistant)}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                            >
+                                <RotateCcw size={12} />
+                                Reset to Default
+                            </button>
+                        </div>
+                        <textarea
+                            value={assistantPrompt}
+                            onChange={(e) => setAssistantPrompt(e.target.value)}
+                            placeholder={DEFAULT_PROMPTS.assistant}
+                            rows={6}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                        />
+                        <p className="text-xs text-slate-400 mt-2">
+                            {assistantPrompt.length} characters {assistantPrompt.length === 0 && '(using default)'}
+                        </p>
                     </div>
                 </div>
             </section>

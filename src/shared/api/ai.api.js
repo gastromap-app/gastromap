@@ -293,9 +293,48 @@ function executeTool(name, args) {
     return { error: `Unknown tool: ${name}` }
 }
 
-// ─── System prompt (compact — no location list injected) ──────────────────
+// ─── Default System Prompts ────────────────────────────────────────────────
 
-async function buildSystemPrompt(userPrefs = {}, queryContext = null) {
+const DEFAULT_GUIDE_PROMPT = `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
+
+CORE RULES:
+- NEVER invent or guess restaurant names. ALWAYS use the search_locations tool before recommending any places.
+- When the user asks for recommendations, call search_locations with appropriate filters first.
+- When the user asks about a specific place by name or ID, use get_location_details.
+- Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
+- Respond in the same language the user writes in (Russian, English, Polish — match their language).
+- Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
+- When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+
+When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.`
+
+const DEFAULT_ASSISTANT_PROMPT = `You are GastroAssistant — a background AI agent that powers smart search, recommendations, and personalization for GastroMap.
+
+CORE RULES:
+- Be precise and factual. You run silently in the background to enhance user experience.
+- When analyzing queries, extract structured filters (cuisine, price, vibe, location, dietary).
+- Prioritize accuracy over creativity. Return actionable data.
+- Respond in the same language as the user's query.
+- Keep responses concise and structured when possible.
+
+Your output is used internally for recommendations, filtering, and personalization. Focus on extracting intent and relevant parameters.`
+
+// ─── System prompt builder (compact — no location list injected) ────────────
+
+/**
+ * Build a system prompt for the specified agent.
+ * @param {'guide' | 'assistant'} agentType - Which agent's prompt to build
+ * @param {Object} userPrefs - User preferences
+ * @param {string | null} queryContext - Query for knowledge graph context
+ */
+async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide') {
+    const appCfg = useAppConfigStore.getState()
+
+    // Use custom prompt if set, otherwise default
+    const basePrompt = agentType === 'guide'
+        ? (appCfg.aiGuideSystemPrompt || DEFAULT_GUIDE_PROMPT)
+        : (appCfg.aiAssistantSystemPrompt || DEFAULT_ASSISTANT_PROMPT)
+
     const { favoriteCuisines = [], vibePreference = [], priceRange = [], dietaryRestrictions = [] } = userPrefs
 
     const prefLines = [
@@ -312,7 +351,7 @@ async function buildSystemPrompt(userPrefs = {}, queryContext = null) {
             const { getAIContextForQuery } = await import('./knowledge-graph.api')
             const kgContext = await getAIContextForQuery(queryContext)
             if (kgContext?.relevantCuisines?.length) {
-                const cuisines = kgContext.relevantCuisines.map(c => 
+                const cuisines = kgContext.relevantCuisines.map(c =>
                     `${c.name}: typical dishes (${c.typical_dishes?.slice(0, 3).join(', ')})`
                 ).join('; ')
                 knowledgeContext = `\n\nCULINARY KNOWLEDGE:\n${cuisines}\n${kgContext.contextNote}`
@@ -322,20 +361,15 @@ async function buildSystemPrompt(userPrefs = {}, queryContext = null) {
         }
     }
 
-    return `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
-
-CORE RULES:
-- NEVER invent or guess restaurant names. ALWAYS use the search_locations tool before recommending any places.
-- When the user asks for recommendations, call search_locations with appropriate filters first.
-- When the user asks about a specific place by name or ID, use get_location_details.
-- Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
-- Respond in the same language the user writes in (Russian, English, Polish — match their language).
-- Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
-- When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+    return `${basePrompt}
 ${knowledgeContext}
-${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
+${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}`
+}
 
-When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.`
+// Export defaults for Admin UI
+export const DEFAULT_PROMPTS = {
+    guide: DEFAULT_GUIDE_PROMPT,
+    assistant: DEFAULT_ASSISTANT_PROMPT,
 }
 
 // ─── OpenRouter fetch helper ──────────────────────────────────────────────

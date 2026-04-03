@@ -10,31 +10,21 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
-import { DEFAULT_PROMPTS } from '@/shared/api/ai.api'
+import { DEFAULT_PROMPTS, testAIConnection, MODEL_CASCADE } from '@/shared/api/ai.api'
 
-// ─── Available OpenRouter free models (March 2026) ──────────────────────────
+// ─── Available OpenRouter free models (April 2026) ──────────────────────────
+// Ordered by reliability/availability - models less likely to be rate-limited first
 
 const FREE_MODELS = [
     {
-        id: 'mistralai/devstral-2512:free',
-        name: 'Devstral 2',
-        provider: 'Mistral',
-        context: '256K',
-        languages: 'EN / RU / PL / UA',
-        badge: 'Recommended',
-        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
-        description: 'Best agentic model with strong tool use. Excellent for chat and recommendations.',
-        toolUse: true,
-    },
-    {
-        id: 'mistralai/mistral-small-3.1:free',
-        name: 'Mistral Small 3.1',
-        provider: 'Mistral',
-        context: '131K',
-        languages: 'EN / RU / PL / UA',
-        badge: 'Best Multilingual',
-        badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-        description: 'Reliable multilingual model with strong reasoning. Great fallback option.',
+        id: 'nvidia/nemotron-nano-9b-v2:free',
+        name: 'Nemotron Nano 9B v2',
+        provider: 'NVIDIA',
+        context: '128K',
+        languages: 'EN / multilingual',
+        badge: 'Most Available',
+        badgeColor: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400',
+        description: 'Lightning-fast responses. High availability, rarely rate-limited.',
         toolUse: true,
     },
     {
@@ -45,7 +35,18 @@ const FREE_MODELS = [
         languages: 'EN / RU / PL',
         badge: 'Fast',
         badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
-        description: 'Fast hybrid thinking mode. Good balance of speed and quality.',
+        description: 'Fast hybrid thinking mode. Good availability.',
+        toolUse: true,
+    },
+    {
+        id: 'mistralai/mistral-small-3.1:free',
+        name: 'Mistral Small 3.1',
+        provider: 'Mistral',
+        context: '131K',
+        languages: 'EN / RU / PL / UA',
+        badge: 'Best Multilingual',
+        badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+        description: 'Reliable multilingual model with strong reasoning.',
         toolUse: true,
     },
     {
@@ -56,18 +57,7 @@ const FREE_MODELS = [
         languages: 'EN / multilingual',
         badge: 'Apache 2.0',
         badgeColor: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
-        description: 'OpenAI open-weight model. Strong function calling and reasoning.',
-        toolUse: true,
-    },
-    {
-        id: 'nvidia/nemotron-nano-9b-v2:free',
-        name: 'Nemotron Nano 9B v2',
-        provider: 'NVIDIA',
-        context: '128K',
-        languages: 'EN / multilingual',
-        badge: 'Fastest',
-        badgeColor: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400',
-        description: 'Lightning-fast responses. Perfect for quick queries.',
+        description: 'OpenAI open-weight model. Strong function calling.',
         toolUse: true,
     },
     {
@@ -82,14 +72,25 @@ const FREE_MODELS = [
         toolUse: true,
     },
     {
+        id: 'mistralai/devstral-2512:free',
+        name: 'Devstral 2',
+        provider: 'Mistral',
+        context: '256K',
+        languages: 'EN / RU / PL / UA',
+        badge: 'Agentic',
+        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
+        description: 'Best agentic model. May be rate-limited during peak hours.',
+        toolUse: true,
+    },
+    {
         id: 'meta-llama/llama-3.3-70b-instruct:free',
         name: 'Llama 3.3 70B',
         provider: 'Meta',
         context: '131K',
         languages: 'EN / RU / PL',
-        badge: 'Reliable',
+        badge: 'Popular',
         badgeColor: 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400',
-        description: 'Well-known model. May be rate-limited during peak hours.',
+        description: 'Well-known model. Often rate-limited during peak hours.',
         toolUse: true,
     },
     {
@@ -98,14 +99,12 @@ const FREE_MODELS = [
         provider: 'Alibaba',
         context: '262K',
         languages: '100+ incl. RU / PL / UA',
-        badge: 'Large Context',
+        badge: 'Largest Context',
         badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
-        description: 'Largest context window. Strong multilingual. Often rate-limited.',
+        description: 'Largest context window. Often rate-limited.',
         toolUse: true,
     },
 ]
-
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // ─── Model card ──────────────────────────────────────────────────────────────
 
@@ -213,10 +212,10 @@ const AdminAIPage = () => {
 
     // ── Models
     const [primaryModel, setPrimaryModel] = useState(
-        appConfig.aiPrimaryModel || 'meta-llama/llama-3.3-70b-instruct:free'
+        appConfig.aiPrimaryModel || 'nvidia/nemotron-nano-9b-v2:free'
     )
     const [fallbackModel, setFallbackModel] = useState(
-        appConfig.aiFallbackModel || 'qwen/qwen3-coder:free'
+        appConfig.aiFallbackModel || 'z-ai/glm-4.5-air:free'
     )
 
     // ── API key
@@ -255,68 +254,26 @@ const AdminAIPage = () => {
         setTimeout(() => setSaved(false), 2500)
     }
 
-    // ── Test model call (simple direct fetch, no tool use, just verify connectivity)
+    // ── Test model call using the cascade system
     const handleTest = async () => {
-        const useProxy = config.ai.useProxy
-        if (!testMessage.trim() || (!apiKey && !useProxy)) return
+        if (!testMessage.trim()) return
 
         setTesting(true)
         setTestResult(null)
 
-        const modelId = testModel === 'primary' ? primaryModel : fallbackModel
-        const startTime = performance.now()
+        // Use the preferred model (primary or fallback) but cascade if rate-limited
+        const preferredModel = testModel === 'primary' ? primaryModel : fallbackModel
 
-        try {
-            const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
-            const headers = { 'Content-Type': 'application/json' }
-            if (!useProxy) {
-                headers['Authorization'] = `Bearer ${apiKey}`
-                headers['HTTP-Referer'] = window.location.origin
-                headers['X-Title'] = 'GastroMap Admin'
-            }
+        const result = await testAIConnection(testMessage, preferredModel)
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    model: modelId,
-                    messages: [
-                        { role: 'system', content: 'You are a helpful assistant. Keep responses under 2 sentences.' },
-                        { role: 'user', content: testMessage },
-                    ],
-                    max_tokens: 100,
-                }),
-            })
+        setTestResult({
+            ok: result.ok,
+            text: result.text,
+            latency: result.latency,
+            model: result.modelUsed,
+        })
 
-            const latency = Math.round(performance.now() - startTime)
-
-            if (!response.ok) {
-                const errorText = await response.text()
-                throw new Error(`HTTP ${response.status}: ${errorText}`)
-            }
-
-            const data = await response.json()
-            const text = data.choices?.[0]?.message?.content || '(no response)'
-            // Show which model the proxy actually used (may differ from requested due to cascade)
-            const actualModel = data._model_used || modelId
-
-            setTestResult({
-                ok: true,
-                text,
-                latency,
-                model: actualModel,
-            })
-        } catch (err) {
-            const latency = Math.round(performance.now() - startTime)
-            setTestResult({
-                ok: false,
-                text: err.message,
-                latency,
-                model: modelId,
-            })
-        } finally {
-            setTesting(false)
-        }
+        setTesting(false)
     }
 
     return (

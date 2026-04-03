@@ -198,24 +198,3 @@ const AdminDashboardPage = () => {
 }
 
 export default AdminDashboardPage
-                                    <div className="flex items-center gap-5 min-w-0">
-                                        <div className="w-12 h-12 rounded-[18px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center font-bold text-xs text-slate-400">
-                                            {item.initial}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[13px] font-bold text-slate-900 dark:text-white leading-none mb-1.5">{item.user}</p>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate opacity-60 leading-none">{item.action}</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-[9px] font-bold text-slate-300 whitespace-nowrap ml-4 uppercase tracking-widest">{item.time}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-export default AdminDashboardPage

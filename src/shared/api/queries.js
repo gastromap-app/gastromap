@@ -15,8 +15,8 @@ import {
     useMutation,
     useInfiniteQuery,
     useQueryClient,
-    queryClient,
 } from '@tanstack/react-query'
+import { queryClient } from '@/shared/config/queryClient'
 
 import {
     getLocations,

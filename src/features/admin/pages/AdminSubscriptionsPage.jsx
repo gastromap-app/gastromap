@@ -160,11 +160,3 @@ const AdminSubscriptionsPage = () => {
 }
 
 export default AdminSubscriptionsPage
-                    </table>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-export default AdminSubscriptionsPage

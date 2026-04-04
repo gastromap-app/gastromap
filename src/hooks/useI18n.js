@@ -39,7 +39,7 @@ export function useI18n(namespace = 'common', isAdmin = false) {
     return {
         t,
         i18n: i18nInstance,
-        language: currentLang,
+        language: i18nInstance.language,
         setLanguage,
         setUserLanguage,
         setAdminLanguage,

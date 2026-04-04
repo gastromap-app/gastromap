@@ -78,8 +78,13 @@ const AdminLocationsPage = () => {
     const [isImproving, setIsImproving] = useState(null) // Field name currently being improved
 
     // useLocations returns { data: [], total, hasMore } — not a plain array
-    const { data: locsData, isLoading: loadingLocations } = useLocations({ showAll: true, limit: 500 })
+    const { data: locsData, isLoading: loadingLocations, error: loadError } = useLocations({ showAll: true, limit: 500 })
     const locationsList = locsData?.data ?? []
+    
+    useEffect(() => {
+        console.log('[Admin] locsData:', locsData)
+        if (loadError) console.error('[Admin] Load Error:', loadError)
+    }, [locsData, loadError])
     const createLocMutation = useCreateLocationMutation()
     const updateLocMutation = useUpdateLocationMutation()
     const deleteLocMutation = useDeleteLocationMutation()
@@ -328,6 +333,12 @@ const AdminLocationsPage = () => {
         
         return matchesSearch && matchesStatus
     })
+
+    useEffect(() => {
+        console.log('[Admin] locationsList.length:', locationsList.length)
+        console.log('[Admin] filteredLocations.length:', filteredLocations.length)
+        console.log('[Admin] pendingLocations.length:', pendingLocations.length)
+    }, [locationsList.length, filteredLocations.length, pendingLocations.length])
 
     const categories = [
         'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',

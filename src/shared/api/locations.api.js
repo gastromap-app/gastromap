@@ -16,6 +16,7 @@ import {
     saveTranslations,
     getTranslations 
 } from './translation.api'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const USE_SUPABASE = config.supabase.isConfigured
 const AUTO_TRANSLATE = config.ai.isOpenRouterConfigured
@@ -99,13 +100,19 @@ function normalise(row) {
         must_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
 
         // AI Metadata
-        status: row.status ?? 'pending',
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
-        has_embedding: !!row.embedding,
+        embedding: row.embedding ?? null,
         
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        // Enrichment Status
+        ai_enrichment_status: row.ai_enrichment_status ?? 'pending',
+        ai_enrichment_error: row.ai_enrichment_error ?? null,
+        ai_enrichment_last_attempt: row.ai_enrichment_last_attempt ?? null,
+
+        // Meta
+        status: row.status ?? 'pending',
+        createdAt: row.created_at ?? '',
+        updatedAt: row.updated_at ?? '',
     }
 }
 
@@ -184,6 +191,147 @@ export async function getLocation(id, { adminMode = false } = {}) {
 // ─── Create with Auto-Translation ──────────────────────────────────────────
 
 /**
+ * Enrich location with AI data:
+ * 1. Generates ai_keywords based on location data
+ * 2. Generates ai_context (brief expert summary)
+ * 3. Generates vector embedding for semantic search
+ */
+async function enrichLocationWithAI(locationData) {
+    const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+
+    if (!apiKey) {
+        console.warn('[locations.api] AI enrichment skipped: No API key found')
+        return locationData
+    }
+
+    try {
+        // Collect text for analysis
+        const textForAI = [
+            locationData.title,
+            locationData.description,
+            locationData.address,
+            locationData.city,
+            locationData.cuisine,
+            locationData.category,
+            ...(locationData.tags || []),
+            ...(locationData.vibe || []),
+            ...(locationData.best_for || []),
+            locationData.insider_tip,
+        ].filter(Boolean).join(', ')
+
+        // Set attempt timestamp
+        locationData.ai_enrichment_last_attempt = new Date().toISOString()
+
+        // 1. Generate search keywords (using Step 3.5 Flash Free)
+        const keywordResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://gastromap.app',
+                'X-Title': 'GastroMap',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'stepfun/step-3.5-flash:free',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a gastronomy expert. Generate 10-15 search keywords for a location. Keywords should cover mood, occasion, food style, and specific features. Return ONLY a JSON array of strings.'
+                    },
+                    {
+                        role: 'user',
+                        content: `Generate keywords for this location:\n${textForAI}`
+                    }
+                ],
+                max_tokens: 300,
+            }),
+        })
+
+        if (keywordResponse.ok) {
+            const kwData = await keywordResponse.json()
+            const content = kwData.choices?.[0]?.message?.content || '[]'
+            const match = content.match(/\[[\s\S]*\]/)
+            if (match) {
+                locationData.ai_keywords = JSON.parse(match[0])
+            }
+        }
+
+        // 2. Generate expert summary (context)
+        const contextResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://gastromap.app',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'stepfun/step-3.5-flash:free',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Write a 2-sentence expert summary of this restaurant for an AI assistant. Focus on uniqueness and target audience.'
+                    },
+                    {
+                        role: 'user',
+                        content: textForAI
+                    }
+                ],
+                max_tokens: 150,
+            }),
+        })
+
+        if (contextResponse.ok) {
+            const ctxData = await contextResponse.json()
+            locationData.ai_context = ctxData.choices?.[0]?.message?.content || ''
+        }
+
+        // 3. Generate pgvector embedding
+        const embeddingText = [
+            locationData.title,
+            locationData.description,
+            locationData.category,
+            ...(locationData.ai_keywords || []),
+            locationData.ai_context
+        ].filter(Boolean).join(' ')
+
+        const embeddingResponse = await fetch('https://openrouter.ai/api/v1/embeddings', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://gastromap.app',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'openai/text-embedding-3-small',
+                input: embeddingText,
+            }),
+        })
+
+        if (embeddingResponse.ok) {
+            const embData = await embeddingResponse.json()
+            locationData.embedding = embData.data?.[0]?.embedding || null
+        }
+
+        // Mark as success if we got at least keywords or embedding
+        if (locationData.ai_keywords?.length || locationData.embedding) {
+            locationData.ai_enrichment_status = 'success'
+            locationData.ai_enrichment_error = null
+        } else {
+            locationData.ai_enrichment_status = 'failed'
+            locationData.ai_enrichment_error = 'No keywords or embedding generated'
+        }
+
+    } catch (error) {
+        console.warn('[locations.api] AI enrichment failed (non-blocking):', error.message)
+        locationData.ai_enrichment_status = 'failed'
+        locationData.ai_enrichment_error = error.message
+    }
+
+    return locationData
+}
+
+/**
  * Create location with automatic translation
  * @param {Object} data - Location data
  * @param {boolean} enableTranslation - Enable auto-translation (default: true if AI configured)
@@ -192,7 +340,13 @@ export async function getLocation(id, { adminMode = false } = {}) {
 export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
     if (!USE_SUPABASE) return _mockCreate(data)
 
-    const locationData = { ...data }
+    let locationData = { ...data }
+
+    // Enrich with AI keywords and embeddings if enabled
+    if (config.ai.isOpenRouterConfigured) {
+        console.log('[locations.api] Enriching location with AI keywords + embedding...')
+        locationData = await enrichLocationWithAI(locationData)
+    }
 
     // Create location IMMEDIATELY (without waiting for translations)
     const row = _toRow(locationData)
@@ -247,6 +401,22 @@ export async function updateLocation(id, updates, enableTranslation = AUTO_TRANS
         const translatableFields = ['title', 'description', 'address', 'insider_tip', 'what_to_try', 'ai_context']
         const hasTranslatableField = translatableFields.some(field => updates[field] !== undefined)
         
+        // Auto-enrich AI data if primary fields changed
+        const aiTriggerFields = ['title', 'description', 'cuisine', 'tags', 'vibe']
+        const shouldEnrichAI = aiTriggerFields.some(field => updates[field] !== undefined)
+
+        if (shouldEnrichAI) {
+            console.log('[locations.api] Re-enriching location with AI...')
+            const current = await getLocation(id, { adminMode: true })
+            const merged = { ...current, ...updates }
+            const enriched = await enrichLocationWithAI(merged)
+            
+            // Extract AI fields into updates
+            if (enriched.ai_keywords) locationData.ai_keywords = enriched.ai_keywords
+            if (enriched.ai_context) locationData.ai_context = enriched.ai_context
+            if (enriched.embedding) locationData.embedding = enriched.embedding
+        }
+
         if (hasTranslatableField) {
             console.log('[locations.api] Auto-translating updated fields...')
             
@@ -421,6 +591,11 @@ function _toRow(d) {
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
     
+    // AI Enrichment status
+    if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
+    if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
+    if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
+
     return row
 }
 

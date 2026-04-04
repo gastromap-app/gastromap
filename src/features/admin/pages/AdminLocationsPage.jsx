@@ -5,7 +5,7 @@ import {
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
     CheckCircle, Clock, AlertCircle, Star, ChevronDown, ArrowRight,
     X, LayoutGrid, List as ListIcon, Activity, Zap, Phone, Link as LinkIcon, Tag, Sparkles,
-    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck
+    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,7 +16,12 @@ import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation } from '@/shared/api/queries'
+import { 
+    useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
+    useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
+    useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
+    useAIQueryMutation, useCulinaryContextMutation 
+} from '@/shared/api/queries'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -33,8 +38,13 @@ function LocationPicker({ position, onLocationSelect }) {
         },
     });
 
+    // Validate position has valid numbers
+    const isValidPosition = position &&
+        typeof position[0] === 'number' && !isNaN(position[0]) &&
+        typeof position[1] === 'number' && !isNaN(position[1]);
+
     useEffect(() => {
-        if (position && position[0] && position[1]) {
+        if (isValidPosition) {
             // Only update view if the position is significantly different to prevent jumping
             const currentCenter = map.getCenter();
             const dist = Math.sqrt(Math.pow(currentCenter.lat - position[0], 2) + Math.pow(currentCenter.lng - position[1], 2));
@@ -42,11 +52,12 @@ function LocationPicker({ position, onLocationSelect }) {
                 map.setView(position, map.getZoom());
             }
         }
-    }, [position?.[0], position?.[1], map]);
+    }, [position?.[0], position?.[1], map, isValidPosition]);
 
-    return position === null ? null : (
+    // Only render marker if position is valid
+    return isValidPosition ? (
         <Marker position={position}></Marker>
-    );
+    ) : null;
 }
 
 const AdminLocationsPage = () => {
@@ -59,8 +70,12 @@ const AdminLocationsPage = () => {
     const [viewMode, setViewMode] = useState('list') // 'list' | 'map'
     const [formData, setFormData] = useState(null)
     const [aiSearchQuery, setAiSearchQuery] = useState('')
+    const [culinarySearchQuery, setCulinarySearchQuery] = useState('')
+    const [culinaryResults, setCulinaryResults] = useState(null)
     const location = useLocation()
     const navigate = useNavigate()
+    const [openActionMenuId, setOpenActionMenuId] = useState(null)
+    const [isImproving, setIsImproving] = useState(null) // Field name currently being improved
 
     // useLocations returns { data: [], total, hasMore } — not a plain array
     const { data: locsData, isLoading: loadingLocations } = useLocations({ showAll: true, limit: 500 })
@@ -71,11 +86,16 @@ const AdminLocationsPage = () => {
     const updateLocStatusMutation = useUpdateLocationStatusMutation()
     const { data: pendingLocations = [] } = usePendingLocations()
     const extractMutation = useExtractLocationMutation()
+    const reindexMutation = useReindexLocationSemanticMutation()
+    const bulkReindexMutation = useBulkReindexLocationsMutation()
+    const spoonacularMutation = useSpoonacularSearchMutation()
+    const aiQueryMutation = useAIQueryMutation()
+    const culinaryContextMutation = useCulinaryContextMutation()
 
     const handleCreateNew = () => {
         const emptyLocation = {
             id: 'NEW',
-            name: '',
+            title: '',
             category: 'Cafe',
             city: '',
             country: '',
@@ -83,23 +103,21 @@ const AdminLocationsPage = () => {
             description: '',
             insider_tip: '',
             must_try: '',
-            price_range: '$$',
+            price_level: '$$',
             website: '',
             phone: '',
             opening_hours: '',
             booking_url: '',
             social_instagram: '',
             social_facebook: '',
-            image_url: '',
+            image: '',
             images: [],
-            latitude: 50.0647,
-            longitude: 19.9450,
+            lat: 50.0647,
+            lng: 19.9450,
             tags: [],
-            best_time: [],
+            vibe: [],
             special_labels: [],
             cuisine: '',
-            is_hidden_gem: false,
-            is_featured: false,
             status: 'pending'
         }
         setSelectedLocation(emptyLocation)
@@ -107,8 +125,7 @@ const AdminLocationsPage = () => {
         setIsSlideOverOpen(true)
     }
 
-    const handleEdit = (id) => {
-        const loc = locationsList.find(l => l.id === id)
+    const handleEdit = (loc) => {
         if (!loc) return
         setSelectedLocation(loc)
         
@@ -146,14 +163,51 @@ const AdminLocationsPage = () => {
         }
     }
 
+    const handleCulinarySearch = async () => {
+        if (!culinarySearchQuery.trim()) return
+        try {
+            const results = await spoonacularMutation.mutateAsync({ query: culinarySearchQuery })
+            setCulinaryResults(results)
+        } catch (error) {
+            console.error('[Admin] Culinary Search failed:', error)
+        }
+    }
+
+    const addCulinaryItem = (item, type) => {
+        if (type === 'dish') {
+            const currentTry = formData.must_try ? formData.must_try.split(',').map(s => s.trim()) : []
+            if (!currentTry.includes(item.name)) {
+                setFormData({
+                    ...formData,
+                    must_try: [...currentTry, item.name].join(', '),
+                    description: formData.description + `\n\nSignature dish: ${item.description}`
+                })
+            }
+        } else if (type === 'ingredient') {
+            const currentTags = formData.tags || []
+            if (!currentTags.includes(item.name)) {
+                setFormData({
+                    ...formData,
+                    tags: [...currentTags, item.name]
+                })
+            }
+        }
+    }
+
     useEffect(() => {
         const params = new URLSearchParams(location.search)
         if (params.get('create') === 'true') {
-            handleCreateNew()
-            navigate(location.pathname, { replace: true })
+            const timer = setTimeout(() => {
+                handleCreateNew()
+                navigate(location.pathname, { replace: true })
+            }, 0)
+            return () => clearTimeout(timer)
         } else if (params.get('import') === 'true') {
-            setIsImportWizardOpen(true)
-            navigate(location.pathname, { replace: true })
+            const timer = setTimeout(() => {
+                setIsImportWizardOpen(true)
+                navigate(location.pathname, { replace: true })
+            }, 0)
+            return () => clearTimeout(timer)
         }
     }, [location.search])
 
@@ -161,18 +215,76 @@ const AdminLocationsPage = () => {
     const stats = [
         { label: 'Всего', val: locationsList.length.toString(), icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
         { label: 'В очереди', val: pendingLocations.length.toString(), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-        { label: 'Active', val: locationsList.filter(l => l.status === 'active').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
+        { label: 'Approved', val: locationsList.filter(l => l.status === 'approved').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
     ]
 
-    const handleApprove = (id) => {
-        updateLocStatusMutation.mutate({ id, status: 'active' })
+    const handleApprove = async (id) => {
+        try {
+            await updateLocStatusMutation.mutateAsync({ id, status: 'approved' })
+        } catch (error) {
+            console.error('Approve failed:', error)
+        }
+    }
+
+    const handleReject = async (id) => {
+        try {
+            await updateLocStatusMutation.mutateAsync({ id, status: 'rejected' })
+        } catch (error) {
+            console.error('Reject failed:', error)
+        }
     }
 
     const handleDelete = (id) => {
-        if (confirm('Удалить этот объект?')) deleteLocMutation.mutate(id)
+        if (confirm('Вы уверены, что хотите удалить этот объект? Это действие нельзя отменить.')) {
+            deleteLocMutation.mutate(id)
+        }
     }
 
+    const handleImproveText = async (field) => {
+        const text = formData[field];
+        if (!text || text.length < 5) {
+            alert('Сначала введите хотя бы немного текста для улучшения');
+            return;
+        }
+        
+        setIsImproving(field);
+        try {
+            const prompt = `Improve this Gastronomic location ${field}. Make it engaging, evocative and professional, while keeping the original intent. Length should be proportional. Here is the text: "${text}"`;
+            const result = await aiQueryMutation.mutateAsync({ message: prompt });
+            // Advanced extraction for varied AI responses
+            let improvedText = "";
+            if (typeof result === 'string') {
+                improvedText = result;
+            } else if (result && typeof result === 'object') {
+                improvedText = result.text || result.content || result.result || result.output || JSON.stringify(result);
+            }
+            
+            // Cleanup: remove surrounding quotes if AI added them
+            improvedText = improvedText.replace(/^["']|["']$/g, '').trim();
+            
+            setFormData(prev => ({ ...prev, [field]: improvedText }));
+        } catch (error) {
+            console.error('AI improvement failed:', error);
+        } finally {
+            setIsImproving(null);
+        }
+    };
+
     const handleSave = () => {
+        // Validation
+        if (!formData.title?.trim()) return alert('Название обязательно');
+        if (!formData.category) return alert('Категория обязательна');
+        if (!formData.city) return alert('Город обязателен');
+
+        // Basic URL Validation
+        const urlFields = ['website', 'booking_url', 'social_instagram', 'social_facebook'];
+        for (const field of urlFields) {
+            const val = formData[field]?.trim();
+            if (val && !val.startsWith('http') && !val.startsWith('www')) {
+                return alert(`Поле ${field} должно быть ссылкой (напр. https://...)`);
+            }
+        }
+
         const submissionData = { ...formData };
         
         if (typeof submissionData.must_try === 'string') {
@@ -183,9 +295,26 @@ const AdminLocationsPage = () => {
         }
 
         if (selectedLocation.id === 'NEW') {
-            createLocMutation.mutate(submissionData, { onSuccess: () => setIsSlideOverOpen(false) })
+            // New items are pending by default
+            submissionData.status = 'pending'
+            createLocMutation.mutate(submissionData, { 
+                onSuccess: () => {
+                    setIsSlideOverOpen(false)
+                    setFormData(null)
+                    setSelectedLocation(null)
+                } 
+            })
         } else {
-            updateLocMutation.mutate({ id: selectedLocation.id, updates: submissionData }, { onSuccess: () => setIsSlideOverOpen(false) })
+            updateLocMutation.mutate({ 
+                id: selectedLocation.id, 
+                updates: submissionData 
+            }, { 
+                onSuccess: () => {
+                    setIsSlideOverOpen(false)
+                    setFormData(null)
+                    setSelectedLocation(null)
+                } 
+            })
         }
     }
 
@@ -241,15 +370,19 @@ const AdminLocationsPage = () => {
 
     const addImageUrl = (url) => {
         if (!url) return;
-        setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, url],
-            image_url: prev.image_url || url // Set as main if it's the first one
-        }))
+        setFormData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                images: [...(prev.images || []), url],
+                image_url: prev.image_url || url // Set as main if it's the first one
+            }
+        })
     }
 
     const removeImage = (index) => {
         setFormData(prev => {
+            if (!prev || !prev.images) return prev;
             const newImages = prev.images.filter((_, i) => i !== index);
             return {
                 ...prev,
@@ -273,7 +406,7 @@ const AdminLocationsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                     {filtered.map((loc, i) => (
-                        <tr key={loc.id} onClick={() => handleEdit(loc.id)} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none">
+                        <tr key={loc.id} onClick={() => handleEdit(loc)} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none">
                             <td className="px-6 py-4 pl-8 lg:pl-10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner shrink-0">
@@ -309,29 +442,108 @@ const AdminLocationsPage = () => {
                             <td className="px-6 py-4">
                                 <div className={cn(
                                     "inline-flex items-center p-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                                    loc.status === 'active' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
+                                    loc.status === 'approved' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
                                         loc.status === 'pending' ? 'bg-orange-50 dark:bg-orange-500/5 text-orange-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
                                 )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full mr-2", loc.status === 'active' ? 'bg-green-500' : loc.status === 'pending' ? 'bg-orange-500' : 'bg-slate-300')} />
-                                    {loc.status === 'active' ? 'Активен' : loc.status === 'pending' ? 'Ожидает' : 'Отклонен'}
+                                    <div className={cn("w-1.5 h-1.5 rounded-full mr-2", loc.status === 'approved' ? 'bg-green-500' : loc.status === 'pending' ? 'bg-orange-500' : 'bg-slate-300')} />
+                                    {loc.status === 'approved' ? 'Активен' : loc.status === 'pending' ? 'Ожидает' : 'Отклонен'}
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-right pr-8 lg:pr-10">
-                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleEdit(loc.id); }}
-                                        className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
-                                        title="Редактировать"
+                            <td className="px-6 py-4 text-right pr-8 lg:pr-10 relative">
+                                <div className="flex items-center justify-end gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenActionMenuId(openActionMenuId === loc.id ? null : loc.id);
+                                        }}
+                                        className={cn(
+                                            "p-2 rounded-xl transition-all",
+                                            openActionMenuId === loc.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-indigo-600"
+                                        )}
                                     >
-                                        <Edit size={16} />
+                                        <MoreHorizontal size={14} className="stroke-[2.5]" />
                                     </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(loc.id); }}
-                                        className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
-                                        title="Удалить"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+
+                                    <AnimatePresence>
+                                        {openActionMenuId === loc.id && (
+                                            <>
+                                                <div 
+                                                    className="fixed inset-0 z-40" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenActionMenuId(null);
+                                                    }}
+                                                />
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 min-w-[200px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-2 overflow-hidden"
+                                                >
+                                                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-3 py-2 border-b border-slate-50 dark:border-slate-800/50 mb-1 text-left">Действия</div>
+                                                    
+                                                    <button
+                                                        onClick={() => {
+                                                            handleEdit(loc);
+                                                            setOpenActionMenuId(null);
+                                                        }}
+                                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                                            <Edit size={12} />
+                                                        </div>
+                                                        <span>Редактировать</span>
+                                                    </button>
+
+                                                    {loc.status === 'pending' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                handleApprove(loc.id);
+                                                                setOpenActionMenuId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/5 rounded-xl transition-colors group"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                <CheckCircle size={12} />
+                                                            </div>
+                                                            <span>Одобрить</span>
+                                                        </button>
+                                                    )}
+
+                                                    {loc.status !== 'rejected' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                handleReject(loc.id);
+                                                                setOpenActionMenuId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/5 rounded-xl transition-colors group"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                <X size={12} />
+                                                            </div>
+                                                            <span>Отклонить</span>
+                                                        </button>
+                                                    )}
+
+                                                    <div className="h-px bg-slate-50 dark:bg-slate-800 my-1" />
+
+                                                    <button
+                                                        onClick={() => {
+                                                            handleDelete(loc.id);
+                                                            setOpenActionMenuId(null);
+                                                        }}
+                                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/5 rounded-xl transition-colors group"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                            <Trash2 size={12} />
+                                                        </div>
+                                                        <span>Удалить</span>
+                                                    </button>
+                                                </motion.div>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </td>
                         </tr>
@@ -360,6 +572,20 @@ const AdminLocationsPage = () => {
                         className="flex-1 sm:px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
                     >
                         Создать
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
+                                bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {
+                                    onSuccess: (data) => alert(`Обработано ${data.processed} объектов`)
+                                })
+                            }
+                        }}
+                        disabled={bulkReindexMutation.isPending}
+                        className="px-4 py-2.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-amber-200/50 dark:border-amber-500/20 active:scale-95 transition-all hover:bg-amber-100 disabled:opacity-50"
+                        title="AI Bulk Indexing"
+                    >
+                        {bulkReindexMutation.isPending ? 'AI...' : <Sparkles size={14} />}
                     </button>
                 </div>
             </div>
@@ -425,7 +651,7 @@ const AdminLocationsPage = () => {
                                 className="bg-transparent border-none py-2.5 pl-1 pr-8 text-[11px] font-bold uppercase tracking-widest outline-none appearance-none cursor-pointer text-slate-600 dark:text-slate-400"
                             >
                                 <option value="all">Все статусы</option>
-                                <option value="active">Активен</option>
+                                <option value="approved">Активен</option>
                                 <option value="pending">Ожидает</option>
                                 <option value="rejected">Отклонен</option>
                             </select>
@@ -459,9 +685,10 @@ const AdminLocationsPage = () => {
                                                     <p className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><MapPin size={12} /> {loc.city}, {loc.country}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-3 w-full sm:w-auto">
-                                                <button onClick={() => handleApprove(loc.id)} className="flex-1 sm:px-8 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">Одобрить</button>
-                                                <button onClick={() => handleDelete(loc.id)} className="flex-1 sm:px-8 py-3.5 bg-white dark:bg-slate-800 text-red-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 transition-all">Удалить</button>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <button onClick={() => handleEdit(loc)} className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all">Проверить</button>
+                                                <button onClick={() => handleApprove(loc.id)} className="flex-1 sm:px-6 py-3.5 bg-indigo-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">Одобрить</button>
+                                                <button onClick={() => handleReject(loc.id)} className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-slate-800 text-orange-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all">Отклонить</button>
                                             </div>
                                         </div>
                                     )) : (
@@ -503,6 +730,7 @@ const AdminLocationsPage = () => {
 
                             <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10 lg:space-y-12 custom-scrollbar relative">
 
+                                {/* Section: Gastro AI Smart Fill */}
                                 <div className="p-6 rounded-[28px] bg-gradient-to-br from-indigo-600 to-indigo-700 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20 group border border-white/10 transition-all hover:shadow-indigo-500/30">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl group-hover:bg-white/20 transition-all duration-700" />
                                     <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
@@ -539,6 +767,152 @@ const AdminLocationsPage = () => {
                                     </div>
                                 </div>
 
+                                {/* Section: AI Semantic Identity */}
+                                {selectedLocation.id !== 'NEW' && (
+                                    <div className="p-6 rounded-[28px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                                    <Activity size={16} className="text-indigo-600 dark:text-indigo-400" />
+                                                </div>
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">AI Semantic Identity</h4>
+                                            </div>
+                                            <Badge variant="secondary" className={cn(
+                                                "text-[8px] font-black uppercase tracking-widest px-2 py-0.5",
+                                                formData.has_embedding ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 text-slate-400"
+                                            )}>
+                                                {formData.has_embedding ? 'Indexed' : 'Not Indexed'}
+                                            </Badge>
+                                        </div>
+
+                                        {formData.ai_context && (
+                                            <div className="space-y-2">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">AI Semantic Summary</p>
+                                                <div className="p-4 bg-white dark:bg-slate-950/50 rounded-2xl text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-400 border border-slate-100/50 dark:border-slate-800/50 italic">
+                                                    {formData.ai_context}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {formData.ai_keywords && formData.ai_keywords.length > 0 && (
+                                            <div className="space-y-3">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">AI Keywords</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {formData.ai_keywords.map((kw, idx) => (
+                                                        <Badge key={idx} variant="outline" className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 dark:border-slate-700/50 text-[9px] font-bold text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg">
+                                                            {kw}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="pt-2">
+                                            <button 
+                                                onClick={() => {
+                                                    reindexMutation.mutate(selectedLocation.id, {
+                                                        onSuccess: (updated) => {
+                                                            setFormData(prev => ({ ...prev, ...updated }));
+                                                            alert('Semantic indexing complete!');
+                                                        }
+                                                    })
+                                                }}
+                                                disabled={reindexMutation.isPending}
+                                                className="w-full py-3 bg-indigo-600/5 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl font-black text-[9px] uppercase tracking-widest border border-indigo-600/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                                            >
+                                                <Zap size={14} className={cn("group-hover:scale-110", reindexMutation.isPending && "animate-pulse")} />
+                                                {reindexMutation.isPending ? 'Процесс AI индексации...' : 'Переиндексировать семантику (Deep AI)'}
+                                            </button>
+                                            <p className="text-[8px] font-bold text-slate-400 text-center mt-3 uppercase tracking-widest opacity-60">
+                                                Это обновит векторные данные, AI-теги и детальное описание для рекомендаций.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Section: Culinary Enrichment */}
+                                {selectedLocation.id !== 'NEW' && (
+                                    <div className="p-6 rounded-[28px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                    <Sparkles size={16} className="text-amber-600 dark:text-amber-400" />
+                                                </div>
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">Culinary Enrichment</h4>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1 group/input">
+                                                <input
+                                                    type="text"
+                                                    value={culinarySearchQuery}
+                                                    onChange={e => setCulinarySearchQuery(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && handleCulinarySearch()}
+                                                    className="w-full pl-5 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                                    placeholder="Поиск блюд или ингредиентов..."
+                                                />
+                                                <Search size={12} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                            </div>
+                                            <button 
+                                                onClick={handleCulinarySearch}
+                                                disabled={spoonacularMutation.isPending}
+                                                className="px-4 py-3 bg-slate-950 text-white dark:bg-white dark:text-slate-950 rounded-xl font-bold text-[10px] uppercase tracking-widest disabled:opacity-50"
+                                            >
+                                                {spoonacularMutation.isPending ? '...' : 'Найти'}
+                                            </button>
+                                        </div>
+
+                                        {culinaryResults && (
+                                            <div className="space-y-4">
+                                                {culinaryResults.dishes?.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Блюда (Spoonacular)</p>
+                                                        <div className="grid grid-cols-1 gap-2">
+                                                            {culinaryResults.dishes.map(dish => (
+                                                                <div key={dish.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all">
+                                                                    <div className="flex items-center gap-3">
+                                                                        {dish.image && <img src={dish.image} className="w-8 h-8 rounded-lg object-cover" alt="" />}
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{dish.name}</p>
+                                                                            <p className="text-[9px] text-slate-400 line-clamp-1">{dish.description}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => addCulinaryItem(dish, 'dish')}
+                                                                        className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                                    >
+                                                                        <Plus size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {culinaryResults.ingredients?.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Ингредиенты</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {culinaryResults.ingredients.map(ing => (
+                                                                <Badge 
+                                                                    key={ing.id} 
+                                                                    variant="outline" 
+                                                                    className="cursor-pointer hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all flex items-center gap-1.5 px-3 py-1"
+                                                                    onClick={() => addCulinaryItem(ing, 'ingredient')}
+                                                                >
+                                                                    {ing.image && <img src={ing.image} className="w-3 h-3 rounded-full" alt="" />}
+                                                                    {ing.name}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Section: General */}
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
@@ -551,8 +925,8 @@ const AdminLocationsPage = () => {
                                             <div className="relative group">
                                                 <input
                                                     type="text"
-                                                    value={formData.name}
-                                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                    value={formData.title}
+                                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
                                                     className="w-full px-6 py-4.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-bold text-sm outline-none transition-all"
                                                     placeholder="Напр. Zen Garden"
                                                 />
@@ -601,8 +975,8 @@ const AdminLocationsPage = () => {
                                             <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Диапазон цен</label>
                                             <div className="relative">
                                                 <select
-                                                    value={formData.price_range}
-                                                    onChange={e => setFormData({ ...formData, price_range: e.target.value })}
+                                                    value={formData.price_level}
+                                                    onChange={e => setFormData({ ...formData, price_level: e.target.value })}
                                                     className="w-full px-6 py-4 bg-slate-50/40 dark:bg-slate-800/40 rounded-2xl border-none font-bold text-xs outline-none focus:ring-4 ring-indigo-500/5 transition-all appearance-none"
                                                 >
                                                     <option value="$">$ (Дешево)</option>
@@ -664,8 +1038,8 @@ const AdminLocationsPage = () => {
                                                 <input
                                                     type="number"
                                                     step="0.000001"
-                                                    value={formData.latitude}
-                                                    onChange={e => setFormData({ ...formData, latitude: e.target.value })}
+                                                    value={formData.lat}
+                                                    onChange={e => setFormData({ ...formData, lat: parseFloat(e.target.value) })}
                                                     className="w-full px-6 py-4 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-2xl border-none font-bold text-xs outline-none focus:ring-4 ring-emerald-500/10 transition-all font-mono"
                                                 />
                                             </div>
@@ -674,8 +1048,8 @@ const AdminLocationsPage = () => {
                                                 <input
                                                     type="number"
                                                     step="0.000001"
-                                                    value={formData.longitude}
-                                                    onChange={e => setFormData({ ...formData, longitude: e.target.value })}
+                                                    value={formData.lng}
+                                                    onChange={e => setFormData({ ...formData, lng: parseFloat(e.target.value) })}
                                                     className="w-full px-6 py-4 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-2xl border-none font-bold text-xs outline-none focus:ring-4 ring-emerald-500/10 transition-all font-mono"
                                                 />
                                             </div>
@@ -686,14 +1060,14 @@ const AdminLocationsPage = () => {
                                             <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Предпросмотр на карте</label>
                                             <div className="h-[220px] w-full rounded-[32px] border-4 border-slate-50 dark:border-slate-800/50 relative z-0 overflow-hidden shadow-inner">
                                                 <MapContainer
-                                                    center={[formData.latitude || 50.0647, formData.longitude || 19.9450]}
+                                                    center={[formData.lat || 50.0647, formData.lng || 19.9450]}
                                                     zoom={15}
                                                     style={{ height: '100%', width: '100%' }}
                                                 >
                                                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                                                     <LocationPicker
-                                                        position={[formData.latitude, formData.longitude]}
-                                                        onLocationSelect={(latlng) => setFormData({ ...formData, latitude: latlng.lat, longitude: latlng.lng })}
+                                                        position={[formData.lat, formData.lng]}
+                                                        onLocationSelect={(latlng) => setFormData({ ...formData, lat: latlng.lat, lng: latlng.lng })}
                                                     />
                                                 </MapContainer>
                                             </div>
@@ -848,8 +1222,16 @@ const AdminLocationsPage = () => {
                                         <div className="space-y-2.5">
                                             <div className="flex justify-between items-center mb-1">
                                                 <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Описание</label>
-                                                <button className="flex items-center gap-1.5 text-indigo-500 text-[9px] font-black uppercase tracking-widest hover:bg-indigo-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-all">
-                                                    <Sparkles size={12} /> AI Улучшить
+                                                <button 
+                                                    onClick={() => handleImproveText('description')}
+                                                    disabled={isImproving === 'description'}
+                                                    className={cn(
+                                                        "flex items-center gap-1.5 text-indigo-500 text-[9px] font-black uppercase tracking-widest hover:bg-indigo-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-all",
+                                                        isImproving === 'description' && "animate-pulse opacity-50"
+                                                    )}
+                                                >
+                                                    <Sparkles size={12} className={isImproving === 'description' ? 'animate-spin' : ''} /> 
+                                                    {isImproving === 'description' ? 'Улучшаем...' : 'AI Улучшить'}
                                                 </button>
                                             </div>
                                             <textarea
@@ -861,7 +1243,20 @@ const AdminLocationsPage = () => {
                                         </div>
 
                                         <div className="space-y-2.5">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1 text-orange-400">Insider Tip</label>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-[10px] font-bold uppercase text-orange-400 tracking-[0.2em] ml-1">Insider Tip</label>
+                                                <button 
+                                                    onClick={() => handleImproveText('insider_tip')}
+                                                    disabled={isImproving === 'insider_tip'}
+                                                    className={cn(
+                                                        "flex items-center gap-1.5 text-orange-500 text-[9px] font-black uppercase tracking-widest hover:bg-orange-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-all",
+                                                        isImproving === 'insider_tip' && "animate-pulse opacity-50"
+                                                    )}
+                                                >
+                                                    <Sparkles size={12} className={isImproving === 'insider_tip' ? 'animate-spin' : ''} /> 
+                                                    {isImproving === 'insider_tip' ? 'Улучшаем...' : 'AI Улучшить'}
+                                                </button>
+                                            </div>
                                             <textarea
                                                 rows={2}
                                                 value={formData.insider_tip}
@@ -872,7 +1267,20 @@ const AdminLocationsPage = () => {
                                         </div>
 
                                         <div className="space-y-2.5">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1 text-emerald-500">Must Try</label>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-[10px] font-bold uppercase text-emerald-500 tracking-[0.2em] ml-1">Must Try</label>
+                                                <button 
+                                                    onClick={() => handleImproveText('must_try')}
+                                                    disabled={isImproving === 'must_try'}
+                                                    className={cn(
+                                                        "flex items-center gap-1.5 text-emerald-500 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-all",
+                                                        isImproving === 'must_try' && "animate-pulse opacity-50"
+                                                    )}
+                                                >
+                                                    <Sparkles size={12} className={isImproving === 'must_try' ? 'animate-spin' : ''} /> 
+                                                    {isImproving === 'must_try' ? 'Улучшаем...' : 'AI Улучшить'}
+                                                </button>
+                                            </div>
                                             <textarea
                                                 rows={2}
                                                 value={formData.must_try}
@@ -1020,11 +1428,45 @@ const AdminLocationsPage = () => {
                             </div>
 
                             {/* Footer */}
-                            <div className="p-6 lg:p-10 border-t border-slate-50 dark:border-slate-800/50 flex gap-4 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl relative z-10">
-                                <button onClick={handleSave} disabled={createLocMutation.isPending || updateLocMutation.isPending} className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] lg:rounded-[24px] font-bold text-[10px] lg:text-[11px] uppercase tracking-[0.2em] shadow-2xl active:scale-[0.97] transition-all hover:shadow-indigo-500/20 border-none outline-none disabled:opacity-50">
-                                    {createLocMutation.isPending || updateLocMutation.isPending ? 'Сохранение...' : (selectedLocation.id === 'NEW' ? 'Создать объект' : 'Сохранить изменения')}
-                                </button>
-                                <button onClick={() => setIsSlideOverOpen(false)} className="px-6 lg:px-10 py-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-[20px] lg:rounded-[24px] font-bold text-[10px] lg:text-[11px] uppercase tracking-[0.2em] hover:text-slate-900 dark:hover:text-white transition-all border-none outline-none">Отмена</button>
+                            <div className="p-6 lg:p-10 border-t border-slate-50 dark:border-slate-800/50 flex flex-col sm:flex-row gap-4 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl relative z-10">
+                                {selectedLocation?.status === 'pending' && selectedLocation?.id !== 'NEW' && (
+                                    <div className="flex gap-2 flex-1">
+                                        <button 
+                                            onClick={() => {
+                                                handleReject(selectedLocation.id);
+                                                setIsSlideOverOpen(false);
+                                            }}
+                                            className="flex-1 py-4 bg-orange-50 dark:bg-orange-500/10 text-orange-600 rounded-[20px] font-black text-[10px] uppercase tracking-widest border border-orange-200/50 dark:border-orange-500/20 active:scale-95 transition-all"
+                                        >
+                                            Отклонить
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                handleApprove(selectedLocation.id);
+                                                setIsSlideOverOpen(false);
+                                            }}
+                                            className="flex-1 py-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-[20px] font-black text-[10px] uppercase tracking-widest border border-emerald-200/50 dark:border-emerald-500/20 active:scale-95 transition-all"
+                                        >
+                                            Одобрить
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="flex gap-2 flex-[2]">
+                                    <button 
+                                        onClick={handleSave} 
+                                        disabled={createLocMutation.isPending || updateLocMutation.isPending} 
+                                        className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    >
+                                        <Save size={14} className={cn((createLocMutation.isPending || updateLocMutation.isPending) && "animate-spin")} />
+                                        {selectedLocation?.id === 'NEW' ? 'Создать объект' : 'Сохранить изменения'}
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsSlideOverOpen(false)} 
+                                        className="px-6 py-4 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all border-none"
+                                    >
+                                        Отмена
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </>

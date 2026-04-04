@@ -3,14 +3,12 @@ import { useState, useEffect } from 'react'
 export function usePWA() {
     const [deferredPrompt, setDeferredPrompt] = useState(null)
     const [isInstallable, setIsInstallable] = useState(false)
-    const [isInstalled, setIsInstalled] = useState(false)
+    const [isInstalled, setIsInstalled] = useState(() => {
+        if (typeof window === 'undefined') return false
+        return !!(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
+    })
 
     useEffect(() => {
-        // Check if already installed
-        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-            setIsInstalled(true)
-        }
-
         const handler = (e) => {
             // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault()

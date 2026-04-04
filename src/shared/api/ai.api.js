@@ -327,8 +327,9 @@ Your output is used internally for recommendations, filtering, and personalizati
  * @param {'guide' | 'assistant'} agentType - Which agent's prompt to build
  * @param {Object} userPrefs - User preferences
  * @param {string | null} queryContext - Query for knowledge graph context
+ * @param {Object} userData - Dynamic user profile data (history, favorites)
  */
-async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide') {
+async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null) {
     const appCfg = useAppConfigStore.getState()
 
     // Use custom prompt if set, otherwise default
@@ -345,7 +346,18 @@ async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType 
         dietaryRestrictions.length ? `Dietary restrictions: ${dietaryRestrictions.join(', ')}` : '',
     ].filter(Boolean).join('\n')
 
-    // Fetch knowledge graph context if query is provided
+    // 1. Dynamic user personalization context (injecting knowledge from database)
+    const profile = userData ? `
+USER PROFILE & EXPERIENCE:
+- Visited locations: ${userData.visitedNames?.join(', ') || 'none yet'} (${userData.visitedCount || 0} total)
+- Favorite places: ${userData.favoritesNames?.join(', ') || 'none yet'}
+- Foodie DNA (Taste Profile): ${userData.foodieDNA || 'Developing taste profile'}
+- Past Experiences & Reviews: 
+${userData.userExperience || 'No direct review history yet.'}
+- Recent Search Interests: ${userData.recentInterests?.join(', ') || 'General explorer'}
+` : ''
+
+    // 2. Fetch knowledge graph context if query is provided
     let knowledgeContext = ''
     if (queryContext) {
         try {
@@ -364,7 +376,13 @@ async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType 
 
     return `${basePrompt}
 ${knowledgeContext}
-${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}`
+${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
+${profile}
+
+INSTRUCTIONS: 
+- Use the USER PROFILE & EXPERIENCE to tailor your tone and recommendations. 
+- If they've liked certain dishes or vibes in the past, prioritize similar matches. 
+- Reference their past experiences naturally (e.g., "Since you enjoyed the spicy ramen at X, you'll love the Y here").`
 }
 
 // Export defaults for Admin UI
@@ -596,7 +614,8 @@ export async function analyzeQuery(message, context = {}) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message)
+            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData)
+
             const messages = [
                 { role: 'system', content: systemPrompt },
                 ...historyMessages,
@@ -639,7 +658,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message)
+            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData)
             const messages = [
                 { role: 'system', content: systemPrompt },
                 ...historyMessages,
@@ -666,8 +685,87 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
         }
     }
 
-    // Fallback: single-shot local engine
     return analyzeQuery(message, context)
+}
+
+export async function generateLocationSemanticSummary(location, extraContext = null) {
+    const { apiKey } = getActiveAIConfig()
+    if (!apiKey) return { summary: location.description || '', keywords: [] }
+
+    // 1. Enrich with Culinary context (Spoonacular + OpenFoodFacts)
+    let culinaryContext = ''
+    try {
+        const { enrichCulinaryTerm } = await import('./spoonacular.api')
+        const { getIngredientCulinaryContext } = await import('./openfoodfacts.api')
+        
+        // Search by cuisine or category for deep context
+        const queryTerm = location.cuisine || location.category
+        const [spoonData, offData] = await Promise.all([
+            enrichCulinaryTerm(queryTerm),
+            getIngredientCulinaryContext(queryTerm).catch(() => null)
+        ])
+
+        if (spoonData?.data) {
+            culinaryContext += `\nCULINARY DATA (Dishes/Ingredients): ${JSON.stringify(spoonData.data)}`
+        }
+        if (offData) {
+            culinaryContext += `\nFOOD FACTS: Categories: ${offData.categories.join(', ')}, Allergens: ${offData.allergens.join(', ')}`
+        }
+    } catch (err) {
+        console.warn('[GastroAI] Culinary enrichment partial success:', err.message)
+    }
+
+    // Merge manual extra context if provided
+    if (extraContext) {
+        culinaryContext += `\nADDITIONAL INFO: ${JSON.stringify(extraContext)}`
+    }
+
+    const prompt = `
+        You are a Michelin-level culinary critic and data scientist.
+        Your task is to create a "Semantic Identity" for the following location:
+        
+        NAME: ${location.title}
+        CATEGORY: ${location.category}
+        CUISINE: ${location.cuisine}
+        DESCRIPTION: ${location.description}
+        FEATURES: ${(location.features || []).join(', ')}
+        VIBE: ${location.vibe}
+        BEST FOR: ${(location.best_for || []).join(', ')}
+        
+        ${culinaryContext ? `CULINARY ENRICHMENT CONTEXT:\n${culinaryContext}` : ''}
+
+        INSTRUCTIONS:
+        1. Create a "Semantic Summary" (ai_context): A dense, keyword-rich 2-3 paragraph description that captures the essence, 
+           flavor profile, target audience, and unique selling points. Use actual culinary terminology and mention potential signature dishes.
+        2. Extract "AI Keywords" (ai_keywords): A list of 15-20 highly specific tags (e.g. "rare single origin coffee", "mibrasa charcoal oven", "secret dinner spot").
+        3. If cuisine is ${location.cuisine}, ensure you use terminology specific to that culture.
+        4. Focus on SEMANTIC searchability - think about what a user might search for beyond just "Italian food".
+        
+        RETURN JSON ONLY:
+        {
+            "summary": "...",
+            "keywords": ["...", "..."]
+        }
+    `
+
+    try {
+        const { response } = await fetchOpenRouter([
+            { role: 'system', content: 'You are a culinary data expert. Respond in JSON.' },
+            { role: 'user', content: prompt }
+        ], { stream: false, withTools: false })
+
+        const data = await response.json()
+        const text = data.choices?.[0]?.message?.content || '{}'
+        const parsed = robustParseJSON(text)
+
+        return {
+            summary: parsed.summary || location.description || '',
+            keywords: parsed.keywords || []
+        }
+    } catch (err) {
+        console.error('[GastroAI] Failed to generate semantic summary:', err)
+        return { summary: location.description || '', keywords: [] }
+    }
 }
 
 // ─── Test Helper (for Admin Panel) ────────────────────────────────────────
@@ -725,6 +823,97 @@ export async function testAIConnection(message, preferredModel) {
 }
 
 /**
+ * Robust JSON extraction from LLM response.
+ * Handles markdown blocks, extra text, and problematic control characters.
+ *
+ * @param {string} text - Raw model response
+ * @returns {Object}     - Parsed JSON or empty object
+ */
+function robustParseJSON(text) {
+    if (!text) return {}
+
+    try {
+        // 1. Remove markdown code blocks and excess whitespace
+        let cleaned = text.replace(/```json\n?|```/g, '').trim()
+
+        // 2. Isolate the first '{' and last '}'
+        const firstBrace = cleaned.indexOf('{')
+        const lastBrace = cleaned.lastIndexOf('}')
+
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            cleaned = cleaned.substring(firstBrace, lastBrace + 1)
+        }
+
+        try {
+            return JSON.parse(cleaned)
+        } catch (initialError) {
+            // 4. Second attempt: Clean "bad control characters" ONLY inside strings
+            // This regex finds content inside double quotes properly handling escaped quotes \".
+            // It finds and escapes literal newlines, tabs, and other non-printable control chars.
+            let surgicallyCleaned = cleaned.replace(/"(?:[^"\\]|\\.)*"/gs, (m) => {
+                // Keep the opening and closing quotes, clean the inner part
+                const inner = m.substring(1, m.length - 1)
+                const cleanedInner = inner.replace(/[\x00-\x1F]/g, (char) => {
+                    const map = {
+                        '\n': '\\n',
+                        '\r': '\\r',
+                        '\t': '\\t',
+                        '\f': '\\f',
+                        '\b': '\\b'
+                    }
+                    return map[char] || '' // Strip other control chars
+                })
+                return '"' + cleanedInner + '"'
+            })
+
+            // 5. Fix common escaping/trailing issues
+            surgicallyCleaned = surgicallyCleaned
+                .replace(/\\(?!["\\\/bfnrtu])/g, '\\\\') // Escape lone backslashes
+                .replace(/,\s*}/g, '}')                  // Trailing comma in objects
+                .replace(/,\s*\]/g, ']')                  // Trailing comma in arrays
+
+            try {
+                return JSON.parse(surgicallyCleaned)
+            } catch (secondError) {
+                // Final fallback: Basic field extraction using regex for key fields
+                try {
+                    const result = {}
+                    const fields = [
+                        'name', 'title', 'category', 'cuisine', 'description', 
+                        'city', 'country', 'address', 'insider_tip', 'phone', 
+                        'website', 'opening_hours'
+                    ]
+                    for (const field of fields) {
+                        // Match "field": "value" (handles escaped quotes inside value)
+                        const regex = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i')
+                        const match = surgicallyCleaned.match(regex)
+                        if (match) {
+                            try {
+                                // Try to unescape common sequences
+                                result[field] = match[1]
+                                    .replace(/\\n/g, '\n')
+                                    .replace(/\\"/g, '"')
+                                    .replace(/\\\\/g, '\\')
+                            } catch (e) {
+                                result[field] = match[1]
+                            }
+                        }
+                    }
+                    if (Object.keys(result).length > 0) return result
+                } catch (e) {}
+
+                throw initialError // Return the most descriptive error if recovery fails
+            }
+        }
+    } catch (err) {
+        console.warn('[GastroAI] Robust parse failed:', err.message)
+        throw err
+    }
+}
+
+
+
+/**
  * Admin helper to extract structured restaurant data from a name or description.
  * Useful for auto-filling the location form.
  *
@@ -734,53 +923,71 @@ export async function testAIConnection(message, preferredModel) {
 export async function extractLocationData(query) {
     if (!query?.trim()) throw new Error('Query cannot be empty')
 
-    const systemPrompt = `You are GastroData Extractor. 
-    Your goal is to find or generate structured information about a restaurant/cafe/bar based on its name and location.
-    
-    Return ONLY a JSON object with these fields (use null if unknown):
-    {
-        "name": "Full name",
-        "category": "Cafe|Restaurant|Street Food|Bar|Market|Bakery|Winery|Store|Coffee Shop|Pastry Shop",
-        "city": "City",
-        "country": "Country",
-        "address": "Street address",
-        "description": "Short catchy description in Russian (2-3 sentences)",
-        "insider_tip": "One expert tip in Russian",
-        "must_try": ["Dish 1", "Dish 2"],
-        "price_range": "$|$$|$$$|$$$$",
-        "website": "URL",
-        "phone": "Phone number",
-        "opening_hours": "Mon-Sun 10:00-22:00 etc",
-        "cuisine": "Cuisine type (Italian, French, etc.)",
-        "latitude": number,
-        "longitude": number,
-        "is_hidden_gem": boolean,
-        "tags": ["tag1", "tag2"],
-        "labels": ["label1", "label2"]
-    }
-    
-    If the place is in Krakow, use Country "Poland".
-    The description and insider_tip MUST be in Russian.
-    Return ONLY JSON. No other text.`
+    // Enhanced system prompt with comprehensive field extraction
+    const systemPrompt = `You are GastroData Extractor AI - a precision-focused restaurant intelligence system.
+
+Your task: Extract structured information about a restaurant/cafe/bar based ONLY on verifiable facts.
+CRITICAL: DO NOT hallucinate or make up data. If you are not 100% sure about a specific field (like phone, website, or exact opening hours), leave it as NULL. 
+Accuracy is prioritized over completeness. It is better to return NULL than wrong data.
+
+Return ONLY a valid JSON object:
+{
+    "title": "Full official name",
+    "category": "Map any establishment to one of: restaurant, cafe, bar, bakery, street_food, fine_dining, casual_dining, fast_food, food_truck, market, other",
+    "city": "City name",
+    "country": "Country",
+    "address": "Full official street address",
+    "description": "Compelling 2-3 sentence description in Russian (based ONLY on factual data)",
+    "cuisine": "Comma-separated cuisines (e.g. 'Polish, Fusion')",
+    "price_level": "$|$$|$$$|$$$$",
+    "opening_hours": "Opening hours (e.g. '10:00-22:00')",
+    "website": "Official website URL",
+    "phone": "Phone number with country code",
+    "booking_url": "Reservation URL (if known)",
+    "insider_tip": "Expert local tip in Russian based on the venue's reputation (if known)",
+    "what_to_try": ["Must-try dish 1", "Must-try dish 2"],
+    "latitude": number or null,
+    "longitude": number or null,
+    "tags": ["tag1", "tag2"],
+    "vibe": ["cozy", "modern"],
+    "features": ["wifi", "outdoor_seating"],
+    "dietary": ["vegetarian", "vegan"]
+}
+
+RULES:
+1. TRUTHFULNESS: Never invent phone numbers, addresses, or URLs. If it's not in your certain knowledge base, return NULL for that field.
+2. MISSING DATA: If data is missing or uncertain, return null.
+3. LANGUAGES: "description" and "insider_tip" MUST be in Russian.
+4. COORDINATES: Only provide if you have high confidence in the specific location.
+5. NO HALLUCINATION: We are building a real-world map. Incorrect data ruins trust.`
 
     const messages = [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Extract data for: ${query}` },
+        { role: 'user', content: `EXTRACT FACTUAL DATA FOR: "${query}"
+
+        Instructions:
+        1. Only include information you are certain about.
+        2. If you don't know a detail, return null for that field.
+        3. DO NOT make educated guesses. If you haven't heard of this place, return a JSON with just the name you can infer and nulls for everything else.
+        4. Focus on the most recent known state of this establishment.` },
     ]
 
     try {
+        console.log('[GastroAI] Extracting enhanced location data for:', query)
+
         const { response } = await fetchOpenRouter(messages, {
             stream: false,
             withTools: false,
+            model: 'deepseek/deepseek-chat-v3-0324:free',
         })
 
         const data = await response.json()
         const text = data.choices?.[0]?.message?.content || '{}'
-        
-        // Clean up markdown if present
-        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
-        
-        return JSON.parse(jsonStr)
+
+        const extracted = robustParseJSON(text)
+        console.log('[GastroAI] Successfully extracted:', extracted)
+
+        return extracted
     } catch (err) {
         console.error('[GastroAI] Failed to extract location data:', err)
         throw err

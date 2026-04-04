@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils'
 import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {
-    const { data: pendingReviews = [], isLoading: loadingReviews } = usePendingReviews()
-    const { data: pendingLocations = [], isLoading: loadingLocs } = usePendingLocations()
+    const { data: pendingReviews = [], isLoading: _loadingReviews } = usePendingReviews()
+    const { data: pendingLocations = [], isLoading: _loadingLocs } = usePendingLocations()
     const updateReviewStatus = useUpdateReviewStatusMutation()
     const updateLocationStatus = useUpdateLocationStatusMutation()
 

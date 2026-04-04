@@ -10,6 +10,7 @@
  * Mutation hooks follow the pattern: use<Verb><Entity>Mutation
  */
 
+import { getOpenFoodFactsContext, getIngredientCulinaryContext } from './openfoodfacts.api'
 import {
     useQuery,
     useMutation,
@@ -28,7 +29,8 @@ import {
     deleteLocation,
 } from './locations.api'
 
-import { analyzeQuery } from './ai.api'
+import { analyzeQuery, extractLocationData } from './ai.api'
+import * as aiAssistant from './ai-assistant.service'
 
 // ─── Query Keys (centralised to avoid string typos) ───────────────────────
 export const queryKeys = {
@@ -148,14 +150,51 @@ export function useAIQueryMutation() {
     })
 }
 
-import { extractLocationData } from './ai.api'
-
-/**
- * Admin: Extract structured data for a location from a string.
- */
 export function useExtractLocationMutation() {
     return useMutation({
         mutationFn: (query) => extractLocationData(query),
+    })
+}
+
+// ─── AI Assistant (Semantic Indexing & Bulk Ops) ──────────────────────────
+
+/**
+ * Admin: Trigger deep semantic indexing for a single location.
+ */
+export function useReindexLocationSemanticMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: (id) => aiAssistant.reindexLocationSemantic(id),
+        onSuccess: (_data, id) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+        },
+    })
+}
+
+/**
+ * Admin: Trigger bulk semantic re-indexing.
+ */
+export function useBulkReindexLocationsMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: (config) => aiAssistant.bulkReindexLocations(config),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+        },
+    })
+}
+
+/**
+ * Admin: Synchronize location with updated Knowledge Graph logic.
+ */
+export function useSyncLocationWithKGMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: (id) => aiAssistant.syncLocationWithKnowledgeGraph(id),
+        onSuccess: (_data, id) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
+        },
     })
 }
 
@@ -319,7 +358,7 @@ export function useDeleteVisitMutation() {
 }
 
 // ─── Reviews ───
-import { getLocationReviews, getUserReviews, createReview, updateReview, deleteReview } from './reviews.api'
+import { getLocationReviews, getUserReviews, createReview } from './reviews.api'
 
 export function useLocationReviews(locationId) {
     return useQuery({ queryKey: ['reviews', locationId], queryFn: () => getLocationReviews(locationId), staleTime: 60_000 })
@@ -371,6 +410,7 @@ import {
     getDishes, createDish, updateDish, deleteDish,
     getIngredients, createIngredient, updateIngredient, deleteIngredient,
     getKnowledgeStats, searchCuisinesSemantic, getAIContextForQuery,
+    syncKGToLocations,
 } from './knowledge-graph.api'
 
 export function useCuisines() {
@@ -468,6 +508,41 @@ export function useKnowledgeStats() {
     return useQuery({ queryKey: ['knowledge-stats'], queryFn: getKnowledgeStats, staleTime: 60_000 })
 }
 
+/**
+ * Admin: Synchronize entire Knowledge Graph with all locations.
+ */
+export function useSyncKGToLocationsMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: (onProgress) => syncKGToLocations(onProgress),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
+    })
+}
+
+/**
+ * Admin: Spoonacular search for culinary enrichment.
+ */
+export function useSpoonacularSearchMutation() {
+    return useMutation({
+        mutationFn: async ({ query, type = 'any' }) => {
+            const { searchDishes, searchIngredients } = await import('@/shared/api/spoonacular.api')
+            
+            if (type === 'dish') return searchDishes(query)
+            if (type === 'ingredient') return searchIngredients(query)
+            
+            // Default: try both (simplistic for now)
+            const [dishes, ingredients] = await Promise.all([
+                searchDishes(query, 3),
+                searchIngredients(query, 3)
+            ])
+            
+            return { dishes, ingredients }
+        }
+    })
+}
+
 export function useSearchCuisinesSemantic(query, enabled = true) {
     return useQuery({
         queryKey: ['knowledge-cuisines-semantic', query],
@@ -478,3 +553,11 @@ export function useSearchCuisinesSemantic(query, enabled = true) {
 }
 
 export { getAIContextForQuery }
+
+// ─── Culinary & Ingredient Context ───
+
+export function useCulinaryContextMutation() {
+    return useMutation({
+        mutationFn: ({ searchTerm }) => getIngredientCulinaryContext(searchTerm),
+    })
+}

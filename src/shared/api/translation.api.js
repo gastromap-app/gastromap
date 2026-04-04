@@ -34,17 +34,17 @@ export const TRANSLATABLE_FIELDS = [
 ]
 
 /**
- * Translate text to target language
+ * Translate text to target language with timeout protection
  */
-export async function translateText(text, targetLang) {
+export async function translateText(text, targetLang, sourceLang = 'auto') {
     if (!text || typeof text !== 'string') {
         return text
     }
-    
+
     const sourceLanguage = sourceLang || 'auto'
     const targetLanguage = SUPPORTED_LANGUAGES[targetLang]?.name || targetLang
-    
-    const prompt = `Translate the following text to ${targetLanguage}. 
+
+    const prompt = `Translate the following text to ${targetLanguage}.
 Preserve formatting, proper nouns, and brand names.
 Return ONLY the translation, no explanations.
 
@@ -52,15 +52,23 @@ Text to translate:
 "${text}"`
 
     try {
-        const response = await analyzeQuery(prompt, {
-            systemPrompt: 'You are a professional translator. Translate accurately while preserving meaning and tone.',
-            temperature: 0.3,
-            maxTokens: 1000
-        })
-        
+        // Add timeout to prevent hanging translation requests
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Translation request timeout')), 30000)
+        )
+
+        const response = await Promise.race([
+            analyzeQuery(prompt, {
+                systemPrompt: 'You are a professional translator. Translate accurately while preserving meaning and tone.',
+                temperature: 0.3,
+                maxTokens: 1000
+            }),
+            timeoutPromise
+        ])
+
         return response?.content?.trim() || text
     } catch (error) {
-        console.error('[Translation API] Error translating text:', error)
+        console.error('[Translation API] Error translating text:', error.message)
         return text
     }
 }
@@ -105,22 +113,24 @@ export async function translateLocation(locationData, targetLang, sourceLang = '
 
 /**
  * Auto-translate location to all supported languages
+ * Uses sequential translation with delays to prevent API overload
  */
 export async function autoTranslateAll(locationData, sourceLang = 'auto') {
     if (!locationData) {
         return locationData
     }
-    
+
     const result = {
         ...locationData,
         translations: {}
     }
-    
+
     const translations = {}
-    
+    const TRANSLATION_DELAY_MS = 500 // Delay between language translations
+
     for (const [langCode, langInfo] of Object.entries(SUPPORTED_LANGUAGES)) {
         console.log(`[Translation API] Translating to ${langInfo.name}...`)
-        
+
         try {
             const translated = await translateLocation(locationData, langCode, sourceLang)
             translations[langCode] = {
@@ -132,6 +142,11 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
                 ai_context: translated.ai_context,
                 translated_at: new Date().toISOString()
             }
+
+            // Add delay between language translations to prevent API overload
+            if (langCode !== 'ru') { // No delay after last language
+                await new Promise(resolve => setTimeout(resolve, TRANSLATION_DELAY_MS))
+            }
         } catch (error) {
             console.error(`[Translation API] Failed to translate to ${langCode}:`, error)
             translations[langCode] = {
@@ -141,36 +156,66 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
             }
         }
     }
-    
+
     result.translations = translations
     return result
 }
 
 /**
- * Save translations to database
+ * Save translations to database with exponential backoff retry logic
  */
-export async function saveTranslations(locationId, translations) {
-    try {
-        const { error } = await supabase
-            .from('location_translations')
-            .upsert({
-                location_id: locationId,
-                translations: translations,
-                updated_at: new Date().toISOString()
-            }, {
-                onConflict: 'location_id'
-            })
-        
-        if (error) {
-            console.error('[Translation API] Error saving translations:', error)
-            throw error
+export async function saveTranslations(locationId, translations, retries = 2) {
+    const MAX_RETRIES = retries
+    let lastError = null
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const { error } = await supabase
+                .from('location_translations')
+                .upsert({
+                    location_id: locationId,
+                    translations: translations,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'location_id'
+                })
+
+            if (error) {
+                console.error(`[Translation API] Error saving translations (attempt ${attempt + 1}):`, error)
+                lastError = error
+
+                // Only retry on specific lock-related errors
+                if (error.message?.includes('lock') || error.code === 'PGRST301') {
+                    if (attempt < MAX_RETRIES) {
+                        // Exponential backoff: 500ms, 1000ms, 2000ms
+                        const delayMs = 500 * Math.pow(2, attempt)
+                        console.log(`[Translation API] Retrying in ${delayMs}ms...`)
+                        await new Promise(resolve => setTimeout(resolve, delayMs))
+                        continue
+                    }
+                } else {
+                    // Don't retry for non-lock errors
+                    throw error
+                }
+            } else {
+                console.log('[Translation API] Translations saved successfully')
+                return
+            }
+        } catch (error) {
+            lastError = error
+            console.error(`[Translation API] Exception saving translations (attempt ${attempt + 1}):`, error)
+
+            if (error.message?.includes('lock') && attempt < MAX_RETRIES) {
+                const delayMs = 500 * Math.pow(2, attempt)
+                console.log(`[Translation API] Retrying in ${delayMs}ms...`)
+                await new Promise(resolve => setTimeout(resolve, delayMs))
+            }
         }
-        
-        console.log('[Translation API] Translations saved successfully')
-    } catch (error) {
-        console.error('[Translation API] Exception saving translations:', error)
-        throw error
     }
+
+    // After all retries exhausted, log but don't throw - translations are non-blocking
+    console.error('[Translation API] Failed to save translations after retries:', lastError)
+    // Non-blocking failure - don't throw to avoid blocking location creation
 }
 
 /**

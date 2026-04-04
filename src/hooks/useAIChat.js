@@ -1,6 +1,10 @@
 import { useCallback } from 'react'
 import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { getUserReviews } from '@/shared/api/reviews.api'
+import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery } from '@/shared/api/ai.api'
 import { config } from '@/shared/config/env'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
@@ -41,6 +45,9 @@ export function useAIChat() {
     } = useAIChatStore()
 
     const { prefs } = useUserPrefsStore()
+    const { favoriteIds } = useFavoritesStore()
+    const { locations } = useLocationsStore()
+    const { user } = useAuthStore()
     const { aiApiKey: adminApiKey } = useAppConfigStore()
 
     // Use admin runtime key (set via AdminAIPage) or fall back to env var.
@@ -63,7 +70,39 @@ export function useAIChat() {
                 content: m.content,
             }))
 
-        const context = { preferences: prefs, history }
+        // Fetch user reviews for deep personalization if authenticated
+        let userExperience = []
+        if (user?.id) {
+            try {
+                const reviews = await getUserReviews(user.id)
+                userExperience = reviews.map(r => ({
+                    location: r.locations?.title,
+                    rating: r.rating,
+                    text: r.review_text?.slice(0, 100) // Keep it concise for prompt
+                }))
+            } catch (err) {
+                console.warn('[useAIChat] Failed to fetch user reviews for context')
+            }
+        }
+
+        const userData = {
+            visitedCount: prefs.lastVisited?.length || 0,
+            visitedNames: locations
+                .filter(l => (prefs.lastVisited || []).includes(l.id))
+                .map(l => l.title),
+            favoritesNames: locations
+                .filter(l => favoriteIds.includes(l.id))
+                .map(l => l.title),
+            recentInterests: prefs.frequentSearches || [],
+            userExperience,
+            foodieDNA: prefs.foodieDNA || ''
+        }
+
+        const context = { 
+            preferences: prefs, 
+            history,
+            userData 
+        }
 
         try {
             // ── Streaming path (OpenRouter API) ──────────────────────────────
@@ -100,7 +139,7 @@ export function useAIChat() {
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, activeApiKey, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory])
+    }, [isTyping, prefs, messages, activeApiKey, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory])
 
     return {
         messages,

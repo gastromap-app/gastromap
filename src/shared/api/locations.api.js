@@ -25,73 +25,90 @@ const AUTO_TRANSLATE = config.ai.isOpenRouterConfigured
 // AND admin-form aliases (name, price_range, opening_hours, image_url, …)
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
 function normalise(row) {
+    if (!row) return null;
+    
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
+    
     return {
         id: row.id,
-        // ── Title ────────────────────────────────────────────────────────
+        // Canonical name is title
         title: row.title ?? '',
-        name: row.title ?? '',           // alias used by AdminLocationsPage list
+        // UI-legacy fallback (can be phased out)
+        name: row.title ?? '',
 
-        // ── Text ─────────────────────────────────────────────────────────
+        // Textual
         description: row.description ?? '',
         address: row.address ?? '',
         city: row.city ?? '',
         country: row.country ?? '',
 
-        // ── Geo ──────────────────────────────────────────────────────────
+        // Coordinates (flat as well as nested for different UI components)
         coordinates: { lat, lng },
-        lat,                             // direct access for admin map
+        lat,
         lng,
 
-        // ── Category / Cuisine ───────────────────────────────────────────
-        category: row.category ?? 'Other',
-        cuisine: row.cuisine ?? '',
+        // Canonical category
+        category: row.category ?? 'other',
+        // UI-legacy fallback
+        type: row.category ?? 'other',
+        
+        cuisine: row.cuisine_types?.[0] ?? '', // Taking first from array
+        cuisine_types: row.cuisine_types ?? [],
 
-        // ── Images ───────────────────────────────────────────────────────
-        image: row.image ?? '',
-        image_url: row.image ?? '',      // alias for admin form
-        photos: row.photos ?? [],
-        images: row.photos ?? [],        // alias for admin form
+        // Media
+        image: row.image_url ?? '',
+        image_url: row.image_url ?? '',
+        photos: row.google_photos ?? [],
+        images: row.google_photos ?? [],
 
-        // ── Ratings & Pricing ────────────────────────────────────────────
-        rating: Number(row.rating ?? 0),
-        priceLevel: row.price_level ?? '$$',
-        price_range: row.price_level ?? '$$',  // alias for admin form
+        // Core stats
+        rating: Number(row.google_rating ?? 0),
+        google_rating: Number(row.google_rating ?? 0),
+        google_user_ratings_total: row.google_user_ratings_total ?? 0,
+        
+        price_level: row.price_range ?? '$$',
+        priceLevel: row.price_range ?? '$$', 
+        price_range: row.price_range ?? '$$',
 
-        // ── Hours ────────────────────────────────────────────────────────
+        // Operational
+        opening_hours: row.opening_hours ?? '',
         openingHours: row.opening_hours ?? '',
-        opening_hours: row.opening_hours ?? '',  // alias for admin form
+        booking_url: row.booking_url ?? '',
+        website: row.website ?? '',
+        phone: row.phone ?? '',
 
-        // ── Arrays ───────────────────────────────────────────────────────
+        // Arrays
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
-        vibe: row.vibe ?? [],
-        features: row.features ?? [],
+        vibe: row.vibe ?? [], // Note: vibe is not in schema directly, might be part of tags or tags in code is vibe?
+        features: row.amenities ?? [],
+        amenities: row.amenities ?? [],
         best_for: row.best_for ?? [],
-        dietary: row.dietary ?? [],
+        dietary: row.dietary_options ?? [],
+        dietary_options: row.dietary_options ?? [],
 
-        // ── Booleans ─────────────────────────────────────────────────────
-        has_wifi: row.has_wifi ?? false,
-        has_outdoor_seating: row.has_outdoor_seating ?? false,
-        reservations_required: row.reservations_required ?? false,
+        // Booleans
+        has_wifi: !!row.wifi_quality && row.wifi_quality !== 'none',
+        has_outdoor_seating: row.outdoor_seating ?? false,
+        reservations_required: row.reservation_required ?? false,
 
-        // ── Michelin ─────────────────────────────────────────────────────
-        michelin_stars: row.michelin_stars ?? 0,
-        michelin_bib: row.michelin_bib ?? false,
-
-        // ── AI / Expert ──────────────────────────────────────────────────
+        // Expert notes
         insider_tip: row.insider_tip ?? '',
-        what_to_try: row.what_to_try ?? [],
+        what_to_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
+        must_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
+
+        // AI Metadata
+        status: row.status ?? 'pending',
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
-
-        // ── Status / Meta ────────────────────────────────────────────────
-        status: row.status ?? 'active',
+        has_embedding: !!row.embedding,
+        
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     }
 }
+
 
 // ─── Read ──────────────────────────────────────────────────────────────────
 
@@ -103,12 +120,12 @@ export async function getLocations(filters = {}) {
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('rating', { ascending: false })
+        .order('google_rating', { ascending: false })
         .range(offset, offset + (limit - 1))
 
     // Admin can pass showAll=true to bypass status filter, or status='pending' etc.
     if (!showAll) {
-        q = q.eq('status', status ?? 'active')
+        q = q.eq('status', status ?? 'approved')
     } else if (status) {
         // showAll + explicit status = filter by that specific status
         q = q.eq('status', status)
@@ -118,12 +135,13 @@ export async function getLocations(filters = {}) {
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', city)
     if (country) q = q.ilike('country', country)
-    if (minRating != null) q = q.gte('rating', minRating)
-    if (priceLevel?.length) q = q.in('price_level', priceLevel)
-    if (vibe?.length) q = q.overlaps('vibe', vibe)
+    if (minRating != null) q = q.gte('google_rating', minRating)
+    if (priceLevel?.length) q = q.in('price_range', priceLevel)
+    if (vibe?.length) q = q.overlaps('tags', vibe) // vibe maps to tags if not separate column
 
+    // Search by title or city if query exists
     if (query) {
-        q = q.textSearch('fts', query, { config: 'english', type: 'websearch' })
+        q = q.or(`title.ilike.%${query}%,city.ilike.%${query}%`)
     }
 
     const { data, error, count } = await q
@@ -148,9 +166,9 @@ export async function getLocation(id, { adminMode = false } = {}) {
         .select('*')
         .eq('id', id)
 
-    // Public facing: only show active locations. Admin mode: show any status.
+    // Public facing: only show active (approved) locations. Admin mode: show any status.
     if (!adminMode) {
-        q = q.eq('status', 'active')
+        q = q.eq('status', 'approved')
     }
 
     const { data, error } = await q.single()
@@ -174,23 +192,9 @@ export async function getLocation(id, { adminMode = false } = {}) {
 export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
     if (!USE_SUPABASE) return _mockCreate(data)
 
-    let locationData = { ...data }
-    let translations = null
-    
-    // Auto-translate before saving
-    if (enableTranslation && config.ai.isOpenRouterConfigured) {
-        console.log('[locations.api] Auto-translating location...')
-        
-        try {
-            const result = await processLocationTranslations(data, true)
-            locationData = result
-            translations = result.translations
-        } catch (error) {
-            console.error('[locations.api] Auto-translation failed, saving without translations:', error)
-            // Continue without translations (non-blocking)
-        }
-    }
+    const locationData = { ...data }
 
+    // Create location IMMEDIATELY (without waiting for translations)
     const row = _toRow(locationData)
     const { data: created, error } = await supabase
         .from('locations')
@@ -199,17 +203,27 @@ export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
         .single()
 
     if (error) throw new ApiError(error.message, 500, error.code)
-    
-    // Save translations separately
-    if (translations) {
-        try {
-            await saveTranslations(created.id, translations)
-        } catch (error) {
-            console.error('[locations.api] Failed to save translations:', error)
-            // Non-blocking, continue
-        }
+
+    // Auto-translate IN BACKGROUND (non-blocking, fire-and-forget)
+    // This allows the UI to return immediately while translations happen in the background
+    if (enableTranslation && config.ai.isOpenRouterConfigured) {
+        console.log('[locations.api] Starting background translation for location:', created.id)
+
+        // Don't await this - let it run in the background
+        processLocationTranslations(data, true)
+            .then(result => {
+                console.log('[locations.api] Auto-translation completed, saving translations...')
+                return saveTranslations(created.id, result.translations)
+            })
+            .then(() => {
+                console.log('[locations.api] Translations saved successfully')
+            })
+            .catch(error => {
+                console.error('[locations.api] Background translation failed (non-blocking):', error)
+                // Silently fail - translations are optional enhancement
+            })
     }
-    
+
     return normalise(created)
 }
 
@@ -324,68 +338,92 @@ export async function getLocationTranslated(id, lang = 'en') {
 function _toRow(d) {
     const row = {}
 
-    // ── Title: accepts 'title' (API canonical) or 'name' (admin form alias) ──
-    const title = d.title ?? d.name
-    if (title !== undefined)          row.title = title
+    // Required or core fields
+    row.title = d.title || d.name || 'Untitled'
+    row.category = (d.category || d.type || 'other').toLowerCase()
+    row.city = d.city || ''
+    row.country = d.country || ''
 
-    if (d.description !== undefined)  row.description = d.description
-    if (d.address !== undefined)      row.address = d.address
-    if (d.city !== undefined)         row.city = d.city
-    if (d.country !== undefined)      row.country = d.country
+    if (d.description !== undefined) row.description = d.description
+    if (d.address !== undefined)     row.address = d.address
 
-    // ── Coordinates: accepts lat/lng (canonical) or latitude/longitude (alias) ──
-    const lat = d.lat ?? d.latitude
-    const lng = d.lng ?? d.longitude
-    if (lat !== undefined)            row.lat = Number(lat)
-    if (lng !== undefined)            row.lng = Number(lng)
+    // Coordinates (lat, lng are canonical)
+    if (d.lat !== undefined) row.lat = Number(d.lat)
+    else if (d.latitude !== undefined) row.lat = Number(d.latitude)
 
-    if (d.category !== undefined)     row.category = d.category
-    if (d.cuisine !== undefined)      row.cuisine = d.cuisine
+    if (d.lng !== undefined) row.lng = Number(d.lng)
+    else if (d.longitude !== undefined) row.lng = Number(d.longitude)
 
-    // ── Image: accepts 'image' (canonical) or 'image_url' (admin form alias) ──
-    const image = d.image ?? d.image_url
-    if (image !== undefined)          row.image = image
+    // Category
+    if (d.category !== undefined) row.category = d.category
+    else if (d.type !== undefined) row.category = d.type
 
-    // ── Photos: accepts 'photos' (canonical) or 'images' (admin form alias) ──
-    const photos = d.photos ?? d.images
-    if (photos !== undefined)         row.photos = photos
+    if (d.cuisine !== undefined)     row.cuisine_types = Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine].filter(Boolean)
+    if (d.cuisine_types !== undefined) row.cuisine_types = d.cuisine_types
 
-    if (d.rating !== undefined)       row.rating = Number(d.rating)
+    // Images
+    if (d.image_url !== undefined) row.image_url = d.image_url
+    else if (d.image !== undefined) row.image_url = d.image
 
-    // ── Price: accepts 'priceLevel' (canonical) or 'price_range' (admin form alias) ──
-    const priceLevel = d.priceLevel ?? d.price_range
-    if (priceLevel !== undefined)     row.price_level = priceLevel
+    if (d.google_photos !== undefined) row.google_photos = d.google_photos
+    else if (d.photos !== undefined) row.google_photos = d.photos
+    else if (d.images !== undefined) row.google_photos = d.images
 
-    // ── Hours: accepts 'openingHours' (canonical) or 'opening_hours' (admin form alias) ──
-    const openingHours = d.openingHours ?? d.opening_hours
-    if (openingHours !== undefined)   row.opening_hours = openingHours
+    if (d.rating !== undefined)         row.google_rating = Number(d.rating)
+    if (d.google_rating !== undefined)  row.google_rating = Number(d.google_rating)
 
-    if (d.tags !== undefined)         row.tags = d.tags
-    if (d.vibe !== undefined)         row.vibe = d.vibe
-    if (d.features !== undefined)     row.features = d.features
-    if (d.best_for !== undefined)     row.best_for = d.best_for
-    if (d.dietary !== undefined)      row.dietary = d.dietary
+    // Price
+    if (d.price_range !== undefined)  row.price_range = d.price_range
+    else if (d.price_level !== undefined) row.price_range = d.price_level
+    else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
+
+    // Hours
+    if (d.opening_hours !== undefined) row.opening_hours = d.opening_hours
+    else if (d.openingHours !== undefined) row.opening_hours = d.openingHours
+
+    if (d.website !== undefined)     row.website = d.website
+    if (d.phone !== undefined)       row.phone = d.phone
+    if (d.booking_url !== undefined) row.booking_url = d.booking_url
+
+    if (d.tags !== undefined)        row.tags = d.tags
+    // if (d.vibe !== undefined)     // vibe not in schema, use tags?
+    
+    if (d.amenities !== undefined)   row.amenities = d.amenities
+    else if (d.features !== undefined) row.amenities = d.features
+
+    if (d.best_for !== undefined)    row.best_for = d.best_for
+    
+    if (d.dietary_options !== undefined) row.dietary_options = d.dietary_options
+    else if (d.dietary !== undefined)    row.dietary_options = d.dietary
+
     if (d.special_labels !== undefined) row.special_labels = d.special_labels
-    if (d.has_wifi !== undefined)     row.has_wifi = d.has_wifi
-    if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
-    if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
-    if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
-    if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
-    if (d.insider_tip !== undefined)  row.insider_tip = d.insider_tip
+    
+    if (d.has_wifi !== undefined)    row.wifi_quality = d.has_wifi ? 'high' : 'none'
+    
+    if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
+    else if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
 
-    // ── What to try: accepts 'what_to_try' array OR 'must_try' comma-separated string ──
-    const whatToTry = d.what_to_try ?? d.must_try
+    if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
+    else if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
+
+    if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
+
+    // What to try (stored as text in DB, but treated as list in UI)
+    const whatToTry = d.must_try ?? d.what_to_try
     if (whatToTry !== undefined) {
-        row.what_to_try = Array.isArray(whatToTry)
-            ? whatToTry
-            : String(whatToTry).split(',').map(s => s.trim()).filter(Boolean)
+        row.must_try = Array.isArray(whatToTry)
+            ? whatToTry.join(', ')
+            : String(whatToTry)
     }
 
     if (d.ai_keywords !== undefined)  row.ai_keywords = d.ai_keywords
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
+    if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
+    
     return row
 }
+
 
 // ─── Mock fallbacks ────────────────────────────────────────────────────────
 
@@ -452,7 +490,7 @@ export async function getCategories() {
     const { data, error } = await supabase
         .from('locations')
         .select('category')
-        .eq('status', 'active')
+        .eq('status', 'approved')
 
     if (error) {
         console.warn('[locations.api] Failed to fetch categories, using mocks:', error.message)

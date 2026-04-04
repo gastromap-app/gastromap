@@ -25,6 +25,7 @@ import { config } from '@/shared/config/env'
 import { ApiError } from './client'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { supabase } from '@/shared/api/client'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
@@ -34,6 +35,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * The system tries these in order until one succeeds.
  */
 const MODEL_CASCADE = [
+    'stepfun/step-3.5-flash:free',          // User preferred free model
     'nvidia/nemotron-nano-9b-v2:free',      // Often available, very fast
     'z-ai/glm-4.5-air:free',                 // Good availability
     'mistralai/mistral-small-3.1:free',      // Reliable multilingual
@@ -145,6 +147,61 @@ const TOOLS = [
     },
 ]
 
+// ─── Semantic Search ──────────────────────────────────────────────────────
+
+/**
+ * Semantic search via pgvector in Supabase.
+ * Converts user query into an embedding → then searches for similar locations.
+ */
+async function semanticSearch(queryText, limit = 10) {
+    const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+
+    if (!apiKey || !supabase) return []
+
+    try {
+        // 1. Generate embedding for user query
+        const embResponse = await fetch('https://openrouter.ai/api/v1/embeddings', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://gastromap.app',
+                'X-Title': 'GastroMap',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'openai/text-embedding-3-small',
+                input: queryText,
+                dimensions: 768,
+            }),
+        })
+
+        if (!embResponse.ok) return []
+
+        const embData = await embResponse.json()
+        const queryEmbedding = embData.data?.[0]?.embedding
+
+        if (!queryEmbedding) return []
+
+        // 2. Call pgvector RPC function in Supabase
+        const { data, error } = await supabase.rpc('search_locations_by_embedding', {
+            query_embedding: queryEmbedding,
+            match_threshold: 0.35, // More permissive for broad intent
+            match_count: limit,
+        })
+
+        if (error) {
+            console.warn('[ai.api] pgvector search error:', error.message)
+            return []
+        }
+
+        return data || []
+    } catch (error) {
+        console.warn('[ai.api] semanticSearch failed:', error.message)
+        return []
+    }
+}
+
 // ─── Client-side tool executor ────────────────────────────────────────────
 
 /**
@@ -153,9 +210,9 @@ const TOOLS = [
  *
  * @param {string} name   tool name
  * @param {Object} args   parsed JSON arguments from the model
- * @returns {Object}      tool result to send back to the model
+ * @returns {Promise<Object>} tool result to send back to the model
  */
-function executeTool(name, args) {
+async function executeTool(name, args) {
     const { locations } = useLocationsStore.getState()
 
     if (name === 'search_locations') {
@@ -224,7 +281,8 @@ function executeTool(name, args) {
         }
         if (keyword) {
             const kw = keyword.toLowerCase()
-            results = results.filter(l =>
+            // 1. Literal local search (includes AI keywords & context)
+            const literalMatches = results.filter(l =>
                 l.title?.toLowerCase().includes(kw) ||
                 l.description?.toLowerCase().includes(kw) ||
                 l.tags?.some(t => t.toLowerCase().includes(kw)) ||
@@ -233,9 +291,38 @@ function executeTool(name, args) {
                 l.insider_tip?.toLowerCase().includes(kw) ||
                 l.what_to_try?.some(w => w.toLowerCase().includes(kw))
             )
+
+            // 2. Semantic AI Search boost
+            if (supabase) {
+                try {
+                    const semanticResults = await semanticSearch(keyword, limit * 2)
+                    const semanticIds = new Set(semanticResults.map(r => r.id))
+                    
+                    // We use ALL locations for semantic search, but keep only those that 
+                    // fit our other hard filters (city, cuisine, etc.)
+                    // RESULTS here already contains locations filtered by city/cuisine/etc.
+                    
+                    results.sort((a, b) => {
+                        const aInSemantic = semanticIds.has(a.id) ? 1 : 0
+                        const bInSemantic = semanticIds.has(b.id) ? 1 : 0
+                        
+                        // Priority: 1. Semantic match, 2. Rating
+                        if (aInSemantic !== bInSemantic) return bInSemantic - aInSemantic
+                        return (b.rating ?? 0) - (a.rating ?? 0)
+                    })
+                } catch (err) {
+                    console.warn('[ai.api] Semantic search failed, using literal filter:', err)
+                    results = literalMatches
+                    results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                }
+            } else {
+                results = literalMatches
+                results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            }
+        } else {
+            results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
         }
 
-        results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
         results = results.slice(0, limit)
 
         return results.map(l => ({
@@ -548,7 +635,7 @@ async function runAgentPass(messages) {
             args = {}
         }
 
-        const result = executeTool(toolCall.function.name, args)
+        const result = await executeTool(toolCall.function.name, args)
 
         toolResults.push({
             role: 'tool',

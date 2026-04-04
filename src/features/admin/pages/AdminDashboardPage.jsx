@@ -66,17 +66,6 @@ const AdminDashboardPage = () => {
         { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-purple-500' },
     ]
 
-    const formatTimeAgo = (timestamp) => {
-        if (!timestamp) return '—'
-        const diff = Date.now() - new Date(timestamp).getTime()
-        const mins = Math.floor(diff / 60000)
-        if (mins < 2) return '2M AGO'
-        if (mins < 60) return `${mins}M AGO`
-        const hours = Math.floor(mins / 60)
-        if (hours < 24) return `${hours}H AGO`
-        return `${Math.floor(hours / 24)}D AGO`
-    }
-
     return (
         <div className="space-y-8 pb-20">
             {/* Header Section matches AdminLocationsPage */}
@@ -191,7 +180,7 @@ const AdminDashboardPage = () => {
                                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate opacity-60 leading-none">{item.action_text || item.activity_type}</p>
                                         </div>
                                     </div>
-                                    <span className="text-[9px] font-bold text-slate-300 whitespace-nowrap ml-4 uppercase tracking-widest">{formatTimeAgo(item.created_at)}</span>
+                                    <span className="text-[9px] font-bold text-slate-300 whitespace-nowrap ml-4 uppercase tracking-widest">{formatTimeAgo(item.created_at, now)}</span>
                                 </div>
                             )) : (
                                 Array.from({ length: 3 }).map((_, i) => (

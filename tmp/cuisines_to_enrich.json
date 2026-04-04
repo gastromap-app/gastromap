@@ -1,0 +1,44 @@
+[
+  {
+    "id": "16c792e7-b922-4d96-b732-75299e69deed",
+    "name": "Vegan",
+    "typical_dishes": ["Buddha bowl", "Falafel", "Tofu scramble", "Vegan burger"]
+  },
+  {
+    "id": "2d8dc009-2290-4450-b2a3-2ea68a317895",
+    "name": "Cafe",
+    "typical_dishes": ["Espresso", "Cappuccino", "Croissant", "Cake", "Sandwich"]
+  },
+  {
+    "id": "b95426b8-9c83-4952-af68-52faff6fb148",
+    "name": "Cocktail Bar",
+    "typical_dishes": ["Old Fashioned", "Negroni", "Martini", "Margarita", "Spritz"]
+  },
+  { "id": "80991e42-be3f-4153-b1b3-a143ed771948", "name": "French", "typical_dishes": null },
+  { "id": "4cd611df-3d7b-4ae6-a02d-c8dceaecd3c4", "name": "Chinese", "typical_dishes": null },
+  { "id": "43f7efb0-6e27-41a2-b74b-e91a11702056", "name": "Indian", "typical_dishes": null },
+  { "id": "24811d9f-9c74-4914-8f1e-5c08384b4ce3", "name": "Mexican", "typical_dishes": null },
+  { "id": "179ae45f-20b4-4a5b-ae68-3920ea8824d6", "name": "Mediterranean", "typical_dishes": null },
+  { "id": "d4ab95d9-2a12-4203-9254-d2fec6b297d7", "name": "American", "typical_dishes": null },
+  { "id": "ea439c07-8bed-4d3a-9071-ad486c54f76d", "name": "Thai", "typical_dishes": null },
+  {
+    "id": "bea03e52-297f-40b6-8a95-9663e01fbf69",
+    "name": "Polish",
+    "typical_dishes": ["Pierogi", "Bigos", "Żurek", "Kotlet schabowy", "Placki ziemniaczane"]
+  },
+  {
+    "id": "8410dafc-8da2-4dec-85c7-a6c19e014683",
+    "name": "Italian",
+    "typical_dishes": ["Pizza", "Pasta", "Risotto", "Tiramisu", "Bruschetta"]
+  },
+  {
+    "id": "d2b402c0-62db-4f9d-bde6-1a212e6930ee",
+    "name": "Georgian",
+    "typical_dishes": ["Khachapuri", "Khinkali", "Chakapuli", "Badrijani", "Lobio"]
+  },
+  {
+    "id": "3771cc39-f14f-42fc-aae3-2e031d67a2f7",
+    "name": "Japanese",
+    "typical_dishes": ["Sushi", "Ramen", "Tempura", "Udon", "Yakitori"]
+  }
+]

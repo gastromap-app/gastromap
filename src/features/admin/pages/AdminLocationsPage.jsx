@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, useUpdateLocationStatusMutation, usePendingLocations } from '@/shared/api/queries'
+import { useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation } from '@/shared/api/queries'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -34,10 +34,15 @@ function LocationPicker({ position, onLocationSelect }) {
     });
 
     useEffect(() => {
-        if (position) {
-            map.setView(position, map.getZoom());
+        if (position && position[0] && position[1]) {
+            // Only update view if the position is significantly different to prevent jumping
+            const currentCenter = map.getCenter();
+            const dist = Math.sqrt(Math.pow(currentCenter.lat - position[0], 2) + Math.pow(currentCenter.lng - position[1], 2));
+            if (dist > 0.0001) {
+                map.setView(position, map.getZoom());
+            }
         }
-    }, [position, map]);
+    }, [position?.[0], position?.[1], map]);
 
     return position === null ? null : (
         <Marker position={position}></Marker>
@@ -47,20 +52,25 @@ function LocationPicker({ position, onLocationSelect }) {
 const AdminLocationsPage = () => {
     const [view, setView] = useState('list')
     const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'active' | 'pending' | 'rejected'
     const [selectedLocation, setSelectedLocation] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
     const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
     const [viewMode, setViewMode] = useState('list') // 'list' | 'map'
     const [formData, setFormData] = useState(null)
+    const [aiSearchQuery, setAiSearchQuery] = useState('')
     const location = useLocation()
     const navigate = useNavigate()
 
-    const { data: locationsList = [], isLoading: loadingLocations } = useLocations()
+    // useLocations returns { data: [], total, hasMore } — not a plain array
+    const { data: locsData, isLoading: loadingLocations } = useLocations({ showAll: true, limit: 500 })
+    const locationsList = locsData?.data ?? []
     const createLocMutation = useCreateLocationMutation()
     const updateLocMutation = useUpdateLocationMutation()
     const deleteLocMutation = useDeleteLocationMutation()
     const updateLocStatusMutation = useUpdateLocationStatusMutation()
     const { data: pendingLocations = [] } = usePendingLocations()
+    const extractMutation = useExtractLocationMutation()
 
     const handleCreateNew = () => {
         const emptyLocation = {
@@ -90,51 +100,56 @@ const AdminLocationsPage = () => {
             cuisine: '',
             is_hidden_gem: false,
             is_featured: false,
-            status: 'Draft'
+            status: 'pending'
         }
         setSelectedLocation(emptyLocation)
         setFormData(emptyLocation)
         setIsSlideOverOpen(true)
     }
 
-    const handleEdit = (loc) => {
+    const handleEdit = (id) => {
+        const loc = locationsList.find(l => l.id === id)
+        if (!loc) return
         setSelectedLocation(loc)
-        setFormData({
-            id: loc.id,
-            name: loc.name || '',
-            category: loc.category || 'Cafe',
-            city: loc.city || '',
-            country: loc.country || '',
-            address: loc.address || '',
-            description: loc.description || '',
-            insider_tip: loc.insider_tip || '',
-            must_try: loc.must_try || '',
-            price_range: loc.price_range || '$$',
-            website: loc.website || '',
-            phone: loc.phone || '',
-            opening_hours: loc.opening_hours || '',
-            booking_url: loc.booking_url || '',
-            social_instagram: loc.social_instagram || '',
-            social_facebook: loc.social_facebook || '',
-            image_url: loc.image_url || '',
-            images: loc.images || (loc.image_url ? [loc.image_url] : []),
-            latitude: loc.latitude || 50.0647,
-            longitude: loc.longitude || 19.9450,
-            tags: loc.tags || [],
-            best_time: loc.best_time || [],
-            special_labels: loc.special_labels || [],
-            cuisine: loc.cuisine || '',
-            is_hidden_gem: loc.is_hidden_gem || false,
-            is_featured: loc.is_featured || false
-        })
+        
+        // Prepare formData with aliases
+        const prepared = { ...loc };
+        
+        // Handle must_try alias for the UI string input
+        if (Array.isArray(loc.what_to_try)) {
+            prepared.must_try = loc.what_to_try.join(', ');
+        } else {
+            prepared.must_try = loc.what_to_try || '';
+        }
+
+        setFormData(prepared)
         setIsSlideOverOpen(true)
+    }
+
+    const handleAIMagic = async () => {
+        if (!aiSearchQuery.trim()) return
+
+        try {
+            const data = await extractMutation.mutateAsync(aiSearchQuery)
+            if (data) {
+                setFormData(prev => ({
+                    ...prev,
+                    ...data,
+                    must_try: Array.isArray(data.must_try) ? data.must_try.join(', ') : (data.must_try || prev.must_try || ''),
+                    ...(data.what_to_try ? { must_try: data.what_to_try.join(', ') } : {})
+                }))
+                setAiSearchQuery('')
+            }
+        } catch (error) {
+            console.error('[Admin] AI Magic failed:', error)
+            alert('Failed to extract data. Check AI settings or connection.')
+        }
     }
 
     useEffect(() => {
         const params = new URLSearchParams(location.search)
         if (params.get('create') === 'true') {
             handleCreateNew()
-            // Clear params to prevent re-triggering on refresh
             navigate(location.pathname, { replace: true })
         } else if (params.get('import') === 'true') {
             setIsImportWizardOpen(true)
@@ -146,11 +161,11 @@ const AdminLocationsPage = () => {
     const stats = [
         { label: 'Всего', val: locationsList.length.toString(), icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
         { label: 'В очереди', val: pendingLocations.length.toString(), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-        { label: 'Active', val: locationsList.filter(l => l.status === 'Active').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
+        { label: 'Active', val: locationsList.filter(l => l.status === 'active').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
     ]
 
     const handleApprove = (id) => {
-        updateLocStatusMutation.mutate({ id, status: 'Active' })
+        updateLocStatusMutation.mutate({ id, status: 'active' })
     }
 
     const handleDelete = (id) => {
@@ -158,19 +173,32 @@ const AdminLocationsPage = () => {
     }
 
     const handleSave = () => {
+        const submissionData = { ...formData };
+        
+        if (typeof submissionData.must_try === 'string') {
+            submissionData.what_to_try = submissionData.must_try
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+
         if (selectedLocation.id === 'NEW') {
-            createLocMutation.mutate(formData, { onSuccess: () => setIsSlideOverOpen(false) })
+            createLocMutation.mutate(submissionData, { onSuccess: () => setIsSlideOverOpen(false) })
         } else {
-            updateLocMutation.mutate({ id: selectedLocation.id, updates: formData }, { onSuccess: () => setIsSlideOverOpen(false) })
+            updateLocMutation.mutate({ id: selectedLocation.id, updates: submissionData }, { onSuccess: () => setIsSlideOverOpen(false) })
         }
     }
 
-    const filteredLocations = locationsList.filter(loc =>
-        !searchQuery ||
-        loc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filteredLocations = locationsList.filter(loc => {
+        const matchesSearch = !searchQuery ||
+            loc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        
+        const matchesStatus = statusFilter === 'all' || loc.status === statusFilter
+        
+        return matchesSearch && matchesStatus
+    })
 
     const categories = [
         'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
@@ -245,14 +273,14 @@ const AdminLocationsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                     {filtered.map((loc, i) => (
-                        <tr key={loc.id} onClick={() => handleEdit(loc)} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none">
+                        <tr key={loc.id} onClick={() => handleEdit(loc.id)} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none">
                             <td className="px-6 py-4 pl-8 lg:pl-10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner shrink-0">
                                         <Building2 size={18} />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.name}</p>
+                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black shrink-0">{loc.category}</p>
                                             {loc.cuisine && (
@@ -281,17 +309,30 @@ const AdminLocationsPage = () => {
                             <td className="px-6 py-4">
                                 <div className={cn(
                                     "inline-flex items-center p-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                                    loc.status === 'Active' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
-                                        loc.status === 'Pending' ? 'bg-orange-50 dark:bg-orange-500/5 text-orange-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                                    loc.status === 'active' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
+                                        loc.status === 'pending' ? 'bg-orange-50 dark:bg-orange-500/5 text-orange-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
                                 )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full mr-2", loc.status === 'Active' ? 'bg-green-500' : loc.status === 'Pending' ? 'bg-orange-500' : 'bg-slate-300')} />
-                                    {loc.status}
+                                    <div className={cn("w-1.5 h-1.5 rounded-full mr-2", loc.status === 'active' ? 'bg-green-500' : loc.status === 'pending' ? 'bg-orange-500' : 'bg-slate-300')} />
+                                    {loc.status === 'active' ? 'Активен' : loc.status === 'pending' ? 'Ожидает' : 'Отклонен'}
                                 </div>
                             </td>
                             <td className="px-6 py-4 text-right pr-8 lg:pr-10">
-                                <button className="p-2 rounded-xl text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all">
-                                    <MoreHorizontal size={18} />
-                                </button>
+                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(loc.id); }}
+                                        className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                                        title="Редактировать"
+                                    >
+                                        <Edit size={16} />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(loc.id); }}
+                                        className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                                        title="Удалить"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -302,7 +343,6 @@ const AdminLocationsPage = () => {
 
     return (
         <div className="space-y-6 lg:space-y-8 pb-10">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                 <div>
                     <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Локации</h1>
@@ -324,7 +364,6 @@ const AdminLocationsPage = () => {
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
             <div className="grid grid-cols-3 gap-3 lg:gap-8">
                 {stats.map((s, i) => (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} key={i} className="bg-white dark:bg-slate-900/50 p-4 lg:p-6 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/10 transition-all">
@@ -339,13 +378,12 @@ const AdminLocationsPage = () => {
                 ))}
             </div>
 
-            {/* Content Card */}
             <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                 <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-slate-800/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                     <div className="flex gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/50 rounded-2xl w-full lg:w-fit overflow-x-auto no-scrollbar border border-slate-100/50 dark:border-slate-800/50">
                         {[
                             { id: 'list', label: 'Все объекты', icon: ListIcon },
-                            { id: 'moderation', label: 'В очереди', icon: AlertCircle, count: 2 }
+                            { id: 'moderation', label: 'В очереди', icon: AlertCircle, count: pendingLocations.length }
                         ].map(tab => (
                             <button key={tab.id} onClick={() => setView(tab.id)} className={cn(
                                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
@@ -379,9 +417,23 @@ const AdminLocationsPage = () => {
                             </button>
                         </div>
 
+                        <div className="flex items-center gap-2 px-1 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-100/50 dark:border-slate-800/50">
+                            <Filter size={14} className="ml-3 text-slate-400" />
+                            <select 
+                                value={statusFilter} 
+                                onChange={e => setStatusFilter(e.target.value)}
+                                className="bg-transparent border-none py-2.5 pl-1 pr-8 text-[11px] font-bold uppercase tracking-widest outline-none appearance-none cursor-pointer text-slate-600 dark:text-slate-400"
+                            >
+                                <option value="all">Все статусы</option>
+                                <option value="active">Активен</option>
+                                <option value="pending">Ожидает</option>
+                                <option value="rejected">Отклонен</option>
+                            </select>
+                        </div>
+
                         <div className="relative flex-1 lg:w-80 group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                            <input type="text" placeholder="Поиск объектов..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all font-black leading-none" />
+                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск объектов..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all font-black leading-none" />
                         </div>
                     </div>
                 </div>
@@ -403,7 +455,7 @@ const AdminLocationsPage = () => {
                                             <div className="flex items-center gap-6">
                                                 <div className="w-16 h-16 rounded-[24px] bg-white dark:bg-slate-800 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform"><Building2 size={24} /></div>
                                                 <div>
-                                                    <h3 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white leading-none mb-2">{loc.name}</h3>
+                                                    <h3 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white leading-none mb-2">{loc.title}</h3>
                                                     <p className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><MapPin size={12} /> {loc.city}, {loc.country}</p>
                                                 </div>
                                             </div>
@@ -432,7 +484,6 @@ const AdminLocationsPage = () => {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSlideOverOpen(false)} className="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-md" />
                         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="fixed top-0 right-0 w-full sm:w-[600px] bg-white dark:bg-slate-900 h-full z-[110] flex flex-col shadow-2xl overflow-hidden font-sans">
 
-                            {/* Header */}
                             <div className="p-6 lg:p-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-4 lg:gap-5">
                                     <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
@@ -450,10 +501,8 @@ const AdminLocationsPage = () => {
                                 <button onClick={() => setIsSlideOverOpen(false)} aria-label="close-panel" className="p-2.5 lg:p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl lg:rounded-2xl hover:rotate-90 transition-all"><X size={18} className="lg:w-5 lg:h-5" /></button>
                             </div>
 
-                            {/* Content */}
                             <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10 lg:space-y-12 custom-scrollbar relative">
 
-                                {/* Section: AI Magic */}
                                 <div className="p-6 rounded-[28px] bg-gradient-to-br from-indigo-600 to-indigo-700 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20 group border border-white/10 transition-all hover:shadow-indigo-500/30">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl group-hover:bg-white/20 transition-all duration-700" />
                                     <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
@@ -471,13 +520,20 @@ const AdminLocationsPage = () => {
                                             <div className="relative flex-1 group/input">
                                                 <input
                                                     type="text"
+                                                    value={aiSearchQuery}
+                                                    onChange={e => setAiSearchQuery(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && handleAIMagic()}
                                                     className="w-full pl-5 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold placeholder:text-white/30 outline-none focus:bg-white/10 focus:border-white/20 transition-all"
                                                     placeholder="Название и город..."
                                                 />
                                                 <Wand2 size={12} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/input:text-white/60 group-focus-within/input:scale-110 transition-all" />
                                             </div>
-                                            <button className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-[0.96] hover:bg-indigo-50 transition-all shrink-0">
-                                                Заполнить
+                                            <button 
+                                                onClick={handleAIMagic}
+                                                disabled={extractMutation.isPending}
+                                                className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-[0.96] hover:bg-indigo-50 transition-all shrink-0 disabled:opacity-50"
+                                            >
+                                                {extractMutation.isPending ? 'Запрос...' : 'Заполнить'}
                                             </button>
                                         </div>
                                     </div>

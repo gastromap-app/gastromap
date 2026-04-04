@@ -13,9 +13,9 @@ DECLARE
 BEGIN
   SELECT json_build_object(
     'total', (SELECT COUNT(*) FROM locations),
-    'published', (SELECT COUNT(*) FROM locations WHERE status = 'published'),
-    'pending', (SELECT COUNT(*) FROM locations WHERE status = 'pending'),
-    'rejected', (SELECT COUNT(*) FROM locations WHERE status = 'rejected')
+    'published', (SELECT COUNT(*) FROM locations WHERE status = 'active'),   -- schema uses 'active', not 'published'
+    'pending',   (SELECT COUNT(*) FROM locations WHERE status = 'pending'),
+    'rejected',  (SELECT COUNT(*) FROM locations WHERE status = 'rejected')
   ) INTO result;
   RETURN result;
 END;

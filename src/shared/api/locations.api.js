@@ -21,37 +21,72 @@ const USE_SUPABASE = config.supabase.isConfigured
 const AUTO_TRANSLATE = config.ai.isOpenRouterConfigured
 
 // ─── Shape normaliser ──────────────────────────────────────────────────────
+// Exposes BOTH API-canonical names (title, priceLevel, openingHours …)
+// AND admin-form aliases (name, price_range, opening_hours, image_url, …)
+// so neither the public Explore page nor AdminLocationsPage needs a remap.
 function normalise(row) {
+    const lat = Number(row.lat ?? 0)
+    const lng = Number(row.lng ?? 0)
     return {
         id: row.id,
-        title: row.title,
+        // ── Title ────────────────────────────────────────────────────────
+        title: row.title ?? '',
+        name: row.title ?? '',           // alias used by AdminLocationsPage list
+
+        // ── Text ─────────────────────────────────────────────────────────
         description: row.description ?? '',
         address: row.address ?? '',
-        city: row.city,
-        country: row.country,
-        coordinates: { lat: Number(row.lat), lng: Number(row.lng) },
+        city: row.city ?? '',
+        country: row.country ?? '',
+
+        // ── Geo ──────────────────────────────────────────────────────────
+        coordinates: { lat, lng },
+        lat,                             // direct access for admin map
+        lng,
+
+        // ── Category / Cuisine ───────────────────────────────────────────
         category: row.category ?? 'Other',
         cuisine: row.cuisine ?? '',
+
+        // ── Images ───────────────────────────────────────────────────────
         image: row.image ?? '',
+        image_url: row.image ?? '',      // alias for admin form
         photos: row.photos ?? [],
+        images: row.photos ?? [],        // alias for admin form
+
+        // ── Ratings & Pricing ────────────────────────────────────────────
         rating: Number(row.rating ?? 0),
         priceLevel: row.price_level ?? '$$',
+        price_range: row.price_level ?? '$$',  // alias for admin form
+
+        // ── Hours ────────────────────────────────────────────────────────
         openingHours: row.opening_hours ?? '',
+        opening_hours: row.opening_hours ?? '',  // alias for admin form
+
+        // ── Arrays ───────────────────────────────────────────────────────
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
         vibe: row.vibe ?? [],
         features: row.features ?? [],
         best_for: row.best_for ?? [],
         dietary: row.dietary ?? [],
+
+        // ── Booleans ─────────────────────────────────────────────────────
         has_wifi: row.has_wifi ?? false,
         has_outdoor_seating: row.has_outdoor_seating ?? false,
         reservations_required: row.reservations_required ?? false,
+
+        // ── Michelin ─────────────────────────────────────────────────────
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
+
+        // ── AI / Expert ──────────────────────────────────────────────────
         insider_tip: row.insider_tip ?? '',
         what_to_try: row.what_to_try ?? [],
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
+
+        // ── Status / Meta ────────────────────────────────────────────────
         status: row.status ?? 'active',
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -63,14 +98,22 @@ function normalise(row) {
 export async function getLocations(filters = {}) {
     if (!USE_SUPABASE) return _mockGetLocations(filters)
 
-    const { category, query, priceLevel, minRating, vibe, city, country, limit = 100, offset = 0 } = filters
+    const { category, query, priceLevel, minRating, vibe, city, country, status, showAll = false, limit = 100, offset = 0 } = filters
 
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .eq('status', 'active')
         .order('rating', { ascending: false })
         .range(offset, offset + (limit - 1))
+
+    // Admin can pass showAll=true to bypass status filter, or status='pending' etc.
+    if (!showAll) {
+        q = q.eq('status', status ?? 'active')
+    } else if (status) {
+        // showAll + explicit status = filter by that specific status
+        q = q.eq('status', status)
+    }
+    // showAll + no status = return everything regardless of status
 
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', city)
@@ -97,15 +140,20 @@ export async function getLocations(filters = {}) {
     }
 }
 
-export async function getLocation(id) {
+export async function getLocation(id, { adminMode = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocation(id)
 
-    const { data, error } = await supabase
+    let q = supabase
         .from('locations')
         .select('*')
         .eq('id', id)
-        .eq('status', 'active')
-        .single()
+
+    // Public facing: only show active locations. Admin mode: show any status.
+    if (!adminMode) {
+        q = q.eq('status', 'active')
+    }
+
+    const { data, error } = await q.single()
 
     if (error) {
         console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
@@ -275,35 +323,67 @@ export async function getLocationTranslated(id, lang = 'en') {
 
 function _toRow(d) {
     const row = {}
-    if (d.title !== undefined)       row.title = d.title
-    if (d.description !== undefined) row.description = d.description
-    if (d.address !== undefined)     row.address = d.address
-    if (d.city !== undefined)        row.city = d.city
-    if (d.country !== undefined)     row.country = d.country
-    if (d.lat !== undefined)         row.lat = d.lat
-    if (d.lng !== undefined)         row.lng = d.lng
-    if (d.category !== undefined)    row.category = d.category
-    if (d.cuisine !== undefined)     row.cuisine = d.cuisine
-    if (d.image !== undefined)       row.image = d.image
-    if (d.photos !== undefined)      row.photos = d.photos
-    if (d.rating !== undefined)      row.rating = d.rating
-    if (d.priceLevel !== undefined)  row.price_level = d.priceLevel
-    if (d.openingHours !== undefined) row.opening_hours = d.openingHours
-    if (d.tags !== undefined)        row.tags = d.tags
-    if (d.vibe !== undefined)        row.vibe = d.vibe
-    if (d.features !== undefined)    row.features = d.features
-    if (d.best_for !== undefined)    row.best_for = d.best_for
-    if (d.dietary !== undefined)     row.dietary = d.dietary
-    if (d.has_wifi !== undefined)    row.has_wifi = d.has_wifi
+
+    // ── Title: accepts 'title' (API canonical) or 'name' (admin form alias) ──
+    const title = d.title ?? d.name
+    if (title !== undefined)          row.title = title
+
+    if (d.description !== undefined)  row.description = d.description
+    if (d.address !== undefined)      row.address = d.address
+    if (d.city !== undefined)         row.city = d.city
+    if (d.country !== undefined)      row.country = d.country
+
+    // ── Coordinates: accepts lat/lng (canonical) or latitude/longitude (alias) ──
+    const lat = d.lat ?? d.latitude
+    const lng = d.lng ?? d.longitude
+    if (lat !== undefined)            row.lat = Number(lat)
+    if (lng !== undefined)            row.lng = Number(lng)
+
+    if (d.category !== undefined)     row.category = d.category
+    if (d.cuisine !== undefined)      row.cuisine = d.cuisine
+
+    // ── Image: accepts 'image' (canonical) or 'image_url' (admin form alias) ──
+    const image = d.image ?? d.image_url
+    if (image !== undefined)          row.image = image
+
+    // ── Photos: accepts 'photos' (canonical) or 'images' (admin form alias) ──
+    const photos = d.photos ?? d.images
+    if (photos !== undefined)         row.photos = photos
+
+    if (d.rating !== undefined)       row.rating = Number(d.rating)
+
+    // ── Price: accepts 'priceLevel' (canonical) or 'price_range' (admin form alias) ──
+    const priceLevel = d.priceLevel ?? d.price_range
+    if (priceLevel !== undefined)     row.price_level = priceLevel
+
+    // ── Hours: accepts 'openingHours' (canonical) or 'opening_hours' (admin form alias) ──
+    const openingHours = d.openingHours ?? d.opening_hours
+    if (openingHours !== undefined)   row.opening_hours = openingHours
+
+    if (d.tags !== undefined)         row.tags = d.tags
+    if (d.vibe !== undefined)         row.vibe = d.vibe
+    if (d.features !== undefined)     row.features = d.features
+    if (d.best_for !== undefined)     row.best_for = d.best_for
+    if (d.dietary !== undefined)      row.dietary = d.dietary
+    if (d.special_labels !== undefined) row.special_labels = d.special_labels
+    if (d.has_wifi !== undefined)     row.has_wifi = d.has_wifi
     if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
     if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
     if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
     if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
-    if (d.insider_tip !== undefined) row.insider_tip = d.insider_tip
-    if (d.what_to_try !== undefined) row.what_to_try = d.what_to_try
-    if (d.ai_keywords !== undefined) row.ai_keywords = d.ai_keywords
-    if (d.ai_context !== undefined)  row.ai_context = d.ai_context
-    if (d.status !== undefined)      row.status = d.status
+    if (d.insider_tip !== undefined)  row.insider_tip = d.insider_tip
+
+    // ── What to try: accepts 'what_to_try' array OR 'must_try' comma-separated string ──
+    const whatToTry = d.what_to_try ?? d.must_try
+    if (whatToTry !== undefined) {
+        row.what_to_try = Array.isArray(whatToTry)
+            ? whatToTry
+            : String(whatToTry).split(',').map(s => s.trim()).filter(Boolean)
+    }
+
+    if (d.ai_keywords !== undefined)  row.ai_keywords = d.ai_keywords
+    if (d.ai_context !== undefined)   row.ai_context = d.ai_context
+    if (d.status !== undefined)       row.status = d.status
     return row
 }
 

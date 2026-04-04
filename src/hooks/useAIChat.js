@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useAIChatStore } from '@/features/shared/hooks/useAIChatStore'
+import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { analyzeQueryStream, analyzeQuery } from '@/shared/api/ai.api'
 import { config } from '@/shared/config/env'

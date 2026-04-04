@@ -723,3 +723,66 @@ export async function testAIConnection(message, preferredModel) {
         }
     }
 }
+
+/**
+ * Admin helper to extract structured restaurant data from a name or description.
+ * Useful for auto-filling the location form.
+ *
+ * @param {string} query - Restaurant name or "Name, City" or description
+ * @returns {Promise<Object>} - Structured location data
+ */
+export async function extractLocationData(query) {
+    if (!query?.trim()) throw new Error('Query cannot be empty')
+
+    const systemPrompt = `You are GastroData Extractor. 
+    Your goal is to find or generate structured information about a restaurant/cafe/bar based on its name and location.
+    
+    Return ONLY a JSON object with these fields (use null if unknown):
+    {
+        "name": "Full name",
+        "category": "Cafe|Restaurant|Street Food|Bar|Market|Bakery|Winery|Store|Coffee Shop|Pastry Shop",
+        "city": "City",
+        "country": "Country",
+        "address": "Street address",
+        "description": "Short catchy description in Russian (2-3 sentences)",
+        "insider_tip": "One expert tip in Russian",
+        "must_try": ["Dish 1", "Dish 2"],
+        "price_range": "$|$$|$$$|$$$$",
+        "website": "URL",
+        "phone": "Phone number",
+        "opening_hours": "Mon-Sun 10:00-22:00 etc",
+        "cuisine": "Cuisine type (Italian, French, etc.)",
+        "latitude": number,
+        "longitude": number,
+        "is_hidden_gem": boolean,
+        "tags": ["tag1", "tag2"],
+        "labels": ["label1", "label2"]
+    }
+    
+    If the place is in Krakow, use Country "Poland".
+    The description and insider_tip MUST be in Russian.
+    Return ONLY JSON. No other text.`
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Extract data for: ${query}` },
+    ]
+
+    try {
+        const { response } = await fetchOpenRouter(messages, {
+            stream: false,
+            withTools: false,
+        })
+
+        const data = await response.json()
+        const text = data.choices?.[0]?.message?.content || '{}'
+        
+        // Clean up markdown if present
+        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+        
+        return JSON.parse(jsonStr)
+    } catch (err) {
+        console.error('[GastroAI] Failed to extract location data:', err)
+        throw err
+    }
+}

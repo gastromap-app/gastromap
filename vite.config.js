@@ -23,13 +23,22 @@ export default defineConfig({
           {
             src: 'pwa-icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            // Separate maskable entry (PWA spec requires purpose split — combined
+            // 'any maskable' is deprecated and fails Lighthouse audit)
+            src: 'pwa-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
@@ -92,6 +101,52 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
+          },
+          // ─── Supabase REST API — NetworkFirst for fresh data, falls back to cache ──
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/rest\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-rest-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours offline fallback
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // ─── Supabase Storage (location images) — CacheFirst, long TTL ───────────
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // ─── OpenStreetMap / CartoDB map tiles — CacheFirst (tiles change rarely) ─
+          {
+            urlPattern: /^https:\/\/[abc]\.basemaps\.cartocdn\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles-cache',
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }
@@ -115,10 +170,21 @@ export default defineConfig({
           'i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
           // TanStack utilities
           'tanstack': ['@tanstack/react-query', '@tanstack/react-virtual'],
-          // Admin (never needed on public routes)
+          // Admin — one chunk for all admin pages (never loaded on public/user routes)
           'admin': [
             '/src/features/admin/layout/AdminLayout.jsx',
             '/src/features/admin/pages/AdminDashboardPage.jsx',
+            '/src/features/admin/pages/AdminLocationsPage.jsx',
+            '/src/features/admin/pages/AdminUsersPage.jsx',
+            '/src/features/admin/pages/AdminSubscriptionsPage.jsx',
+            '/src/features/admin/pages/AdminModerationPage.jsx',
+            '/src/features/admin/pages/AdminAIPage.jsx',
+            '/src/features/admin/pages/AdminKnowledgeGraphPage.jsx',
+            '/src/features/admin/pages/AdminNotificationsPage.jsx',
+            '/src/features/admin/pages/AdminStatsPage.jsx',
+            '/src/features/admin/pages/AdminSettingsPage.jsx',
+            '/src/features/admin/components/ImportWizard.jsx',
+            '/src/features/admin/components/LocationHierarchyExplorer.jsx',
           ],
         }
       }

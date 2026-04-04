@@ -148,6 +148,17 @@ export function useAIQueryMutation() {
     })
 }
 
+import { extractLocationData } from './ai.api'
+
+/**
+ * Admin: Extract structured data for a location from a string.
+ */
+export function useExtractLocationMutation() {
+    return useMutation({
+        mutationFn: (query) => extractLocationData(query),
+    })
+}
+
 // ─── Admin Stats ───
 import { getAdminStats, getRecentLocations, getRecentActivity, getProfiles, updateProfileRole, getPendingReviews, updateReviewStatus, getPendingLocations } from './admin.api'
 
@@ -205,47 +216,43 @@ export function useUpdateLocationStatusMutation() {
 }
 
 // ─── Admin Stats Page ───
+// NOTE: All derived stat hooks share the SAME queryKey ['admin-stats'] as useAdminStats().
+// React Query deduplicates the network call — only ONE request is sent regardless
+// of how many of these hooks are mounted simultaneously.
+
 export function useCategoryStats() {
     return useQuery({
-        queryKey: ['category-stats'],
-        queryFn: async () => {
-            const { data } = await getAdminStats()
-            return data?.locations || {}
-        },
+        queryKey: ['admin-stats'],          // ← same key as useAdminStats()
+        queryFn: getAdminStats,
         staleTime: 60_000,
+        select: (data) => data?.locations || {},
     })
 }
 
 export function useTopLocations(limit = 5) {
     return useQuery({
-        queryKey: ['top-locations', limit],
-        queryFn: async () => {
-            const { data } = await getAdminStats()
-            return data?.top_locations || []
-        },
+        queryKey: ['admin-stats'],          // ← same key — deduped, no extra request
+        queryFn: getAdminStats,
         staleTime: 60_000,
+        select: (data) => (data?.top_locations || []).slice(0, limit),
     })
 }
 
 export function useEngagementStats() {
     return useQuery({
-        queryKey: ['engagement-stats'],
-        queryFn: async () => {
-            const { data } = await getAdminStats()
-            return data?.engagement || {}
-        },
+        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryFn: getAdminStats,
         staleTime: 30_000,
+        select: (data) => data?.engagement || {},
     })
 }
 
 export function usePaymentStats() {
     return useQuery({
-        queryKey: ['payment-stats'],
-        queryFn: async () => {
-            const { data } = await getAdminStats()
-            return data?.payments || {}
-        },
+        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryFn: getAdminStats,
         staleTime: 60_000,
+        select: (data) => data?.payments || {},
     })
 }
 

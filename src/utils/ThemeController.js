@@ -57,7 +57,7 @@ class ThemeController {
         this.applyTheme(saved);
 
         // Watch system changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (this.getSavedTheme() === 'auto') {
                 this.applyTheme('auto');
             }

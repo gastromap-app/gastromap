@@ -10,22 +10,19 @@ import i18n, { changeLanguage, getCurrentLanguage } from '@/i18n/config'
  * @returns {Object} Методы и данные для работы с переводами
  */
 export function useI18n(namespace = 'common', isAdmin = false) {
-    const { t, i18n: i18nInstance } = useTranslation()
-    const [currentLang, setCurrentLang] = useState(getCurrentLanguage())
+    const { t, i18n: i18nInstance } = useTranslation(namespace)
 
     // Авто-переключение языка на основе роли
     useEffect(() => {
         const targetLang = isAdmin ? 'ru' : 'en'
-        if (getCurrentLanguage() !== targetLang) {
+        if (i18nInstance.language !== targetLang) {
             changeLanguage(targetLang)
-            setCurrentLang(targetLang)
         }
-    }, [isAdmin])
+    }, [isAdmin, i18nInstance])
 
     // Функция для явного переключения языка
     const setLanguage = (lng) => {
         changeLanguage(lng)
-        setCurrentLang(lng)
     }
 
     // Функция для переключения на язык пользователя

@@ -35,6 +35,14 @@ export const config = {
         },
     },
 
+    // ─── Culinary APIs (Food Databases) ──────────────────────────────────────
+    culinary: {
+        spoonacularKey: import.meta.env.VITE_SPOONACULAR_API_KEY ?? '1b1558e8934f47daafb5a28ce844f9be',
+        get isSpoonacularConfigured() {
+            return Boolean(this.spoonacularKey)
+        },
+    },
+
     // ─── Map ──────────────────────────────────────────────────────────────────
     map: {
         defaultCenter: { lat: 50.0619, lng: 19.9368 }, // Krakow

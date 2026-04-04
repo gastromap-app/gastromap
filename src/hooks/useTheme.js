@@ -11,7 +11,7 @@ export const useTheme = () => {
     );
 
     useEffect(() => {
-        const handleThemeChange = (e) => {
+        const handleThemeChange = () => {
             // e.detail.theme is the preference (auto, light, dark)
             // But we might want the *actual* applied theme for UI logic?
             // Actually ThemeController sets data-theme. Let's read that.

@@ -468,3 +468,103 @@ export async function getKnowledgeStats() {
         ingredients: ingredients.count || 0,
     }
 }
+
+// ─── Knowledge Graph Synchronization ────────────────────────────────────────
+
+/**
+ * Matches a location's text content with Knowledge Graph entities.
+ * Returns relevant cuisines, dishes, and ingredients.
+ * 
+ * @param {Object} location 
+ * @returns {Promise<{cuisines: string[], dishes: string[], ingredients: string[]}>}
+ */
+export async function matchLocationWithKG(location) {
+    const textToMatch = [
+        location.title,
+        location.description,
+        location.cuisine,
+        ...(location.tags || []),
+        ...(location.what_to_try || [])
+    ].join(' ').toLowerCase()
+
+    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+        getCuisines(),
+        getDishes(),
+        getIngredients()
+    ])
+
+    const matches = {
+        cuisines: [],
+        dishes: [],
+        ingredients: []
+    }
+
+    // Match Cuisines
+    allCuisines.forEach(c => {
+        const names = [c.name, ...(c.aliases || [])].map(n => n.toLowerCase())
+        if (names.some(n => textToMatch.includes(n))) {
+            matches.cuisines.push(c.name)
+        }
+    })
+
+    // Match Dishes
+    allDishes.forEach(d => {
+        if (textToMatch.includes(d.name.toLowerCase())) {
+            matches.dishes.push(d.name)
+        }
+    })
+
+    // Match Ingredients
+    allIngredients.forEach(i => {
+        if (textToMatch.includes(i.name.toLowerCase())) {
+            matches.ingredients.push(i.name)
+        }
+    })
+
+    return matches
+}
+
+/**
+ * Synchronizes the entire Knowledge Graph with existing locations.
+ * Updates ai_keywords and enriches ai_context for matching locations.
+ */
+export async function syncKGToLocations(onProgress) {
+    if (!supabase) return { success: true, count: 0 }
+
+    const { data: locations, error } = await supabase
+        .from('locations')
+        .select('*')
+    
+    if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
+
+    let updatedCount = 0
+    for (let i = 0; i < locations.length; i++) {
+        const loc = locations[i]
+        const kgMatches = await matchLocationWithKG(loc)
+        
+        // Merge KG entities into ai_keywords
+        const newKeywords = Array.from(new Set([
+            ...(loc.ai_keywords || []),
+            ...kgMatches.cuisines,
+            ...kgMatches.dishes,
+            ...kgMatches.ingredients
+        ]))
+
+        // Only update if something changed
+        if (newKeywords.length !== (loc.ai_keywords?.length || 0)) {
+            const { error: upError } = await supabase
+                .from('locations')
+                .update({ 
+                    ai_keywords: newKeywords, 
+                    updated_at: new Date().toISOString() 
+                })
+                .eq('id', loc.id)
+            
+            if (!upError) updatedCount++
+        }
+
+        if (onProgress) onProgress(i + 1, locations.length)
+    }
+
+    return { success: true, count: updatedCount }
+}

@@ -1,28 +1,22 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Brain, ChefHat, UtensilsCrossed, Apple, Plus, Search,
-    Edit2, Trash2, X, Save, ChevronRight, AlertCircle, CheckCircle2,
-    Globe, Sparkles, Leaf, Loader2
+    Brain, ChefHat, UtensilsCrossed, Plus, Search,
+    Edit2, Trash2, X, Save, Leaf,
+    Globe, Sparkles, Loader2, BookOpen, RefreshCw, Zap, Package, Download
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-    useCuisines, useDishes, useIngredients,
-    useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
-    useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
-    useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
-    useKnowledgeStats,
+import { 
+    useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
+    useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
+    useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
+    useKnowledgeStats, useSyncKGToLocationsMutation,
+    useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 
-// ─── Tab Configuration ──────────────────────────────────────────────────────
-
-const TABS = [
-    { id: 'cuisines', label: 'Cuisines', icon: Globe, color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
-    { id: 'dishes', label: 'Dishes', icon: UtensilsCrossed, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-    { id: 'ingredients', label: 'Ingredients', icon: Leaf, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-]
-
-// ─── Stats Card ─────────────────────────────────────────────────────────────
+/**
+ * ─── HELPER COMPONENTS ───────────────────────────────────────────────────────
+ */
 
 const StatsCard = ({ icon: Icon, label, value, color, bgColor }) => (
     <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -37,8 +31,6 @@ const StatsCard = ({ icon: Icon, label, value, color, bgColor }) => (
         </div>
     </div>
 )
-
-// ─── Cuisine Card ────────────────────────────────────────────────────────────
 
 const CuisineCard = ({ cuisine, onEdit, onDelete }) => (
     <motion.div
@@ -81,8 +73,6 @@ const CuisineCard = ({ cuisine, onEdit, onDelete }) => (
     </motion.div>
 )
 
-// ─── Dish Card ───────────────────────────────────────────────────────────────
-
 const DishCard = ({ dish, onEdit, onDelete }) => (
     <motion.div
         layout
@@ -98,7 +88,7 @@ const DishCard = ({ dish, onEdit, onDelete }) => (
                 </div>
                 <div>
                     <h3 className="font-bold text-slate-900 dark:text-white">{dish.name}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{dish.cuisine?.name || 'Unknown cuisine'}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{dish.cuisine?.name || 'Unknown'}</p>
                 </div>
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -112,13 +102,11 @@ const DishCard = ({ dish, onEdit, onDelete }) => (
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{dish.description}</p>
         <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500">Flavor:</span>
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{dish.flavor_notes}</span>
+            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Flavor:</span>
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{dish.flavor_notes}</span>
         </div>
     </motion.div>
 )
-
-// ─── Ingredient Card ─────────────────────────────────────────────────────────
 
 const IngredientCard = ({ ingredient, onEdit, onDelete }) => (
     <motion.div
@@ -134,7 +122,7 @@ const IngredientCard = ({ ingredient, onEdit, onDelete }) => (
                     <Leaf size={20} />
                 </div>
                 <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{ingredient.name}</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white capitalize">{ingredient.name}</h3>
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider">{ingredient.category}</p>
                 </div>
             </div>
@@ -150,7 +138,7 @@ const IngredientCard = ({ ingredient, onEdit, onDelete }) => (
         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{ingredient.flavor_profile}</p>
         <div className="flex flex-wrap gap-1">
             {(ingredient.dietary_info || []).map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-green-100 dark:bg-green-500/10 rounded text-[10px] text-green-600 dark:text-green-400">
+                <span key={tag} className="px-2 py-0.5 bg-green-100 dark:bg-green-500/10 rounded text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-tighter">
                     {tag}
                 </span>
             ))}
@@ -158,7 +146,52 @@ const IngredientCard = ({ ingredient, onEdit, onDelete }) => (
     </motion.div>
 )
 
-// ─── Cuisine Form Modal ──────────────────────────────────────────────────────
+/**
+ * ─── MODAL COMPONENTS ────────────────────────────────────────────────────────
+ */
+
+const FormModalBase = ({ title, onSave, onClose, children }) => (
+    <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+    >
+        <motion.div
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-hidden flex flex-col"
+        >
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
+                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <X size={18} />
+                </button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto">
+                {children}
+            </div>
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-3 justify-end">
+                <button
+                    onClick={onClose}
+                    className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={onSave}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm flex items-center gap-2"
+                >
+                    <Save size={16} />
+                    Save Changes
+                </button>
+            </div>
+        </motion.div>
+    </motion.div>
+)
 
 const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
     const [form, setForm] = useState({
@@ -171,8 +204,7 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
         flavor_profile: cuisine?.flavor_profile || '',
     })
 
-    const handleSubmit = (e) => {
-        e.preventDefault()
+    const handleSubmit = () => {
         onSave({
             ...form,
             aliases: form.aliases.split(',').map(s => s.trim()).filter(Boolean),
@@ -182,132 +214,280 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            <motion.div
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                onClick={e => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-hidden flex flex-col"
-            >
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                        {cuisine ? 'Edit Cuisine' : 'Add Cuisine'}
-                    </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                        <X size={18} />
-                    </button>
+        <FormModalBase title={cuisine ? 'Edit Cuisine' : 'New Cuisine'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-4">
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
+                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Italian" />
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Name</label>
-                        <input
-                            value={form.name}
-                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                            placeholder="e.g. Italian"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Description</label>
-                        <textarea
-                            value={form.description}
-                            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm resize-none h-20"
-                            placeholder="Brief description of this cuisine..."
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Region</label>
-                            <input
-                                value={form.region}
-                                onChange={e => setForm(f => ({ ...f, region: e.target.value }))}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                                placeholder="e.g. Mediterranean"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Flavor Profile</label>
-                            <input
-                                value={form.flavor_profile}
-                                onChange={e => setForm(f => ({ ...f, flavor_profile: e.target.value }))}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                                placeholder="e.g. herbal, savory"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Aliases (comma-separated)</label>
-                        <input
-                            value={form.aliases}
-                            onChange={e => setForm(f => ({ ...f, aliases: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                            placeholder="e.g. Italiana, Italia"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Typical Dishes (comma-separated)</label>
-                        <input
-                            value={form.typical_dishes}
-                            onChange={e => setForm(f => ({ ...f, typical_dishes: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                            placeholder="e.g. pasta, pizza, risotto"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Key Ingredients (comma-separated)</label>
-                        <input
-                            value={form.key_ingredients}
-                            onChange={e => setForm(f => ({ ...f, key_ingredients: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-                            placeholder="e.g. olive oil, tomatoes, garlic"
-                        />
-                    </div>
-                </form>
-                <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-3 justify-end">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm flex items-center gap-2"
-                    >
-                        <Save size={16} />
-                        Save
-                    </button>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Description</label>
+                    <textarea className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium h-24 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context..." />
                 </div>
-            </motion.div>
-        </motion.div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Region</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="e.g. Mediterranean" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Flavor Profile</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. savory, herbal" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Typical Dishes (Comma separated)</label>
+                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="pasta, pizza, risotto..." />
+                </div>
+            </div>
+        </FormModalBase>
     )
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+const DishFormModal = ({ dish, onSave, onClose }) => {
+    const { data: cuisines = [] } = useCuisines()
+    const [form, setForm] = useState({
+        name: dish?.name || '',
+        cuisine_id: dish?.cuisine_id || '',
+        description: dish?.description || '',
+        ingredients: (dish?.ingredients || []).join(', '),
+        preparation_style: dish?.preparation_style || '',
+        dietary_tags: (dish?.dietary_tags || []).join(', '),
+        flavor_notes: dish?.flavor_notes || '',
+        best_pairing: dish?.best_pairing || '',
+    })
+
+    const handleSubmit = () => {
+        onSave({
+            ...form,
+            ingredients: form.ingredients.split(',').map(s => s.trim()).filter(Boolean),
+            dietary_tags: form.dietary_tags.split(',').map(s => s.trim()).filter(Boolean),
+        })
+    }
+
+    return (
+        <FormModalBase title={dish ? 'Edit Dish' : 'New Dish'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Carbonara" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Cuisine</label>
+                        <select 
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                            value={form.cuisine_id}
+                            onChange={e => setForm({...form, cuisine_id: e.target.value})}
+                        >
+                            <option value="">Select Cuisine</option>
+                            {cuisines.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Description</label>
+                    <textarea className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium h-20 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Style</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="e.g. Grilled" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Dietary (Comma sep.)</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, GF..." />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Ingredients (Comma separated)</label>
+                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} />
+                </div>
+            </div>
+        </FormModalBase>
+    )
+}
+
+const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
+    const [form, setForm] = useState({
+        name: ingredient?.name || '',
+        category: ingredient?.category || '',
+        flavor_profile: ingredient?.flavor_profile || '',
+        common_pairings: (ingredient?.common_pairings || []).join(', '),
+        dietary_info: (ingredient?.dietary_info || []).join(', '),
+        season: ingredient?.season || '',
+    })
+
+    const handleSubmit = () => {
+        onSave({
+            ...form,
+            common_pairings: form.common_pairings.split(',').map(s => s.trim()).filter(Boolean),
+            dietary_info: form.dietary_info.split(',').map(s => s.trim()).filter(Boolean),
+        })
+    }
+
+    return (
+        <FormModalBase title={ingredient ? 'Edit Ingredient' : 'New Ingredient'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Category</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="e.g. spice, dairy" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Flavor Profile</label>
+                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. Earthy, pungent" />
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Common Pairings (Comma sep.)</label>
+                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Season</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.season} onChange={e => setForm({...form, season: e.target.value})} placeholder="e.g. Autumn" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Dietary Info</label>
+                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.dietary_info} onChange={e => setForm({...form, dietary_info: e.target.value})} placeholder="Vegan, GF..." />
+                    </div>
+                </div>
+            </div>
+        </FormModalBase>
+    )
+}
+
+/**
+ * ─── SPOONACULAR ENRICHER ──────────────────────────────────────────────────
+ */
+
+function SpoonacularEnricher({ onImport }) {
+    const [query, setQuery] = useState('')
+    const searchMutation = useSpoonacularSearchMutation()
+    const [results, setResults] = useState(null)
+
+    const handleSearch = async () => {
+        if (!query.trim()) return
+        const res = await searchMutation.mutateAsync({ query })
+        setResults(res)
+    }
+
+    return (
+        <div className="p-8 bg-black rounded-[40px] text-white shadow-2xl relative overflow-hidden group">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            
+            <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                        <Sparkles className="text-yellow-400" size={28} />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight">Culinary Deep Search</h2>
+                        <p className="text-indigo-200/60 font-medium text-sm">Semantic AI Knowledge Extraction</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 max-w-2xl mb-8">
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} />
+                        <input
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                            placeholder="Search dishes or ingredients..."
+                            className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-[20px] outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
+                        />
+                    </div>
+                    <button
+                        onClick={handleSearch}
+                        disabled={searchMutation.isPending}
+                        className="px-8 py-4 bg-indigo-600 text-white rounded-[20px] font-black hover:bg-indigo-500 transition-all disabled:opacity-50"
+                    >
+                        {searchMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : 'Discover'}
+                    </button>
+                </div>
+
+                <AnimatePresence>
+                    {results && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="grid md:grid-cols-2 gap-8"
+                        >
+                            {results.dishes.length > 0 && (
+                                <div className="space-y-4">
+                                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-white/40">Suggested Dishes</h3>
+                                    <div className="grid gap-2">
+                                        {results.dishes.map(dish => (
+                                            <div key={dish.id} className="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between group/item">
+                                                <div className="flex items-center gap-3">
+                                                    {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+                                                    <div>
+                                                        <div className="font-bold text-sm tracking-tight">{dish.name}</div>
+                                                        <div className="text-[10px] text-white/30 font-bold uppercase">{dish.cuisine || 'Global'}</div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onImport('dish', dish)}
+                                                    className="p-2 rounded-xl hover:bg-indigo-600 transition-colors"
+                                                >
+                                                    <Download size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {results.ingredients.length > 0 && (
+                                <div className="space-y-4">
+                                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-white/40">Suggested Ingredients</h3>
+                                    <div className="grid gap-2">
+                                        {results.ingredients.map(ing => (
+                                            <div key={ing.id} className="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between group/item">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-contain bg-white/5" />
+                                                    <div className="font-bold text-sm tracking-tight capitalize">{ing.name}</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onImport('ingredient', ing)}
+                                                    className="p-2 rounded-xl hover:bg-emerald-600 transition-colors"
+                                                >
+                                                    <Download size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
+    )
+}
+
+/**
+ * ─── MAIN ADMIN PAGE ────────────────────────────────────────────────────────
+ */
 
 const AdminKnowledgeGraphPage = () => {
     const [activeTab, setActiveTab] = useState('cuisines')
     const [searchTerm, setSearchTerm] = useState('')
-    const [showModal, setShowModal] = useState(null) // { type: 'cuisine'|'dish'|'ingredient', data: obj|null }
+    const [showModal, setShowModal] = useState(null)
     const [toast, setToast] = useState(null)
 
-    // Queries
     const { data: stats } = useKnowledgeStats()
     const { data: cuisines = [], isLoading: loadingCuisines } = useCuisines()
     const { data: dishes = [], isLoading: loadingDishes } = useDishes()
     const { data: ingredients = [], isLoading: loadingIngredients } = useIngredients()
 
-    // Mutations
     const createCuisine = useCreateCuisineMutation()
     const updateCuisine = useUpdateCuisineMutation()
     const deleteCuisine = useDeleteCuisineMutation()
@@ -323,111 +503,78 @@ const AdminKnowledgeGraphPage = () => {
         setTimeout(() => setToast(null), 3000)
     }
 
-    // Handlers
+    const syncKG = useSyncKGToLocationsMutation()
+    const [syncStatus, setSyncStatus] = useState(null)
+
+    const handleSyncLocations = async () => {
+        try {
+            await syncKG.mutateAsync((current, total) => {
+                setSyncStatus({ message: `Processing ${current} of ${total}`, progress: Math.round((current/total)*100) })
+            })
+            showToast('Knowledge Graph synchronized with locations')
+            setSyncStatus(null)
+        } catch (_err) {
+            showToast('Error during synchronization', 'error')
+            setSyncStatus(null)
+        }
+    }
+
     const handleSaveCuisine = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateCuisine.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Cuisine updated successfully')
+                showToast('Cuisine updated')
             } else {
                 await createCuisine.mutateAsync(data)
-                showToast('Cuisine created successfully')
+                showToast('Cuisine created')
             }
             setShowModal(null)
-        } catch (err) {
-            showToast('Error saving cuisine', 'error')
-        }
-    }
-
-    const handleDeleteCuisine = async (id) => {
-        if (!confirm('Delete this cuisine?')) return
-        try {
-            await deleteCuisine.mutateAsync(id)
-            showToast('Cuisine deleted')
-        } catch (err) {
-            showToast('Error deleting cuisine', 'error')
-        }
+        } catch (_err) { showToast('Action failed', 'error') }
     }
 
     const handleSaveDish = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateDish.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Dish updated successfully')
+                showToast('Dish updated')
             } else {
                 await createDish.mutateAsync(data)
-                showToast('Dish created successfully')
+                showToast('Dish imported')
             }
             setShowModal(null)
-        } catch (err) {
-            showToast('Error saving dish', 'error')
-        }
-    }
-
-    const handleDeleteDish = async (id) => {
-        if (!confirm('Delete this dish?')) return
-        try {
-            await deleteDish.mutateAsync(id)
-            showToast('Dish deleted')
-        } catch (err) {
-            showToast('Error deleting dish', 'error')
-        }
+        } catch (_err) { showToast('Action failed', 'error') }
     }
 
     const handleSaveIngredient = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateIngredient.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Ingredient updated successfully')
+                showToast('Ingredient updated')
             } else {
                 await createIngredient.mutateAsync(data)
-                showToast('Ingredient created successfully')
+                showToast('Ingredient imported')
             }
             setShowModal(null)
-        } catch (err) {
-            showToast('Error saving ingredient', 'error')
-        }
+        } catch (_err) { showToast('Action failed', 'error') }
     }
 
-    const handleDeleteIngredient = async (id) => {
-        if (!confirm('Delete this ingredient?')) return
-        try {
-            await deleteIngredient.mutateAsync(id)
-            showToast('Ingredient deleted')
-        } catch (err) {
-            showToast('Error deleting ingredient', 'error')
-        }
-    }
-
-    // Filtered data
-    const filteredCuisines = cuisines.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    const filteredDishes = dishes.filter(d =>
-        d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    const filteredIngredients = ingredients.filter(i =>
-        i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.flavor_profile?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    // Filters
+    const filteredItems = (activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients)
+        .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const isLoading = loadingCuisines || loadingDishes || loadingIngredients
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
-            {/* Toast */}
+        <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
+            {/* Toast System */}
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className={cn(
-                            "fixed top-4 right-4 z-[100] px-6 py-3 rounded-xl shadow-2xl font-semibold text-sm",
-                            toast.type === 'success' ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
-                        )}
+                        initial={{ opacity: 0, y: -20, x: 20 }}
+                        animate={{ opacity: 1, y: 0, x: 0 }}
+                        exit={{ opacity: 0, y: -20, x: 20 }}
+                        className={cn("fixed top-6 right-6 z-[100] px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm", 
+                            toast.type === 'success' ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")}
                     >
                         {toast.message}
                     </motion.div>
@@ -435,112 +582,116 @@ const AdminKnowledgeGraphPage = () => {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="mb-10">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                        <Brain size={24} />
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="flex items-center gap-5">
+                    <div className="w-20 h-20 rounded-[32px] bg-slate-900 flex items-center justify-center text-white shadow-2xl">
+                        <Brain size={40} />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Knowledge Graph</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Manage culinary knowledge for AI recommendations</p>
+                        <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Knowledge Graph</h1>
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Culinary Intelligence Layer v2.0</p>
                     </div>
                 </div>
-            </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleSyncLocations}
+                        disabled={syncKG.isPending}
+                        className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
+                    >
+                        <RefreshCw size={20} className={syncKG.isPending ? 'animate-spin' : ''} />
+                        Sync All Locations
+                    </button>
+                    
+                    <button
+                        onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
+                        className="w-14 h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                    >
+                        <Plus size={28} />
+                    </button>
+                </div>
+            </header>
+
+            {syncStatus && (
+                <div className="bg-indigo-600 rounded-[32px] p-8 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="font-black uppercase tracking-widest text-xs">Syncing World Knowledge</div>
+                        <div className="font-black text-2xl">{syncStatus.progress}%</div>
+                    </div>
+                    <div className="h-4 bg-indigo-900/40 rounded-full overflow-hidden">
+                        <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${syncStatus.progress}%` }} />
+                    </div>
+                    <p className="mt-4 text-sm font-bold text-indigo-100">{syncStatus.message}</p>
+                </div>
+            )}
 
             {/* Stats */}
-            <section className="grid grid-cols-3 gap-4 mb-8">
-                <StatsCard icon={Globe} label="Cuisines" value={stats?.cuisines || 0} color="text-indigo-500" bgColor="bg-indigo-500/10" />
-                <StatsCard icon={UtensilsCrossed} label="Dishes" value={stats?.dishes || 0} color="text-emerald-500" bgColor="bg-emerald-500/10" />
-                <StatsCard icon={Leaf} label="Ingredients" value={stats?.ingredients || 0} color="text-amber-500" bgColor="bg-amber-500/10" />
-            </section>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                                activeTab === tab.id
-                                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                            )}
-                        >
-                            <tab.icon size={16} className={activeTab === tab.id ? tab.color : ''} />
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search..."
-                        className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
-                    />
-                </div>
-
-                <button
-                    onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm"
-                >
-                    <Plus size={16} />
-                    Add {activeTab === 'cuisines' ? 'Cuisine' : activeTab === 'dishes' ? 'Dish' : 'Ingredient'}
-                </button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                    { label: 'Cuisines', val: stats?.cuisines || 0, icon: Globe, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                    { label: 'Dishes', val: stats?.dishes || 0, icon: ChefHat, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Ingredients', val: stats?.ingredients || 0, icon: Package, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                    { label: 'Logic Sync', val: 'Active', icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' }
+                ].map((s, i) => (
+                    <StatsCard key={i} {...s} value={s.val} />
+                ))}
             </div>
 
-            {/* Content */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <AnimatePresence mode="popLayout">
-                    {isLoading ? (
-                        <div className="col-span-full flex items-center justify-center py-12">
-                            <Loader2 className="animate-spin text-indigo-500" size={24} />
-                        </div>
-                    ) : activeTab === 'cuisines' ? (
-                        filteredCuisines.map(cuisine => (
-                            <CuisineCard
-                                key={cuisine.id}
-                                cuisine={cuisine}
-                                onEdit={(c) => setShowModal({ type: 'cuisine', data: c })}
-                                onDelete={handleDeleteCuisine}
-                            />
-                        ))
-                    ) : activeTab === 'dishes' ? (
-                        filteredDishes.map(dish => (
-                            <DishCard
-                                key={dish.id}
-                                dish={dish}
-                                onEdit={(d) => setShowModal({ type: 'dish', data: d })}
-                                onDelete={handleDeleteDish}
-                            />
-                        ))
-                    ) : (
-                        filteredIngredients.map(ingredient => (
-                            <IngredientCard
-                                key={ingredient.id}
-                                ingredient={ingredient}
-                                onEdit={(i) => setShowModal({ type: 'ingredient', data: i })}
-                                onDelete={handleDeleteIngredient}
-                            />
-                        ))
-                    )}
-                </AnimatePresence>
+            {/* Spoonacular Tool */}
+            <SpoonacularEnricher onImport={(type, data) => {
+                if (type === 'dish') handleSaveDish(data)
+                if (type === 'ingredient') handleSaveIngredient(data)
+            }} />
 
-                {!isLoading && (
-                    (activeTab === 'cuisines' && filteredCuisines.length === 0) ||
-                    (activeTab === 'dishes' && filteredDishes.length === 0) ||
-                    (activeTab === 'ingredients' && filteredIngredients.length === 0)
-                ) && (
-                    <div className="col-span-full text-center py-12 text-slate-500">
-                        <ChefHat size={32} className="mx-auto mb-3 opacity-30" />
-                        <p className="text-sm font-medium">No {activeTab} found</p>
+            {/* Browser */}
+            <section className="space-y-8">
+                <div className="flex items-center justify-between gap-6">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-3xl shrink-0">
+                        {['cuisines', 'dishes', 'ingredients'].map(id => (
+                            <button
+                                key={id}
+                                onClick={() => setActiveTab(id)}
+                                className={cn("px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+                                    activeTab === id ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xl" : "text-slate-400")}
+                            >
+                                {id}
+                            </button>
+                        ))}
                     </div>
-                )}
-            </div>
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            placeholder={`Filter ${activeTab}...`}
+                            className="w-full pl-12 pr-6 py-4 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl outline-none focus:border-indigo-500 transition-all font-bold text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence mode="popLayout">
+                        {isLoading ? (
+                            <div className="col-span-full py-20 flex flex-col items-center gap-4 text-slate-400">
+                                <Loader2 className="animate-spin" size={40} />
+                                <span className="font-black uppercase tracking-widest text-xs">Accessing Digital Memory...</span>
+                            </div>
+                        ) : (
+                            filteredItems.map(item => (
+                                activeTab === 'cuisines' ? <CuisineCard key={item.id} cuisine={item} onEdit={c => setShowModal({type: 'cuisine', data: c})} onDelete={id => deleteCuisine.mutateAsync(id)} /> :
+                                activeTab === 'dishes' ? <DishCard key={item.id} dish={item} onEdit={d => setShowModal({type: 'dish', data: d})} onDelete={id => deleteDish.mutateAsync(id)} /> :
+                                <IngredientCard key={item.id} ingredient={item} onEdit={i => setShowModal({type: 'ingredient', data: i})} onDelete={id => deleteIngredient.mutateAsync(id)} />
+                            ))
+                        )}
+                        {!isLoading && filteredItems.length === 0 && (
+                            <div className="col-span-full py-20 text-center text-slate-300">
+                                <Search size={48} className="mx-auto mb-4 opacity-20" />
+                                <p className="font-black uppercase tracking-widest">No entries matching your search</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </section>
 
             {/* Modals */}
             <AnimatePresence>
@@ -551,25 +702,21 @@ const AdminKnowledgeGraphPage = () => {
                         onClose={() => setShowModal(null)}
                     />
                 )}
-                {/* Simplified modals for dishes and ingredients - using same pattern */}
+                {showModal?.type === 'dish' && (
+                    <DishFormModal
+                        dish={showModal.data}
+                        onSave={handleSaveDish}
+                        onClose={() => setShowModal(null)}
+                    />
+                )}
+                {showModal?.type === 'ingredient' && (
+                    <IngredientFormModal
+                        ingredient={showModal.data}
+                        onSave={handleSaveIngredient}
+                        onClose={() => setShowModal(null)}
+                    />
+                )}
             </AnimatePresence>
-
-            {/* AI Context Note */}
-            <div className="mt-10 p-6 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-[32px] border border-indigo-500/10">
-                <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
-                        <Sparkles size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900 dark:text-white mb-1">AI Enhancement</h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                            The Knowledge Graph enhances GastroGuide AI recommendations by providing deep culinary context.
-                            When users ask for recommendations, the AI uses this knowledge to understand cuisines,
-                            suggest dishes based on preferences, and provide expert-level insights about ingredients and pairings.
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
     )
 }

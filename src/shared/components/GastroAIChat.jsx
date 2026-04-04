@@ -7,7 +7,8 @@ import { useAIChat } from '@/hooks/useAIChat'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 
-// ─── Welcome messages shown before user types anything ────────────────────
+// --- Welcome messages shown before user types anything ---
+
 const buildWelcomeMessages = (userName) => [
     {
         id: 'welcome-1',
@@ -46,7 +47,7 @@ const buildWelcomeMessages = (userName) => [
 ]
 
 /**
- * useGastroAI — backward-compatible wrapper around the new useAIChat hook.
+ * useGastroAI - backward-compatible wrapper around the new useAIChat hook.
  *
  * Merges welcome demo messages with real persisted chat history so the
  * interface never looks empty on first launch.
@@ -62,7 +63,7 @@ export const useGastroAI = () => {
     return { messages, isTyping, sendMessage, clearHistory }
 }
 
-// ─── Unified Chat Interface Component ─────────────────────────────────────
+// --- Unified Chat Interface Component ---
 
 export function ChatInterface({
     messages,
@@ -256,3 +257,4 @@ export function ChatInterface({
 }
 
 export default ChatInterface
+

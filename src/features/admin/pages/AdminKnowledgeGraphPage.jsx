@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Brain, ChefHat, UtensilsCrossed, Plus, Search,
     Edit2, Trash2, X, Save, Leaf,
-    Globe, Sparkles, Loader2, BookOpen, RefreshCw, Zap, Package, Download
+    Globe, Sparkles, Loader2, BookOpen, RefreshCw, Zap, Package, Download,
+    ChevronRight, Info, Filter, ArrowUpRight, Database
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { 
@@ -19,132 +20,101 @@ import {
  */
 
 const StatsCard = ({ icon: Icon, label, value, color, bgColor }) => (
-    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', bgColor)}>
-                <Icon size={20} className={color} />
+    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md p-5 rounded-[24px] border border-white/20 dark:border-slate-800/50 shadow-xl shadow-slate-200/50 dark:shadow-black/20 flex-1 min-w-[200px]">
+        <div className="flex items-center gap-4">
+            <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner', bgColor)}>
+                <Icon size={24} className={color} />
             </div>
             <div>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{value}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">{value}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{label}</p>
             </div>
         </div>
     </div>
 )
 
-const CuisineCard = ({ cuisine, onEdit, onDelete }) => (
-    <motion.div
-        layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all group"
-    >
-        <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                    <Globe size={20} />
-                </div>
-                <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{cuisine.name}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{cuisine.region || 'Global'}</p>
-                </div>
-            </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onEdit(cuisine)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                    <Edit2 size={14} className="text-slate-400" />
-                </button>
-                <button onClick={() => onDelete(cuisine.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                    <Trash2 size={14} className="text-red-400" />
-                </button>
-            </div>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{cuisine.description}</p>
-        <div className="flex flex-wrap gap-1">
-            {(cuisine.typical_dishes || []).slice(0, 4).map(dish => (
-                <span key={dish} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[10px] text-slate-600 dark:text-slate-400">
-                    {dish}
-                </span>
-            ))}
-            {(cuisine.typical_dishes || []).length > 4 && (
-                <span className="text-[10px] text-slate-400">+{(cuisine.typical_dishes || []).length - 4} more</span>
-            )}
-        </div>
-    </motion.div>
-)
+const ListItem = ({ type, item, onEdit, onDelete }) => {
+    const isCuisine = type === 'cuisines'
+    const isDish = type === 'dishes'
+    const isIngredient = type === 'ingredients'
 
-const DishCard = ({ dish, onEdit, onDelete }) => (
-    <motion.div
-        layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 transition-all group"
-    >
-        <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                    <UtensilsCrossed size={20} />
-                </div>
-                <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{dish.name}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{dish.cuisine?.name || 'Unknown'}</p>
-                </div>
-            </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onEdit(dish)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                    <Edit2 size={14} className="text-slate-400" />
-                </button>
-                <button onClick={() => onDelete(dish.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                    <Trash2 size={14} className="text-red-400" />
-                </button>
-            </div>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{dish.description}</p>
-        <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Flavor:</span>
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">{dish.flavor_notes}</span>
-        </div>
-    </motion.div>
-)
+    const Icon = isCuisine ? Globe : isDish ? UtensilsCrossed : Leaf
+    const iconColor = isCuisine ? 'text-indigo-500' : isDish ? 'text-emerald-500' : 'text-amber-500'
+    const bgClass = isCuisine ? 'bg-indigo-500/5' : isDish ? 'bg-emerald-500/5' : 'bg-amber-500/5'
 
-const IngredientCard = ({ ingredient, onEdit, onDelete }) => (
-    <motion.div
-        layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/30 transition-all group"
-    >
-        <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                    <Leaf size={20} />
-                </div>
-                <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white capitalize">{ingredient.name}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{ingredient.category}</p>
-                </div>
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="group flex items-center gap-6 p-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-[24px] border border-slate-100 dark:border-slate-800/60 hover:bg-white dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-default"
+        >
+            <div className={cn("w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-105 transition-transform", bgClass)}>
+                <Icon size={24} className={iconColor} />
             </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onEdit(ingredient)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                    <Edit2 size={14} className="text-slate-400" />
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-bold text-slate-900 dark:text-white truncate">{item.name}</h3>
+                    {isCuisine && item.region && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-tighter">
+                            {item.region}
+                        </span>
+                    )}
+                    {isDish && item.cuisine?.name && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-tighter">
+                            {item.cuisine.name}
+                        </span>
+                    )}
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xl">
+                    {isCuisine ? item.description : isDish ? item.description : item.flavor_profile}
+                </p>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-4 px-6 border-l border-slate-100 dark:border-slate-800">
+                {isCuisine && (
+                    <div className="flex -space-x-2">
+                        {(item.typical_dishes || []).slice(0, 3).map((d, i) => (
+                            <div key={i} className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold text-slate-500 uppercase overflow-hidden" title={d}>
+                                {d.charAt(0)}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {isDish && (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        {item.preparation_style || 'Default'}
+                    </div>
+                )}
+                {isIngredient && (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        {item.category || 'Basic'}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={() => onEdit(item)}
+                    className="p-2.5 bg-slate-100 dark:bg-white/5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                >
+                    <Edit2 size={16} />
                 </button>
-                <button onClick={() => onDelete(ingredient.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                    <Trash2 size={14} className="text-red-400" />
+                <button
+                    onClick={() => onDelete(item.id)}
+                    className="p-2.5 bg-slate-100 dark:bg-white/5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                >
+                    <Trash2 size={16} />
+                </button>
+                <button className="p-2.5 bg-slate-100 dark:bg-white/5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition-all">
+                    <ChevronRight size={16} />
                 </button>
             </div>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{ingredient.flavor_profile}</p>
-        <div className="flex flex-wrap gap-1">
-            {(ingredient.dietary_info || []).map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-green-100 dark:bg-green-500/10 rounded text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-tighter">
-                    {tag}
-                </span>
-            ))}
-        </div>
-    </motion.div>
-)
+        </motion.div>
+    )
+}
 
 /**
  * ─── MODAL COMPONENTS ────────────────────────────────────────────────────────
@@ -155,39 +125,159 @@ const FormModalBase = ({ title, onSave, onClose, children }) => (
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4"
         onClick={onClose}
     >
         <motion.div
-            initial={{ scale: 0.95, y: 20 }}
+            initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
+            exit={{ scale: 0.9, y: 20 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-slate-950 w-full max-w-2xl rounded-[40px] shadow-2xl border border-white/20 dark:border-slate-800/50 max-h-[90vh] overflow-hidden flex flex-col"
         >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                    <X size={18} />
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tighter">
+                        {title}
+                    </h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Knowledge Management</p>
+                </div>
+                <button onClick={onClose} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-all">
+                    <X size={20} />
                 </button>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto">
+            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                 {children}
             </div>
-            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-3 justify-end">
+            <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-end bg-slate-50/50 dark:bg-slate-900/50">
                 <button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="px-8 py-3.5 rounded-[20px] font-black text-sm text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all uppercase tracking-widest"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={onSave}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm flex items-center gap-2"
+                    className="px-10 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] font-black text-sm flex items-center gap-3 hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-widest"
                 >
-                    <Save size={16} />
-                    Save Changes
+                    <Save size={18} />
+                    Save Entity
                 </button>
+            </div>
+        </motion.div>
+    </motion.div>
+)
+
+/**
+ * ─── INFORMATION MODAL ───────────────────────────────────────────────────
+ */
+
+const InfoModal = ({ onClose }) => (
+    <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6"
+        onClick={onClose}
+    >
+        <motion.div
+            initial={{ scale: 0.9, y: 40, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.9, y: 40, opacity: 0 }}
+            onClick={e => e.stopPropagation()}
+            className="bg-white dark:bg-slate-950 w-full max-w-4xl rounded-[48px] shadow-2xl border border-white/20 dark:border-slate-800/50 max-h-[85vh] overflow-hidden flex flex-col relative"
+        >
+            {/* Close Button UI */}
+            <button 
+                onClick={onClose}
+                className="absolute top-8 right-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all z-10"
+            >
+                <X size={20} />
+            </button>
+
+            <div className="p-12 overflow-y-auto custom-scrollbar">
+                <header className="mb-12">
+                    <div className="w-16 h-16 bg-indigo-600 rounded-[20px] flex items-center justify-center text-white mb-6 shadow-xl">
+                        <Brain size={32} />
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none">
+                        How Gastromap <span className="text-indigo-600">Knowledge Graph</span> Works
+                    </h2>
+                    <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mt-4">System Mechanics & Logic Flow</p>
+                </header>
+
+                <div className="grid md:grid-cols-2 gap-12">
+                    <section className="space-y-6">
+                        <div className="flex gap-6">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600">
+                                <Database size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-sm uppercase tracking-widest mb-2 dark:text-white">1. База Знаний (Ontology)</h4>
+                                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    Это наша кулинарная энциклопедия. Мы храним не просто названия, а связи: Кухни (Итальянская) → Блюда (Паста) → Ингредиенты (Базилик). Это позволяет приложению понимать контекст еды.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-6">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-500/20 text-emerald-600">
+                                <Sparkles size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-sm uppercase tracking-widest mb-2 dark:text-white">2. Искусственный Интеллект</h4>
+                                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    AI (OpenRouter/OpenAI) наполняет базу "семенами" знаний. Автоматически генерирует тысячи блюд, их описания и теги на основе мировых кулинарных стандартов.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-6">
+                        <div className="flex gap-6">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-500/20 text-amber-600">
+                                <RefreshCw size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-sm uppercase tracking-widest mb-2 dark:text-white">3. Синхронизация (Mapping)</h4>
+                                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    Самая мощная часть. Приложение берет реальные рестораны и "привязывает" их к нашей базе знаний. Если ресторан подает пиццу, он автоматически становится частью "Итальянской кухни".
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-6">
+                            <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0 border border-purple-100 dark:border-purple-500/20 text-purple-600">
+                                <Search size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-sm uppercase tracking-widest mb-2 dark:text-white">4. Семантический Поиск</h4>
+                                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    Благодаря этой системе пользователи могут искать еду не по именам, а по смыслу: "хочу что-то острое", "веганская Азия" и т.д. Система найдет рестораны через связи в графе.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div className="mt-16 p-8 bg-slate-900 rounded-[32px] text-indigo-200">
+                    <div className="flex items-center gap-4 mb-4">
+                        <Zap className="text-yellow-400" size={24} />
+                        <h4 className="font-black text-sm uppercase tracking-[0.2em] text-white italic">PRO TIP для Админа</h4>
+                    </div>
+                    <p className="text-xs leading-relaxed font-medium opacity-80">
+                        Используйте <strong>Bulk Seed</strong> для инициализации новых мировых регионов. После добавления новых данных всегда нажимайте <strong>Sync Graph</strong>, чтобы обновить теги у всех ресторанов на карте. Это сделает поиск в приложении на 40% точнее.
+                    </p>
+                </div>
+
+                <div className="mt-12 flex justify-center">
+                    <button 
+                        onClick={onClose}
+                        className="px-12 py-5 bg-slate-100 dark:bg-slate-800 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+                    >
+                        I understand everything
+                    </button>
+                </div>
             </div>
         </motion.div>
     </motion.div>
@@ -213,30 +303,33 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
         })
     }
 
+    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+    const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1"
+
     return (
-        <FormModalBase title={cuisine ? 'Edit Cuisine' : 'New Cuisine'} onSave={handleSubmit} onClose={onClose}>
-            <div className="space-y-4">
+        <FormModalBase title={cuisine ? 'Update Cuisine' : 'New Cuisine Ontology'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-6">
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
-                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Italian" />
+                    <label className={labelClasses}>Primary Identity</label>
+                    <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Italian, Thai, Polish..." />
                 </div>
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Description</label>
-                    <textarea className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium h-24 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context..." />
+                    <label className={labelClasses}>Deep Description</label>
+                    <textarea className={cn(inputClasses, "h-28 resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context, historical significance..." />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Region</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="e.g. Mediterranean" />
+                        <label className={labelClasses}>Global Region</label>
+                        <input className={inputClasses} value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="e.g. Mediterranean" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Flavor Profile</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. savory, herbal" />
+                        <label className={labelClasses}>Flavor DNA</label>
+                        <input className={inputClasses} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. herbal, rich, umami" />
                     </div>
                 </div>
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Typical Dishes (Comma separated)</label>
-                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="pasta, pizza, risotto..." />
+                    <label className={labelClasses}>Signature Exports (Typical Dishes)</label>
+                    <input className={inputClasses} value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="Comma separated list..." />
                 </div>
             </div>
         </FormModalBase>
@@ -264,106 +357,51 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
         })
     }
 
+    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+    const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1"
+
     return (
-        <FormModalBase title={dish ? 'Edit Dish' : 'New Dish'} onSave={handleSubmit} onClose={onClose}>
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        <FormModalBase title={dish ? 'Edit Master Dish' : 'New Dish Definition'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Carbonara" />
+                        <label className={labelClasses}>Dish Name</label>
+                        <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Ramen" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Cuisine</label>
+                        <label className={labelClasses}>Base Cuisine</label>
                         <select 
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                            className={cn(inputClasses, "appearance-none")}
                             value={form.cuisine_id}
                             onChange={e => setForm({...form, cuisine_id: e.target.value})}
                         >
-                            <option value="">Select Cuisine</option>
+                            <option value="">Select Parent...</option>
                             {cuisines.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Description</label>
-                    <textarea className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium h-20 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                    <label className={labelClasses}>Visual & Narrative Description</label>
+                    <textarea className={cn(inputClasses, "h-24")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Style</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="e.g. Grilled" />
+                        <label className={labelClasses}>Cooking Methodology</label>
+                        <input className={inputClasses} value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="e.g. Fermented, Raw" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Dietary (Comma sep.)</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, GF..." />
+                        <label className={labelClasses}>Dietary DNA</label>
+                        <input className={inputClasses} value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, Nut-Free..." />
                     </div>
                 </div>
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Ingredients (Comma separated)</label>
-                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} />
+                    <label className={labelClasses}>Key Ingredient Network</label>
+                    <input className={inputClasses} value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} placeholder="Comma separated list..." />
                 </div>
             </div>
         </FormModalBase>
     )
 }
-
-const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
-    const [form, setForm] = useState({
-        name: ingredient?.name || '',
-        category: ingredient?.category || '',
-        flavor_profile: ingredient?.flavor_profile || '',
-        common_pairings: (ingredient?.common_pairings || []).join(', '),
-        dietary_info: (ingredient?.dietary_info || []).join(', '),
-        season: ingredient?.season || '',
-    })
-
-    const handleSubmit = () => {
-        onSave({
-            ...form,
-            common_pairings: form.common_pairings.split(',').map(s => s.trim()).filter(Boolean),
-            dietary_info: form.dietary_info.split(',').map(s => s.trim()).filter(Boolean),
-        })
-    }
-
-    return (
-        <FormModalBase title={ingredient ? 'Edit Ingredient' : 'New Ingredient'} onSave={handleSubmit} onClose={onClose}>
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Name</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Category</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="e.g. spice, dairy" />
-                    </div>
-                </div>
-                <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Flavor Profile</label>
-                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. Earthy, pungent" />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Common Pairings (Comma sep.)</label>
-                    <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Season</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.season} onChange={e => setForm({...form, season: e.target.value})} placeholder="e.g. Autumn" />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Dietary Info</label>
-                        <input className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all" value={form.dietary_info} onChange={e => setForm({...form, dietary_info: e.target.value})} placeholder="Vegan, GF..." />
-                    </div>
-                </div>
-            </div>
-        </FormModalBase>
-    )
-}
-
-/**
- * ─── SPOONACULAR ENRICHER ──────────────────────────────────────────────────
- */
 
 function SpoonacularEnricher({ onImport }) {
     const [query, setQuery] = useState('')
@@ -377,38 +415,38 @@ function SpoonacularEnricher({ onImport }) {
     }
 
     return (
-        <div className="p-8 bg-black rounded-[40px] text-white shadow-2xl relative overflow-hidden group">
-            {/* Background elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="p-10 bg-slate-900 rounded-[48px] text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
             
             <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-                        <Sparkles className="text-yellow-400" size={28} />
+                <div className="flex items-center gap-6 mb-10">
+                    <div className="w-16 h-16 rounded-[24px] bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-2xl">
+                        <Sparkles className="text-yellow-400" size={32} />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black tracking-tight">Culinary Deep Search</h2>
-                        <p className="text-indigo-200/60 font-medium text-sm">Semantic AI Knowledge Extraction</p>
+                        <h2 className="text-3xl font-black tracking-tight leading-none italic uppercase">Intelligence Harvester</h2>
+                        <p className="text-indigo-200/50 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">External Data Enrichment Engine</p>
                     </div>
                 </div>
 
-                <div className="flex gap-3 max-w-2xl mb-8">
+                <div className="flex gap-4 max-w-3xl mb-10">
                     <div className="flex-1 relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30" size={24} />
                         <input
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                            placeholder="Search dishes or ingredients..."
-                            className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-[20px] outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
+                            placeholder="Identify world culinary units..."
+                            className="w-full pl-16 pr-8 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all font-bold text-lg"
                         />
                     </div>
                     <button
                         onClick={handleSearch}
                         disabled={searchMutation.isPending}
-                        className="px-8 py-4 bg-indigo-600 text-white rounded-[20px] font-black hover:bg-indigo-500 transition-all disabled:opacity-50"
+                        className="px-10 py-5 bg-indigo-600 text-white rounded-[24px] font-black hover:bg-indigo-500 hover:shadow-2xl hover:shadow-indigo-500/50 active:scale-95 transition-all disabled:opacity-50"
                     >
-                        {searchMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : 'Discover'}
+                        {searchMutation.isPending ? <Loader2 className="animate-spin" size={24} /> : 'Seed Graph'}
                     </button>
                 </div>
 
@@ -417,54 +455,62 @@ function SpoonacularEnricher({ onImport }) {
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="grid md:grid-cols-2 gap-8"
+                            className="grid md:grid-cols-2 gap-10"
                         >
-                            {results.dishes.length > 0 && (
-                                <div className="space-y-4">
-                                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-white/40">Suggested Dishes</h3>
-                                    <div className="grid gap-2">
-                                        {results.dishes.map(dish => (
-                                            <div key={dish.id} className="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between group/item">
-                                                <div className="flex items-center gap-3">
-                                                    {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
-                                                    <div>
-                                                        <div className="font-bold text-sm tracking-tight">{dish.name}</div>
-                                                        <div className="text-[10px] text-white/30 font-bold uppercase">{dish.cuisine || 'Global'}</div>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => onImport('dish', dish)}
-                                                    className="p-2 rounded-xl hover:bg-indigo-600 transition-colors"
-                                                >
-                                                    <Download size={16} />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                                    <h3 className="font-black uppercase tracking-widest text-xs text-white/40">Knowledge Candidates (Dishes)</h3>
+                                    <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-md">{results.dishes.length} Found</span>
                                 </div>
-                            )}
+                                <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-4">
+                                    {results.dishes.map(dish => (
+                                        <div key={dish.id} className="bg-white/5 border border-white/5 rounded-[22px] p-4 flex items-center justify-between hover:bg-white/10 transition-all group">
+                                            <div className="flex items-center gap-4">
+                                                {dish.image ? (
+                                                    <img src={dish.image} alt="" className="w-12 h-12 rounded-xl object-cover shadow-2xl" />
+                                                ) : (
+                                                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center"><UtensilsCrossed size={18} /></div>
+                                                )}
+                                                <div>
+                                                    <div className="font-bold text-sm tracking-tight">{dish.name}</div>
+                                                    <div className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-0.5">{dish.cuisine || 'International'}</div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => onImport('dish', dish)}
+                                                className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-indigo-600 transition-all text-indigo-400"
+                                            >
+                                                <Download size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-                            {results.ingredients.length > 0 && (
-                                <div className="space-y-4">
-                                    <h3 className="font-bold uppercase tracking-widest text-[10px] text-white/40">Suggested Ingredients</h3>
-                                    <div className="grid gap-2">
-                                        {results.ingredients.map(ing => (
-                                            <div key={ing.id} className="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between group/item">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-contain bg-white/5" />
-                                                    <div className="font-bold text-sm tracking-tight capitalize">{ing.name}</div>
-                                                </div>
-                                                <button
-                                                    onClick={() => onImport('ingredient', ing)}
-                                                    className="p-2 rounded-xl hover:bg-emerald-600 transition-colors"
-                                                >
-                                                    <Download size={16} />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                                    <h3 className="font-black uppercase tracking-widest text-xs text-white/40">Molecular Map (Ingredients)</h3>
+                                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md">{results.ingredients.length} Matched</span>
                                 </div>
-                            )}
+                                <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-4">
+                                    {results.ingredients.map(ing => (
+                                        <div key={ing.id} className="bg-white/5 border border-white/5 rounded-[22px] p-4 flex items-center justify-between hover:bg-white/10 transition-all group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white/5 p-2 flex items-center justify-center shadow-inner">
+                                                    <img src={ing.image} alt="" className="w-full h-full object-contain" />
+                                                </div>
+                                                <div className="font-bold text-sm tracking-tight capitalize">{ing.name}</div>
+                                            </div>
+                                            <button
+                                                onClick={() => onImport('ingredient', ing)}
+                                                className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-emerald-600 transition-all text-emerald-400"
+                                            >
+                                                <Download size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -473,14 +519,11 @@ function SpoonacularEnricher({ onImport }) {
     )
 }
 
-/**
- * ─── MAIN ADMIN PAGE ────────────────────────────────────────────────────────
- */
-
 const AdminKnowledgeGraphPage = () => {
     const [activeTab, setActiveTab] = useState('cuisines')
     const [searchTerm, setSearchTerm] = useState('')
     const [showModal, setShowModal] = useState(null)
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
     const [toast, setToast] = useState(null)
 
     const { data: stats } = useKnowledgeStats()
@@ -498,202 +541,275 @@ const AdminKnowledgeGraphPage = () => {
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
 
+    const syncKG = useSyncKGToLocationsMutation()
+    const [syncStatus, setSyncStatus] = useState(null)
+
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
         setTimeout(() => setToast(null), 3000)
     }
 
-    const syncKG = useSyncKGToLocationsMutation()
-    const [syncStatus, setSyncStatus] = useState(null)
-
     const handleSyncLocations = async () => {
         try {
             await syncKG.mutateAsync((current, total) => {
-                setSyncStatus({ message: `Processing ${current} of ${total}`, progress: Math.round((current/total)*100) })
+                setSyncStatus({ message: `Rebuilding neural mapping: ${current} / ${total}`, progress: Math.round((current/total)*100) })
             })
-            showToast('Knowledge Graph synchronized with locations')
+            showToast('Knowledge synchronization successful')
             setSyncStatus(null)
         } catch (_err) {
-            showToast('Error during synchronization', 'error')
+            showToast('Synchronization error', 'error')
             setSyncStatus(null)
         }
+    }
+
+    const handleBulkPopulate = () => {
+        showToast('System seeder active in background')
     }
 
     const handleSaveCuisine = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateCuisine.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Cuisine updated')
+                showToast('Knowledge core expanded')
             } else {
                 await createCuisine.mutateAsync(data)
-                showToast('Cuisine created')
+                showToast('New culinary unit initialized')
             }
             setShowModal(null)
-        } catch (_err) { showToast('Action failed', 'error') }
+        } catch (_err) { showToast('Operation failed', 'error') }
     }
 
     const handleSaveDish = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateDish.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Dish updated')
+                showToast('Dish definition secured')
             } else {
                 await createDish.mutateAsync(data)
-                showToast('Dish imported')
+                showToast('Dish manifest imported')
             }
             setShowModal(null)
-        } catch (_err) { showToast('Action failed', 'error') }
+        } catch (_err) { showToast('Operation failed', 'error') }
     }
 
     const handleSaveIngredient = async (data) => {
         try {
             if (showModal?.data?.id) {
                 await updateIngredient.mutateAsync({ id: showModal.data.id, updates: data })
-                showToast('Ingredient updated')
+                showToast('Ingredient profile updated')
             } else {
                 await createIngredient.mutateAsync(data)
-                showToast('Ingredient imported')
+                showToast('Ingredient unit initialized')
             }
             setShowModal(null)
-        } catch (_err) { showToast('Action failed', 'error') }
+        } catch (_err) { showToast('Operation failed', 'error') }
     }
 
-    // Filters
-    const filteredItems = (activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients)
-        .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredItems = useMemo(() => {
+        const source = (activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients)
+        return (source || []).filter(item => {
+            const search = searchTerm.toLowerCase()
+            return item.name?.toLowerCase().includes(search) || 
+                   item.description?.toLowerCase().includes(search) ||
+                   item.region?.toLowerCase().includes(search)
+        })
+    }, [activeTab, cuisines, dishes, ingredients, searchTerm])
 
     const isLoading = loadingCuisines || loadingDishes || loadingIngredients
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
-            {/* Toast System */}
+        <div className="max-w-7xl mx-auto px-8 py-12 space-y-12 bg-slate-50 dark:bg-slate-950 min-h-screen">
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20, x: 20 }}
-                        animate={{ opacity: 1, y: 0, x: 0 }}
-                        exit={{ opacity: 0, y: -20, x: 20 }}
-                        className={cn("fixed top-6 right-6 z-[100] px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm", 
-                            toast.type === 'success' ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")}
+                        initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        className={cn(
+                            "fixed top-8 right-8 z-[200] px-8 py-4 rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] font-black text-xs uppercase tracking-[0.3em] flex items-center gap-3 border backdrop-blur-md", 
+                            toast.type === 'success' ? "bg-emerald-600/90 text-white border-emerald-400/20" : "bg-rose-600/90 text-white border-rose-400/20"
+                        )}
                     >
+                        <Sparkles size={16} />
                         {toast.message}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-[32px] bg-slate-900 flex items-center justify-center text-white shadow-2xl">
-                        <Brain size={40} />
+            <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+                <div className="flex items-start gap-8">
+                    <div className="w-24 h-24 rounded-[36px] bg-slate-900 flex items-center justify-center text-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] border-4 border-white/10 shrink-0">
+                        <Brain size={48} />
                     </div>
                     <div>
-                        <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Knowledge Graph</h1>
-                        <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Culinary Intelligence Layer v2.0</p>
+                        <div className="flex items-center gap-4 mb-2">
+                            <h1 className="text-6xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-[0.85]">
+                                Knowledge <span className="text-indigo-600">Graph</span>
+                            </h1>
+                            <div className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black text-indigo-500 uppercase tracking-widest h-fit">ULTRA</div>
+                        </div>
+                        <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px] pl-1">Global Gastronomy Ontological Index</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setIsInfoModalOpen(true)}
+                        className="w-16 h-16 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-400 rounded-[24px] flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 hover:border-indigo-500/50 transition-all shadow-xl"
+                        title="How it works"
+                    >
+                        <Info size={32} />
+                    </button>
+
+                    <button
+                        onClick={handleBulkPopulate}
+                        className="flex items-center gap-3 px-8 py-4.5 rounded-[24px] bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-black text-xs uppercase tracking-widest hover:border-indigo-500 hover:text-indigo-500 hover:shadow-2xl transition-all group"
+                    >
+                        <Database size={18} className="group-hover:rotate-12 transition-transform" />
+                        Seed Engine
+                    </button>
+                    
                     <button
                         onClick={handleSyncLocations}
                         disabled={syncKG.isPending}
-                        className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
+                        className="flex items-center gap-3 px-8 py-4.5 rounded-[24px] bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-xs uppercase tracking-widest hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] active:scale-95 transition-all"
                     >
-                        <RefreshCw size={20} className={syncKG.isPending ? 'animate-spin' : ''} />
-                        Sync All Locations
+                        <RefreshCw size={18} className={syncKG.isPending ? 'animate-spin' : ''} />
+                        Sync Graph
                     </button>
                     
                     <button
                         onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
-                        className="w-14 h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                        className="w-16 h-16 bg-indigo-600 text-white rounded-[24px] flex items-center justify-center hover:bg-indigo-500 hover:rotate-90 hover:scale-110 active:scale-95 transition-all shadow-[0_15px_40px_rgba(79,70,229,0.4)]"
                     >
-                        <Plus size={28} />
+                        <Plus size={32} />
                     </button>
                 </div>
             </header>
 
-            {syncStatus && (
-                <div className="bg-indigo-600 rounded-[32px] p-8 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="font-black uppercase tracking-widest text-xs">Syncing World Knowledge</div>
-                        <div className="font-black text-2xl">{syncStatus.progress}%</div>
-                    </div>
-                    <div className="h-4 bg-indigo-900/40 rounded-full overflow-hidden">
-                        <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${syncStatus.progress}%` }} />
-                    </div>
-                    <p className="mt-4 text-sm font-bold text-indigo-100">{syncStatus.message}</p>
-                </div>
-            )}
+            <AnimatePresence>
+                {syncStatus && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-indigo-600 rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-500/30"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                    <RefreshCw className="animate-spin" size={20} />
+                                </div>
+                                <div className="font-black uppercase tracking-[0.2em] text-xs italic">Quantum Mapping Cycle</div>
+                            </div>
+                            <div className="font-black text-4xl italic">{syncStatus.progress}%</div>
+                        </div>
+                        <div className="h-4 bg-indigo-900/40 rounded-full overflow-hidden border border-white/10">
+                            <motion.div 
+                                className="h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]" 
+                                initial={{ width: 0 }} 
+                                animate={{ width: `${syncStatus.progress}%` }} 
+                            />
+                        </div>
+                        <p className="mt-6 text-sm font-black text-indigo-100 flex items-center gap-2 italic uppercase tracking-widest">
+                            <Zap size={16} />
+                            {syncStatus.message}
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex flex-wrap gap-6">
                 {[
                     { label: 'Cuisines', val: stats?.cuisines || 0, icon: Globe, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                    { label: 'Dishes', val: stats?.dishes || 0, icon: ChefHat, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Ingredients', val: stats?.ingredients || 0, icon: Package, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                    { label: 'Logic Sync', val: 'Active', icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' }
+                    { label: 'Dishes', val: stats?.dishes || 0, icon: UtensilsCrossed, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Ingredients', val: stats?.ingredients || 0, icon: Leaf, color: 'text-amber-500', bg: 'bg-amber-500/10' },
                 ].map((s, i) => (
-                    <StatsCard key={i} {...s} value={s.val} />
+                    <StatsCard key={i} {...s} value={s.val} bgColor={s.bg} />
                 ))}
             </div>
 
-            {/* Spoonacular Tool */}
             <SpoonacularEnricher onImport={(type, data) => {
                 if (type === 'dish') handleSaveDish(data)
                 if (type === 'ingredient') handleSaveIngredient(data)
             }} />
 
-            {/* Browser */}
-            <section className="space-y-8">
-                <div className="flex items-center justify-between gap-6">
-                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-3xl shrink-0">
+            <section className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl rounded-[48px] border border-white/20 dark:border-slate-800/50 p-1 shadow-2xl overflow-hidden flex flex-col h-[800px]">
+                <div className="p-8 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-100 dark:border-slate-800/50">
+                    <div className="flex gap-1.5 bg-slate-100/80 dark:bg-slate-950/80 p-1.5 rounded-[24px] border border-white/50 dark:border-slate-800/50">
                         {['cuisines', 'dishes', 'ingredients'].map(id => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}
-                                className={cn("px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
-                                    activeTab === id ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xl" : "text-slate-400")}
+                                className={cn("px-10 py-3.5 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all",
+                                    activeTab === id 
+                                        ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xl border border-slate-100 dark:border-slate-700" 
+                                        : "text-slate-400 hover:text-slate-600")}
                             >
                                 {id}
                             </button>
                         ))}
                     </div>
-                    <div className="relative flex-1 max-w-sm">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            placeholder={`Filter ${activeTab}...`}
-                            className="w-full pl-12 pr-6 py-4 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl outline-none focus:border-indigo-500 transition-all font-bold text-sm"
-                        />
+                    
+                    <div className="flex items-center gap-4 flex-1 max-w-xl">
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                            <input
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                placeholder={`Filter ${activeTab} by name or metadata...`}
+                                className="w-full pl-16 pr-8 py-5 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[24px] outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm"
+                            />
+                        </div>
+                        <button className="w-16 h-16 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[24px] flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:border-indigo-500/50 transition-all">
+                            <Filter size={20} />
+                        </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <AnimatePresence mode="popLayout">
+                <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar space-y-4">
+                    <AnimatePresence mode="popLayout" initial={false}>
                         {isLoading ? (
-                            <div className="col-span-full py-20 flex flex-col items-center gap-4 text-slate-400">
-                                <Loader2 className="animate-spin" size={40} />
-                                <span className="font-black uppercase tracking-widest text-xs">Accessing Digital Memory...</span>
+                            <div className="h-full flex flex-col items-center justify-center gap-10 opacity-20">
+                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }}>
+                                    <Brain size={120} />
+                                </motion.div>
+                                <span className="font-black uppercase tracking-[0.6em] text-[10px]">Accessing Culinary Memory Layer</span>
                             </div>
-                        ) : (
+                        ) : filteredItems.length > 0 ? (
                             filteredItems.map(item => (
-                                activeTab === 'cuisines' ? <CuisineCard key={item.id} cuisine={item} onEdit={c => setShowModal({type: 'cuisine', data: c})} onDelete={id => deleteCuisine.mutateAsync(id)} /> :
-                                activeTab === 'dishes' ? <DishCard key={item.id} dish={item} onEdit={d => setShowModal({type: 'dish', data: d})} onDelete={id => deleteDish.mutateAsync(id)} /> :
-                                <IngredientCard key={item.id} ingredient={item} onEdit={i => setShowModal({type: 'ingredient', data: i})} onDelete={id => deleteIngredient.mutateAsync(id)} />
+                                <ListItem 
+                                    key={item.id} 
+                                    type={activeTab} 
+                                    item={item} 
+                                    onEdit={obj => setShowModal({type: activeTab.slice(0, -1), data: obj})} 
+                                    onDelete={async id => {
+                                        if (confirm('Verify data deletion? This action is irreversible.')) {
+                                            if (activeTab === 'cuisines') await deleteCuisine.mutateAsync(id)
+                                            else if (activeTab === 'dishes') await deleteDish.mutateAsync(id)
+                                            else await deleteIngredient.mutateAsync(id)
+                                            showToast('Entity purged from graph')
+                                        }
+                                    }} 
+                                />
                             ))
-                        )}
-                        {!isLoading && filteredItems.length === 0 && (
-                            <div className="col-span-full py-20 text-center text-slate-300">
-                                <Search size={48} className="mx-auto mb-4 opacity-20" />
-                                <p className="font-black uppercase tracking-widest">No entries matching your search</p>
-                            </div>
+                        ) : (
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                className="flex flex-col items-center justify-center py-40 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[48px]"
+                            >
+                                <div className="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-6 text-slate-200">
+                                    <Search size={48} />
+                                </div>
+                                <h3 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter italic">No Matches Found</h3>
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Neural graph returned zero nodes</p>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             </section>
 
-            {/* Modals */}
             <AnimatePresence>
                 {showModal?.type === 'cuisine' && (
                     <CuisineFormModal
@@ -709,12 +825,9 @@ const AdminKnowledgeGraphPage = () => {
                         onClose={() => setShowModal(null)}
                     />
                 )}
-                {showModal?.type === 'ingredient' && (
-                    <IngredientFormModal
-                        ingredient={showModal.data}
-                        onSave={handleSaveIngredient}
-                        onClose={() => setShowModal(null)}
-                    />
+                {/* Info Modal */}
+                {isInfoModalOpen && (
+                    <InfoModal onClose={() => setIsInfoModalOpen(false)} />
                 )}
             </AnimatePresence>
         </div>

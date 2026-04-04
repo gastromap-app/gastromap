@@ -254,3 +254,5 @@ export function ChatInterface({
         </div>
     )
 }
+
+export default ChatInterface

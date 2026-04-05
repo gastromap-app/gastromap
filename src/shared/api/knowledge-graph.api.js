@@ -199,13 +199,16 @@ const mockIngredients = [
 // ─── Cuisines API ───────────────────────────────────────────────────────────
 
 export async function getCuisines() {
-    if (!supabase) return mockCuisines
+    if (!supabase) {
+        console.warn('[KnowledgeGraph] Supabase not configured — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing. Returning mock data.')
+        return mockCuisines
+    }
     const { data, error } = await supabase
         .from('cuisines')
         .select('*')
         .order('name', { ascending: true })
     if (error) {
-        console.warn('[KnowledgeGraph] getCuisines error, using mock:', error.message)
+        console.error('[KnowledgeGraph] getCuisines error:', error.message)
         return mockCuisines
     }
     return data || []
@@ -268,13 +271,14 @@ export async function deleteCuisine(id) {
 
 export async function getDishes(cuisineId = null) {
     if (!supabase) {
+        console.warn('[KnowledgeGraph] Supabase not configured — returning mock dishes.')
         return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
     }
     let query = supabase.from('dishes').select('*, cuisine:cuisines(name)')
     if (cuisineId) query = query.eq('cuisine_id', cuisineId)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.warn('[KnowledgeGraph] getDishes error, using mock:', error.message)
+        console.error('[KnowledgeGraph] getDishes error:', error.message)
         return mockDishes
     }
     return data || []
@@ -326,13 +330,14 @@ export async function deleteDish(id) {
 
 export async function getIngredients(category = null) {
     if (!supabase) {
+        console.warn('[KnowledgeGraph] Supabase not configured — returning mock ingredients.')
         return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
     }
     let query = supabase.from('ingredients').select('*')
     if (category) query = query.eq('category', category)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.warn('[KnowledgeGraph] getIngredients error, using mock:', error.message)
+        console.error('[KnowledgeGraph] getIngredients error:', error.message)
         return mockIngredients
     }
     return data || []
@@ -449,11 +454,7 @@ export async function getAIContextForQuery(query) {
 
 export async function getKnowledgeStats() {
     if (!supabase) {
-        return {
-            cuisines: mockCuisines.length,
-            dishes: mockDishes.length,
-            ingredients: mockIngredients.length,
-        }
+        return { cuisines: 0, dishes: 0, ingredients: 0 }
     }
 
     const [cuisines, dishes, ingredients] = await Promise.all([

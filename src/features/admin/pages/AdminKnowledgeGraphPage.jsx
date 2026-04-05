@@ -4,7 +4,8 @@ import {
     Brain, ChefHat, UtensilsCrossed, Plus, Search,
     Edit2, Trash2, X, Save, Leaf,
     Globe, Sparkles, Loader2, BookOpen, RefreshCw, Zap, Package, Download,
-    ChevronRight, Info, Filter, ArrowUpRight, Database
+    ChevronRight, Info, Filter, ArrowUpRight, Database,
+    Carrot, Share2, LayoutGrid
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { 
@@ -33,7 +34,7 @@ const StatsCard = ({ icon: Icon, label, value, color, bgColor }) => (
     </div>
 )
 
-const ListItem = ({ type, item, onEdit, onDelete }) => {
+const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) => {
     const isCuisine = type === 'cuisines'
     const isDish = type === 'dishes'
     const isIngredient = type === 'ingredients'
@@ -44,10 +45,12 @@ const ListItem = ({ type, item, onEdit, onDelete }) => {
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ delay: (idx % 10) * 0.05 }}
             className="group flex items-center gap-6 p-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-[24px] border border-slate-100 dark:border-slate-800/60 hover:bg-white dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-default"
         >
             <div className={cn("w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-105 transition-transform", bgClass)}>
@@ -114,7 +117,7 @@ const ListItem = ({ type, item, onEdit, onDelete }) => {
             </div>
         </motion.div>
     )
-}
+})
 
 /**
  * ─── MODAL COMPONENTS ────────────────────────────────────────────────────────
@@ -146,7 +149,7 @@ const FormModalBase = ({ title, onSave, onClose, children }) => (
                     <X size={20} />
                 </button>
             </div>
-            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                 {children}
             </div>
             <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex gap-4 justify-end bg-slate-50/50 dark:bg-slate-900/50">
@@ -165,6 +168,7 @@ const FormModalBase = ({ title, onSave, onClose, children }) => (
                 </button>
             </div>
         </motion.div>
+
     </motion.div>
 )
 
@@ -290,46 +294,51 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
         region: cuisine?.region || '',
         aliases: (cuisine?.aliases || []).join(', '),
         typical_dishes: (cuisine?.typical_dishes || []).join(', '),
-        key_ingredients: (cuisine?.key_ingredients || []).join(', '),
-        flavor_profile: cuisine?.flavor_profile || '',
+        key_ingredients: (cuisine?.key_ingredients || []).join(', ')
     })
 
     const handleSubmit = () => {
-        onSave({
-            ...form,
+        onSave({ 
+            ...form, 
             aliases: form.aliases.split(',').map(s => s.trim()).filter(Boolean),
             typical_dishes: form.typical_dishes.split(',').map(s => s.trim()).filter(Boolean),
-            key_ingredients: form.key_ingredients.split(',').map(s => s.trim()).filter(Boolean),
+            key_ingredients: form.key_ingredients.split(',').map(s => s.trim()).filter(Boolean)
         })
     }
 
-    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-amber-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
     const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1"
 
     return (
-        <FormModalBase title={cuisine ? 'Update Cuisine' : 'New Cuisine Ontology'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={cuisine ? 'Edit Global Cuisine' : 'Chart New Territory'} onSave={handleSubmit} onClose={onClose}>
             <div className="space-y-6">
-                <div>
-                    <label className={labelClasses}>Primary Identity</label>
-                    <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Italian, Thai, Polish..." />
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <label className={labelClasses}>Territory Name</label>
+                        <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Levantine" />
+                    </div>
+                    <div>
+                        <label className={labelClasses}>Geographical Focus</label>
+                        <input className={inputClasses} value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="Middle East, Balkan..." />
+                    </div>
                 </div>
                 <div>
-                    <label className={labelClasses}>Deep Description</label>
-                    <textarea className={cn(inputClasses, "h-28 resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context, historical significance..." />
+                    <label className={labelClasses}>Known Aliases (Names)</label>
+                    <input className={inputClasses} value={form.aliases} onChange={e => setForm({...form, aliases: e.target.value})} placeholder="Local/Alternate labels..." />
+                </div>
+                <div>
+                    <label className={labelClasses}>Narrative Summary</label>
+                    <textarea className={cn(inputClasses, "min-h-[120px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context..." />
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className={labelClasses}>Global Region</label>
-                        <input className={inputClasses} value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="e.g. Mediterranean" />
+                        <label className={labelClasses}>Iconic Dishes</label>
+                        <input className={inputClasses} value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="Hummus, Shawarma..." />
                     </div>
                     <div>
-                        <label className={labelClasses}>Flavor DNA</label>
-                        <input className={inputClasses} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. herbal, rich, umami" />
+                        <label className={labelClasses}>Botanical/Key Components</label>
+                        <input className={inputClasses} value={form.key_ingredients} onChange={e => setForm({...form, key_ingredients: e.target.value})} placeholder="Olive Oil, Za'atar..." />
                     </div>
-                </div>
-                <div>
-                    <label className={labelClasses}>Signature Exports (Typical Dishes)</label>
-                    <input className={inputClasses} value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="Comma separated list..." />
                 </div>
             </div>
         </FormModalBase>
@@ -337,66 +346,123 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
 }
 
 const DishFormModal = ({ dish, onSave, onClose }) => {
-    const { data: cuisines = [] } = useCuisines()
     const [form, setForm] = useState({
         name: dish?.name || '',
-        cuisine_id: dish?.cuisine_id || '',
         description: dish?.description || '',
-        ingredients: (dish?.ingredients || []).join(', '),
+        flavor_profile: dish?.flavor_profile || '',
         preparation_style: dish?.preparation_style || '',
-        dietary_tags: (dish?.dietary_tags || []).join(', '),
-        flavor_notes: dish?.flavor_notes || '',
-        best_pairing: dish?.best_pairing || '',
+        common_pairings: (dish?.common_pairings || []).join(', '),
+        dietary_tags: (dish?.dietary_tags || []).join(', ')
+    })
+
+    const handleSubmit = () => {
+        onSave({ 
+            ...form, 
+            common_pairings: form.common_pairings.split(',').map(s => s.trim()).filter(Boolean),
+            dietary_tags: form.dietary_tags.split(',').map(s => s.trim()).filter(Boolean)
+        })
+    }
+
+    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-amber-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+    const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1"
+
+    return (
+        <FormModalBase title={dish ? 'Stabilize Plate Profile' : 'Define New Plate'} onSave={handleSubmit} onClose={onClose}>
+            <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <label className={labelClasses}>Gastronomic Title</label>
+                        <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Shakshuka" />
+                    </div>
+                    <div>
+                        <label className={labelClasses}>Flavor DNA</label>
+                        <input className={inputClasses} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="Spicy, Savory, Umami..." />
+                    </div>
+                </div>
+                <div>
+                    <label className={labelClasses}>Profile Summary</label>
+                    <textarea className={cn(inputClasses, "min-h-[100px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Molecular breakdown..." />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <label className={labelClasses}>Preparation Style</label>
+                        <input className={inputClasses} value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="Grilled, Slow-cooked..." />
+                    </div>
+                    <div>
+                        <label className={labelClasses}>Dietary Matrix</label>
+                        <input className={inputClasses} value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, Gluten-free..." />
+                    </div>
+                </div>
+                <div>
+                    <label className={labelClasses}>Synergistic Elements (Pairings)</label>
+                    <input className={inputClasses} value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} placeholder="Rice, Wine, Herbs..." />
+                </div>
+            </div>
+        </FormModalBase>
+    )
+}
+
+const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
+    const [form, setForm] = useState({
+        name: ingredient?.name || '',
+        category: ingredient?.category || '',
+        flavor_profile: ingredient?.flavor_profile || '',
+        common_pairings: (ingredient?.common_pairings || []).join(', '),
+        dietary_info: (ingredient?.dietary_info || []).join(', '),
+        season: ingredient?.season || 'year-round',
     })
 
     const handleSubmit = () => {
         onSave({
             ...form,
-            ingredients: form.ingredients.split(',').map(s => s.trim()).filter(Boolean),
-            dietary_tags: form.dietary_tags.split(',').map(s => s.trim()).filter(Boolean),
+            common_pairings: form.common_pairings.split(',').map(s => s.trim()).filter(Boolean),
+            dietary_info: form.dietary_info.split(',').map(s => s.trim()).filter(Boolean),
         })
     }
 
-    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
+    const inputClasses = "w-full px-5 py-4 rounded-[18px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold focus:ring-4 focus:ring-amber-500/10 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
     const labelClasses = "text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1"
 
     return (
-        <FormModalBase title={dish ? 'Edit Master Dish' : 'New Dish Definition'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={ingredient ? 'Modify Ingredient' : 'New Molecular Component'} onSave={handleSubmit} onClose={onClose}>
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className={labelClasses}>Dish Name</label>
-                        <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Ramen" />
+                        <label className={labelClasses}>Component Name</label>
+                        <input className={inputClasses} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Saffron" />
                     </div>
                     <div>
-                        <label className={labelClasses}>Base Cuisine</label>
-                        <select 
-                            className={cn(inputClasses, "appearance-none")}
-                            value={form.cuisine_id}
-                            onChange={e => setForm({...form, cuisine_id: e.target.value})}
-                        >
-                            <option value="">Select Parent...</option>
-                            {cuisines.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        <label className={labelClasses}>Taxonomy (Category)</label>
+                        <select className={cn(inputClasses, "appearance-none")} value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                            <option value="">Select Category...</option>
+                            <option value="spice">Spice</option>
+                            <option value="herb">Herb</option>
+                            <option value="vegetable">Vegetable</option>
+                            <option value="fruit">Fruit</option>
+                            <option value="meat">Meat</option>
+                            <option value="fish">Seafood</option>
+                            <option value="dairy">Dairy</option>
+                            <option value="oil">Oil/Fat</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label className={labelClasses}>Visual & Narrative Description</label>
-                    <textarea className={cn(inputClasses, "h-24")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                    <label className={labelClasses}>Flavor Profile</label>
+                    <input className={inputClasses} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="e.g. Floral, bitter, aromatic..." />
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <label className={labelClasses}>Cooking Methodology</label>
-                        <input className={inputClasses} value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="e.g. Fermented, Raw" />
+                        <label className={labelClasses}>Dietary Classification</label>
+                        <input className={inputClasses} value={form.dietary_info} onChange={e => setForm({...form, dietary_info: e.target.value})} placeholder="Vegan, Nut-free..." />
                     </div>
                     <div>
-                        <label className={labelClasses}>Dietary DNA</label>
-                        <input className={inputClasses} value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, Nut-Free..." />
+                        <label className={labelClasses}>Seasonal Blueprint</label>
+                        <input className={inputClasses} value={form.season} onChange={e => setForm({...form, season: e.target.value})} placeholder="Autumn, Year-round..." />
                     </div>
                 </div>
                 <div>
-                    <label className={labelClasses}>Key Ingredient Network</label>
-                    <input className={inputClasses} value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} placeholder="Comma separated list..." />
+                    <label className={labelClasses}>Synergistic Pairings</label>
+                    <input className={inputClasses} value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} placeholder="Comma separated list..." />
                 </div>
             </div>
         </FormModalBase>
@@ -531,6 +597,16 @@ const AdminKnowledgeGraphPage = () => {
     const { data: dishes = [], isLoading: loadingDishes } = useDishes()
     const { data: ingredients = [], isLoading: loadingIngredients } = useIngredients()
 
+    console.log('Knowledge Graph Data Status:', { 
+        activeTab, 
+        cuisinesCount: cuisines?.length, 
+        dishesCount: dishes?.length, 
+        ingredientsCount: ingredients?.length 
+    })
+    if (cuisines?.length > 0) console.log('First Cuisine:', cuisines[0])
+    if (dishes?.length > 0) console.log('First Dish:', dishes[0])
+    if (ingredients?.length > 0) console.log('First Ingredient:', ingredients[0])
+
     const createCuisine = useCreateCuisineMutation()
     const updateCuisine = useUpdateCuisineMutation()
     const deleteCuisine = useDeleteCuisineMutation()
@@ -607,15 +683,23 @@ const AdminKnowledgeGraphPage = () => {
 
     const filteredItems = useMemo(() => {
         const source = (activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients)
-        return (source || []).filter(item => {
+        const items = Array.isArray(source) ? source : []
+        
+        return items.filter(item => {
+            if (!item) return false
             const search = searchTerm.toLowerCase()
-            return item.name?.toLowerCase().includes(search) || 
-                   item.description?.toLowerCase().includes(search) ||
-                   item.region?.toLowerCase().includes(search)
+            const name = (item.name || '').toLowerCase()
+            const desc = (item.description || '').toLowerCase()
+            const region = (item.region || '').toLowerCase()
+            
+            return name.includes(search) || desc.includes(search) || region.includes(search)
         })
     }, [activeTab, cuisines, dishes, ingredients, searchTerm])
 
-    const isLoading = loadingCuisines || loadingDishes || loadingIngredients
+    const isCurrentTabLoading = 
+        (activeTab === 'cuisines' && loadingCuisines) || 
+        (activeTab === 'dishes' && loadingDishes) || 
+        (activeTab === 'ingredients' && loadingIngredients)
 
     return (
         <div className="max-w-7xl mx-auto px-8 py-12 space-y-12 bg-slate-50 dark:bg-slate-950 min-h-screen">
@@ -721,11 +805,26 @@ const AdminKnowledgeGraphPage = () => {
 
             <div className="flex flex-wrap gap-6">
                 {[
-                    { label: 'Cuisines', val: stats?.cuisines || 0, icon: Globe, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                    { label: 'Dishes', val: stats?.dishes || 0, icon: UtensilsCrossed, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Ingredients', val: stats?.ingredients || 0, icon: Leaf, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                ].map((s, i) => (
-                    <StatsCard key={i} {...s} value={s.val} bgColor={s.bg} />
+                    { label: 'Cuisines', val: cuisines?.length || 0, Icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+                    { label: 'Dishes', val: dishes?.length || 0, Icon: UtensilsCrossed, color: 'text-amber-600', bg: 'bg-amber-50/50' },
+                    { label: 'Ingredients', val: ingredients?.length || 0, Icon: Carrot, color: 'text-rose-600', bg: 'bg-rose-50/50' },
+                    { label: 'Connected', val: '92%', Icon: Share2, color: 'text-indigo-600', bg: 'bg-indigo-50/50' }
+                ].map((stat, i) => (
+                    <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className={`flex-1 min-w-[200px] p-6 rounded-[32px] ${stat.bg} border border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between shadow-sm backdrop-blur-sm`}
+                    >
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                            <h4 className="text-3xl font-black text-slate-900 dark:text-white font-serif">{stat.val}</h4>
+                        </div>
+                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <stat.Icon size={20} className={stat.color} />
+                        </div>
+                    </motion.div>
                 ))}
             </div>
 
@@ -769,19 +868,18 @@ const AdminKnowledgeGraphPage = () => {
 
                 <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar space-y-4">
                     <AnimatePresence mode="popLayout" initial={false}>
-                        {isLoading ? (
-                            <div className="h-full flex flex-col items-center justify-center gap-10 opacity-20">
-                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }}>
-                                    <Brain size={120} />
-                                </motion.div>
-                                <span className="font-black uppercase tracking-[0.6em] text-[10px]">Accessing Culinary Memory Layer</span>
+                        {isCurrentTabLoading ? (
+                            <div className="flex-1 flex flex-col items-center justify-center py-20 gap-8 animate-pulse">
+                                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                                <div className="h-4 w-48 bg-slate-100 dark:bg-slate-800 rounded-full" />
                             </div>
                         ) : filteredItems.length > 0 ? (
-                            filteredItems.map(item => (
+                            filteredItems.map((item, idx) => (
                                 <ListItem 
                                     key={item.id} 
                                     type={activeTab} 
                                     item={item} 
+                                    idx={idx}
                                     onEdit={obj => setShowModal({type: activeTab.slice(0, -1), data: obj})} 
                                     onDelete={async id => {
                                         if (confirm('Verify data deletion? This action is irreversible.')) {
@@ -819,10 +917,17 @@ const AdminKnowledgeGraphPage = () => {
                     />
                 )}
                 {showModal?.type === 'dish' && (
-                    <DishFormModal
-                        dish={showModal.data}
-                        onSave={handleSaveDish}
-                        onClose={() => setShowModal(null)}
+                    <DishFormModal 
+                        dish={showModal.data} 
+                        onSave={handleSaveDish} 
+                        onClose={() => setShowModal(null)} 
+                    />
+                )}
+                {showModal?.type === 'ingredient' && (
+                    <IngredientFormModal 
+                        ingredient={showModal.data} 
+                        onSave={handleSaveIngredient} 
+                        onClose={() => setShowModal(null)} 
                     />
                 )}
                 {/* Info Modal */}

@@ -125,9 +125,20 @@ async function populateDishesForCuisine(cuisine) {
             cuisine_id: cuisine.id
         }))
         
+        // Create unique batch by name
+        const uniqueBatch = [];
+        const seenNames = new Set();
+        
+        for (const item of dishesToInsert) {
+          if (!seenNames.has(item.name)) {
+            uniqueBatch.push(item);
+            seenNames.add(item.name);
+          }
+        }
+        
         const { data: inserted, error } = await supabase
             .from('dishes')
-            .upsert(dishesToInsert, { onConflict: 'slug' })
+            .upsert(uniqueBatch, { onConflict: 'slug' })
             .select()
             
         if (error) {

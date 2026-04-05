@@ -413,18 +413,48 @@ import {
     syncKGToLocations,
 } from './knowledge-graph.api'
 
+// ─── Knowledge Graph hooks ────────────────────────────────────────────────────
+// staleTime: Infinity  → React Query never considers KG data stale in-memory.
+//   Read functions (getCuisines etc.) already check a localStorage cache (TTL=24h)
+//   so every mount either returns from localStorage instantly OR fetches Supabase once.
+//   React Query's job is simply to hold the result in-memory for the tab's lifetime.
+//
+// gcTime: Infinity → data is never evicted from the in-memory React Query store while
+//   the tab is open. This eliminates the "cache cleared after 10 min" window that
+//   previously caused fresh fetches on return-visits.
+//
+// retry: 2 → on actual failure try twice more before surfacing an error.
+//
+// invalidation on mutation: mutations call `qc.invalidateQueries` which marks the
+//   in-memory entry stale + triggers an immediate background re-fetch. The API layer
+//   also calls `invalidateCacheGroup(...)` to wipe the localStorage cache so the
+//   next getCuisines() call goes all the way to Supabase and refreshes L2.
+
 export function useCuisines() {
-    return useQuery({ queryKey: ['knowledge-cuisines'], queryFn: getCuisines, staleTime: 0, retry: 2 })
+    return useQuery({
+        queryKey: ['knowledge-cuisines'],
+        queryFn: getCuisines,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        retry: 2,
+    })
 }
 
 export function useCuisine(id) {
-    return useQuery({ queryKey: ['knowledge-cuisine', id], queryFn: () => getCuisineById(id), enabled: !!id, staleTime: 5 * 60_000 })
+    return useQuery({
+        queryKey: ['knowledge-cuisine', id],
+        queryFn: () => getCuisineById(id),
+        enabled: !!id,
+        staleTime: Infinity,
+        gcTime: Infinity,
+    })
 }
 
 export function useCreateCuisineMutation() {
     const qc = useQueryClient()
     return useMutation({
         mutationFn: createCuisine,
+        // API already called invalidateCacheGroup('cuisines'); now bust React Query too
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
     })
 }
@@ -449,7 +479,13 @@ export function useDeleteCuisineMutation() {
 }
 
 export function useDishes(cuisineId = null) {
-    return useQuery({ queryKey: ['knowledge-dishes', cuisineId], queryFn: () => getDishes(cuisineId), staleTime: 0, retry: 2 })
+    return useQuery({
+        queryKey: ['knowledge-dishes', cuisineId],
+        queryFn: () => getDishes(cuisineId),
+        staleTime: Infinity,
+        gcTime: Infinity,
+        retry: 2,
+    })
 }
 
 export function useCreateDishMutation() {
@@ -477,7 +513,13 @@ export function useDeleteDishMutation() {
 }
 
 export function useIngredients(category = null) {
-    return useQuery({ queryKey: ['knowledge-ingredients', category], queryFn: () => getIngredients(category), staleTime: 0, retry: 2 })
+    return useQuery({
+        queryKey: ['knowledge-ingredients', category],
+        queryFn: () => getIngredients(category),
+        staleTime: Infinity,
+        gcTime: Infinity,
+        retry: 2,
+    })
 }
 
 export function useCreateIngredientMutation() {

@@ -143,24 +143,41 @@ const AdminNotificationsPage = () => {
     const adminTypes = Object.values(NOTIFICATION_TYPES).filter(t => t.adminOnly)
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-10">
+        <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
             {/* Header */}
-            <div className="mb-10">
-                <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">
-                    Notifications
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 text-lg">
-                    Configure push notification settings and types
-                </p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                <div>
+                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Notifications</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Configure push notification settings and types.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {saved && (
+                        <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm"
+                        >
+                            <CheckCircle2 size={16} />
+                            Saved!
+                        </motion.div>
+                    )}
+                    <button
+                        onClick={handleSave}
+                        className="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all shadow-sm"
+                    >
+                        <Save size={15} />
+                        Save Settings
+                    </button>
+                </div>
             </div>
 
             {/* Permission Status */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Bell className="text-indigo-500" size={24} />
-                    Permission Status
-                </h2>
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Bell size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Permission Status</h2>
+                </div>
+                <div className="p-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className={cn(
@@ -225,125 +242,98 @@ const AdminNotificationsPage = () => {
                         </div>
                     )}
                 </div>
-            </section>
+            </div>
 
             {/* Test Notification */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <TestTube className="text-indigo-500" size={24} />
-                    Test Notifications
-                </h2>
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <TestTube size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Notifications</h2>
+                </div>
+                <div className="p-6">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleTestNotification}
                             disabled={testing || permissionStatus !== 'granted'}
                             className={cn(
-                                'px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all',
+                                'h-10 px-5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all',
                                 testing || permissionStatus !== 'granted'
-                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20'
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
                             )}
                         >
-                            {testing ? (
-                                <RefreshCw className="animate-spin" size={18} />
-                            ) : (
-                                <Send size={18} />
-                            )}
+                            {testing ? <RefreshCw className="animate-spin" size={14} /> : <Send size={14} />}
                             Send Test
                         </button>
-
-                        <p className="text-sm text-slate-500">
-                            Send a test notification to verify everything works
-                        </p>
+                        <p className="text-sm text-slate-500">Send a test notification to verify everything works</p>
                     </div>
 
                     {testResult && (
                         <motion.div
-                            initial={{ opacity: 0, y: -10 }}
+                            initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
                             className={cn(
-                                'mt-4 p-3 rounded-xl flex items-center gap-2',
+                                'mt-4 p-3 rounded-xl flex items-center gap-2 text-sm font-medium',
                                 testResult.success
-                                    ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300'
-                                    : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
                             )}
                         >
-                            {testResult.success ? (
-                                <CheckCircle2 size={18} />
-                            ) : (
-                                <AlertCircle size={18} />
-                            )}
+                            {testResult.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                             {testResult.message}
                         </motion.div>
                     )}
                 </div>
-            </section>
+            </div>
 
             {/* User Notification Types */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Users className="text-indigo-500" size={24} />
-                    User Notification Types
-                </h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                    {userTypes.map((type) => (
-                        <NotificationTypeCard
-                            key={type.id}
-                            type={type}
-                            enabled={preferences[type.id]}
-                            onToggle={togglePreference}
-                        />
-                    ))}
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Users size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">User Notification Types</h2>
                 </div>
-            </section>
+                <div className="p-6">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        {userTypes.map((type) => (
+                            <NotificationTypeCard
+                                key={type.id}
+                                type={type}
+                                enabled={preferences[type.id]}
+                                onToggle={togglePreference}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
 
             {/* Admin Notification Types */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Shield className="text-indigo-500" size={24} />
-                    Admin Notification Types
-                </h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                    {adminTypes.map((type) => (
-                        <NotificationTypeCard
-                            key={type.id}
-                            type={type}
-                            enabled={preferences[type.id]}
-                            onToggle={togglePreference}
-                        />
-                    ))}
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Shield size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Admin Notification Types</h2>
                 </div>
-            </section>
+                <div className="p-6">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        {adminTypes.map((type) => (
+                            <NotificationTypeCard
+                                key={type.id}
+                                type={type}
+                                enabled={preferences[type.id]}
+                                onToggle={togglePreference}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
 
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between sticky bottom-6 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
+            {/* Reset */}
+            <div className="flex justify-between items-center">
                 <button
                     onClick={resetPreferences}
-                    className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium"
                 >
                     Reset to Defaults
                 </button>
-
-                <div className="flex items-center gap-3">
-                    {saved && (
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm"
-                        >
-                            <CheckCircle2 size={18} />
-                            Saved!
-                        </motion.div>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-indigo-500/20"
-                    >
-                        <Save size={18} />
-                        Save Settings
-                    </button>
-                </div>
             </div>
         </div>
     )

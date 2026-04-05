@@ -127,37 +127,39 @@ const AdminStatsPage = () => {
                     </div>
                 </div>
 
-                {/* Growths / AI efficiency */}
-                <div className="bg-slate-950 dark:bg-black p-6 lg:p-10 rounded-[32px] lg:rounded-[48px] text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 lg:w-64 h-48 lg:h-64 bg-indigo-500/10 blur-[60px] lg:blur-[100px] -mr-16 -mt-16" />
-
-                    <h2 className="text-lg lg:text-xl font-bold mb-8 relative z-10 leading-tight pl-1">AI Impact</h2>
-                    <div className="space-y-4 lg:space-y-6 relative z-10">
-                        <div className="p-5 lg:p-6 rounded-[24px] lg:rounded-[32px] bg-white/5 border border-white/5 backdrop-blur-xl group hover:border-white/10 transition-all">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><MousePointer2 size={20} /></div>
+                {/* AI efficiency */}
+                <div className="bg-white dark:bg-slate-900/50 p-6 lg:p-8 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm">
+                    <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white mb-6 pl-1">AI Impact</h2>
+                    <div className="space-y-4">
+                        <div className="p-5 rounded-[20px] bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 group hover:bg-indigo-100 dark:hover:bg-indigo-500/15 transition-all">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center shadow-sm">
+                                    <MousePointer2 size={16} />
+                                </div>
                                 <div>
-                                    <p className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-500 tracking-widest mb-0.5">CTR AI REC</p>
-                                    <p className="text-xl lg:text-2xl font-bold italic">24.8%</p>
+                                    <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">CTR AI Rec</p>
+                                    <p className="text-xl font-bold text-slate-900 dark:text-white">24.8%</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-400 uppercase tracking-widest">
-                                <ArrowUpRight size={12} />
-                                <span>+4.2%</span>
+                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                <ArrowUpRight size={13} />
+                                <span>+4.2% vs last period</span>
                             </div>
                         </div>
 
-                        <div className="p-5 lg:p-6 rounded-[24px] lg:rounded-[32px] bg-white/5 border border-white/5 backdrop-blur-xl group hover:border-white/10 transition-all">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><Clock size={20} /></div>
+                        <div className="p-5 rounded-[20px] bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 group hover:bg-purple-100 dark:hover:bg-purple-500/15 transition-all">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-purple-500/20 text-purple-500 flex items-center justify-center shadow-sm">
+                                    <Clock size={16} />
+                                </div>
                                 <div>
-                                    <p className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-500 tracking-widest mb-0.5">Retention</p>
-                                    <p className="text-xl lg:text-2xl font-bold italic">68.2%</p>
+                                    <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Retention</p>
+                                    <p className="text-xl font-bold text-slate-900 dark:text-white">68.2%</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-400 uppercase tracking-widest leading-none">
-                                <ArrowUpRight size={12} />
-                                <span>Healthy</span>
+                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                <ArrowUpRight size={13} />
+                                <span>Healthy range</span>
                             </div>
                         </div>
                     </div>

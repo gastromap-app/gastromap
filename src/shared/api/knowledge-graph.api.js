@@ -9,6 +9,7 @@ import { supabase } from './client'
 import { simulateDelay, ApiError } from './client'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
+import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/shared/lib/cache'
 
 // ─── Embedding Generation ───────────────────────────────────────────────────
 
@@ -199,8 +200,16 @@ const mockIngredients = [
 // ─── Cuisines API ───────────────────────────────────────────────────────────
 
 export async function getCuisines() {
+    // L2: localStorage cache — skip Supabase if data is fresh
+    const cached = getCachedData('cuisines')
+    if (cached) {
+        console.debug('[KG] cuisines served from localStorage cache')
+        return cached
+    }
+
+    // L3: Supabase
     if (!supabase) {
-        console.warn('[KnowledgeGraph] Supabase not configured — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing. Returning mock data.')
+        console.warn('[KG] Supabase not configured — returning mock cuisines')
         return mockCuisines
     }
     const { data, error } = await supabase
@@ -208,10 +217,13 @@ export async function getCuisines() {
         .select('*')
         .order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getCuisines error:', error.message, '— returning mock data as fallback')
-        return mockCuisines
+        console.error('[KG] getCuisines error:', error.message, '— returning mock data as fallback')
+        return mockCuisines  // L4: mock fallback
     }
-    return data || []
+
+    const result = data || []
+    setCachedData('cuisines', result, TTL.cuisines)  // populate L2
+    return result
 }
 
 export async function getCuisineById(id) {
@@ -236,6 +248,7 @@ export async function createCuisine(cuisine) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    invalidateCacheGroup('cuisines')  // bust L2 so next read fetches fresh
     return data
 }
 
@@ -251,6 +264,7 @@ export async function updateCuisine(id, updates) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    invalidateCacheGroup('cuisines')  // bust L2
     return data
 }
 
@@ -264,24 +278,38 @@ export async function deleteCuisine(id) {
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    invalidateCacheGroup('cuisines')  // bust L2
     return { success: true }
 }
 
 // ─── Dishes API ─────────────────────────────────────────────────────────────
 
 export async function getDishes(cuisineId = null) {
+    const cacheKey = `dishes_${cuisineId ?? 'all'}`
+
+    // L2: localStorage cache
+    const cached = getCachedData(cacheKey)
+    if (cached) {
+        console.debug('[KG] dishes served from localStorage cache', { cuisineId })
+        return cached
+    }
+
+    // L3: Supabase
     if (!supabase) {
-        console.warn('[KnowledgeGraph] Supabase not configured — returning mock dishes.')
+        console.warn('[KG] Supabase not configured — returning mock dishes')
         return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
     }
     let query = supabase.from('dishes').select('*, cuisine:cuisines(name)')
     if (cuisineId) query = query.eq('cuisine_id', cuisineId)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getDishes error:', error.message, '— returning mock data as fallback')
-        return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
+        console.error('[KG] getDishes error:', error.message, '— returning mock data as fallback')
+        return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes  // L4
     }
-    return data || []
+
+    const result = data || []
+    setCachedData(cacheKey, result, TTL.dishes)  // populate L2
+    return result
 }
 
 export async function createDish(dish) {
@@ -295,6 +323,7 @@ export async function createDish(dish) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    invalidateCacheGroup('dishes')  // bust all dishes_* cache entries
     return data
 }
 
@@ -310,6 +339,7 @@ export async function updateDish(id, updates) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    invalidateCacheGroup('dishes')
     return data
 }
 
@@ -323,24 +353,38 @@ export async function deleteDish(id) {
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    invalidateCacheGroup('dishes')
     return { success: true }
 }
 
 // ─── Ingredients API ────────────────────────────────────────────────────────
 
 export async function getIngredients(category = null) {
+    const cacheKey = `ingredients_${category ?? 'all'}`
+
+    // L2: localStorage cache
+    const cached = getCachedData(cacheKey)
+    if (cached) {
+        console.debug('[KG] ingredients served from localStorage cache', { category })
+        return cached
+    }
+
+    // L3: Supabase
     if (!supabase) {
-        console.warn('[KnowledgeGraph] Supabase not configured — returning mock ingredients.')
+        console.warn('[KG] Supabase not configured — returning mock ingredients')
         return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
     }
     let query = supabase.from('ingredients').select('*')
     if (category) query = query.eq('category', category)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getIngredients error:', error.message, '— returning mock data as fallback')
-        return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
+        console.error('[KG] getIngredients error:', error.message, '— returning mock data as fallback')
+        return category ? mockIngredients.filter(i => i.category === category) : mockIngredients  // L4
     }
-    return data || []
+
+    const result = data || []
+    setCachedData(cacheKey, result, TTL.ingredients)  // populate L2
+    return result
 }
 
 export async function createIngredient(ingredient) {
@@ -354,6 +398,7 @@ export async function createIngredient(ingredient) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    invalidateCacheGroup('ingredients')  // bust all ingredients_* cache entries
     return data
 }
 
@@ -369,6 +414,7 @@ export async function updateIngredient(id, updates) {
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    invalidateCacheGroup('ingredients')
     return data
 }
 
@@ -382,6 +428,7 @@ export async function deleteIngredient(id) {
         .delete()
         .eq('id', id)
     if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    invalidateCacheGroup('ingredients')
     return { success: true }
 }
 

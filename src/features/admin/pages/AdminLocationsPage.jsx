@@ -78,7 +78,7 @@ const AdminLocationsPage = () => {
     const [isImproving, setIsImproving] = useState(null) // Field name currently being improved
 
     // useLocations returns { data: [], total, hasMore } — not a plain array
-    const { data: locsData, isLoading: loadingLocations, error: loadError } = useLocations({ showAll: true, limit: 500 })
+    const { data: locsData, isLoading: loadingLocations, error: loadError } = useLocations({ all: true, limit: 500 })
     const locationsList = locsData?.data ?? []
     
     useEffect(() => {
@@ -566,6 +566,23 @@ const AdminLocationsPage = () => {
 
     return (
         <div className="space-y-6 lg:space-y-8 pb-10">
+            {/* Error Message Display */}
+            {loadError && (
+                <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-6 rounded-3xl mb-6">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                            <AlertCircle size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-red-900 dark:text-red-200 uppercase tracking-widest leading-none mt-1">Data Load Failure</h3>
+                            <p className="text-[11px] text-red-600 dark:text-red-400 font-medium mt-2 leading-relaxed">
+                                {loadError.message || 'Could not fetch data from database. Please check your Supabase configuration or network connection.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                 <div>
                     <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Локации</h1>

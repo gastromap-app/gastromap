@@ -9,12 +9,12 @@ import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
-    <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                <Icon size={20} />
+    <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-6 lg:p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                <Icon size={18} />
             </div>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
         </div>
         {children}
     </div>
@@ -119,38 +119,38 @@ const AdminSettingsPage = () => {
     }
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
             {/* Toast */}
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
+                        initial={{ opacity: 0, y: -16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
+                        exit={{ opacity: 0, y: -16 }}
                         className={cn(
                             "fixed top-24 right-8 z-[9999] px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-xl border backdrop-blur-md flex items-center gap-2",
                             toast.type === 'error'
-                                ? "bg-red-900/90 border-red-500/20"
+                                ? "bg-rose-600/95 border-rose-400/20"
                                 : "bg-slate-900/95 border-white/10"
                         )}
                     >
-                        <CheckCircle2 size={14} className={toast.type === 'error' ? "text-red-400" : "text-emerald-400"} />
+                        <CheckCircle2 size={15} className={toast.type === 'error' ? "text-rose-200" : "text-emerald-400"} />
                         {toast.msg}
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">System Settings</h1>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 opacity-60">GastroOS Configuration • v2.1.0</p>
+                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Settings</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">GastroMap configuration &amp; system controls.</p>
                 </div>
                 <button
                     onClick={handleSave}
-                    className="h-12 px-8 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+                    className="h-10 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2"
                 >
-                    <Save size={18} /> Save Changes
+                    <Save size={15} /> Save Changes
                 </button>
             </div>
 

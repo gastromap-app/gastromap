@@ -277,161 +277,178 @@ const AdminAIPage = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
             {/* Header */}
-            <div className="mb-10">
-                <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">
-                    AI & Agents
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 text-lg">
-                    Configure GastroGuide AI models, agents, and API settings
-                </p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                <div>
+                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">AI &amp; Agents</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Configure GastroGuide AI models, agents, and API settings.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {saved && (
+                        <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm"
+                        >
+                            <CheckCircle2 size={16} />
+                            Saved!
+                        </motion.div>
+                    )}
+                    <button
+                        onClick={handleSave}
+                        className="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all shadow-sm"
+                    >
+                        <Save size={15} />
+                        Save Settings
+                    </button>
+                </div>
             </div>
 
             {/* Agents */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Bot className="text-indigo-500" size={24} />
-                    Active Agents
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <AgentCard
-                        name="GastroGuide"
-                        role="AI Dining Assistant"
-                        isActive={agentActive.guide}
-                        onToggle={() => toggleAgent('guide')}
-                        icon={MessageSquare}
-                        color="text-indigo-500"
-                        description="Interactive chat assistant that helps users discover restaurants based on preferences, mood, and occasion."
-                    />
-                    <AgentCard
-                        name="GastroAssistant"
-                        role="Background Helper"
-                        isActive={agentActive.assistant}
-                        onToggle={() => toggleAgent('assistant')}
-                        icon={Brain}
-                        color="text-emerald-500"
-                        description="Silent AI that powers smart search, recommendations, and personalization across the app."
-                    />
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Bot size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Active Agents</h2>
                 </div>
-            </section>
+                <div className="p-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <AgentCard
+                            name="GastroGuide"
+                            role="AI Dining Assistant"
+                            isActive={agentActive.guide}
+                            onToggle={() => toggleAgent('guide')}
+                            icon={MessageSquare}
+                            color="text-indigo-500"
+                            description="Interactive chat assistant that helps users discover restaurants based on preferences, mood, and occasion."
+                        />
+                        <AgentCard
+                            name="GastroAssistant"
+                            role="Background Helper"
+                            isActive={agentActive.assistant}
+                            onToggle={() => toggleAgent('assistant')}
+                            icon={Brain}
+                            color="text-emerald-500"
+                            description="Silent AI that powers smart search, recommendations, and personalization across the app."
+                        />
+                    </div>
+                </div>
+            </div>
 
             {/* AI Models */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Cpu className="text-indigo-500" size={24} />
-                    AI Models (OpenRouter Free)
-                </h2>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                    {/* Primary Model */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-slate-900 dark:text-white">Primary Model</h3>
-                            <button
-                                onClick={() => setShowPrimaryPicker(!showPrimaryPicker)}
-                                className="text-indigo-600 dark:text-indigo-400 text-sm font-bold flex items-center gap-1 hover:underline"
-                            >
-                                {showPrimaryPicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                {showPrimaryPicker ? 'Close' : 'Change'}
-                            </button>
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Cpu size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter Free)</h2>
+                </div>
+                <div className="p-6 space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* Primary Model */}
+                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Primary Model</h3>
+                                <button
+                                    onClick={() => setShowPrimaryPicker(!showPrimaryPicker)}
+                                    className="text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1 hover:underline"
+                                >
+                                    {showPrimaryPicker ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    {showPrimaryPicker ? 'Close' : 'Change'}
+                                </button>
+                            </div>
+                            {showPrimaryPicker ? (
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                    {FREE_MODELS.map((model) => (
+                                        <ModelCard
+                                            key={model.id}
+                                            model={model}
+                                            selected={primaryModel === model.id}
+                                            onSelect={(id) => {
+                                                setPrimaryModel(id)
+                                                setShowPrimaryPicker(false)
+                                            }}
+                                            disabled={false}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-200 dark:border-indigo-500/20">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-bold text-sm text-slate-900 dark:text-white">{getPrimaryInfo().name}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                                            {getPrimaryInfo().badge}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getPrimaryInfo().description}</p>
+                                    <div className="flex gap-3 text-[10px] text-slate-500">
+                                        <span>📊 {getPrimaryInfo().context}</span>
+                                        <span>🌍 {getPrimaryInfo().languages}</span>
+                                        {getPrimaryInfo().toolUse && <span className="text-emerald-500 font-bold">✓ Tool Use</span>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {showPrimaryPicker ? (
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                {FREE_MODELS.map((model) => (
-                                    <ModelCard
-                                        key={model.id}
-                                        model={model}
-                                        selected={primaryModel === model.id}
-                                        onSelect={(id) => {
-                                            setPrimaryModel(id)
-                                            setShowPrimaryPicker(false)
-                                        }}
-                                        disabled={false}
-                                    />
-                                ))}
+                        {/* Fallback Model */}
+                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Fallback Model</h3>
+                                <button
+                                    onClick={() => setShowFallbackPicker(!showFallbackPicker)}
+                                    className="text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1 hover:underline"
+                                >
+                                    {showFallbackPicker ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    {showFallbackPicker ? 'Close' : 'Change'}
+                                </button>
                             </div>
-                        ) : (
-                            <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-200 dark:border-indigo-500/20">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-bold text-slate-900 dark:text-white">{getPrimaryInfo().name}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
-                                        {getPrimaryInfo().badge}
-                                    </span>
+                            {showFallbackPicker ? (
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                    {FREE_MODELS.map((model) => (
+                                        <ModelCard
+                                            key={model.id}
+                                            model={model}
+                                            selected={fallbackModel === model.id}
+                                            onSelect={(id) => {
+                                                setFallbackModel(id)
+                                                setShowFallbackPicker(false)
+                                            }}
+                                            disabled={false}
+                                        />
+                                    ))}
                                 </div>
-                                <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getPrimaryInfo().description}</p>
-                                <div className="flex gap-3 text-[10px] text-slate-500">
-                                    <span>📊 {getPrimaryInfo().context}</span>
-                                    <span>🌍 {getPrimaryInfo().languages}</span>
-                                    {getPrimaryInfo().toolUse && <span className="text-emerald-500 font-bold">✓ Tool Use</span>}
+                            ) : (
+                                <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-bold text-sm text-slate-900 dark:text-white">{getFallbackInfo().name}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                                            {getFallbackInfo().badge}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getFallbackInfo().description}</p>
+                                    <div className="flex gap-3 text-[10px] text-slate-500">
+                                        <span>📊 {getFallbackInfo().context}</span>
+                                        <span>🌍 {getFallbackInfo().languages}</span>
+                                        {getFallbackInfo().toolUse && <span className="text-emerald-500 font-bold">✓ Tool Use</span>}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Fallback Model */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-slate-900 dark:text-white">Fallback Model</h3>
-                            <button
-                                onClick={() => setShowFallbackPicker(!showFallbackPicker)}
-                                className="text-indigo-600 dark:text-indigo-400 text-sm font-bold flex items-center gap-1 hover:underline"
-                            >
-                                {showFallbackPicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                {showFallbackPicker ? 'Close' : 'Change'}
-                            </button>
+                            )}
                         </div>
+                    </div>
 
-                        {showFallbackPicker ? (
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                {FREE_MODELS.map((model) => (
-                                    <ModelCard
-                                        key={model.id}
-                                        model={model}
-                                        selected={fallbackModel === model.id}
-                                        onSelect={(id) => {
-                                            setFallbackModel(id)
-                                            setShowFallbackPicker(false)
-                                        }}
-                                        disabled={false}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-bold text-slate-900 dark:text-white">{getFallbackInfo().name}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
-                                        {getFallbackInfo().badge}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getFallbackInfo().description}</p>
-                                <div className="flex gap-3 text-[10px] text-slate-500">
-                                    <span>📊 {getFallbackInfo().context}</span>
-                                    <span>🌍 {getFallbackInfo().languages}</span>
-                                    {getFallbackInfo().toolUse && <span className="text-emerald-500 font-bold">✓ Tool Use</span>}
-                                </div>
-                            </div>
-                        )}
+                    <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20">
+                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                            <strong>💡 Tip:</strong> If your primary model is overloaded or slow, switch to <strong>Nemotron Nano 9B</strong> for fastest responses or <strong>Mistral Small 3.1</strong> for best multilingual performance.
+                        </p>
                     </div>
                 </div>
-
-                {/* Model tips */}
-                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20">
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
-                        <strong>💡 Tip:</strong> If your primary model is overloaded or slow, switch to <strong>Step 3.5 Flash</strong> for fastest responses or <strong>Nemotron 3 Nano</strong> for balanced performance.
-                    </p>
-                </div>
-            </section>
+            </div>
 
             {/* API Key */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Shield className="text-indigo-500" size={24} />
-                    OpenRouter API Key
-                </h2>
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Shield size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter API Key</h2>
+                </div>
+                <div className="p-6">
                     <div className="flex gap-3 mb-4">
                         <div className="flex-1 relative">
                             <input
@@ -439,89 +456,95 @@ const AdminAIPage = () => {
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
                                 placeholder="sk-or-v1-..."
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full h-12 px-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                             />
                             <button
                                 onClick={() => setShowKey(!showKey)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                                 aria-label={showKey ? 'Hide API key' : 'Show API key'}
                             >
-                                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                         Get your free API key from{' '}
-                        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                             openrouter.ai/keys
                         </a>
                     </p>
                 </div>
-            </section>
+            </div>
 
             {/* Temperature */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Sliders className="text-indigo-500" size={24} />
-                    Temperature Settings
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <h3 className="font-bold text-slate-900 dark:text-white mb-4">GastroGuide Temperature</h3>
-                        <input
-                            type="range"
-                            min="0"
-                            max="2"
-                            step="0.1"
-                            value={guideTemp}
-                            onChange={(e) => setGuideTemp(parseFloat(e.target.value))}
-                            className="w-full accent-indigo-600"
-                        />
-                        <div className="flex justify-between text-xs text-slate-500 mt-2">
-                            <span>Precise (0)</span>
-                            <span className="font-mono font-bold text-indigo-600">{guideTemp.toFixed(1)}</span>
-                            <span>Creative (2)</span>
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Sliders size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Temperature Settings</h2>
+                </div>
+                <div className="p-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
+                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-lg">{guideTemp.toFixed(1)}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                value={guideTemp}
+                                onChange={(e) => setGuideTemp(parseFloat(e.target.value))}
+                                className="w-full accent-indigo-600"
+                            />
+                            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-wider">
+                                <span>Precise (0)</span>
+                                <span>Creative (2)</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <h3 className="font-bold text-slate-900 dark:text-white mb-4">Assistant Temperature</h3>
-                        <input
-                            type="range"
-                            min="0"
-                            max="2"
-                            step="0.1"
-                            value={assistantTemp}
-                            onChange={(e) => setAssistantTemp(parseFloat(e.target.value))}
-                            className="w-full accent-indigo-600"
-                        />
-                        <div className="flex justify-between text-xs text-slate-500 mt-2">
-                            <span>Precise (0)</span>
-                            <span className="font-mono font-bold text-indigo-600">{assistantTemp.toFixed(1)}</span>
-                            <span>Creative (2)</span>
+                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant</h3>
+                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-lg">{assistantTemp.toFixed(1)}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                value={assistantTemp}
+                                onChange={(e) => setAssistantTemp(parseFloat(e.target.value))}
+                                className="w-full accent-indigo-600"
+                            />
+                            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-wider">
+                                <span>Precise (0)</span>
+                                <span>Creative (2)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
 
             {/* System Prompts */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <FileText className="text-indigo-500" size={24} />
-                    System Prompts
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                    Customize AI behavior. Leave empty to use default prompts. Changes take effect immediately after saving.
-                </p>
-                <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <FileText size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">System Prompts</h2>
+                </div>
+                <div className="p-6 space-y-5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Customize AI behavior. Leave empty to use default prompts. Changes take effect immediately after saving.
+                    </p>
                     {/* GastroGuide Prompt */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
-                                    <MessageSquare className="text-indigo-500" size={18} />
+                                    <MessageSquare className="text-indigo-500" size={16} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white">GastroGuide</h3>
+                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
                                     <p className="text-xs text-slate-500">User-facing dining assistant</p>
                                 </div>
                             </div>
@@ -530,7 +553,7 @@ const AdminAIPage = () => {
                                 className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
                             >
                                 <RotateCcw size={12} />
-                                Reset to Default
+                                Reset
                             </button>
                         </div>
                         <textarea
@@ -538,7 +561,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setGuidePrompt(e.target.value)}
                             placeholder={DEFAULT_PROMPTS.guide}
                             rows={6}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {guidePrompt.length} characters {guidePrompt.length === 0 && '(using default)'}
@@ -546,15 +569,15 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* GastroAssistant Prompt */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                                    <Brain className="text-emerald-500" size={18} />
+                                    <Brain className="text-emerald-500" size={16} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white">GastroAssistant</h3>
-                                    <p className="text-xs text-slate-500">Background agent for search & personalization</p>
+                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant</h3>
+                                    <p className="text-xs text-slate-500">Background agent for search &amp; personalization</p>
                                 </div>
                             </div>
                             <button
@@ -562,7 +585,7 @@ const AdminAIPage = () => {
                                 className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
                             >
                                 <RotateCcw size={12} />
-                                Reset to Default
+                                Reset
                             </button>
                         </div>
                         <textarea
@@ -570,27 +593,27 @@ const AdminAIPage = () => {
                             onChange={(e) => setAssistantPrompt(e.target.value)}
                             placeholder={DEFAULT_PROMPTS.assistant}
                             rows={6}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {assistantPrompt.length} characters {assistantPrompt.length === 0 && '(using default)'}
                         </p>
                     </div>
                 </div>
-            </section>
+            </div>
 
             {/* Test Panel */}
-            <section className="mb-10">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Play className="text-indigo-500" size={24} />
-                    Test Model
-                </h2>
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+                    <Play size={16} className="text-indigo-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Model</h2>
+                </div>
+                <div className="p-6">
                     <div className="flex gap-3 mb-4">
                         <select
                             value={testModel}
                             onChange={(e) => setTestModel(e.target.value)}
-                            className="px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="px-4 h-12 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                         >
                             <option value="primary">Primary: {getPrimaryInfo().name}</option>
                             <option value="fallback">Fallback: {getFallbackInfo().name}</option>
@@ -600,73 +623,54 @@ const AdminAIPage = () => {
                             value={testMessage}
                             onChange={(e) => setTestMessage(e.target.value)}
                             placeholder="Test message..."
-                            className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="flex-1 h-12 px-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                             onKeyDown={(e) => e.key === 'Enter' && handleTest()}
                         />
                         <button
                             onClick={handleTest}
                             disabled={testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)}
                             className={cn(
-                                'px-6 py-3 rounded-xl font-bold text-white flex items-center gap-2 transition-all active:scale-95',
+                                'h-10 px-5 rounded-2xl font-semibold text-sm text-white flex items-center gap-2 transition-all active:scale-95',
                                 testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)
                                     ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-sm'
                             )}
                         >
-                            {testing ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
-                            Test
+                            {testing ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />}
+                            Run
                         </button>
                     </div>
 
                     {testResult && (
-                        <div className={cn(
-                            'p-4 rounded-xl border',
-                            testResult.ok
-                                ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20'
-                                : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20'
-                        )}>
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={cn(
+                                'p-4 rounded-xl border',
+                                testResult.ok
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                                    : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20'
+                            )}
+                        >
                             <div className="flex items-center gap-2 mb-2">
                                 {testResult.ok ? (
-                                    <CheckCircle2 className="text-green-600 dark:text-green-400" size={20} />
+                                    <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={16} />
                                 ) : (
-                                    <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+                                    <AlertCircle className="text-red-600 dark:text-red-400" size={16} />
                                 )}
                                 <span className="font-bold text-sm">
                                     {testResult.ok ? 'Success' : 'Error'}
                                 </span>
                                 <span className="text-xs text-slate-500 ml-auto">
-                                    Model: {testResult.model} | Latency: {testResult.latency}ms
+                                    {testResult.model} · {testResult.latency}ms
                                 </span>
                             </div>
                             <p className="text-sm text-slate-700 dark:text-slate-300 font-mono">
                                 {testResult.text}
                             </p>
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* Save */}
-            <div className="flex items-center justify-between sticky bottom-6 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
-                <div className="flex items-center gap-3">
-                    {saved && (
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm"
-                        >
-                            <CheckCircle2 size={18} />
-                            Saved!
                         </motion.div>
                     )}
                 </div>
-                <button
-                    onClick={handleSave}
-                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-indigo-500/20"
-                >
-                    <Save size={18} />
-                    Save Settings
-                </button>
             </div>
         </div>
     )

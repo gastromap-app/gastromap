@@ -209,7 +209,7 @@ export async function getCuisines() {
         .order('name', { ascending: true })
     if (error) {
         console.error('[KnowledgeGraph] getCuisines error:', error.message)
-        return mockCuisines
+        throw new ApiError(error.message, 500, 'FETCH_ERROR')
     }
     return data || []
 }
@@ -279,7 +279,7 @@ export async function getDishes(cuisineId = null) {
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
         console.error('[KnowledgeGraph] getDishes error:', error.message)
-        return mockDishes
+        throw new ApiError(error.message, 500, 'FETCH_ERROR')
     }
     return data || []
 }
@@ -338,7 +338,7 @@ export async function getIngredients(category = null) {
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
         console.error('[KnowledgeGraph] getIngredients error:', error.message)
-        return mockIngredients
+        throw new ApiError(error.message, 500, 'FETCH_ERROR')
     }
     return data || []
 }

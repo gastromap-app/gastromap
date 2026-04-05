@@ -13,7 +13,22 @@ if (config.supabase.isConfigured) {
 }
 
 export const supabase = config.supabase.isConfigured
-    ? createClient(config.supabase.url, config.supabase.anonKey)
+    ? createClient(config.supabase.url, config.supabase.anonKey, {
+        auth: {
+            // Unique storage key — prevents collisions when multiple
+            // Supabase projects are open in the same browser origin.
+            storageKey: 'sb-gastromap-auth',
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false,
+            // Override the Web Locks API lock so concurrent requests
+            // (e.g. getCuisines + getDishes + getIngredients firing at the
+            // same time) don't steal each other's token-refresh lock.
+            // Safe to do here because we never run multiple tabs that need
+            // coordinated session refresh for the same user.
+            lock: async (_name, _acquireTimeout, fn) => fn(),
+        },
+    })
     : null
 
 /**

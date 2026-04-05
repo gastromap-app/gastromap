@@ -208,8 +208,8 @@ export async function getCuisines() {
         .select('*')
         .order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getCuisines error:', error.message)
-        throw new ApiError(error.message, 500, 'FETCH_ERROR')
+        console.error('[KnowledgeGraph] getCuisines error:', error.message, '— returning mock data as fallback')
+        return mockCuisines
     }
     return data || []
 }
@@ -278,8 +278,8 @@ export async function getDishes(cuisineId = null) {
     if (cuisineId) query = query.eq('cuisine_id', cuisineId)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getDishes error:', error.message)
-        throw new ApiError(error.message, 500, 'FETCH_ERROR')
+        console.error('[KnowledgeGraph] getDishes error:', error.message, '— returning mock data as fallback')
+        return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
     }
     return data || []
 }
@@ -337,8 +337,8 @@ export async function getIngredients(category = null) {
     if (category) query = query.eq('category', category)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KnowledgeGraph] getIngredients error:', error.message)
-        throw new ApiError(error.message, 500, 'FETCH_ERROR')
+        console.error('[KnowledgeGraph] getIngredients error:', error.message, '— returning mock data as fallback')
+        return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
     }
     return data || []
 }

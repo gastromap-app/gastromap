@@ -333,12 +333,48 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
         setSaveProgress(progress)
         setPhase('saving')
 
-        // Execute saves in order
+        // ── Throttle settings (Supabase free tier safe) ───────────────────────
+        // Free tier has a small PostgREST connection pool (~10 connections).
+        // Writing sequentially with a 700ms gap keeps us well under the limit.
+        const SAVE_DELAY_MS    = 700   // pause between each write
+        const RATE_LIMIT_DELAY = 5000  // wait after a 429 / "Too Many Requests"
+        const MAX_RETRIES      = 2     // retry attempts per item on rate-limit
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+        // Helper: attempt one save with automatic retry on rate-limit (429)
+        const saveWithRetry = async (type, data) => {
+            let lastErr
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                try {
+                    return await onSaved(type, data)
+                } catch (err) {
+                    lastErr = err
+                    const isRateLimit =
+                        err?.status === 429 ||
+                        (err?.message || '').toLowerCase().includes('too many') ||
+                        (err?.message || '').toLowerCase().includes('rate limit')
+
+                    if (isRateLimit && attempt < MAX_RETRIES - 1) {
+                        console.warn(`[KGAgent] Rate limit on "${data.name}", waiting ${RATE_LIMIT_DELAY}ms…`)
+                        await sleep(RATE_LIMIT_DELAY)
+                    } else {
+                        throw err
+                    }
+                }
+            }
+            throw lastErr
+        }
+
+        // Execute saves sequentially with throttle
         const createdCuisines = [...cuisines] // track newly created cuisines for dish linking
         const errors = []
 
         for (let i = 0; i < plan.length; i++) {
             const item = plan[i]
+
+            // Throttle: wait before each write except the very first
+            if (i > 0) await sleep(SAVE_DELAY_MS)
 
             setSaveProgress(prev => prev.map((s, idx) =>
                 idx === i ? { ...s, status: 'saving' } : s
@@ -346,24 +382,21 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
 
             try {
                 if (item.type === 'cuisine') {
-                    const created = await onSaved('cuisine', item.data)
+                    const created = await saveWithRetry('cuisine', item.data)
                     if (created) createdCuisines.push(created)
 
                 } else if (item.type === 'dish') {
                     // Resolve cuisine_id using all known cuisines
                     const resolved = resolveDishCuisineIds([item.data], createdCuisines)
-                    await onSaved('dish', resolved[0])
+                    await saveWithRetry('dish', resolved[0])
 
                 } else if (item.type === 'ingredient') {
-                    await onSaved('ingredient', item.data)
+                    await saveWithRetry('ingredient', item.data)
                 }
 
                 setSaveProgress(prev => prev.map((s, idx) =>
                     idx === i ? { ...s, status: 'done' } : s
                 ))
-
-                // Small delay for UX
-                await new Promise(r => setTimeout(r, 120))
 
             } catch (err) {
                 console.error(`[KGAgent] Failed to save ${item.label}:`, err)
@@ -634,10 +667,31 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                                         animate={{ opacity: 1 }}
                                         className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50"
                                     >
-                                        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-3 flex items-center gap-1.5">
-                                            <Loader2 size={10} className="animate-spin" />
-                                            Saving to Knowledge Graph…
-                                        </p>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
+                                                <Loader2 size={10} className="animate-spin" />
+                                                Saving to Knowledge Graph…&nbsp;
+                                                <span className="text-slate-300 dark:text-slate-600 font-semibold normal-case tracking-normal">
+                                                    {saveProgress.filter(s => s.status === 'done' || s.status === 'error').length}
+                                                    /{saveProgress.length}
+                                                </span>
+                                            </p>
+                                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 flex-shrink-0">
+                                                throttled · free plan
+                                            </span>
+                                        </div>
+                                        {/* Progress bar */}
+                                        <div className="h-1 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden mb-3">
+                                            <motion.div
+                                                className="h-full bg-indigo-400 rounded-full"
+                                                animate={{
+                                                    width: `${saveProgress.length
+                                                        ? (saveProgress.filter(s => s.status === 'done' || s.status === 'error').length / saveProgress.length) * 100
+                                                        : 0}%`
+                                                }}
+                                                transition={{ ease: 'easeOut', duration: 0.4 }}
+                                            />
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5">
                                             {saveProgress.map(s => (
                                                 <SaveStatus key={s.id} label={s.label} icon={s.icon} status={s.status} />

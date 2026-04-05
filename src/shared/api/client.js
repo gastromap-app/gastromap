@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 import { config } from '@/shared/config/env'
 
 // ─── Supabase Client ──────────────────────────────────────────────────────
+console.log('Supabase Configuration:', { 
+    url: config.supabase.url, 
+    isConfigured: config.supabase.isConfigured 
+});
+
 export const supabase = config.supabase.isConfigured
     ? createClient(config.supabase.url, config.supabase.anonKey)
     : null

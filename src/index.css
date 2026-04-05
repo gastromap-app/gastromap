@@ -75,12 +75,12 @@
 @layer base {
   * {
     @apply border-border;
-    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif;
+    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif;
+    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
     font-weight: 400;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;

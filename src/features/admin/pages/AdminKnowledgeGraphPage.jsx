@@ -289,15 +289,16 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
     const [form, setForm] = useState({
         name:               dish?.name || '',
         description:        dish?.description || '',
-        flavor_profile:     dish?.flavor_profile || '',
+        flavor_notes:       dish?.flavor_notes || '',
         preparation_style:  dish?.preparation_style || '',
-        common_pairings:    (dish?.common_pairings || []).join(', '),
+        ingredients:        (dish?.ingredients || []).join(', '),
+        best_pairing:       dish?.best_pairing || '',
         dietary_tags:       (dish?.dietary_tags || []).join(', ')
     })
 
     const handleSubmit = () => onSave({
         ...form,
-        common_pairings: form.common_pairings.split(',').map(s => s.trim()).filter(Boolean),
+        ingredients:     form.ingredients.split(',').map(s => s.trim()).filter(Boolean),
         dietary_tags:    form.dietary_tags.split(',').map(s => s.trim()).filter(Boolean),
     })
 
@@ -316,13 +317,17 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className={lbl}>Flavor Profile</label>
-                    <input className={inp} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="Savory, umami, rich..." />
+                    <label className={lbl}>Flavor Notes</label>
+                    <input className={inp} value={form.flavor_notes} onChange={e => setForm({...form, flavor_notes: e.target.value})} placeholder="Savory, umami, rich..." />
                 </div>
                 <div>
                     <label className={lbl}>Preparation Style</label>
                     <input className={inp} value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="Baked, Grilled..." />
                 </div>
+            </div>
+            <div>
+                <label className={lbl}>Ingredients</label>
+                <input className={inp} value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} placeholder="Comma separated list..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -330,8 +335,8 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
                     <input className={inp} value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, Gluten-free..." />
                 </div>
                 <div>
-                    <label className={lbl}>Common Pairings</label>
-                    <input className={inp} value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} placeholder="Wine, Salad..." />
+                    <label className={lbl}>Best Pairing</label>
+                    <input className={inp} value={form.best_pairing} onChange={e => setForm({...form, best_pairing: e.target.value})} placeholder="Wine, Salad..." />
                 </div>
             </div>
         </FormModalBase>
@@ -344,7 +349,7 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
     const [form, setForm] = useState({
         name:            ingredient?.name || '',
         category:        ingredient?.category || '',
-        flavor_profile:  ingredient?.flavor_profile || '',
+        description:     ingredient?.description || '',
         common_pairings: (ingredient?.common_pairings || []).join(', '),
         dietary_info:    (ingredient?.dietary_info || []).join(', '),
         season:          ingredient?.season || 'year-round',
@@ -382,8 +387,8 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
                 </div>
             </div>
             <div>
-                <label className={lbl}>Flavor Profile</label>
-                <input className={inp} value={form.flavor_profile} onChange={e => setForm({...form, flavor_profile: e.target.value})} placeholder="Floral, bitter, aromatic..." />
+                <label className={lbl}>Description</label>
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context and characteristics..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>

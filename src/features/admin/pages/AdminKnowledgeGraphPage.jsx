@@ -31,8 +31,8 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
                                : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
 
     const meta = isCuisine ? item.region
-               : isDish    ? (item.preparation_style || item.flavor_profile)
-                           : item.category
+               : isDish    ? (item.preparation_style || item.flavor_notes)
+                           : (item.category || item.description)
 
     return (
         <motion.div
@@ -349,7 +349,7 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
     const [form, setForm] = useState({
         name:            ingredient?.name || '',
         category:        ingredient?.category || '',
-        description:     ingredient?.description || '',
+        flavor_profile:  ingredient?.flavor_profile || '',
         common_pairings: (ingredient?.common_pairings || []).join(', '),
         dietary_info:    (ingredient?.dietary_info || []).join(', '),
         season:          ingredient?.season || 'year-round',
@@ -552,9 +552,11 @@ const AdminKnowledgeGraphPage = () => {
     const [toast, setToast]           = useState(null)
     const [syncStatus, setSyncStatus] = useState(null)
 
-    const { data: cuisines     = [], isLoading: loadingCuisines     } = useCuisines()
-    const { data: dishes       = [], isLoading: loadingDishes       } = useDishes()
-    const { data: ingredients  = [], isLoading: loadingIngredients  } = useIngredients()
+    const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError    } = useCuisines()
+    const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError      } = useDishes()
+    const { data: ingredients  = [], isLoading: loadingIngredients, error: ingredientsError } = useIngredients()
+
+    const combinedError = cuisinesError || dishesError || ingredientsError
 
     const createCuisine    = useCreateCuisineMutation()
     const updateCuisine    = useUpdateCuisineMutation()
@@ -763,6 +765,35 @@ const AdminKnowledgeGraphPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ── Error UI ── */}
+            {combinedError && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8 p-6 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-[32px] flex items-start gap-4"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-red-100/50 dark:bg-red-900/20 flex items-center justify-center text-red-600 flex-shrink-0">
+                        <AlertCircle size={24} />
+                    </div>
+                    <div className="flex-1 pt-1">
+                        <h3 className="text-sm font-bold text-red-900 dark:text-red-300 mb-1">
+                            Failed to Load Knowledge Graph Data
+                        </h3>
+                        <p className="text-xs font-medium text-red-600/80 leading-relaxed max-w-2xl">
+                            {combinedError.message || 'An unexpected error occurred while fetching data from Supabase. Please check your connection or RLS policies.'}
+                        </p>
+                        <div className="mt-4 flex gap-2">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-4 py-2 bg-red-100/50 hover:bg-red-200/50 dark:bg-red-900/20 dark:hover:bg-red-800/20 text-red-700 dark:text-red-400 text-[11px] font-bold rounded-xl transition-all"
+                            >
+                                Retry Connection
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* ── Spoonacular ── */}
             <SpoonacularEnricher

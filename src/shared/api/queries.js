@@ -414,7 +414,7 @@ import {
 } from './knowledge-graph.api'
 
 export function useCuisines() {
-    return useQuery({ queryKey: ['knowledge-cuisines'], queryFn: getCuisines, staleTime: 5 * 60_000 })
+    return useQuery({ queryKey: ['knowledge-cuisines'], queryFn: getCuisines, staleTime: 0, retry: 2 })
 }
 
 export function useCuisine(id) {
@@ -449,7 +449,7 @@ export function useDeleteCuisineMutation() {
 }
 
 export function useDishes(cuisineId = null) {
-    return useQuery({ queryKey: ['knowledge-dishes', cuisineId], queryFn: () => getDishes(cuisineId), staleTime: 5 * 60_000 })
+    return useQuery({ queryKey: ['knowledge-dishes', cuisineId], queryFn: () => getDishes(cuisineId), staleTime: 0, retry: 2 })
 }
 
 export function useCreateDishMutation() {
@@ -477,7 +477,7 @@ export function useDeleteDishMutation() {
 }
 
 export function useIngredients(category = null) {
-    return useQuery({ queryKey: ['knowledge-ingredients', category], queryFn: () => getIngredients(category), staleTime: 5 * 60_000 })
+    return useQuery({ queryKey: ['knowledge-ingredients', category], queryFn: () => getIngredients(category), staleTime: 0, retry: 2 })
 }
 
 export function useCreateIngredientMutation() {

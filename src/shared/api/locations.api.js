@@ -122,7 +122,13 @@ function normalise(row) {
 export async function getLocations(filters = {}) {
     if (!USE_SUPABASE) return _mockGetLocations(filters)
 
-    const { category, query, priceLevel, minRating, vibe, city, country, status, showAll = false, limit = 100, offset = 0 } = filters
+    const { 
+        category, query, priceLevel, minRating, vibe, city, country, status, 
+        all = false, showAll = false, 
+        limit = 100, offset = 0 
+    } = filters
+
+    const bypassStatus = all || showAll
 
     let q = supabase
         .from('locations')
@@ -130,14 +136,14 @@ export async function getLocations(filters = {}) {
         .order('google_rating', { ascending: false })
         .range(offset, offset + (limit - 1))
 
-    // Admin can pass showAll=true to bypass status filter, or status='pending' etc.
-    if (!showAll) {
+    // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
+    if (!bypassStatus) {
         q = q.eq('status', status ?? 'approved')
     } else if (status) {
-        // showAll + explicit status = filter by that specific status
+        // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)
     }
-    // showAll + no status = return everything regardless of status
+    // bypass requested + no status = return everything regardless of status
 
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', city)

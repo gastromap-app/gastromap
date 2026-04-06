@@ -25,7 +25,7 @@ export async function getRecentActivity(limit = 10) {
 
 export async function getProfiles() {
     if (!supabase) return mockProfiles
-    const { data } = await supabase.from('profiles').select('id, email, name, role, avatar_url, created_at').order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles').select('id, email, full_name, role, avatar_url, created_at').order('created_at', { ascending: false })
     return data || []
 }
 
@@ -37,7 +37,7 @@ export async function updateProfileRole(userId, role) {
 
 export async function getPendingReviews() {
     if (!supabase) return mockPendingReviews
-    const { data } = await supabase.from('reviews').select('*, profiles(name), locations(title)').eq('status', 'pending').order('created_at', { ascending: false })
+    const { data } = await supabase.from('reviews').select('*, profiles(full_name), locations(title)').eq('status', 'pending').order('created_at', { ascending: false })
     return data || []
 }
 

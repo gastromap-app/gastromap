@@ -10,4 +10,5 @@
 export * from './locations.api'
 export * from './auth.api'
 export * from './ai.api'
+export * from './ai-config.api'
 export { ApiError, simulateDelay } from './client'

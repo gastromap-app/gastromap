@@ -657,15 +657,21 @@ const AdminKnowledgeGraphPage = () => {
 
     // ── AI Agent save handler ─────────────────────────────────────────────────
     const handleAgentSave = async (type, data) => {
+        // Используем прямые API функции вместо мутаций React Query
+        // чтобы избежать side effects (invalidateQueries, onError toast и т.д.)
+        // которые могут прерывать batch save
         let result
-        if (type === 'cuisine')    result = await createCuisine.mutateAsync(data)
-        else if (type === 'dish')       result = await createDish.mutateAsync(data)
-        else if (type === 'ingredient') result = await createIngredient.mutateAsync(data)
-        else throw new Error(`Unknown type: ${type}`)
-        // Explicitly refetch so the list updates immediately without page reload
-        refetchCuisines()
-        refetchDishes()
-        refetchIngredients()
+        try {
+            if (type === 'cuisine')         result = await createCuisineApi(data)
+            else if (type === 'dish')       result = await createDishApi(data)
+            else if (type === 'ingredient') result = await createIngredientApi(data)
+            else throw new Error(`Unknown type: ${type}`)
+        } finally {
+            // Обновляем UI после каждого сохранения (не блокируем batch)
+            refetchCuisines()
+            refetchDishes()
+            refetchIngredients()
+        }
         return result
     }
 

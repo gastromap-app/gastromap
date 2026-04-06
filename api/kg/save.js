@@ -4,12 +4,37 @@
  * Uses SUPABASE_SERVICE_ROLE_KEY (server-side only) to bypass RLS.
  * Deduplication: checks by name before insert — returns existing record if duplicate.
  * DB safety net: ON CONFLICT DO NOTHING via Prefer: resolution=ignore-duplicates.
+ *
+ * Schema alignment (2026-04-06):
+ *  cuisines    → name, description, region, flavor_profile, aliases[], typical_dishes[], key_ingredients[]
+ *  dishes      → name, cuisine_name, cuisine_id, description, ingredients(JSONB), preparation_style,
+ *                dietary_tags[], flavor_notes, best_pairing
+ *  ingredients → name, category, description, flavor_profile, common_pairings[], dietary_info[],
+ *                season_label (TEXT — replaces season TEXT[])
  */
 
 const TABLE_MAP = {
     cuisine:    'cuisines',
     dish:       'dishes',
     ingredient: 'ingredients',
+}
+
+// Maps AI-generated category names → DB CHECK constraint values
+const INGREDIENT_CAT_MAP = {
+    oil:       'oil',
+    sauce:     'sauce',
+    grain:     'grain',
+    protein:   'meat',
+    meat:      'meat',
+    dairy:     'dairy',
+    fruit:     'fruit',
+    vegetable: 'vegetable',
+    spice:     'spice',
+    herb:      'herb',
+    nut:       'nut',
+    legume:    'legume',
+    fish:      'fish',
+    seafood:   'seafood',
 }
 
 export default async function handler(req, res) {
@@ -51,12 +76,11 @@ export default async function handler(req, res) {
             return res.status(200).json({ data: existing[0], duplicate: true })
         }
 
-        // ── Step 2: Insert with ON CONFLICT DO NOTHING ────────────────────────
+        // ── Step 2: Insert ────────────────────────────────────────────────────
         const insertResp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
             method: 'POST',
             headers: {
                 ...headers,
-                // If a UNIQUE constraint exists on name — DB will silently skip duplicates
                 'Prefer': 'return=representation,resolution=ignore-duplicates',
             },
             body: JSON.stringify(cleanedData),
@@ -66,13 +90,12 @@ export default async function handler(req, res) {
 
         if (!insertResp.ok) {
             const msg = result?.message || result?.error || `Supabase error ${insertResp.status}`
-            console.error(`[kg/save] Insert error for ${table}:`, msg)
+            console.error(`[kg/save] Insert error for ${table}:`, msg, JSON.stringify(cleanedData))
             return res.status(insertResp.status).json({ error: msg, details: result })
         }
 
         const saved = Array.isArray(result) ? result[0] : result
         if (!saved) {
-            // resolution=ignore-duplicates returns empty array if conflict — treat as duplicate
             console.log(`[kg/save] Conflict ignored (UNIQUE): "${name}" already in ${table}`)
             return res.status(200).json({ data: { name }, duplicate: true })
         }
@@ -86,30 +109,81 @@ export default async function handler(req, res) {
     }
 }
 
+/**
+ * sanitize() — map AI-generated fields → real DB column names & types
+ */
 function sanitize(type, data) {
     if (type === 'cuisine') {
         const { name, description, region, flavor_profile, aliases, typical_dishes, key_ingredients } = data
-        return clean({ name, description, region, flavor_profile, aliases: toArray(aliases), typical_dishes: toArray(typical_dishes), key_ingredients: toArray(key_ingredients) })
+        return clean({
+            name:            name?.trim(),
+            description:     description || null,
+            region:          region || null,
+            flavor_profile:  flavor_profile || null,
+            aliases:         toArray(aliases),
+            typical_dishes:  toArray(typical_dishes),
+            key_ingredients: toArray(key_ingredients),
+            // slug is optional now — generate from name as fallback
+            slug: slugify(name),
+        })
     }
+
     if (type === 'dish') {
         const { name, cuisine_name, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
-        return clean({ name, cuisine_name, description, ingredients: toArray(ingredients), preparation_style, flavor_notes, best_pairing, dietary_tags: toArray(dietary_tags) })
+        return clean({
+            name:              name?.trim(),
+            cuisine_name:      cuisine_name || null,
+            description:       description || null,
+            // ingredients stored as JSONB array of strings
+            ingredients:       toArray(ingredients),
+            preparation_style: preparation_style || null,
+            dietary_tags:      toArray(dietary_tags),
+            flavor_notes:      flavor_notes || null,
+            best_pairing:      best_pairing || null,
+            // slug optional
+            slug: slugify(name),
+        })
     }
+
     if (type === 'ingredient') {
         const { name, category, description, flavor_profile, common_pairings, dietary_info, season } = data
-        const CAT_MAP = { oil: 'other', sauce: 'other', grain: 'grain', protein: 'meat', dairy: 'dairy', fruit: 'fruit', vegetable: 'vegetable', spice: 'spice', herb: 'herb' }
-        return clean({ name, description, flavor_profile, category: CAT_MAP[category?.toLowerCase()] || 'other', common_pairings: toArray(common_pairings), dietary_info: toArray(dietary_info), season: season || null })
+        const mappedCategory = INGREDIENT_CAT_MAP[category?.toLowerCase()] || 'other'
+        return clean({
+            name:            name?.trim(),
+            description:     description || null,
+            flavor_profile:  flavor_profile || null,
+            category:        mappedCategory,
+            common_pairings: toArray(common_pairings),
+            dietary_info:    toArray(dietary_info),
+            // season comes as TEXT from AI ("year-round", "summer") → store in season_label
+            season_label:    season || null,
+            // slug optional
+            slug: slugify(name),
+        })
     }
+
     return data
+}
+
+function slugify(str) {
+    if (!str) return null
+    return str
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/^-+|-+$/g, '')
 }
 
 function toArray(val) {
     if (!val) return []
-    if (Array.isArray(val)) return val
+    if (Array.isArray(val)) return val.filter(Boolean)
     if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(Boolean)
     return []
 }
 
 function clean(obj) {
-    return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null))
+    return Object.fromEntries(
+        Object.entries(obj).filter(([, v]) => v !== undefined && v !== null)
+    )
 }

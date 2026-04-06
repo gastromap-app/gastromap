@@ -823,7 +823,7 @@ export function resolveDishCuisineIds(dishes, allCuisines) {
     })
 }
 
-export async function callEnrichmentAI(cuisine, fieldsToEnrich) {
+export async function callEnrichmentAI(cuisine, fieldsToEnrich, onModelAttempt) {
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
 
@@ -863,6 +863,7 @@ Return ONLY a valid JSON object containing only the requested fields. No explana
 
     for (let _mi = 0; _mi < cascade.length; _mi++) {
         const model = cascade[_mi]
+        onModelAttempt?.(model)
         KGDebug.model(model, _mi + 1, cascade.length)
         const _modelStart = performance.now()
 

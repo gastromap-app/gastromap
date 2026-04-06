@@ -45,7 +45,11 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
 
             try {
                 const missingFields = FIELDS_TO_CHECK.filter(f => isMissing(cuisine[f]))
-                const updates = await callEnrichmentAI(cuisine, missingFields)
+                const updates = await callEnrichmentAI(cuisine, missingFields, (model) => {
+                    setProgress(prev => prev.map((p, idx) =>
+                        idx === i ? { ...p, status: 'loading', model } : p
+                    ))
+                })
                 
                 if (updates && Object.keys(updates).length > 0) {
                     await onEnriched(cuisine.id, updates)
@@ -155,19 +159,21 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
                                     {p.status === 'skipped'  && <AlertTriangle size={14} className="text-slate-500 shrink-0" />}
                                     {p.status === 'error'    && <XCircle size={14} className="text-red-500 shrink-0" />}
                                     
-                                    <div className="flex-1 flex items-center justify-between">
-                                        <span className="font-bold text-xs text-slate-200 uppercase tracking-tight">{p.name}</span>
+                                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 min-w-0">
+                                        <span className="font-bold text-xs text-slate-200 uppercase tracking-tight truncate">
+                                            {p.name}
+                                        </span>
                                         
                                         {p.status === 'loading' && (
-                                            <span className="text-[10px] font-mono text-amber-500/80 animate-pulse">
-                                                AI PROCESSING...
+                                            <span className="text-[10px] font-mono text-amber-500/80 animate-pulse truncate sm:text-right shrink-0">
+                                                AI PROCESSING{p.model ? ` [${p.model}]` : ''}...
                                             </span>
                                         )}
                                         
                                         {p.status === 'done' && (
-                                            <div className="flex gap-1">
+                                            <div className="flex flex-wrap gap-1 sm:justify-end">
                                                 {p.fields.map(f => (
-                                                    <span key={f} className="text-[9px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 border border-emerald-500/20">
+                                                    <span key={f} className="text-[9px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 border border-emerald-500/20 truncate max-w-[80px]">
                                                         {f.toUpperCase()}
                                                     </span>
                                                 ))}
@@ -175,7 +181,7 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
                                         )}
                                         
                                         {p.status === 'error' && (
-                                            <span className="text-[10px] font-mono text-red-500 truncate max-w-[150px]">
+                                            <span className="text-[10px] font-mono text-red-500 truncate sm:max-w-[150px] sm:text-right">
                                                 {p.error}
                                             </span>
                                         )}

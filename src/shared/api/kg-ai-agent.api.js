@@ -207,7 +207,7 @@ Enrich the GastroMap database with accurate, structured culinary knowledge.
 YOUR ROLE:
 You populate three core entity types:
 1. CUISINES — culinary traditions of the world
-2. DISHES — specific dishes within each cuisine
+2. DISHES — specific dishes within each cuisine  
 3. INGREDIENTS — individual ingredients with flavor profiles and pairings
 
 DEDUP CHECK (items already verified against database):
@@ -217,7 +217,8 @@ RULES:
 - Items marked EXISTS → skip them completely, do NOT include in output
 - Items marked NOT_FOUND → generate and include them
 - If user asks for something not in the check list → generate it freely
-- Be precise with names: "Italian" = "Italian Cuisine", "olive oil" = "Olive Oil"
+- Use the EXACT field names from schemas below — they map directly to database columns
+- cuisine_name in dishes must match EXACTLY the name of a cuisine you are also generating in this batch (or one that already EXISTS)
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -236,38 +237,64 @@ OUTPUT FORMAT (strict JSON):
   "summary": "Added X cuisines, Y dishes, Z ingredients. Skipped N duplicates."
 }
 
-CUISINE SCHEMA:
+═══════════════════════════════════════════════════════
+CUISINE SCHEMA (all fields map 1:1 to database columns):
+═══════════════════════════════════════════════════════
 {
-  "name": "string — required",
-  "description": "string — 2-3 sentences, required",
-  "region": "string — e.g. Mediterranean, East Asian, Latin American",
-  "aliases": ["alternative names"],
-  "typical_dishes": ["dish names this cuisine is famous for"],
-  "key_ingredients": ["most important ingredients"],
-  "flavor_profile": "string — e.g. herbal, savory, umami, spicy"
+  "name": "string — REQUIRED, e.g. \"Italian\" (not \"Italian Cuisine\")",
+  "description": "string — REQUIRED, 2-3 sentences",
+  "region": "string — broad geographic region, e.g. \"Mediterranean\", \"East Asian\", \"Latin American\"",
+  "origin_country": "string — primary country, e.g. \"Italy\", \"Japan\"",
+  "aliases": ["array of alternative names, e.g. \"Italiana\""],
+  "flavor_profile": "string — dominant flavors, e.g. \"herbal, savory, umami, spicy\"",
+  "typical_dishes": ["array of dish names this cuisine is famous for"],
+  "key_ingredients": ["array of most important/characteristic ingredients"],
+  "spice_level": "one of: mild | medium | spicy | very_spicy",
+  "meal_structure": "string — e.g. \"3-course\", \"tapas\", \"mezze\", \"family-style\"",
+  "cooking_methods": ["array — e.g. \"grilling\", \"braising\", \"fermenting\", \"stir-frying\""],
+  "dietary_notes": "string — e.g. \"halal-friendly\", \"heavy dairy\", \"largely plant-based\""
 }
 
-DISH SCHEMA:
+═══════════════════════════════════════════════════════
+DISH SCHEMA (all fields map 1:1 to database columns):
+═══════════════════════════════════════════════════════
 {
-  "name": "string — required",
-  "cuisine_name": "string — parent cuisine name (required)",
-  "description": "string — 1-2 sentences, required",
-  "ingredients": ["main ingredients array"],
-  "preparation_style": "string — e.g. pasta, grilled, soup, fried, baked",
-  "dietary_tags": ["vegetarian|vegan|gluten-free|dairy-free|nut-free"],
-  "flavor_notes": "string — e.g. creamy, rich, smoky, fresh",
-  "best_pairing": "string — e.g. white wine, crusty bread"
+  "name": "string — REQUIRED, e.g. \"Spaghetti Carbonara\"",
+  "cuisine_name": "string — REQUIRED, parent cuisine name (must match cuisine name exactly)",
+  "description": "string — REQUIRED, 1-2 sentences",
+  "course": "one of: appetizer | main | dessert | side | drink | snack | bread",
+  "preparation_style": "string — e.g. \"pasta\", \"grilled\", \"soup\", \"fried\", \"baked\", \"raw\", \"steamed\"",
+  "ingredients": ["array of main ingredient names"],
+  "dietary_tags": ["array — any of: vegetarian | vegan | gluten-free | dairy-free | nut-free | halal | kosher"],
+  "flavor_notes": "string — e.g. \"creamy, rich, smoky, fresh\"",
+  "best_pairing": "string — e.g. \"white wine, crusty bread\"",
+  "serving_temp": "one of: hot | warm | cold | room_temp",
+  "difficulty": "one of: easy | medium | hard",
+  "cook_time_min": "integer — estimated cooking time in minutes",
+  "origin_city": "string — city of origin if notable, e.g. \"Naples\", \"Bologna\"",
+  "alternative_names": ["array of local/regional names"],
+  "spicy_level": "integer 0-5 (0=not spicy, 5=extremely spicy)",
+  "is_signature": "boolean — true if iconic/signature dish of its cuisine"
 }
 
-INGREDIENT SCHEMA:
+═══════════════════════════════════════════════════════
+INGREDIENT SCHEMA (all fields map 1:1 to database columns):
+═══════════════════════════════════════════════════════
 {
-  "name": "string — required",
-  "category": "string — oil|spice|vegetable|protein|grain|dairy|fruit|herb|sauce|other",
-  "description": "string — 1-2 sentences, required",
-  "flavor_profile": "string — e.g. earthy, pungent, sweet, neutral",
-  "common_pairings": ["ingredients that pair well"],
-  "dietary_info": ["vegan|gluten-free|dairy-free"],
-  "season": "year-round|spring|summer|fall|winter"
+  "name": "string — REQUIRED, e.g. \"Truffle Oil\"",
+  "category": "one of: vegetable | fruit | meat | fish | seafood | dairy | grain | spice | herb | nut | legume | oil | sauce | other",
+  "description": "string — REQUIRED, 1-2 sentences about this ingredient",
+  "flavor_profile": "string — e.g. \"earthy, pungent, sweet, neutral\"",
+  "common_pairings": ["array of ingredients that pair well with this one"],
+  "dietary_info": ["array — any of: vegan | vegetarian | gluten-free | dairy-free | nut-free | halal | kosher"],
+  "season": ["array — any of: spring | summer | fall | winter | year-round"],
+  "origin_region": "string — geographic origin, e.g. \"Southeast Asia\", \"Mediterranean\"",
+  "health_notes": "string — e.g. \"high in omega-3\", \"antioxidant-rich\", \"high protein\"",
+  "substitutes": ["array of ingredient names that can substitute this one"],
+  "storage_tip": "string — e.g. \"refrigerate up to 1 week\", \"store in cool dry place\"",
+  "is_allergen": "boolean — true if this is a common allergen (nuts, dairy, gluten, shellfish, etc.)",
+  "is_vegan": "boolean",
+  "is_vegetarian": "boolean"
 }`
 
 // ─── Smart Context Engine ─────────────────────────────────────────────────────
@@ -782,4 +809,5 @@ export const AGENT_EXAMPLE_PROMPTS = [
     'Add 5 common spices used across Mediterranean cooking',
     'Enrich the Knowledge Graph with vegan dishes from Indian cuisine',
 ]
+
 

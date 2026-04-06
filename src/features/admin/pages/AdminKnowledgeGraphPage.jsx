@@ -19,6 +19,7 @@ import {
 import { createCuisine as createCuisineApi, createDish as createDishApi, createIngredient as createIngredientApi } from '@/shared/api/knowledge-graph.api'
 import { invalidateCacheGroup } from '@/shared/lib/cache'
 import KGAIAgent from '../components/KGAIAgent'
+import KGEnrichmentAgent from '../components/KGEnrichmentAgent'
 
 // ─── LIST ITEM ────────────────────────────────────────────────────────────────
 
@@ -677,6 +678,15 @@ const AdminKnowledgeGraphPage = () => {
         return result
     }
 
+    // ── KG Enrichment: update single cuisine with AI-filled fields ─────────────
+    const updateCuisineMutation = useUpdateCuisineMutation()
+    const handleCuisineEnriched = useCallback(async (id, updates) => {
+        await updateCuisineMutation.mutateAsync({ id, ...updates })
+        // Invalidate cache so list refreshes
+        import('@/shared/lib/cache').then(({ invalidateCacheGroup }) => invalidateCacheGroup('cuisines'))
+        queryClient.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
+    }, [updateCuisineMutation, queryClient])
+
     // ── After batch save: flush ALL caches so UI shows new data ────────────────
     const handleBatchComplete = (savedCount, errors) => {
         // 1. Wipe localStorage L2 cache for all KG entities
@@ -873,6 +883,12 @@ const AdminKnowledgeGraphPage = () => {
                 ingredients={ingredients}
                 onSaved={handleAgentSave}
                 onBatchComplete={handleBatchComplete}
+            />
+
+            {/* ── KG Enrichment ── */}
+            <KGEnrichmentAgent
+                cuisines={cuisines}
+                onEnriched={handleCuisineEnriched}
             />
 
             {/* ── Spoonacular ── */}

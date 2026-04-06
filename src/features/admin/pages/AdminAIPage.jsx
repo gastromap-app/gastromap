@@ -102,6 +102,8 @@ const FREE_MODELS = [
         badge: 'Largest Context',
         badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
         description: 'Largest context window. Often rate-limited.',
+        toolUse: true,
+    },
     {
         id: 'qwen/qwen3.6-plus:free',
         name: 'Qwen3.6 Plus',

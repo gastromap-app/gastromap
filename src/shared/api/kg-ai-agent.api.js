@@ -531,7 +531,11 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     if (braveKey.trim()) {
         KGDebug.step('BRAVE', 'Brave Search enrichment')
         try {
-            const braveResults = await searchBrave(userMessage, braveKey, 3)
+            // Всегда ищем на английском — берём translatedKeywords если есть,
+            // иначе используем оригинальный запрос (brave-search.js сам добавит EN bias)
+            const braveQuery = ctx.translatedKeywords?.join(' ') || userMessage
+            KGDebug.info(`Brave query (EN): "${braveQuery}"`)
+            const braveResults = await searchBrave(braveQuery, braveKey, 3)
             if (braveResults) {
                 // Обрезаем до 400 символов чтобы не раздувать prompt (экономим токены)
                 const trimmedBrave = braveResults.slice(0, 400)

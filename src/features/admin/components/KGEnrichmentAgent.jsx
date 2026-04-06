@@ -43,13 +43,20 @@ Only include the fields that are listed as missing. Return valid JSON only, no m
     const apiKey = config.ai?.openRouterKey
     if (!apiKey) throw new Error('OpenRouter API key not configured')
 
+    // Updated 2026-04-06: removed broken models (deepseek-v3-0324→404, mistral-small-3.1-24b→404)
+    // Using same verified cascade as KGAIAgent
     const models = [
-        'deepseek/deepseek-chat-v3-0324:free',
+        'openai/gpt-oss-120b:free',
         'meta-llama/llama-3.3-70b-instruct:free',
-        'mistralai/mistral-small-3.1-24b-instruct:free',
+        'google/gemma-3-27b-it:free',
+        'openai/gpt-oss-20b:free',
+        'stepfun/step-3.5-flash:free',
     ]
 
-    for (const model of models) {
+    for (let _mi = 0; _mi < models.length; _mi++) {
+        const model = models[_mi]
+        // Delay between attempts to avoid cascading rate limits
+        if (_mi > 0) await new Promise(r => setTimeout(r, 1500))
         try {
             const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -62,15 +69,26 @@ Only include the fields that are listed as missing. Return valid JSON only, no m
                 body: JSON.stringify({
                     model,
                     messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 400,
+                    max_tokens: 600,
                     temperature: 0.3,
                 }),
             })
 
-            if (!resp.ok) continue
+            if (resp.status === 429 || resp.status === 503) {
+                console.warn(`[Enrichment] ${model} rate-limited, trying next…`)
+                await new Promise(r => setTimeout(r, 2000))
+                continue
+            }
+            if (!resp.ok) {
+                console.warn(`[Enrichment] ${model} HTTP ${resp.status}, trying next…`)
+                continue
+            }
             const data = await resp.json()
             const text = data.choices?.[0]?.message?.content?.trim()
-            if (!text) continue
+            if (!text) {
+                console.warn(`[Enrichment] ${model} empty response, trying next…`)
+                continue
+            }
 
             // Parse JSON — strip possible markdown fences
             const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()

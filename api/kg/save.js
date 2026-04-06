@@ -122,14 +122,16 @@ export default async function handler(req, res) {
 
     try {
         // ── Step 1: Dedup check ───────────────────────────────────────────────
+        const startDedup = Date.now()
         const checkUrl = `${supabaseUrl}/rest/v1/${table}?name=ilike.${encodeURIComponent(name)}&limit=1`
-        console.log(`[kg/save] Dedup check: GET ${checkUrl}`)
+        console.log(`[kg/save] 🔍 Step 1: Dedup check start: GET ${checkUrl}`)
 
         const checkResp = await fetch(checkUrl, { headers: pgHeaders })
+        console.log(`[kg/save] 🔍 Dedup check response: ${checkResp.status} in ${Date.now() - startDedup}ms`)
 
         if (!checkResp.ok) {
             const errText = await checkResp.text()
-            console.error(`[kg/save] Dedup check failed: ${checkResp.status}`, errText)
+            console.error(`[kg/save] ❌ Dedup check failed: ${checkResp.status}`, errText)
             return res.status(checkResp.status).json({
                 error: `Supabase dedup check failed: ${checkResp.status}`,
                 details: errText.slice(0, 200),
@@ -137,6 +139,7 @@ export default async function handler(req, res) {
         }
 
         let existing = await checkResp.json()
+        console.log(`[kg/save] 🔍 Existing records found: ${existing.length}`)
 
         // ── Step 1.1: Alias check (if direct name match failed) ───────────────
         if ((!Array.isArray(existing) || existing.length === 0)) {

@@ -437,7 +437,7 @@ function buildSmartContext(userMessage, cuisines, dishes, ingredients) {
         lines.push(`EXISTS (ingredients): ${found.ingredients.join(', ')}`)
     }
 
-    return { found, context: lines.join('\n') }
+    return { found, context: lines.join('\n'), rawKeywords, keywords }
 }
 
 // ─── Dynamic max_tokens ───────────────────────────────────────────────────────
@@ -512,7 +512,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     KGDebug.info(`KG state: ${cuisines.length} cuisines, ${dishes.length} dishes, ${ingredients.length} ingredients`)
 
     // ── Smart context: только релевантные совпадения из KG ────────────────────
-    const { found, context: smartContext } = buildSmartContext(
+    const { found, context: smartContext, rawKeywords, keywords } = buildSmartContext(
         userMessage, cuisines, dishes, ingredients
     )
 

@@ -5,7 +5,7 @@ import {
     Save, Play, Pause, RefreshCw, Sliders, Brain,
     CheckCircle2, ChevronDown, ChevronUp, Send,
     Loader2, AlertCircle, Eye, EyeOff, Star, Globe, Cpu,
-    FileText, RotateCcw
+    FileText, RotateCcw, Search, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
@@ -238,6 +238,8 @@ const AdminAIPage = () => {
     const [guidePrompt, setGuidePrompt] = useState(appConfig.aiGuideSystemPrompt ?? '')
     const [assistantPrompt, setAssistantPrompt] = useState(appConfig.aiAssistantSystemPrompt ?? '')
     const [kgAgentPrompt, setKgAgentPrompt] = useState(appConfig.aiKGAgentSystemPrompt ?? '')
+    const [braveApiKey, setBraveApiKey] = useState(appConfig.braveSearchApiKey ?? '')
+    const [showBraveKey, setShowBraveKey] = useState(false)
 
     // ── Agents
     const [agentActive, setAgentActive] = useState({
@@ -285,6 +287,7 @@ const AdminAIPage = () => {
             aiGuideSystemPrompt: guidePrompt,
             aiAssistantSystemPrompt: assistantPrompt,
             aiKGAgentSystemPrompt: kgAgentPrompt,
+            braveSearchApiKey: braveApiKey,
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
@@ -661,6 +664,38 @@ const AdminAIPage = () => {
                                 This agent connects to Open Food Facts, Wikipedia, and other culinary sources to populate
                                 the Knowledge Graph with cuisines, dishes, and ingredients.
                                 GastroGuide reads this data for semantic, context-aware recommendations.
+                            </p>
+                        </div>
+                        {/* Brave Search API Key */}
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Search size={13} className="text-violet-500" />
+                                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Brave Search API Key</label>
+                                <span className="text-xs text-slate-400">(free tier: 2 000 req/month)</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type={showBraveKey ? "text" : "password"}
+                                        value={braveApiKey}
+                                        onChange={(e) => setBraveApiKey(e.target.value)}
+                                        placeholder="BSA..."
+                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-violet-500 transition-all"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowBraveKey(v => !v)}
+                                    className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                >
+                                    {showBraveKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1.5">
+                                Get a free key at{" "}
+                                <a href="https://api.search.brave.com" target="_blank" rel="noopener noreferrer" className="text-violet-500 hover:underline">api.search.brave.com</a>.
+                                {braveApiKey ? " ✓ Web search enrichment active" : " Leave empty to skip web search."}
                             </p>
                         </div>
                         <textarea

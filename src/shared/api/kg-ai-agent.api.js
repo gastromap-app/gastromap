@@ -623,8 +623,9 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             if (resp.status === 429 || resp.status === 503) {
                 KGDebug.modelFail(model, `rate-limited (${resp.status})`)
                 errors.push(`${model}: rate-limited (${resp.status})`)
-                // Wait before trying next model to avoid cascading 429s
-                await new Promise(r => setTimeout(r, 2000))
+                // Exponential backoff: 2s → 4s → 8s per model attempt
+                const delay = Math.min(2000 * Math.pow(2, _mi), 10000)
+                await new Promise(r => setTimeout(r, delay))
                 continue
             }
             if (!resp.ok) {
@@ -708,6 +709,15 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
     KGDebug.footer(null)
     KGDebug.info('All models failed:', errors)
+    // Check if ALL errors are rate-limits
+    const allRateLimited = errors.every(e => e.includes('rate-limited') || e.includes('429'))
+    if (allRateLimited) {
+        throw new Error(
+            'OpenRouter rate limit reached (20 req/min). ' +
+            'Подожди 60 секунд и попробуй снова. ' +
+            'Лимит: 50 запросов/день (до $10) или 1000/день (от $10 на счету).'
+        )
+    }
     throw new Error(`KG Agent: all models failed.\n${errors.join('\n')}`)
 }
 

@@ -135,7 +135,17 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
     const errors = []
 
-    for (const model of AGENT_MODELS) {
+    // ── Single source of truth: use admin-selected model first ───────────────
+    // Reads primary/fallback from useAppConfigStore (set in Admin → AI Settings).
+    const primaryModel  = appCfg.aiPrimaryModel  || config.ai.model  || AGENT_MODELS[0]
+    const fallbackModel = appCfg.aiFallbackModel || null
+    const cascade = [primaryModel]
+    if (fallbackModel && fallbackModel !== primaryModel) cascade.push(fallbackModel)
+    for (const m of AGENT_MODELS) {
+        if (!cascade.includes(m)) cascade.push(m)
+    }
+
+    for (const model of cascade) {
         onModelAttempt?.(model)
 
         try {

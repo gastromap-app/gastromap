@@ -723,11 +723,48 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
 // ─── Resolve cuisine_id for dishes ───────────────────────────────────────────
 
+/**
+ * Fuzzy match cuisine name to handle cases where AI returns
+ * "Italian Cuisine" but DB has "Italian", or "French" vs "French Cuisine".
+ * 
+ * Match order:
+ *  1. Exact match (case-insensitive)
+ *  2. Strip " cuisine" suffix from dish.cuisine_name → match against DB name
+ *  3. DB name is contained in dish.cuisine_name (e.g. "Italian" ⊂ "Italian Cuisine")
+ *  4. dish.cuisine_name is contained in DB name
+ */
+function matchCuisine(cuisineName, allCuisines) {
+    if (!cuisineName) return null
+    const raw = cuisineName.trim().toLowerCase()
+    // Strip common suffixes AI adds: " cuisine", " food", " cooking"
+    const stripped = raw.replace(/\s+(cuisine|food|cooking|kitchen)$/i, '').trim()
+
+    // 1. Exact
+    let match = allCuisines.find(c => c.name?.toLowerCase() === raw)
+    if (match) return match
+
+    // 2. Exact after stripping suffix
+    match = allCuisines.find(c => c.name?.toLowerCase() === stripped)
+    if (match) return match
+
+    // 3. DB name ⊂ raw (e.g. DB="Italian", raw="italian cuisine")
+    match = allCuisines.find(c => raw.includes(c.name?.toLowerCase()))
+    if (match) return match
+
+    // 4. raw ⊂ DB name (e.g. DB="Italian Cuisine", raw="italian")
+    match = allCuisines.find(c => c.name?.toLowerCase().includes(raw))
+    if (match) return match
+
+    // 5. Stripped ⊂ DB name
+    match = allCuisines.find(c => c.name?.toLowerCase().includes(stripped))
+    if (match) return match
+
+    return null
+}
+
 export function resolveDishCuisineIds(dishes, allCuisines) {
     return dishes.map(dish => {
-        const match = allCuisines.find(c =>
-            c.name?.toLowerCase() === dish.cuisine_name?.toLowerCase()
-        )
+        const match = matchCuisine(dish.cuisine_name, allCuisines)
         const { cuisine_name, ...rest } = dish
         return { ...rest, cuisine_id: match?.id ?? null }
     })
@@ -745,3 +782,4 @@ export const AGENT_EXAMPLE_PROMPTS = [
     'Add 5 common spices used across Mediterranean cooking',
     'Enrich the Knowledge Graph with vegan dishes from Indian cuisine',
 ]
+

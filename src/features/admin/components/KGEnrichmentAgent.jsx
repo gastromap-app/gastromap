@@ -43,14 +43,12 @@ Only include the fields that are listed as missing. Return valid JSON only, no m
     const apiKey = config.ai?.openRouterKey
     if (!apiKey) throw new Error('OpenRouter API key not configured')
 
-    // Updated 2026-04-06: removed broken models (deepseek-v3-0324→404, mistral-small-3.1-24b→404)
-    // Using same verified cascade as KGAIAgent
+    // Enrichment uses smaller cascade to conserve rate limit budget
+    // Only 2 primary + 1 fallback — saves requests when previous cuisine exhausted rate limit
     const models = [
         'openai/gpt-oss-120b:free',
         'meta-llama/llama-3.3-70b-instruct:free',
         'google/gemma-3-27b-it:free',
-        'openai/gpt-oss-20b:free',
-        'stepfun/step-3.5-flash:free',
     ]
 
     for (let _mi = 0; _mi < models.length; _mi++) {
@@ -76,7 +74,7 @@ Only include the fields that are listed as missing. Return valid JSON only, no m
 
             if (resp.status === 429 || resp.status === 503) {
                 console.warn(`[Enrichment] ${model} rate-limited, trying next…`)
-                await new Promise(r => setTimeout(r, 2000))
+                await new Promise(r => setTimeout(r, 5000))
                 continue
             }
             if (!resp.ok) {
@@ -145,8 +143,8 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
                 ))
             }
 
-            // Small delay to avoid rate limits
-            if (i < toEnrich.length - 1) await new Promise(r => setTimeout(r, 800))
+            // Delay between cuisines — free tier OpenRouter needs time to reset
+            if (i < toEnrich.length - 1) await new Promise(r => setTimeout(r, 8000))
         }
 
         setRunning(false)

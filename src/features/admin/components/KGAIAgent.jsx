@@ -591,6 +591,14 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                                                         )}
                                                     </div>
                                                 )}
+                                                {msg.role === 'agent' && msg.skipped && ((msg.skipped.cuisines?.length || 0) + (msg.skipped.dishes?.length || 0) + (msg.skipped.ingredients?.length || 0)) > 0 && (
+                                                    <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-100 dark:border-slate-700/50 pt-2 space-y-0.5">
+                                                        <p className="font-semibold text-slate-500 dark:text-slate-400">Already in KG (skipped):</p>
+                                                        {msg.skipped.cuisines?.length > 0 && <p>• {msg.skipped.cuisines.length} cuisine{msg.skipped.cuisines.length > 1 ? 's' : ''}: {msg.skipped.cuisines.join(', ')}</p>}
+                                                        {msg.skipped.dishes?.length > 0 && <p>• {msg.skipped.dishes.length} dish{msg.skipped.dishes.length > 1 ? 'es' : ''}: {msg.skipped.dishes.slice(0,5).join(', ')}{msg.skipped.dishes.length > 5 ? ` +${msg.skipped.dishes.length - 5} more` : ''}</p>}
+                                                        {msg.skipped.ingredients?.length > 0 && <p>• {msg.skipped.ingredients.length} ingredient{msg.skipped.ingredients.length > 1 ? 's' : ''}: {msg.skipped.ingredients.slice(0,5).join(', ')}{msg.skipped.ingredients.length > 5 ? ` +${msg.skipped.ingredients.length - 5} more` : ''}</p>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </motion.div>
                                     ))}

@@ -252,12 +252,27 @@ async function saveViaProxy(type, data) {
     _log(`POST /api/kg/save`, { type, data })
 
     // Get JWT from current Supabase session for authenticated proxy calls
+    // Always refresh first to avoid 401 from expired tokens
     let jwt = ''
     try {
-        const { data: sessionData } = await supabase.auth.getSession()
-        jwt = sessionData?.session?.access_token || ''
+        // Try to refresh the session first (fixes expired token errors)
+        const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession()
+        if (refreshData?.session?.access_token) {
+            jwt = refreshData.session.access_token
+        } else {
+            // Fallback: use existing session (may still be valid)
+            const { data: sessionData } = await supabase.auth.getSession()
+            jwt = sessionData?.session?.access_token || ''
+        }
+        if (refreshErr) {
+            console.warn('[saveViaProxy] Session refresh warning:', refreshErr.message)
+        }
     } catch (e) {
         console.warn('[saveViaProxy] Could not get JWT:', e.message)
+    }
+    
+    if (!jwt) {
+        throw new ApiError('Not authenticated. Please log in again.', 401, 'AUTH_ERROR')
     }
 
     let res
@@ -706,3 +721,4 @@ export async function syncKGToLocations(onProgress) {
 
     return { success: true, count: updatedCount }
 }
+

@@ -24,6 +24,7 @@ export const useAppConfigStore = create(
             aiGuideSystemPrompt: '',
             aiAssistantSystemPrompt: '',
             aiKGAgentSystemPrompt: '',   // KG Agent instructions (empty = use DEFAULT_KG_SYSTEM_PROMPT)
+            braveSearchApiKey: '',        // Brave Search API key for KG Agent web enrichment (free: 2000 req/mo)
 
             updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
             setAppStatus: (status) => set({ appStatus: status }),

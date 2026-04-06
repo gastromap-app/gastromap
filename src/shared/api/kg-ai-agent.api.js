@@ -18,6 +18,143 @@ import { useAppConfigStore } from '@/store/useAppConfigStore'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+// ─── 🔍 KG Agent Debugger ─────────────────────────────────────────────────────
+//
+// Автоматически активируется в localStorage: localStorage.setItem('KG_DEBUG', '1')
+// Деактивируется:                            localStorage.removeItem('KG_DEBUG')
+// Или из консоли:                            window.KGDebug.enable() / .disable()
+//
+// Показывает: все этапы, тайминги, размеры payload, ответы моделей, ошибки
+
+const KGDebug = (() => {
+    const isEnabled = () => {
+        try { return localStorage.getItem('KG_DEBUG') === '1' } catch { return false }
+    }
+
+    const C = {
+        HEADER:  'color:#a78bfa;font-weight:bold;font-size:13px',
+        STEP:    'color:#60a5fa;font-weight:600',
+        SUCCESS: 'color:#34d399;font-weight:600',
+        WARN:    'color:#fbbf24;font-weight:600',
+        ERROR:   'color:#f87171;font-weight:600',
+        INFO:    'color:#94a3b8',
+        TIME:    'color:#c084fc;font-style:italic',
+        KEY:     'color:#e2e8f0;font-weight:600',
+        VAL:     'color:#7dd3fc',
+    }
+
+    let _sessionStart = null
+    let _stepTimers   = {}
+
+    const fmt = ms => ms < 1000 ? `${ms}ms` : `${(ms/1000).toFixed(2)}s`
+
+    const header = (title) => {
+        if (!isEnabled()) return
+        _sessionStart = performance.now()
+        _stepTimers   = {}
+        console.group(
+            `%c🧠 KG Agent Session — ${new Date().toLocaleTimeString()}`,
+            C.HEADER
+        )
+        console.log('%c' + '─'.repeat(60), C.INFO)
+        console.log(`%c📝 Query: %c"${title}"`, C.KEY, C.VAL)
+        console.log('%c' + '─'.repeat(60), C.INFO)
+    }
+
+    const footer = (result) => {
+        if (!isEnabled()) return
+        const total = fmt(performance.now() - _sessionStart)
+        console.log('%c' + '─'.repeat(60), C.INFO)
+        console.log(`%c✅ Session complete %c${total} total`, C.SUCCESS, C.TIME)
+        if (result) {
+            const c = result.items?.cuisines?.length  || 0
+            const d = result.items?.dishes?.length    || 0
+            const i = result.items?.ingredients?.length || 0
+            const sc = (result.skipped?.cuisines?.length || 0) +
+                       (result.skipped?.dishes?.length   || 0) +
+                       (result.skipped?.ingredients?.length || 0)
+            console.log(
+                `%c📦 Result: %c${c} cuisines, ${d} dishes, ${i} ingredients %c(${sc} skipped)`,
+                C.KEY, C.SUCCESS, C.WARN
+            )
+        }
+        console.groupEnd()
+    }
+
+    const step = (id, label) => {
+        if (!isEnabled()) return
+        _stepTimers[id] = performance.now()
+        console.log(`%c⏱ [${id}] %c${label}`, C.STEP, C.KEY)
+    }
+
+    const stepDone = (id, label, data) => {
+        if (!isEnabled()) return
+        const t = _stepTimers[id] ? fmt(performance.now() - _stepTimers[id]) : '?'
+        console.log(`%c✓ [${id}] %c${label} %c${t}`, C.SUCCESS, C.KEY, C.TIME)
+        if (data !== undefined) console.log('   ', data)
+    }
+
+    const stepWarn = (id, label, data) => {
+        if (!isEnabled()) return
+        const t = _stepTimers[id] ? fmt(performance.now() - _stepTimers[id]) : '?'
+        console.log(`%c⚠ [${id}] %c${label} %c${t}`, C.WARN, C.WARN, C.TIME)
+        if (data !== undefined) console.log('   ', data)
+    }
+
+    const stepFail = (id, label, err) => {
+        if (!isEnabled()) return
+        const t = _stepTimers[id] ? fmt(performance.now() - _stepTimers[id]) : '?'
+        console.log(`%c✗ [${id}] %c${label} %c${t}`, C.ERROR, C.ERROR, C.TIME)
+        if (err) console.log('   ', typeof err === 'string' ? err : err.message || err)
+    }
+
+    const info = (label, data) => {
+        if (!isEnabled()) return
+        console.log(`%c   ℹ ${label}`, C.INFO, data !== undefined ? data : '')
+    }
+
+    const model = (name, attempt, total) => {
+        if (!isEnabled()) return
+        console.log(`%c🤖 Model [${attempt}/${total}]: %c${name}`, C.STEP, C.VAL)
+    }
+
+    const modelFail = (name, reason) => {
+        if (!isEnabled()) return
+        console.log(`%c   ↳ Failed: %c${reason}`, C.WARN, C.ERROR)
+    }
+
+    const modelOk = (name, ms, tokens) => {
+        if (!isEnabled()) return
+        console.log(
+            `%c   ↳ ✓ Response %c${fmt(ms)} %c| ${tokens} tokens`,
+            C.SUCCESS, C.TIME, C.INFO
+        )
+    }
+
+    // Public API
+    const api = {
+        enable:   () => { localStorage.setItem('KG_DEBUG', '1');    console.log('%c🔍 KG Debug ENABLED', C.SUCCESS)  },
+        disable:  () => { localStorage.removeItem('KG_DEBUG');       console.log('%c🔕 KG Debug DISABLED', C.WARN)   },
+        status:   () => console.log(isEnabled() ? '%c🔍 KG Debug: ON' : '%c🔕 KG Debug: OFF', isEnabled() ? C.SUCCESS : C.WARN),
+        header, footer, step, stepDone, stepWarn, stepFail, info, model, modelFail, modelOk,
+        _enabled: isEnabled,
+    }
+
+    // Экспортируем в window для удобного доступа из консоли
+    if (typeof window !== 'undefined') {
+        window.KGDebug = api
+        if (isEnabled()) {
+            console.log('%c🔍 KG Agent Debugger active — window.KGDebug.disable() to turn off', C.SUCCESS)
+        } else {
+            console.log('%c🔍 KG Debug available — run: window.KGDebug.enable()', C.INFO)
+        }
+    }
+
+    return api
+})()
+
+
+
 // ─── Brave Search helper ──────────────────────────────────────────────────────
 
 export async function searchBrave(query, apiKey, count = 5) {
@@ -296,29 +433,51 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
 
+    // ── 🔍 Debug session start ────────────────────────────────────────────────
+    KGDebug.header(userMessage)
+
     if (!apiKey) {
+        KGDebug.stepFail('AUTH', 'API key missing')
         throw new Error('AI API key is not configured. Please add it in Admin → AI Settings.')
     }
 
     const { cuisines = [], dishes = [], ingredients = [] } = context
+
+    KGDebug.step('CTX', 'Building smart context')
+    KGDebug.info(`KG state: ${cuisines.length} cuisines, ${dishes.length} dishes, ${ingredients.length} ingredients`)
 
     // ── Smart context: только релевантные совпадения из KG ────────────────────
     const { found, context: smartContext } = buildSmartContext(
         userMessage, cuisines, dishes, ingredients
     )
 
+    const ctxTokens = Math.ceil(smartContext.length / 4)
+    KGDebug.stepDone('CTX', 'Smart context built', {
+        keywords: extractKeywords(userMessage),
+        matches: found,
+        contextSize: `~${ctxTokens} tokens (${smartContext.length} chars)`,
+        context: smartContext,
+    })
+
     // ── Brave Search enrichment (optional) ───────────────────────────────────
     const braveKey = appCfg.braveSearchApiKey || ''
     let webContext = ''
     if (braveKey.trim()) {
+        KGDebug.step('BRAVE', 'Brave Search enrichment')
         try {
             const braveResults = await searchBrave(userMessage, braveKey, 5)
             if (braveResults) {
                 webContext = '\n\nWEB SEARCH RESULTS (use as reference):\n' + braveResults
+                KGDebug.stepDone('BRAVE', 'Brave results fetched', braveResults.slice(0, 200) + '...')
+            } else {
+                KGDebug.stepWarn('BRAVE', 'No Brave results')
             }
         } catch (e) {
+            KGDebug.stepFail('BRAVE', 'Brave search failed', e.message)
             console.warn('[KG Agent] Brave search skipped:', e.message)
         }
+    } else {
+        KGDebug.info('Brave Search: skipped (no API key)')
     }
 
     // ── Compose system prompt ─────────────────────────────────────────────────
@@ -334,7 +493,9 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     // ── Dynamic max_tokens ────────────────────────────────────────────────────
     const maxTokens = estimateMaxTokens(userMessage)
 
-    const ctxTokens = Math.ceil(smartContext.length / 4)
+    KGDebug.step('AI', 'Calling AI model cascade')
+    KGDebug.info(`max_tokens: ${maxTokens} | prompt size: ~${Math.ceil(systemPrompt.length / 4)} tokens`)
+
     console.debug(`[KG Agent] Sending to AI — context: ~${ctxTokens} tokens | max_tokens: ${maxTokens}`)
 
     // ── Model cascade ─────────────────────────────────────────────────────────
@@ -346,10 +507,14 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         if (!cascade.includes(m)) cascade.push(m)
     }
 
+    KGDebug.info(`Model cascade (${cascade.length} models):`, cascade)
     const errors = []
 
-    for (const model of cascade) {
+    for (let _mi = 0; _mi < cascade.length; _mi++) {
+        const model = cascade[_mi]
         onModelAttempt?.(model)
+        KGDebug.model(model, _mi + 1, cascade.length)
+        const _modelStart = performance.now()
 
         try {
             const resp = await fetch(OPENROUTER_URL, {
@@ -373,6 +538,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             })
 
             if (resp.status === 429 || resp.status === 503) {
+                KGDebug.modelFail(model, `rate-limited (${resp.status})`)
                 errors.push(`${model}: rate-limited (${resp.status})`)
                 continue
             }
@@ -384,11 +550,17 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
             const data = await resp.json()
             const rawContent = data.choices?.[0]?.message?.content?.trim()
+            const _usage = data.usage || {}
 
             if (!rawContent) {
+                KGDebug.modelFail(model, 'empty response')
                 errors.push(`${model}: empty response`)
                 continue
             }
+
+            KGDebug.modelOk(model, performance.now() - _modelStart, _usage.total_tokens || '?')
+            KGDebug.step('PARSE', 'Parsing AI response')
+            KGDebug.info(`Raw response size: ${rawContent.length} chars`)
 
             const clean = rawContent
                 .replace(/^```json\s*/i, '')
@@ -417,18 +589,38 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             parsed.items = filtered
 
             const totalSkipped = parsed.skipped.cuisines.length + parsed.skipped.dishes.length + parsed.skipped.ingredients.length
+
+            KGDebug.stepDone('PARSE', 'Response parsed & deduped', {
+                new: {
+                    cuisines:    parsed.items.cuisines.length,
+                    dishes:      parsed.items.dishes.length,
+                    ingredients: parsed.items.ingredients.length,
+                },
+                skipped: {
+                    total: totalSkipped,
+                    names: parsed.skipped,
+                },
+                understanding: parsed.understanding,
+                plan:          parsed.plan,
+            })
+
             if (totalSkipped > 0) {
+                KGDebug.stepWarn('DEDUP', `Skipped ${totalSkipped} duplicates`, parsed.skipped)
                 console.info(`[KG Agent] Dedup: skipped ${totalSkipped} duplicates`, parsed.skipped)
             }
 
             console.info(`[KG Agent] ✓ ${model} | ctx: ~${ctxTokens} tokens | max: ${maxTokens}`)
+            KGDebug.footer(parsed)
             return parsed
 
         } catch (err) {
+            KGDebug.stepFail('AI', `${model} threw error`, err.message)
             errors.push(`${model}: ${err.message}`)
         }
     }
 
+    KGDebug.footer(null)
+    KGDebug.info('All models failed:', errors)
     throw new Error(`KG Agent: all models failed.\n${errors.join('\n')}`)
 }
 

@@ -676,30 +676,35 @@ const AdminKnowledgeGraphPage = () => {
     // ── KG Enrichment: update single cuisine with AI-filled fields ─────────────
     const updateCuisineMutation = useUpdateCuisineMutation()
     const handleCuisineEnriched = useCallback(async (id, updates) => {
-        await updateCuisineMutation.mutateAsync({ id, ...updates })
-        // Invalidate cache so list refreshes
-        import('@/shared/lib/cache').then(({ invalidateCacheGroup }) => invalidateCacheGroup('cuisines'))
+        // Fix: pass { id, updates } — mutation expects this shape, not { id, ...updates }
+        await updateCuisineMutation.mutateAsync({ id, updates })
+        // Invalidate caches so list refreshes with enriched data
+        invalidateCacheGroup('cuisines')
         queryClient.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
     }, [updateCuisineMutation, queryClient])
 
     // ── After batch save: flush ALL caches so UI shows new data ────────────────
-    const handleBatchComplete = (savedCount, errors) => {
-        // 1. Wipe localStorage L2 cache for all KG entities
+    const handleBatchComplete = useCallback(async (savedCount, errors) => {
+        // 1. Wipe localStorage L2 cache for all KG entities (synchronous)
         invalidateCacheGroup('cuisines')
         invalidateCacheGroup('dishes')
         invalidateCacheGroup('ingredients')
-        // 2. Force React Query to re-fetch from Supabase (not from cache)
+
+        // 2. Force React Query to drop in-memory cache completely
         queryClient.removeQueries({ queryKey: ['knowledge-cuisines'] })
         queryClient.removeQueries({ queryKey: ['knowledge-dishes'] })
         queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
         queryClient.removeQueries({ queryKey: ['knowledge-stats'] })
-        // 3. Trigger immediate refetch
-        setTimeout(() => {
-            refetchCuisines()
-            refetchDishes()
-            refetchIngredients()
-        }, 300)
-    }
+
+        // 3. Immediate refetch — no setTimeout! Caches are already clean,
+        //    so getCuisines() will miss L2 cache and go straight to Supabase
+        try {
+            await Promise.all([refetchCuisines(), refetchDishes(), refetchIngredients()])
+        } catch {
+            // refetch failure is non-critical — user can click ↺ manually
+            console.warn('[KG] Post-save refetch failed — user can click ↺ to retry')
+        }
+    }, [queryClient, refetchCuisines, refetchDishes, refetchIngredients])
 
     const filteredItems = useMemo(() => {
         const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients
@@ -962,16 +967,21 @@ const AdminKnowledgeGraphPage = () => {
                     </div>
 
                     <button
-                        onClick={() => {
-                            import('@/shared/lib/cache').then(({ invalidateCacheGroup }) => {
-                                invalidateCacheGroup('cuisines')
-                                invalidateCacheGroup('dishes')
-                                invalidateCacheGroup('ingredients')
-                            })
+                        onClick={async () => {
+                            // 1. Await dynamic import to guarantee L2 cache is cleared BEFORE refetch
+                            const { invalidateCacheGroup } = await import('@/shared/lib/cache')
+                            invalidateCacheGroup('cuisines')
+                            invalidateCacheGroup('dishes')
+                            invalidateCacheGroup('ingredients')
+
+                            // 2. Clear L1 (React Query in-memory cache)
                             queryClient.removeQueries({ queryKey: ['knowledge-cuisines'] })
                             queryClient.removeQueries({ queryKey: ['knowledge-dishes'] })
                             queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
-                            setTimeout(() => { refetchCuisines(); refetchDishes(); refetchIngredients() }, 100)
+                            queryClient.removeQueries({ queryKey: ['knowledge-stats'] })
+
+                            // 3. Now refetch — caches are clean, getCuisines() will hit Supabase
+                            await Promise.all([refetchCuisines(), refetchDishes(), refetchIngredients()])
                         }}
                         className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors text-xs font-medium"
                         title="Clear cache and reload from database"

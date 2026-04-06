@@ -5,9 +5,8 @@ import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
-import { analyzeQueryStream, analyzeQuery } from '@/shared/api/ai.api'
+import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { config } from '@/shared/config/env'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
 
 /**
  * useAIChat — GastroGuide conversation logic with OpenRouter API streaming.
@@ -48,12 +47,8 @@ export function useAIChat() {
     const { favoriteIds } = useFavoritesStore()
     const { locations } = useLocationsStore()
     const { user } = useAuthStore()
-    const { aiApiKey: adminApiKey } = useAppConfigStore()
-
-    // Use admin runtime key (set via AdminAIPage) or fall back to env var.
-    // Mirrors the logic in ai.api.js getActiveAIConfig() so streaming path
-    // is taken whenever the API call itself would actually work.
-    const activeApiKey = adminApiKey || config.ai.openRouterKey
+    // Use centralized AI configuration logic (Runtime Admin key > Env key)
+    const { apiKey: activeApiKey } = getActiveAIConfig()
 
     const sendMessage = useCallback(async (text) => {
         if (!text?.trim() || isTyping) return

@@ -886,23 +886,50 @@ export async function testAIConnection(message, preferredModel) {
             { role: 'user', content: message },
         ]
 
-        const { response, modelUsed } = await fetchOpenRouter(messages, {
-            stream: false,
-            withTools: false,
-            modelOverride: preferredModel,
+        // ── DIRECT call to the specific model — no cascade fallback during test ──
+        // This ensures the test result reflects EXACTLY the chosen model performance.
+        const modelToTest = preferredModel || MODEL_CASCADE[0]
+        const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
+        const headers = { 'Content-Type': 'application/json' }
+        if (!useProxy) {
+            headers['Authorization'] = `Bearer ${apiKey}`
+            headers['HTTP-Referer'] = 'https://gastromap.app'
+            headers['X-Title'] = 'GastroMap'
+        }
+
+        const body = {
+            model: modelToTest,
+            messages,
+            max_tokens: 256,
+            // Pass a flag so the proxy knows this is a direct test (no cascade)
+            _direct_model: true,
+        }
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
         })
 
-        const data = await response.json()
-        const text = data.choices?.[0]?.message?.content || '(no response)'
+        const data = await res.json()
         const latency = Math.round(performance.now() - startTime)
 
-        return { ok: true, text, modelUsed, latency }
+        if (!res.ok) {
+            const errMsg = data?.error?.message || `Model returned ${res.status}`
+            return { ok: false, text: errMsg, modelUsed: modelToTest, latency }
+        }
+
+        // Proxy may return _model_used to confirm which model actually answered
+        const actualModel = data._model_used || modelToTest
+        const text = data.choices?.[0]?.message?.content || '(no response)'
+
+        return { ok: true, text, modelUsed: actualModel, latency }
     } catch (err) {
         const latency = Math.round(performance.now() - startTime)
         return {
             ok: false,
             text: err.message || 'Unknown error',
-            modelUsed: err.allModelsTried?.join(' → ') || 'unknown',
+            modelUsed: preferredModel || 'unknown',
             latency,
             error: err.message,
         }

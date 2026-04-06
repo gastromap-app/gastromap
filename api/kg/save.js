@@ -33,15 +33,16 @@ const INGREDIENT_CAT_MAP = {
 }
 
 export default async function handler(req, res) {
-    // CORS — restrict to known origins (production + local dev)
-    const allowedOrigins = [
-        'https://gastromap.app',
-        'https://gastromap-stand-alone.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:3000',
-    ]
+    // CORS — allow production, all Vercel previews, and local dev
     const origin = req.headers.origin || ''
-    const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+    const isAllowed = (
+        !origin ||                                              // server-to-server
+        origin.endsWith('.vercel.app') ||                       // any Vercel preview/deploy
+        origin === 'https://gastromap.app' ||
+        origin === 'http://localhost:5173' ||
+        origin === 'http://localhost:3000'
+    )
+    const corsOrigin = isAllowed ? (origin || 'https://gastromap.app') : 'https://gastromap.app'
     res.setHeader('Access-Control-Allow-Origin', corsOrigin)
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
@@ -340,4 +341,5 @@ function clean(obj) {
         Object.entries(obj).filter(([, v]) => v !== undefined && v !== null)
     )
 }
+
 

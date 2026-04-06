@@ -11,13 +11,13 @@
 import { MOCK_LOCATIONS, MOCK_CATEGORIES } from '@/mocks/locations'
 import { supabase, ApiError } from './client'
 import { config } from '@/shared/config/env'
-import { 
-    processLocationTranslations, 
-    saveTranslations,
-    getTranslations 
-} from './translation.api'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { getActiveAIConfig } from './ai-config.api'
+// import { 
+//     processLocationTranslations, 
+//     saveTranslations,
+//     getTranslations 
+// } from './translation.api'
+// import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+// import { getActiveAIConfig } from './ai-config.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
 
@@ -203,6 +203,7 @@ export async function getLocation(id, { adminMode = false } = {}) {
  * 3. Generates vector embedding for semantic search
  */
 async function enrichLocationWithAI(locationData) {
+    const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
 
@@ -346,6 +347,7 @@ async function enrichLocationWithAI(locationData) {
 export async function createLocation(data, enableTranslation = null) {
     if (!USE_SUPABASE) return _mockCreate(data)
 
+    const { getActiveAIConfig } = await import('./ai-config.api')
     const isAiReady = getActiveAIConfig().isConfigured
     const shouldTranslate = enableTranslation ?? isAiReady
 
@@ -372,6 +374,7 @@ export async function createLocation(data, enableTranslation = null) {
     if (shouldTranslate) {
         console.log('[locations.api] Starting background translation for location:', created.id)
 
+        const { processLocationTranslations, saveTranslations } = await import('./translation.api')
         // Don't await this - let it run in the background
         processLocationTranslations(data, true)
             .then(result => {
@@ -402,6 +405,7 @@ export async function createLocation(data, enableTranslation = null) {
 export async function updateLocation(id, updates, enableTranslation = null) {
     if (!USE_SUPABASE) return _mockUpdate(id, updates)
 
+    const { getActiveAIConfig } = await import('./ai-config.api')
     const isAiReady = getActiveAIConfig().isConfigured
     const shouldTranslate = enableTranslation ?? isAiReady
 
@@ -437,6 +441,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                 const current = await getLocation(id)
                 const merged = { ...current, ...updates }
                 
+                const { processLocationTranslations } = await import('./translation.api')
                 const result = await processLocationTranslations(merged, true)
                 locationData = result
                 translations = result.translations
@@ -460,6 +465,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     // Update translations
     if (translations) {
         try {
+            const { saveTranslations } = await import('./translation.api')
             await saveTranslations(updated.id, translations)
         } catch (error) {
             console.error('[locations.api] Failed to save translations:', error)
@@ -500,6 +506,7 @@ export async function getLocationTranslated(id, lang = 'en') {
     if (!location) return null
 
     // Get translations
+    const { getTranslations } = await import('./translation.api')
     const translations = await getTranslations(id)
     
     if (translations && translations[lang]) {

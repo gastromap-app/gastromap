@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
-import { getLocations } from '@/shared/api/locations.api'
+// import { getLocations } from '@/shared/api/locations.api' // REMOVED to break cycle
 
 /**
  * useLocationsStore — client-side filter state for the locations list.
@@ -194,6 +194,7 @@ export const useLocationsStore = create((set, get) => ({
         if (get().isLoading) return
         set({ isLoading: true })
         try {
+            const { getLocations } = await import('@/shared/api/locations.api')
             const { data } = await getLocations({ limit: 500 })
             if (data?.length) {
                 set((state) => ({

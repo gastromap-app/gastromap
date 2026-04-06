@@ -10,7 +10,7 @@
  * Mutation hooks follow the pattern: use<Verb><Entity>Mutation
  */
 
-import { getOpenFoodFactsContext, getIngredientCulinaryContext } from './openfoodfacts.api'
+// ─── Core Imports ──────────────────────────────────────────────────────────
 import {
     useQuery,
     useMutation,
@@ -19,18 +19,9 @@ import {
 } from '@tanstack/react-query'
 import { queryClient } from '@/shared/config/queryClient'
 
-import {
-    getLocations,
-    getLocationById,
-    getCategories,
-    getLocationsNearby,
-    createLocation,
-    updateLocation,
-    deleteLocation,
-} from './locations.api'
-
-import { analyzeQuery, extractLocationData } from './ai.api'
-import * as aiAssistant from './ai-assistant.service'
+// ─── API Module Imports (Refactored to minimize top-level cycles) ────────────────
+// Note: We use dynamic imports inside the hooks to prevent "ReferenceError: Cannot access before initialization" cycles.
+// Essential shared types/utilities can remain static.
 
 // ─── Query Keys (centralised to avoid string typos) ───────────────────────
 export const queryKeys = {
@@ -55,7 +46,10 @@ export const queryKeys = {
 export function useLocations(filters = {}) {
     return useQuery({
         queryKey: queryKeys.locations.filtered(filters),
-        queryFn: () => getLocations(filters),
+        queryFn: async () => {
+            const { getLocations } = await import('./locations.api')
+            return getLocations(filters)
+        },
     })
 }
 
@@ -66,8 +60,10 @@ export function useLocations(filters = {}) {
 export function useInfiniteLocations(filters = {}) {
     return useInfiniteQuery({
         queryKey: [...queryKeys.locations.filtered(filters), 'infinite'],
-        queryFn: ({ pageParam = 0 }) =>
-            getLocations({ ...filters, limit: 10, offset: pageParam }),
+        queryFn: async ({ pageParam = 0 }) => {
+            const { getLocations } = await import('./locations.api')
+            return getLocations({ ...filters, limit: 10, offset: pageParam })
+        },
         getNextPageParam: (lastPage, pages) =>
             lastPage.hasMore ? pages.length * 10 : undefined,
         initialPageParam: 0,
@@ -81,7 +77,10 @@ export function useInfiniteLocations(filters = {}) {
 export function useLocation(id) {
     return useQuery({
         queryKey: queryKeys.locations.detail(id),
-        queryFn: () => getLocationById(id),
+        queryFn: async () => {
+            const { getLocationById } = await import('./locations.api')
+            return getLocationById(id)
+        },
         enabled: Boolean(id),
     })
 }
@@ -92,7 +91,10 @@ export function useLocation(id) {
 export function useCategories() {
     return useQuery({
         queryKey: queryKeys.categories,
-        queryFn: getCategories,
+        queryFn: async () => {
+            const { getCategories } = await import('./locations.api')
+            return getCategories()
+        },
         staleTime: Infinity, // categories rarely change
     })
 }
@@ -105,7 +107,10 @@ export function useCategories() {
 export function useLocationsNearby(coords, radiusKm = 2) {
     return useQuery({
         queryKey: queryKeys.locations.nearby(coords),
-        queryFn: () => getLocationsNearby(coords, radiusKm),
+        queryFn: async () => {
+            const { getLocationsNearby } = await import('./locations.api')
+            return getLocationsNearby(coords, radiusKm)
+        },
         enabled: Boolean(coords?.lat && coords?.lng),
     })
 }
@@ -115,7 +120,10 @@ export function useLocationsNearby(coords, radiusKm = 2) {
 export function useCreateLocationMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: createLocation,
+        mutationFn: async (data) => {
+            const { createLocation } = await import('./locations.api')
+            return createLocation(data)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.locations.all }),
     })
 }
@@ -123,7 +131,10 @@ export function useCreateLocationMutation() {
 export function useUpdateLocationMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, updates }) => updateLocation(id, updates),
+        mutationFn: async ({ id, updates }) => {
+            const { updateLocation } = await import('./locations.api')
+            return updateLocation(id, updates)
+        },
         onSuccess: (_data, { id }) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
@@ -134,7 +145,10 @@ export function useUpdateLocationMutation() {
 export function useDeleteLocationMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: deleteLocation,
+        mutationFn: async (id) => {
+            const { deleteLocation } = await import('./locations.api')
+            return deleteLocation(id)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.locations.all }),
     })
 }
@@ -146,13 +160,19 @@ export function useDeleteLocationMutation() {
  */
 export function useAIQueryMutation() {
     return useMutation({
-        mutationFn: ({ message, context }) => analyzeQuery(message, context),
+        mutationFn: async ({ message, context }) => {
+            const { analyzeQuery } = await import('./ai.api')
+            return analyzeQuery(message, context)
+        },
     })
 }
 
 export function useExtractLocationMutation() {
     return useMutation({
-        mutationFn: (query) => extractLocationData(query),
+        mutationFn: async (query) => {
+            const { extractLocationData } = await import('./ai.api')
+            return extractLocationData(query)
+        },
     })
 }
 
@@ -164,7 +184,10 @@ export function useExtractLocationMutation() {
 export function useReindexLocationSemanticMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: (id) => aiAssistant.reindexLocationSemantic(id),
+        mutationFn: async (id) => {
+            const { reindexLocationSemantic } = await import('./ai-assistant.service')
+            return reindexLocationSemantic(id)
+        },
         onSuccess: (_data, id) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
@@ -178,7 +201,10 @@ export function useReindexLocationSemanticMutation() {
 export function useBulkReindexLocationsMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: (config) => aiAssistant.bulkReindexLocations(config),
+        mutationFn: async (config) => {
+            const { bulkReindexLocations } = await import('./ai-assistant.service')
+            return bulkReindexLocations(config)
+        },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
         },
@@ -191,7 +217,10 @@ export function useBulkReindexLocationsMutation() {
 export function useSyncLocationWithKGMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: (id) => aiAssistant.syncLocationWithKnowledgeGraph(id),
+        mutationFn: async (id) => {
+            const { syncLocationWithKnowledgeGraph } = await import('./ai-assistant.service')
+            return syncLocationWithKnowledgeGraph(id)
+        },
         onSuccess: (_data, id) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
         },
@@ -199,40 +228,79 @@ export function useSyncLocationWithKGMutation() {
 }
 
 // ─── Admin Stats ───
-import { getAdminStats, getRecentLocations, getRecentActivity, getProfiles, updateProfileRole, getPendingReviews, updateReviewStatus, getPendingLocations } from './admin.api'
-
 export function useAdminStats() {
-    return useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['admin-stats'], 
+        queryFn: async () => {
+            const { getAdminStats } = await import('./admin.api')
+            return getAdminStats()
+        }, 
+        staleTime: 60_000 
+    })
 }
 
 export function useRecentLocations(limit = 5) {
-    return useQuery({ queryKey: ['recent-locations', limit], queryFn: () => getRecentLocations(limit), staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['recent-locations', limit], 
+        queryFn: async () => {
+            const { getRecentLocations } = await import('./admin.api')
+            return getRecentLocations(limit)
+        }, 
+        staleTime: 60_000 
+    })
 }
 
 export function useRecentActivity(limit = 10) {
-    return useQuery({ queryKey: ['recent-activity', limit], queryFn: () => getRecentActivity(limit), staleTime: 30_000 })
+    return useQuery({ 
+        queryKey: ['recent-activity', limit], 
+        queryFn: async () => {
+            const { getRecentActivity } = await import('./admin.api')
+            return getRecentActivity(limit)
+        }, 
+        staleTime: 30_000 
+    })
 }
 
 // ─── Admin Users ───
 export function useProfiles() {
-    return useQuery({ queryKey: ['profiles'], queryFn: getProfiles, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['profiles'], 
+        queryFn: async () => {
+            const { getProfiles } = await import('./admin.api')
+            return getProfiles()
+        }, 
+        staleTime: 60_000 
+    })
 }
 
 export function useUpdateProfileRoleMutation() {
     return useMutation({
-        mutationFn: ({ userId, role }) => updateProfileRole(userId, role),
+        mutationFn: async ({ userId, role }) => {
+            const { updateProfileRole } = await import('./admin.api')
+            return updateProfileRole(userId, role)
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profiles'] }),
     })
 }
 
 // ─── Moderation ───
 export function usePendingReviews() {
-    return useQuery({ queryKey: ['pending-reviews'], queryFn: getPendingReviews, staleTime: 30_000 })
+    return useQuery({ 
+        queryKey: ['pending-reviews'], 
+        queryFn: async () => {
+            const { getPendingReviews } = await import('./admin.api')
+            return getPendingReviews()
+        }, 
+        staleTime: 30_000 
+    })
 }
 
 export function useUpdateReviewStatusMutation() {
     return useMutation({
-        mutationFn: ({ reviewId, status, comment }) => updateReviewStatus(reviewId, status, comment),
+        mutationFn: async ({ reviewId, status, comment }) => {
+            const { updateReviewStatus } = await import('./admin.api')
+            return updateReviewStatus(reviewId, status, comment)
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['pending-reviews'] })
             queryClient.invalidateQueries({ queryKey: ['reviews'] })
@@ -241,12 +309,22 @@ export function useUpdateReviewStatusMutation() {
 }
 
 export function usePendingLocations() {
-    return useQuery({ queryKey: ['pending-locations'], queryFn: getPendingLocations, staleTime: 30_000 })
+    return useQuery({ 
+        queryKey: ['pending-locations'], 
+        queryFn: async () => {
+            const { getPendingLocations } = await import('./admin.api')
+            return getPendingLocations()
+        }, 
+        staleTime: 30_000 
+    })
 }
 
 export function useUpdateLocationStatusMutation() {
     return useMutation({
-        mutationFn: ({ id, status }) => updateLocation(id, { status }),
+        mutationFn: async ({ id, status }) => {
+            const { updateLocation } = await import('./locations.api')
+            return updateLocation(id, { status })
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['locations'] })
             queryClient.invalidateQueries({ queryKey: ['pending-locations'] })
@@ -262,7 +340,10 @@ export function useUpdateLocationStatusMutation() {
 export function useCategoryStats() {
     return useQuery({
         queryKey: ['admin-stats'],          // ← same key as useAdminStats()
-        queryFn: getAdminStats,
+        queryFn: async () => {
+            const { getAdminStats } = await import('./admin.api')
+            return getAdminStats()
+        },
         staleTime: 60_000,
         select: (data) => data?.locations || {},
     })
@@ -271,7 +352,10 @@ export function useCategoryStats() {
 export function useTopLocations(limit = 5) {
     return useQuery({
         queryKey: ['admin-stats'],          // ← same key — deduped, no extra request
-        queryFn: getAdminStats,
+        queryFn: async () => {
+            const { getAdminStats } = await import('./admin.api')
+            return getAdminStats()
+        },
         staleTime: 60_000,
         select: (data) => (data?.top_locations || []).slice(0, limit),
     })
@@ -280,7 +364,10 @@ export function useTopLocations(limit = 5) {
 export function useEngagementStats() {
     return useQuery({
         queryKey: ['admin-stats'],          // ← same key — deduped
-        queryFn: getAdminStats,
+        queryFn: async () => {
+            const { getAdminStats } = await import('./admin.api')
+            return getAdminStats()
+        },
         staleTime: 30_000,
         select: (data) => data?.engagement || {},
     })
@@ -289,26 +376,49 @@ export function useEngagementStats() {
 export function usePaymentStats() {
     return useQuery({
         queryKey: ['admin-stats'],          // ← same key — deduped
-        queryFn: getAdminStats,
+        queryFn: async () => {
+            const { getAdminStats } = await import('./admin.api')
+            return getAdminStats()
+        },
         staleTime: 60_000,
         select: (data) => data?.payments || {},
     })
 }
 
 // ─── Favorites ───
-import { getUserFavorites, getUserFavoritesWithLocations, addFavorite, removeFavorite, isFavorite } from './favorites.api'
+// ─── Favorites ───
 
+// ─── Favorites ───
 export function useUserFavorites(userId) {
-    return useQuery({ queryKey: ['favorites', userId], queryFn: () => getUserFavorites(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['favorites', userId], 
+        queryFn: async () => {
+            const { getUserFavorites } = await import('./favorites.api')
+            return getUserFavorites(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useUserFavoritesWithLocations(userId) {
-    return useQuery({ queryKey: ['favorites-with-locations', userId], queryFn: () => getUserFavoritesWithLocations(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['favorites-with-locations', userId], 
+        queryFn: async () => {
+            const { getUserFavoritesWithLocations } = await import('./favorites.api')
+            return getUserFavoritesWithLocations(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useAddFavoriteMutation() {
     return useMutation({
-        mutationFn: ({ userId, locationId }) => addFavorite(userId, locationId),
+        mutationFn: async ({ userId, locationId }) => {
+            const { addFavorite } = await import('./favorites.api')
+            return addFavorite(userId, locationId)
+        },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['favorites', userId] })
             queryClient.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
@@ -318,7 +428,10 @@ export function useAddFavoriteMutation() {
 
 export function useRemoveFavoriteMutation() {
     return useMutation({
-        mutationFn: ({ userId, locationId }) => removeFavorite(userId, locationId),
+        mutationFn: async ({ userId, locationId }) => {
+            const { removeFavorite } = await import('./favorites.api')
+            return removeFavorite(userId, locationId)
+        },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['favorites', userId] })
             queryClient.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
@@ -327,19 +440,39 @@ export function useRemoveFavoriteMutation() {
 }
 
 // ─── Visits ───
-import { getUserVisits, getUserVisitsWithLocations, addVisit, deleteVisit, hasVisited } from './visits.api'
+// ─── Visits ───
 
+// ─── Visits ───
 export function useUserVisits(userId) {
-    return useQuery({ queryKey: ['visits', userId], queryFn: () => getUserVisits(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['visits', userId], 
+        queryFn: async () => {
+            const { getUserVisits } = await import('./visits.api')
+            return getUserVisits(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useUserVisitsWithLocations(userId) {
-    return useQuery({ queryKey: ['visits-with-locations', userId], queryFn: () => getUserVisitsWithLocations(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['visits-with-locations', userId], 
+        queryFn: async () => {
+            const { getUserVisitsWithLocations } = await import('./visits.api')
+            return getUserVisitsWithLocations(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useAddVisitMutation() {
     return useMutation({
-        mutationFn: ({ userId, locationId, rating, reviewText }) => addVisit(userId, locationId, rating, reviewText),
+        mutationFn: async ({ userId, locationId, rating, reviewText }) => {
+            const { addVisit } = await import('./visits.api')
+            return addVisit(userId, locationId, rating, reviewText)
+        },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['visits', userId] })
             queryClient.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
@@ -349,7 +482,10 @@ export function useAddVisitMutation() {
 
 export function useDeleteVisitMutation() {
     return useMutation({
-        mutationFn: ({ visitId, userId }) => deleteVisit(visitId),
+        mutationFn: async ({ visitId, userId }) => {
+            const { deleteVisit } = await import('./visits.api')
+            return deleteVisit(visitId)
+        },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['visits', userId] })
             queryClient.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
@@ -358,19 +494,38 @@ export function useDeleteVisitMutation() {
 }
 
 // ─── Reviews ───
-import { getLocationReviews, getUserReviews, createReview } from './reviews.api'
+// ─── Reviews ───
 
+// ─── Reviews ───
 export function useLocationReviews(locationId) {
-    return useQuery({ queryKey: ['reviews', locationId], queryFn: () => getLocationReviews(locationId), staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['reviews', locationId], 
+        queryFn: async () => {
+            const { getLocationReviews } = await import('./reviews.api')
+            return getLocationReviews(locationId)
+        }, 
+        staleTime: 60_000 
+    })
 }
 
 export function useUserReviews(userId) {
-    return useQuery({ queryKey: ['user-reviews', userId], queryFn: () => getUserReviews(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['user-reviews', userId], 
+        queryFn: async () => {
+            const { getUserReviews } = await import('./reviews.api')
+            return getUserReviews(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useCreateReviewMutation() {
     return useMutation({
-        mutationFn: ({ userId, locationId, rating, reviewText }) => createReview(userId, locationId, rating, reviewText),
+        mutationFn: async ({ userId, locationId, rating, reviewText }) => {
+            const { createReview } = await import('./reviews.api')
+            return createReview(userId, locationId, rating, reviewText)
+        },
         onSuccess: (_, { locationId }) => {
             queryClient.invalidateQueries({ queryKey: ['reviews', locationId] })
         },
@@ -378,26 +533,54 @@ export function useCreateReviewMutation() {
 }
 
 // ─── Leaderboard ───
-import { getLeaderboard, getUserRank } from './leaderboard.api'
+// ─── Leaderboard ───
 
+// ─── Leaderboard ───
 export function useLeaderboard(limit = 50) {
-    return useQuery({ queryKey: ['leaderboard'], queryFn: () => getLeaderboard(limit), staleTime: 5 * 60_000 })
+    return useQuery({ 
+        queryKey: ['leaderboard'], 
+        queryFn: async () => {
+            const { getLeaderboard } = await import('./leaderboard.api')
+            return getLeaderboard(limit)
+        }, 
+        staleTime: 5 * 60_000 
+    })
 }
 
 export function useUserRank(userId) {
-    return useQuery({ queryKey: ['user-rank', userId], queryFn: () => getUserRank(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['user-rank', userId], 
+        queryFn: async () => {
+            const { getUserRank } = await import('./leaderboard.api')
+            return getUserRank(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 // ─── Preferences ───
-import { getUserPreferences, updateUserPreferences } from './preferences.api'
+// ─── Preferences ───
 
+// ─── Preferences ───
 export function useUserPreferences(userId) {
-    return useQuery({ queryKey: ['user-preferences', userId], queryFn: () => getUserPreferences(userId), enabled: !!userId, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['user-preferences', userId], 
+        queryFn: async () => {
+            const { getUserPreferences } = await import('./preferences.api')
+            return getUserPreferences(userId)
+        }, 
+        enabled: !!userId, 
+        staleTime: 60_000 
+    })
 }
 
 export function useUpdatePreferencesMutation() {
     return useMutation({
-        mutationFn: ({ userId, preferences }) => updateUserPreferences(userId, preferences),
+        mutationFn: async ({ userId, preferences }) => {
+            const { updateUserPreferences } = await import('./preferences.api')
+            return updateUserPreferences(userId, preferences)
+        },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['user-preferences', userId] })
         },
@@ -405,13 +588,7 @@ export function useUpdatePreferencesMutation() {
 }
 
 // ─── Knowledge Graph ───
-import {
-    getCuisines, getCuisineById, createCuisine, updateCuisine, deleteCuisine,
-    getDishes, createDish, updateDish, deleteDish,
-    getIngredients, createIngredient, updateIngredient, deleteIngredient,
-    getKnowledgeStats, searchCuisinesSemantic, getAIContextForQuery,
-    syncKGToLocations,
-} from './knowledge-graph.api'
+// ─── Knowledge Graph hooks ────────────────────────────────────────────────────
 
 // ─── Knowledge Graph hooks ────────────────────────────────────────────────────
 // staleTime: Infinity  → React Query never considers KG data stale in-memory.
@@ -433,7 +610,10 @@ import {
 export function useCuisines() {
     return useQuery({
         queryKey: ['knowledge-cuisines'],
-        queryFn: getCuisines,
+        queryFn: async () => {
+            const { getCuisines } = await import('./knowledge-graph.api')
+            return getCuisines()
+        },
         staleTime: 30_000,   // 30s — allows invalidateQueries to trigger refetch
         gcTime: 5 * 60_000,
         retry: 2,
@@ -443,7 +623,10 @@ export function useCuisines() {
 export function useCuisine(id) {
     return useQuery({
         queryKey: ['knowledge-cuisine', id],
-        queryFn: () => getCuisineById(id),
+        queryFn: async () => {
+            const { getCuisineById } = await import('./knowledge-graph.api')
+            return getCuisineById(id)
+        },
         enabled: !!id,
         staleTime: 30_000,
         gcTime: 5 * 60_000,
@@ -453,7 +636,10 @@ export function useCuisine(id) {
 export function useCreateCuisineMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: createCuisine,
+        mutationFn: async (cuisine) => {
+            const { createCuisine } = await import('./knowledge-graph.api')
+            return createCuisine(cuisine)
+        },
         // API already called invalidateCacheGroup('cuisines'); now bust React Query too
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
     })
@@ -462,7 +648,10 @@ export function useCreateCuisineMutation() {
 export function useUpdateCuisineMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, updates }) => updateCuisine(id, updates),
+        mutationFn: async ({ id, updates }) => {
+            const { updateCuisine } = await import('./knowledge-graph.api')
+            return updateCuisine(id, updates)
+        },
         onSuccess: (_, { id }) => {
             qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
             qc.invalidateQueries({ queryKey: ['knowledge-cuisine', id] })
@@ -473,7 +662,10 @@ export function useUpdateCuisineMutation() {
 export function useDeleteCuisineMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: deleteCuisine,
+        mutationFn: async (id) => {
+            const { deleteCuisine } = await import('./knowledge-graph.api')
+            return deleteCuisine(id)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
     })
 }
@@ -481,7 +673,10 @@ export function useDeleteCuisineMutation() {
 export function useDishes(cuisineId = null) {
     return useQuery({
         queryKey: ['knowledge-dishes', cuisineId],
-        queryFn: () => getDishes(cuisineId),
+        queryFn: async () => {
+            const { getDishes } = await import('./knowledge-graph.api')
+            return getDishes(cuisineId)
+        },
         staleTime: 30_000,
         gcTime: 5 * 60_000,
         retry: 2,
@@ -491,7 +686,10 @@ export function useDishes(cuisineId = null) {
 export function useCreateDishMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: createDish,
+        mutationFn: async (dish) => {
+            const { createDish } = await import('./knowledge-graph.api')
+            return createDish(dish)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
     })
 }
@@ -499,7 +697,10 @@ export function useCreateDishMutation() {
 export function useUpdateDishMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, updates }) => updateDish(id, updates),
+        mutationFn: async ({ id, updates }) => {
+            const { updateDish } = await import('./knowledge-graph.api')
+            return updateDish(id, updates)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
     })
 }
@@ -507,7 +708,10 @@ export function useUpdateDishMutation() {
 export function useDeleteDishMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: deleteDish,
+        mutationFn: async (id) => {
+            const { deleteDish } = await import('./knowledge-graph.api')
+            return deleteDish(id)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
     })
 }
@@ -515,7 +719,10 @@ export function useDeleteDishMutation() {
 export function useIngredients(category = null) {
     return useQuery({
         queryKey: ['knowledge-ingredients', category],
-        queryFn: () => getIngredients(category),
+        queryFn: async () => {
+            const { getIngredients } = await import('./knowledge-graph.api')
+            return getIngredients(category)
+        },
         staleTime: 30_000,
         gcTime: 5 * 60_000,
         retry: 2,
@@ -525,7 +732,10 @@ export function useIngredients(category = null) {
 export function useCreateIngredientMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: createIngredient,
+        mutationFn: async (ingredient) => {
+            const { createIngredient } = await import('./knowledge-graph.api')
+            return createIngredient(ingredient)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
     })
 }
@@ -533,7 +743,10 @@ export function useCreateIngredientMutation() {
 export function useUpdateIngredientMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, updates }) => updateIngredient(id, updates),
+        mutationFn: async ({ id, updates }) => {
+            const { updateIngredient } = await import('./knowledge-graph.api')
+            return updateIngredient(id, updates)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
     })
 }
@@ -541,13 +754,23 @@ export function useUpdateIngredientMutation() {
 export function useDeleteIngredientMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: deleteIngredient,
+        mutationFn: async (id) => {
+            const { deleteIngredient } = await import('./knowledge-graph.api')
+            return deleteIngredient(id)
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
     })
 }
 
 export function useKnowledgeStats() {
-    return useQuery({ queryKey: ['knowledge-stats'], queryFn: getKnowledgeStats, staleTime: 60_000 })
+    return useQuery({ 
+        queryKey: ['knowledge-stats'], 
+        queryFn: async () => {
+            const { getKnowledgeStats } = await import('./knowledge-graph.api')
+            return getKnowledgeStats()
+        }, 
+        staleTime: 60_000 
+    })
 }
 
 /**
@@ -556,7 +779,10 @@ export function useKnowledgeStats() {
 export function useSyncKGToLocationsMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: (onProgress) => syncKGToLocations(onProgress),
+        mutationFn: async (onProgress) => {
+            const { syncKGToLocations } = await import('./knowledge-graph.api')
+            return syncKGToLocations(onProgress)
+        },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['locations'] })
         },
@@ -588,7 +814,10 @@ export function useSpoonacularSearchMutation() {
 export function useSearchCuisinesSemantic(query, enabled = true) {
     return useQuery({
         queryKey: ['knowledge-cuisines-semantic', query],
-        queryFn: () => searchCuisinesSemantic(query),
+        queryFn: async () => {
+            const { searchCuisinesSemantic } = await import('./knowledge-graph.api')
+            return searchCuisinesSemantic(query)
+        },
         enabled: enabled && !!query,
         staleTime: 5 * 60_000,
     })
@@ -600,6 +829,9 @@ export { getAIContextForQuery }
 
 export function useCulinaryContextMutation() {
     return useMutation({
-        mutationFn: ({ searchTerm }) => getIngredientCulinaryContext(searchTerm),
+        mutationFn: async ({ searchTerm }) => {
+            const { getIngredientCulinaryContext } = await import('./openfoodfacts.api')
+            return getIngredientCulinaryContext(searchTerm)
+        },
     })
 }

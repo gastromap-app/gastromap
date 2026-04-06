@@ -17,6 +17,17 @@ import { DEFAULT_PROMPTS, testAIConnection, MODEL_CASCADE } from '@/shared/api/a
 
 const FREE_MODELS = [
     {
+        id: 'stepfun/step-3.5-flash:free',
+        name: 'Step 3.5 Flash',
+        provider: 'StepFun',
+        context: '256K',
+        languages: 'EN / RU / PL / UA / multilingual',
+        badge: 'Fastest',
+        badgeColor: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        description: 'Fastest free model. Low latency, high availability. Best for real-time chat.',
+        toolUse: true,
+    },
+    {
         id: 'nvidia/nemotron-nano-9b-v2:free',
         name: 'Nemotron Nano 9B v2',
         provider: 'NVIDIA',

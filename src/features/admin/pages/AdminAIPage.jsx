@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { DEFAULT_PROMPTS, testAIConnection, MODEL_CASCADE } from '@/shared/api/ai.api'
+import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'
 
 // ─── Available OpenRouter free models (April 2026) ──────────────────────────
 // Ordered by reliability/availability - models less likely to be rate-limited first
@@ -236,6 +237,7 @@ const AdminAIPage = () => {
     // ── System Prompts
     const [guidePrompt, setGuidePrompt] = useState(appConfig.aiGuideSystemPrompt ?? '')
     const [assistantPrompt, setAssistantPrompt] = useState(appConfig.aiAssistantSystemPrompt ?? '')
+    const [kgAgentPrompt, setKgAgentPrompt] = useState(appConfig.aiKGAgentSystemPrompt ?? '')
 
     // ── Agents
     const [agentActive, setAgentActive] = useState({
@@ -282,6 +284,7 @@ const AdminAIPage = () => {
             aiApiKey: apiKey,
             aiGuideSystemPrompt: guidePrompt,
             aiAssistantSystemPrompt: assistantPrompt,
+            aiKGAgentSystemPrompt: kgAgentPrompt,
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
@@ -630,6 +633,45 @@ const AdminAIPage = () => {
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {assistantPrompt.length} characters {assistantPrompt.length === 0 && '(using default)'}
+                        </p>
+                    </div>
+
+                    {/* KG Agent Prompt */}
+                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-500/20">
+                                    <Globe className="text-violet-500" size={16} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">Knowledge Graph Agent</h3>
+                                    <p className="text-xs text-slate-500">Enriches the culinary database from Open Food Facts &amp; web sources</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setKgAgentPrompt('')}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                            >
+                                <RotateCcw size={12} />
+                                Reset
+                            </button>
+                        </div>
+                        <div className="mb-3 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
+                            <p className="text-xs text-violet-700 dark:text-violet-300 font-medium leading-relaxed">
+                                This agent connects to Open Food Facts, Wikipedia, and other culinary sources to populate
+                                the Knowledge Graph with cuisines, dishes, and ingredients.
+                                GastroGuide reads this data for semantic, context-aware recommendations.
+                            </p>
+                        </div>
+                        <textarea
+                            value={kgAgentPrompt}
+                            onChange={(e) => setKgAgentPrompt(e.target.value)}
+                            placeholder={DEFAULT_KG_SYSTEM_PROMPT}
+                            rows={8}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-violet-500 transition-all resize-y"
+                        />
+                        <p className="text-xs text-slate-400 mt-2">
+                            {kgAgentPrompt.length} characters {kgAgentPrompt.length === 0 && '(using default — Open Food Facts + Wikipedia sources)'}
                         </p>
                     </div>
                 </div>

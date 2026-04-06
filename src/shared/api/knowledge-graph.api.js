@@ -244,18 +244,51 @@ export async function getCuisineById(id) {
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    const res = await fetch('/api/kg/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, data }),
-    })
+    // 🔍 KGSaveDebug proxy logging
+    const _dbgOn = () => { try { return localStorage.getItem('KG_SAVE_DEBUG') === '1' } catch { return false } }
+    const _log = (label, ...args) => { if (_dbgOn()) console.log(`%c🌐 [proxy] ${label}`, 'color:#c084fc;font-style:italic', ...args) }
+    const _err = (label, ...args) => { if (_dbgOn()) console.error(`%c🌐 [proxy] ${label}`, 'color:#f87171;font-weight:bold', ...args) }
 
-    if (res.status === 404) return null // proxy not deployed yet — fallback to direct
+    _log(`POST /api/kg/save`, { type, data })
 
-    const result = await res.json()
+    let res
+    try {
+        res = await fetch('/api/kg/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, data }),
+        })
+    } catch (fetchErr) {
+        _err(`Network error (server unreachable)`, fetchErr.message)
+        throw new ApiError(`Network error calling /api/kg/save: ${fetchErr.message}`, 0, 'NETWORK_ERROR')
+    }
+
+    _log(`Response: HTTP ${res.status}`)
+
+    if (res.status === 404) {
+        _log('Proxy returned 404 — falling back to direct Supabase insert')
+        return null
+    }
+
+    let result
+    try {
+        result = await res.json()
+    } catch (parseErr) {
+        _err(`Could not parse JSON response`, parseErr.message)
+        throw new ApiError(`/api/kg/save returned non-JSON (status ${res.status})`, res.status, 'PARSE_ERROR')
+    }
+
+    _log(`Response body`, result)
 
     if (!res.ok) {
+        _err(`Save failed`, { status: res.status, error: result.error, details: result.details })
         throw new ApiError(result.error || `KG save failed (proxy): ${res.status}`, res.status, 'SAVE_ERROR')
+    }
+
+    if (result.duplicate) {
+        _log(`Duplicate — already exists: "${data.name}"`)
+    } else {
+        _log(`✓ Saved "${data.name}" → id: ${result.data?.id}`, result.addedColumns?.length ? `(new cols: ${result.addedColumns.join(', ')})` : '')
     }
 
     return result.data

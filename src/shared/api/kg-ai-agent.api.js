@@ -1,15 +1,19 @@
 /**
  * Knowledge Graph AI Agent — API layer
  *
- * Flow:
+ * Optimized flow (April 2026):
  *   User message
- *   → build context: FULL existing data (names + ingredients per dish)
+ *   → build SLIM context: only names for dedup (not ingredients per dish)
+ *   → dynamic max_tokens based on request size
  *   → call OpenRouter — AI returns ONLY missing items (diff-aware)
  *   → client-side dedup filter (safety net)
- *   → return { understanding, plan, items, diffReport, model }
+ *   → return { understanding, plan, items, skipped, model }
  *
- * The component (KGAIAgent.jsx) shows each item with status: 'new' | 'exists' | 'partial'
- * 'partial' = dish exists but missing some ingredients → only new ingredients offered
+ * Key optimizations vs previous version:
+ *  1. buildExistingContext() — removed ingredients from dish lines (~70% fewer tokens)
+ *  2. max_tokens — dynamic: 800 small / 2000 medium / 3500 large request
+ *  3. temperature — lowered 0.65 → 0.3 (JSON tasks need determinism, not creativity)
+ *  4. response_format — kept json_object but prompt is now tighter
  */
 
 import { config } from '@/shared/config/env'
@@ -73,10 +77,9 @@ SMART DIFF RULES — read carefully:
 - Compare the user's request against the EXISTING DATA above
 - Only generate items that are MISSING from the existing data
 - If a cuisine exists → skip it, but still add its missing dishes
-- If a dish exists → check its ingredients list; only add missing ingredients
 - If everything requested already exists → return empty arrays and explain in "understanding"
 - Be precise: "Italian" and "Italian Cuisine" are the same — do not duplicate
-- Ingredient names: "olive oil" = "Olive Oil" = "extra virgin olive oil" — treat as same, pick the best name
+- Ingredient names: "olive oil" = "Olive Oil" — treat as same, pick the best name
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -131,40 +134,68 @@ INGREDIENT SCHEMA:
 
 const SYSTEM_PROMPT = DEFAULT_KG_SYSTEM_PROMPT
 
-// ─── Build rich existing context for AI ──────────────────────────────────────
+// ─── Build SLIM context for dedup ────────────────────────────────────────────
 
 /**
- * Builds a detailed context string for the AI prompt.
- * Includes dish→ingredients mapping so AI can detect partial matches.
+ * Builds a minimal name-only context string for the AI prompt.
+ *
+ * OPTIMIZATION vs old version:
+ *  OLD: "[dish] Carbonara (Italian) | ingredients: egg, pancetta, pecorino, black pepper"
+ *  NEW: "Carbonara"
+ *
+ * Why: AI already knows what's in carbonara — we're only passing names for dedup.
+ * This cuts context token count by ~70% when DB has 50+ dishes with ingredients.
+ *
+ * Token savings example (100 dishes × avg 8 ingredients):
+ *  Old: ~2400 tokens for dishes alone
+ *  New: ~200 tokens for dishes alone
  */
 function buildExistingContext(cuisines, dishes, ingredients) {
-    const lines = []
+    const parts = []
 
     if (cuisines.length > 0) {
-        lines.push('=== EXISTING CUISINES ===')
-        cuisines.forEach(c => {
-            lines.push(`[cuisine] ${c.name}${c.region ? ` (${c.region})` : ''}`)
-        })
+        parts.push('CUISINES: ' + cuisines.map(c => c.name).join(', '))
     }
-
     if (dishes.length > 0) {
-        lines.push('\n=== EXISTING DISHES ===')
-        dishes.forEach(d => {
-            const ings = Array.isArray(d.ingredients) && d.ingredients.length > 0
-                ? ` | ingredients: ${d.ingredients.join(', ')}`
-                : ''
-            lines.push(`[dish] ${d.name}${d.cuisine_name ? ` (${d.cuisine_name})` : ''}${ings}`)
-        })
+        parts.push('DISHES: ' + dishes.map(d => d.name).join(', '))
     }
-
     if (ingredients.length > 0) {
-        lines.push('\n=== EXISTING INGREDIENTS ===')
-        ingredients.forEach(i => {
-            lines.push(`[ingredient] ${i.name}${i.category ? ` (${i.category})` : ''}`)
-        })
+        parts.push('INGREDIENTS: ' + ingredients.map(i => i.name).join(', '))
     }
 
-    return lines.length > 0 ? lines.join('\n') : '(Knowledge Graph is empty — add freely)'
+    if (parts.length === 0) return '(Knowledge Graph is empty — add freely)'
+
+    return parts.join('\n')
+}
+
+// ─── Dynamic max_tokens based on request complexity ───────────────────────────
+
+/**
+ * Estimates how many output tokens the request will need.
+ * Small request ("add carbonara") → 800 tokens
+ * Medium ("add Italian cuisine with 5 dishes") → 2000 tokens
+ * Large ("add all European cuisines with top 10 dishes and ingredients") → 3500 tokens
+ */
+function estimateMaxTokens(userMessage) {
+    const msg = userMessage.toLowerCase()
+
+    // Large: "all X", "every", multiple cuisines + dishes + ingredients in one request
+    if (
+        msg.includes('all ') ||
+        msg.includes('every ') ||
+        (msg.includes('cuisine') && msg.includes('dish') && msg.includes('ingredient'))
+    ) return 3500
+
+    // Medium: one cuisine with dishes, or multiple dishes
+    if (
+        msg.includes('cuisine') ||
+        msg.includes('dishes') ||
+        msg.includes('top ') ||
+        /\d+\s+dish/.test(msg)
+    ) return 2000
+
+    // Small: single item or a few ingredients
+    return 800
 }
 
 // ─── Client-side dedup filter ─────────────────────────────────────────────────
@@ -187,37 +218,35 @@ function clientDedup(items, existingCuisines, existingDishes, existingIngredient
         ingredients: [],
     }
 
-    items.cuisines.forEach(c => {
+    for (const c of (items.cuisines || [])) {
         if (exCuisineNames.has(norm(c.name))) {
             duplicates.cuisines.push(c.name)
         } else {
             filtered.cuisines.push(c)
-            exCuisineNames.add(norm(c.name)) // prevent dupes within the batch itself
+            exCuisineNames.add(norm(c.name)) // prevent intra-batch dupes
         }
-    })
-
-    items.dishes.forEach(d => {
+    }
+    for (const d of (items.dishes || [])) {
         if (exDishNames.has(norm(d.name))) {
             duplicates.dishes.push(d.name)
         } else {
             filtered.dishes.push(d)
             exDishNames.add(norm(d.name))
         }
-    })
-
-    items.ingredients.forEach(i => {
+    }
+    for (const i of (items.ingredients || [])) {
         if (exIngNames.has(norm(i.name))) {
             duplicates.ingredients.push(i.name)
         } else {
             filtered.ingredients.push(i)
             exIngNames.add(norm(i.name))
         }
-    })
+    }
 
     return { filtered, duplicates }
 }
 
-// ─── Main function ────────────────────────────────────────────────────────────
+// ─── Main agent call ──────────────────────────────────────────────────────────
 
 export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     const appCfg = useAppConfigStore.getState()
@@ -229,10 +258,14 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
     const { cuisines = [], dishes = [], ingredients = [] } = context
 
-    // Build rich context (includes dish→ingredients for partial matching)
+    // ── Slim context (names only — no ingredients per dish) ───────────────────
     const existingContext = buildExistingContext(cuisines, dishes, ingredients)
 
-    // Brave Search enrichment
+    // Log token estimate for debugging
+    const contextTokenEstimate = Math.ceil(existingContext.length / 4)
+    console.debug(`[KG Agent] Context size: ${existingContext.length} chars (~${contextTokenEstimate} tokens)`)
+
+    // ── Brave Search enrichment (optional) ───────────────────────────────────
     const braveKey = appCfg.braveSearchApiKey || ''
     let webContext = ''
     if (braveKey.trim()) {
@@ -247,6 +280,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         }
     }
 
+    // ── Compose system prompt ─────────────────────────────────────────────────
     const basePrompt = (appCfg.aiKGAgentSystemPrompt && appCfg.aiKGAgentSystemPrompt.trim())
         ? appCfg.aiKGAgentSystemPrompt
         : DEFAULT_KG_SYSTEM_PROMPT
@@ -256,8 +290,11 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         : basePrompt + '\n\nEXISTING DATA (never duplicate these):\n' + existingContext
     ) + webContext
 
-    const errors = []
+    // ── Dynamic max_tokens ────────────────────────────────────────────────────
+    const maxTokens = estimateMaxTokens(userMessage)
+    console.debug(`[KG Agent] max_tokens: ${maxTokens} (estimated for request size)`)
 
+    // ── Model cascade ─────────────────────────────────────────────────────────
     const primaryModel  = appCfg.aiPrimaryModel  || config.ai.model  || AGENT_MODELS[0]
     const fallbackModel = appCfg.aiFallbackModel || null
     const cascade = [primaryModel]
@@ -265,6 +302,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     for (const m of AGENT_MODELS) {
         if (!cascade.includes(m)) cascade.push(m)
     }
+
+    const errors = []
 
     for (const model of cascade) {
         onModelAttempt?.(model)
@@ -284,8 +323,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
                         { role: 'system', content: systemPrompt },
                         { role: 'user',   content: userMessage },
                     ],
-                    max_tokens: 4096,
-                    temperature: 0.65,
+                    max_tokens:      maxTokens,
+                    temperature:     0.3,   // lowered: JSON tasks need precision, not creativity
                     response_format: { type: 'json_object' },
                 }),
             })
@@ -323,7 +362,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             parsed.skipped           = parsed.skipped        || { cuisines: [], dishes: [], ingredients: [] }
             parsed.model             = model
 
-            // ── Client-side safety dedup ──────────────────────────────────
+            // ── Client-side safety dedup ──────────────────────────────────────
             const { filtered, duplicates } = clientDedup(
                 parsed.items,
                 cuisines,
@@ -332,8 +371,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             )
 
             // Merge AI-reported skipped + client-detected dupes
-            parsed.skipped.cuisines    = [...new Set([...(parsed.skipped.cuisines || []),    ...duplicates.cuisines])]
-            parsed.skipped.dishes      = [...new Set([...(parsed.skipped.dishes || []),      ...duplicates.dishes])]
+            parsed.skipped.cuisines    = [...new Set([...(parsed.skipped.cuisines    || []), ...duplicates.cuisines])]
+            parsed.skipped.dishes      = [...new Set([...(parsed.skipped.dishes      || []), ...duplicates.dishes])]
             parsed.skipped.ingredients = [...new Set([...(parsed.skipped.ingredients || []), ...duplicates.ingredients])]
             parsed.items = filtered
 
@@ -343,13 +382,10 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
                 parsed.skipped.ingredients.length
 
             if (totalSkipped > 0) {
-                console.info(
-                    `[KG Agent] Dedup: skipped ${totalSkipped} duplicates`,
-                    parsed.skipped,
-                )
+                console.info(`[KG Agent] Dedup: skipped ${totalSkipped} duplicates`, parsed.skipped)
             }
 
-            console.info(`[KG Agent] Success with ${model}`, parsed)
+            console.info(`[KG Agent] ✓ ${model} | tokens: ${maxTokens} | ctx: ~${contextTokenEstimate}`, parsed)
             return parsed
 
         } catch (err) {
@@ -360,7 +396,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     throw new Error(`KG Agent: all models failed.\n${errors.join('\n')}`)
 }
 
-// ─── Resolve cuisine_id for dishes ──────────────────────────────────────────
+// ─── Resolve cuisine_id for dishes ───────────────────────────────────────────
 
 export function resolveDishCuisineIds(dishes, allCuisines) {
     return dishes.map(dish => {
@@ -375,7 +411,7 @@ export function resolveDishCuisineIds(dishes, allCuisines) {
     })
 }
 
-// ─── Example prompts ─────────────────────────────────────────────────────────
+// ─── Example prompts ──────────────────────────────────────────────────────────
 
 export const AGENT_EXAMPLE_PROMPTS = [
     'Add all European cuisines, their top 10 dishes and all ingredients',

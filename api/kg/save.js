@@ -91,7 +91,26 @@ export default async function handler(req, res) {
             })
         }
 
-        const existing = await checkResp.json()
+        let existing = await checkResp.json()
+
+        // For cuisines: also check aliases array — e.g. "German Cuisine" → finds row "German" with aliases=["German Cuisine"]
+        if ((!Array.isArray(existing) || existing.length === 0) && type === 'cuisine') {
+            const aliasCheckUrl = `${supabaseUrl}/rest/v1/${table}?aliases=cs.${encodeURIComponent('{"' + name + '"}')}&limit=1`
+            console.log(`[kg/save] Alias dedup check: GET ${aliasCheckUrl}`)
+            try {
+                const aliasResp = await fetch(aliasCheckUrl, { headers: pgHeaders })
+                if (aliasResp.ok) {
+                    const aliasMatches = await aliasResp.json()
+                    if (Array.isArray(aliasMatches) && aliasMatches.length > 0) {
+                        existing = aliasMatches
+                        console.log(`[kg/save] Matched via alias: "${aliasMatches[0].name}"`)
+                    }
+                }
+            } catch (e) {
+                console.warn('[kg/save] Alias check failed (non-fatal):', e.message)
+            }
+        }
+
         if (Array.isArray(existing) && existing.length > 0) {
             console.log(`[kg/save] Duplicate: "${name}" already exists in ${table}`)
             return res.status(200).json({ data: existing[0], duplicate: true })

@@ -17,9 +17,19 @@ const TABLE_MAP = {
 }
 
 const INGREDIENT_CAT_MAP = {
-    oil: 'oil', sauce: 'sauce', grain: 'grain', protein: 'meat', meat: 'meat',
-    dairy: 'dairy', fruit: 'fruit', vegetable: 'vegetable', spice: 'spice',
-    herb: 'herb', nut: 'nut', legume: 'legume', fish: 'fish', seafood: 'seafood',
+    // Direct mappings
+    vegetable: 'vegetable', fruit: 'fruit', meat: 'meat', fish: 'fish',
+    seafood: 'seafood', dairy: 'dairy', grain: 'grain', spice: 'spice',
+    herb: 'herb', nut: 'nut', legume: 'legume', oil: 'oil', sauce: 'sauce',
+    other: 'other',
+    // Aliases AI might send
+    protein: 'meat', poultry: 'meat', pork: 'meat', beef: 'meat',
+    bread: 'grain', pasta: 'grain', rice: 'grain', cereal: 'grain',
+    cheese: 'dairy', milk: 'dairy', cream: 'dairy', butter: 'dairy',
+    mushroom: 'vegetable', fungi: 'vegetable',
+    seed: 'nut', seeds: 'nut',
+    condiment: 'sauce', dressing: 'sauce', paste: 'sauce',
+    fat: 'oil', vinegar: 'sauce',
 }
 
 export default async function handler(req, res) {
@@ -195,46 +205,116 @@ export default async function handler(req, res) {
 
 function sanitize(type, data) {
     if (type === 'cuisine') {
-        const { name, description, region, origin_country, flavor_profile, aliases, typical_dishes, key_ingredients } = data
+        const {
+            name, description, region, origin_country, flavor_profile,
+            aliases, typical_dishes, key_ingredients,
+            spice_level, meal_structure, cooking_methods, dietary_notes,
+        } = data
+
+        // Validate spice_level enum
+        const SPICE_LEVELS = ['mild', 'medium', 'spicy', 'very_spicy']
+        const validSpiceLevel = SPICE_LEVELS.includes(spice_level) ? spice_level : null
+
         return clean({
-            name:            name?.trim(),
-            slug:            slugify(name),
+            name:             name?.trim(),
+            slug:             slugify(name),
             description,
-            // AI sends 'region' (e.g. "Central European"), DB column is 'origin_country'
-            origin_country:  origin_country || region || null,
+            origin_country:   origin_country || null,
+            region:           region || null,            // store both — region is broader
             flavor_profile,
-            aliases:         toArray(aliases),
-            typical_dishes:  toArray(typical_dishes),
-            key_ingredients: toArray(key_ingredients),
+            aliases:          toArray(aliases),
+            typical_dishes:   toArray(typical_dishes),
+            key_ingredients:  toArray(key_ingredients),
+            spice_level:      validSpiceLevel,
+            meal_structure:   meal_structure || null,
+            cooking_methods:  toArray(cooking_methods),
+            dietary_notes:    dietary_notes || null,
         })
     }
+
     if (type === 'dish') {
-        const { name, cuisine_id, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
+        const {
+            name, cuisine_id, description, ingredients,
+            preparation_style, dietary_tags, flavor_notes, best_pairing,
+            serving_temp, course, cook_time_min, difficulty,
+            origin_city, alternative_names, spicy_level, is_signature,
+            vegetarian, vegan, gluten_free,
+        } = data
+
+        // Validate enums
+        const SERVING_TEMPS = ['hot','warm','cold','room_temp']
+        const COURSES = ['appetizer','main','dessert','side','drink','snack','bread']
+        const DIFFICULTIES = ['easy','medium','hard']
+
+        // Derive boolean flags from dietary_tags if not explicitly set
+        const tags = toArray(dietary_tags)
+        const isVegetarian = vegetarian ?? tags.includes('vegetarian') ?? tags.includes('vegan')
+        const isVegan = vegan ?? tags.includes('vegan')
+        const isGlutenFree = gluten_free ?? tags.includes('gluten-free')
+
         return clean({
             name:              name?.trim(),
             slug:              slugify(name),
             cuisine_id:        cuisine_id || null,
             description,
             ingredients:       toArray(ingredients),
-            preparation_style,
-            dietary_tags:      toArray(dietary_tags),
-            flavor_notes,
-            best_pairing,
+            preparation_style: preparation_style || null,
+            dietary_tags:      tags,
+            flavor_notes:      flavor_notes || null,
+            best_pairing:      best_pairing || null,
+            serving_temp:      SERVING_TEMPS.includes(serving_temp) ? serving_temp : null,
+            course:            COURSES.includes(course) ? course : null,
+            cook_time_min:     Number.isInteger(cook_time_min) ? cook_time_min : null,
+            difficulty:        DIFFICULTIES.includes(difficulty) ? difficulty : null,
+            origin_city:       origin_city || null,
+            alternative_names: toArray(alternative_names),
+            spicy_level:       typeof spicy_level === 'number' ? Math.max(0, Math.min(5, spicy_level)) : null,
+            is_signature:      typeof is_signature === 'boolean' ? is_signature : false,
+            vegetarian:        isVegetarian || false,
+            vegan:             isVegan || false,
+            gluten_free:       isGlutenFree || false,
         })
     }
+
     if (type === 'ingredient') {
-        const { name, category, description, flavor_profile, common_pairings, dietary_info, season } = data
+        const {
+            name, category, description, flavor_profile,
+            common_pairings, dietary_info, season,
+            origin_region, health_notes, substitutes, storage_tip,
+            is_allergen, is_vegan, is_vegetarian,
+        } = data
+
+        // Normalize season — AI may send string or array
+        const seasonArr = toArray(season)
+        const VALID_SEASONS = ['spring','summer','fall','winter','year-round']
+        const cleanSeason = seasonArr.length
+            ? seasonArr.filter(s => VALID_SEASONS.includes(s.toLowerCase()))
+            : []
+
+        // Derive booleans from dietary_info if not provided
+        const dInfo = toArray(dietary_info)
+        const derivedVegan = is_vegan ?? dInfo.includes('vegan')
+        const derivedVeg   = is_vegetarian ?? (dInfo.includes('vegetarian') || derivedVegan)
+
         return clean({
-            name:            name?.trim(),
-            slug:            slugify(name),
-            description,
-            flavor_profile,
-            category:        INGREDIENT_CAT_MAP[category?.toLowerCase()] || 'other',
-            common_pairings: toArray(common_pairings),
-            dietary_info:    toArray(dietary_info),
-            season_label:    season || null,
+            name:             name?.trim(),
+            slug:             slugify(name),
+            description:      description || null,
+            flavor_profile:   flavor_profile || null,
+            category:         INGREDIENT_CAT_MAP[category?.toLowerCase()] || 'other',
+            common_pairings:  toArray(common_pairings),
+            dietary_info:     dInfo,
+            season:           cleanSeason,
+            origin_region:    origin_region || null,
+            health_notes:     health_notes || null,
+            substitutes:      toArray(substitutes),
+            storage_tip:      storage_tip || null,
+            is_allergen:      typeof is_allergen === 'boolean' ? is_allergen : false,
+            is_vegan:         derivedVegan || false,
+            is_vegetarian:    derivedVeg || false,
         })
     }
+
     return data
 }
 
@@ -260,3 +340,4 @@ function clean(obj) {
         Object.entries(obj).filter(([, v]) => v !== undefined && v !== null)
     )
 }
+

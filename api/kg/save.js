@@ -1,15 +1,13 @@
 /**
  * Vercel Serverless Function — Knowledge Graph Save Proxy
  *
- * 🧠 SMART SCHEMA: перед каждым INSERT автоматически проверяет
- *    существующие колонки таблицы и добавляет недостающие через ALTER TABLE.
- *    Благодаря этому AI может добавить любое новое поле — БД подстроится сама.
+ * Использует SUPABASE_SERVICE_ROLE_KEY для обхода RLS.
+ * Простой надёжный INSERT без auto-migration (которая зависала).
  *
  * Flow:
- *  1. sanitize()      — базовая типизация данных от AI
- *  2. ensureColumns() — сравнивает поля с реальной схемой, ALTER TABLE если нужно
- *  3. dedup check     — проверка по имени
- *  4. INSERT          — запись с ON CONFLICT DO NOTHING
+ *  1. sanitize()  — типизация данных от AI
+ *  2. dedup check — проверка по имени (ilike)
+ *  3. INSERT      — с Prefer: return=representation
  */
 
 const TABLE_MAP = {
@@ -18,9 +16,6 @@ const TABLE_MAP = {
     ingredient: 'ingredients',
 }
 
-// Кэш схем таблиц на время жизни serverless-инстанса (не между запросами, но внутри батча)
-const schemaCache = {}
-
 const INGREDIENT_CAT_MAP = {
     oil: 'oil', sauce: 'sauce', grain: 'grain', protein: 'meat', meat: 'meat',
     dairy: 'dairy', fruit: 'fruit', vegetable: 'vegetable', spice: 'spice',
@@ -28,185 +23,119 @@ const INGREDIENT_CAT_MAP = {
 }
 
 export default async function handler(req, res) {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    if (req.method === 'OPTIONS') return res.status(200).end()
+
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
     const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+    // Debug: логируем наличие env vars (без значений)
+    console.log('[kg/save] env check:', {
+        hasSupabaseUrl:      !!supabaseUrl,
+        hasServiceKey:       !!serviceKey,
+        supabaseUrlPrefix:   supabaseUrl?.slice(0, 30) || 'MISSING',
+    })
+
     if (!supabaseUrl || !serviceKey) {
-        return res.status(500).json({ error: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured' })
+        return res.status(500).json({
+            error: 'Server misconfiguration',
+            missing: [
+                !supabaseUrl ? 'SUPABASE_URL' : null,
+                !serviceKey  ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+            ].filter(Boolean),
+        })
     }
 
-    const { type, data } = req.body
+    let body = req.body
+    if (typeof body === 'string') {
+        try { body = JSON.parse(body) } catch { return res.status(400).json({ error: 'Invalid JSON body' }) }
+    }
+
+    const { type, data } = body || {}
     if (!type || !data) return res.status(400).json({ error: 'type and data are required' })
 
     const table = TABLE_MAP[type]
-    if (!table) return res.status(400).json({ error: `Unknown type: ${type}` })
+    if (!table) return res.status(400).json({ error: `Unknown type: ${type}. Use: ${Object.keys(TABLE_MAP).join(', ')}` })
 
     const cleanedData = sanitize(type, data)
     const name = cleanedData.name?.trim()
-    if (!name) return res.status(400).json({ error: 'name is required' })
+    if (!name) return res.status(400).json({ error: 'name is required and cannot be empty' })
+
+    console.log(`[kg/save] Saving ${type}: "${name}"`, JSON.stringify(cleanedData))
 
     const pgHeaders = {
         'apikey':        serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
         'Content-Type':  'application/json',
+        'Prefer':        'return=representation',
     }
 
     try {
-        // ── Step 1: Smart schema — ensure all fields exist in DB ──────────────
-        const addedCols = await ensureColumns(table, cleanedData, supabaseUrl, serviceKey)
-        if (addedCols.length > 0) {
-            console.log(`[kg/save] 🧠 Auto-migrated ${table}: added columns [${addedCols.join(', ')}]`)
+        // ── Step 1: Dedup check ───────────────────────────────────────────────
+        const checkUrl = `${supabaseUrl}/rest/v1/${table}?name=ilike.${encodeURIComponent(name)}&limit=1`
+        console.log(`[kg/save] Dedup check: GET ${checkUrl}`)
+
+        const checkResp = await fetch(checkUrl, { headers: pgHeaders })
+
+        if (!checkResp.ok) {
+            const errText = await checkResp.text()
+            console.error(`[kg/save] Dedup check failed: ${checkResp.status}`, errText)
+            return res.status(checkResp.status).json({
+                error: `Supabase dedup check failed: ${checkResp.status}`,
+                details: errText.slice(0, 200),
+            })
         }
 
-        // ── Step 2: Dedup check ───────────────────────────────────────────────
-        const checkResp = await fetch(
-            `${supabaseUrl}/rest/v1/${table}?name=ilike.${encodeURIComponent(name)}&limit=1`,
-            { headers: pgHeaders }
-        )
         const existing = await checkResp.json()
         if (Array.isArray(existing) && existing.length > 0) {
-            console.log(`[kg/save] Duplicate skipped: "${name}" already in ${table}`)
+            console.log(`[kg/save] Duplicate: "${name}" already exists in ${table}`)
             return res.status(200).json({ data: existing[0], duplicate: true })
         }
 
-        // ── Step 3: Insert ────────────────────────────────────────────────────
-        const insertResp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+        // ── Step 2: Insert ────────────────────────────────────────────────────
+        const insertUrl = `${supabaseUrl}/rest/v1/${table}`
+        console.log(`[kg/save] INSERT into ${table}`)
+
+        const insertResp = await fetch(insertUrl, {
             method:  'POST',
-            headers: { ...pgHeaders, 'Prefer': 'return=representation,resolution=ignore-duplicates' },
+            headers: pgHeaders,
             body:    JSON.stringify(cleanedData),
         })
 
-        const result = await insertResp.json()
+        const resultText = await insertResp.text()
+        console.log(`[kg/save] INSERT response: ${insertResp.status}`, resultText.slice(0, 300))
+
+        let result
+        try { result = JSON.parse(resultText) } catch { result = resultText }
 
         if (!insertResp.ok) {
-            const msg = result?.message || result?.error || `Supabase error ${insertResp.status}`
-            console.error(`[kg/save] Insert error for ${table}:`, msg, JSON.stringify(cleanedData))
+            const msg = (typeof result === 'object' ? result?.message || result?.error : result) || `Supabase error ${insertResp.status}`
+            console.error(`[kg/save] INSERT failed for ${table}:`, msg)
             return res.status(insertResp.status).json({ error: msg, details: result })
         }
 
         const saved = Array.isArray(result) ? result[0] : result
-        if (!saved) {
-            return res.status(200).json({ data: { name }, duplicate: true })
+        if (!saved || (Array.isArray(result) && result.length === 0)) {
+            // Supabase может вернуть [] если ON CONFLICT — попробуем получить запись
+            console.log(`[kg/save] Empty INSERT result — fetching by name`)
+            const fetchResp = await fetch(checkUrl, { headers: pgHeaders })
+            const fetched   = await fetchResp.json()
+            const found     = Array.isArray(fetched) ? fetched[0] : null
+            return res.status(200).json({ data: found || { name }, duplicate: !found })
         }
 
         console.log(`[kg/save] ✓ Saved ${type}: "${saved.name}" (id: ${saved.id})`)
-        return res.status(200).json({ data: saved, duplicate: false, addedColumns: addedCols })
+        return res.status(200).json({ data: saved, duplicate: false })
 
     } catch (err) {
-        console.error('[kg/save] Unexpected error:', err.message)
+        console.error('[kg/save] Unexpected error:', err.message, err.stack)
         return res.status(500).json({ error: err.message })
     }
-}
-
-// ─── Smart Schema Engine ──────────────────────────────────────────────────────
-
-/**
- * Получает список реальных колонок таблицы из information_schema.
- * Результат кэшируется в памяти serverless-инстанса.
- */
-async function getTableColumns(table, supabaseUrl, serviceKey) {
-    if (schemaCache[table]) return schemaCache[table]
-
-    const resp = await fetch(
-        `${supabaseUrl}/rest/v1/rpc/get_table_columns`,
-        {
-            method:  'POST',
-            headers: {
-                'apikey':        serviceKey,
-                'Authorization': `Bearer ${serviceKey}`,
-                'Content-Type':  'application/json',
-            },
-            body: JSON.stringify({ p_table: table }),
-        }
-    )
-
-    if (!resp.ok) {
-        // Fallback: если RPC не создана — используем прямой information_schema запрос
-        const fallback = await fetch(
-            `${supabaseUrl}/rest/v1/information_schema_columns?table_name=eq.${table}&select=column_name,data_type`,
-            {
-                headers: {
-                    'apikey':        serviceKey,
-                    'Authorization': `Bearer ${serviceKey}`,
-                },
-            }
-        )
-        if (fallback.ok) {
-            const cols = await fallback.json()
-            const result = Object.fromEntries(cols.map(c => [c.column_name, c.data_type]))
-            schemaCache[table] = result
-            return result
-        }
-        console.warn(`[kg/save] Could not fetch schema for ${table}, skipping auto-migration`)
-        return {}
-    }
-
-    const cols = await resp.json()
-    const result = Object.fromEntries(cols.map(c => [c.column_name, c.data_type]))
-    schemaCache[table] = result
-    return result
-}
-
-/**
- * Определяет SQL-тип для значения из JS.
- * Массивы → TEXT[], числа → NUMERIC, булевы → BOOLEAN, остальное → TEXT
- */
-function inferSqlType(value) {
-    if (Array.isArray(value))          return 'TEXT[]'
-    if (typeof value === 'boolean')    return 'BOOLEAN'
-    if (typeof value === 'number')     return Number.isInteger(value) ? 'INTEGER' : 'NUMERIC'
-    if (value !== null && typeof value === 'object') return 'JSONB'
-    return 'TEXT'
-}
-
-/**
- * Для каждого поля в data которого нет в таблице — выполняет ALTER TABLE ADD COLUMN.
- * Пропускает системные поля (id, created_at, updated_at, embedding).
- * Возвращает список добавленных колонок.
- */
-async function ensureColumns(table, data, supabaseUrl, serviceKey) {
-    const SKIP = new Set(['id', 'created_at', 'updated_at', 'embedding', 'created_by'])
-
-    const existing = await getTableColumns(table, supabaseUrl, serviceKey)
-    if (Object.keys(existing).length === 0) return [] // не удалось получить схему
-
-    const toAdd = []
-    for (const [col, val] of Object.entries(data)) {
-        if (SKIP.has(col)) continue
-        if (existing[col])  continue  // колонка уже есть
-        if (val === null || val === undefined) continue
-        toAdd.push({ col, type: inferSqlType(val) })
-    }
-
-    if (toAdd.length === 0) return []
-
-    // Выполняем ALTER TABLE через SQL RPC
-    const added = []
-    for (const { col, type } of toAdd) {
-        const sql = `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS "${col}" ${type}`
-        const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-            method:  'POST',
-            headers: {
-                'apikey':        serviceKey,
-                'Authorization': `Bearer ${serviceKey}`,
-                'Content-Type':  'application/json',
-            },
-            body: JSON.stringify({ query: sql }),
-        })
-
-        if (resp.ok) {
-            added.push(col)
-            // Обновить кэш
-            if (schemaCache[table]) schemaCache[table][col] = type.toLowerCase()
-        } else {
-            const err = await resp.text()
-            console.warn(`[kg/save] ALTER TABLE failed for ${table}.${col}:`, err.slice(0, 100))
-        }
-    }
-
-    return added
 }
 
 // ─── sanitize() ──────────────────────────────────────────────────────────────
@@ -226,8 +155,6 @@ function sanitize(type, data) {
         })
     }
     if (type === 'dish') {
-        // NOTE: cuisine_name is NOT stored in DB — dishes link via cuisine_id (FK)
-        // resolveDishCuisineIds() in KGAIAgent converts cuisine_name → cuisine_id before calling here
         const { name, cuisine_id, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
         return clean({
             name:              name?.trim(),

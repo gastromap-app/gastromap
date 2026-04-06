@@ -33,7 +33,7 @@ async function _fetchProfile(userId) {
 function _mapUser(authUser, profile) {
     return {
         id: authUser.id,
-        name: profile?.name || authUser.user_metadata?.name || authUser.email.split('@')[0],
+        name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email.split('@')[0],
         email: authUser.email,
         // DB profile role takes priority; ADMIN_EMAILS is a fallback for fresh installs
         role: profile?.role || (ADMIN_EMAILS.includes(authUser.email) ? 'admin' : 'user'),
@@ -90,7 +90,7 @@ export async function signUp(email, password, name) {
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name }, emailRedirectTo: window.location.origin },
+        options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
     })
     if (error) throw new ApiError(error.message, 400, 'AUTH_ERROR')
 
@@ -209,7 +209,7 @@ export async function updateProfile(userId, updates) {
     if (!USE_SUPABASE) { await simulateDelay(300); return { id: userId, ...updates } }
 
     const dbUpdates = {}
-    if (updates.name) dbUpdates.name = updates.name
+    if (updates.name) dbUpdates.full_name = updates.name
     if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
 
     const { data, error } = await supabase
@@ -220,7 +220,7 @@ export async function updateProfile(userId, updates) {
         .single()
 
     if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR')
-    return { id: data.id, name: data.name, avatar: data.avatar_url, role: data.role }
+    return { id: data.id, name: data.full_name, avatar: data.avatar_url, role: data.role }
 }
 
 /**

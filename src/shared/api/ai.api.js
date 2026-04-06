@@ -24,8 +24,9 @@ import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { config } from '@/shared/config/env'
 import { ApiError } from './client'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { supabase } from '@/shared/api/client'
+import { getActiveAIConfig } from './ai-config.api'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
@@ -46,25 +47,6 @@ const MODEL_CASCADE = [
     'qwen/qwen3-coder:free',                 // Last resort, often rate-limited
 ]
 
-/**
- * Get active AI config — admin store overrides env vars at runtime.
- * Admin can change model/key in AdminAIPage without redeploying.
- */
-export function getActiveAIConfig() {
-    const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-    return {
-        apiKey,
-        model:         appCfg.aiPrimaryModel  || config.ai.model,
-        fallbackModel: appCfg.aiFallbackModel || config.ai.modelFallback,
-        isConfigured:  !!apiKey && apiKey !== '',
-        /** 
-         * Use proxy only if NO key is provided (Store or Env) 
-         * AND we are in Production. In Dev, always direct unless specified.
-         */
-        useProxy: (!apiKey || apiKey === '') && import.meta.env.PROD
-    }
-}
 
 // ─── Tool definitions (OpenAI function calling format) ────────────────────
 

@@ -361,22 +361,108 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
             plan.push({ type: 'ingredient', data: items.ingredients[idx], label: items.ingredients[idx].name, icon: Carrot })
         })
 
+        // ── 🔍 KG Save Debugger ───────────────────────────────────────────────────
+        // Активируется через: localStorage.setItem('KG_SAVE_DEBUG', '1')
+        // Деактивируется:     localStorage.removeItem('KG_SAVE_DEBUG')
+        // Или из консоли:     window.KGSaveDebug.enable() / .disable()
+        const _dbg = (() => {
+            const on = () => { try { return localStorage.getItem('KG_SAVE_DEBUG') === '1' } catch { return false } }
+            const C  = {
+                H: 'color:#f472b6;font-weight:bold;font-size:13px',
+                S: 'color:#60a5fa;font-weight:600',
+                OK:'color:#34d399;font-weight:600',
+                W: 'color:#fbbf24;font-weight:600',
+                E: 'color:#f87171;font-weight:600',
+                I: 'color:#94a3b8',
+                T: 'color:#c084fc;font-style:italic',
+            }
+            const fmt = ms => ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms/1000).toFixed(2)}s`
+            let _t = {}
+            return {
+                start: (total) => {
+                    if (!on()) return
+                    console.group(`%c💾 KG Save Session — ${total} items — ${new Date().toLocaleTimeString()}`, C.H)
+                    console.log(`%c📋 Plan:`, C.S, plan.map(p => `${p.type}: "${p.label}"`))
+                },
+                end: (saved, failed) => {
+                    if (!on()) return
+                    console.log('%c' + '─'.repeat(55), C.I)
+                    console.log(`%c✅ Done: ${saved} saved, ${failed} failed`, failed > 0 ? C.W : C.OK)
+                    console.groupEnd()
+                },
+                item: (i, type, data) => {
+                    if (!on()) return
+                    _t[i] = performance.now()
+                    console.group(`%c[${i+1}/${plan.length}] %c${type}: "${data.name}"`, C.S, C.H)
+                    console.log('%c📦 Payload to DB:', C.I, JSON.stringify(data, null, 2))
+                    // Проверяем потенциальные проблемы
+                    const warns = []
+                    if (!data.name)                   warns.push('❌ name is empty!')
+                    if (type === 'dish' && !data.cuisine_id)  warns.push('⚠️  cuisine_id is null — dish will have no cuisine link')
+                    if (type === 'dish' && data.cuisine_name) warns.push('⚠️  cuisine_name still present — should be removed before INSERT')
+                    if (Object.values(data).some(v => v === undefined)) warns.push('⚠️  some fields are undefined (will be ignored by Supabase)')
+                    if (warns.length) warns.forEach(w => console.warn(`   ${w}`))
+                },
+                itemOk: (i, result) => {
+                    if (!on()) return
+                    const t = fmt(performance.now() - (_t[i] || performance.now()))
+                    console.log(`%c✓ Saved %c${t}`, C.OK, C.T, result ? `→ id: ${result.id}` : '')
+                    console.groupEnd()
+                },
+                itemRetry: (i, attempt, reason) => {
+                    if (!on()) return
+                    console.warn(`%c↻ Retry ${attempt+1} — ${reason}`, C.W)
+                },
+                itemFail: (i, err) => {
+                    if (!on()) return
+                    const t = fmt(performance.now() - (_t[i] || performance.now()))
+                    console.log(`%c✗ Failed %c${t}`, C.E, C.T)
+                    console.error('   Error details:', {
+                        message:  err?.message,
+                        status:   err?.status || err?.statusCode,
+                        code:     err?.code,
+                        hint:     err?.hint,
+                        details:  err?.details,
+                        fullErr:  err,
+                    })
+                    console.groupEnd()
+                },
+                proxy: (url, payload) => {
+                    if (!on()) return
+                    console.log(`%c🌐 POST ${url}`, C.I, payload)
+                },
+                proxyResp: (status, body) => {
+                    if (!on()) return
+                    const ok = status >= 200 && status < 300
+                    console.log(`%c${ok ? '✓' : '✗'} Proxy response %c${status}`, ok ? C.OK : C.E, C.T, body)
+                },
+            }
+        })()
+
+        // Экспортируем управление в window
+        if (typeof window !== 'undefined' && !window.KGSaveDebug) {
+            window.KGSaveDebug = {
+                enable:  () => { localStorage.setItem('KG_SAVE_DEBUG', '1');  console.log('%c💾 KG Save Debug ENABLED', 'color:#34d399;font-weight:bold') },
+                disable: () => { localStorage.removeItem('KG_SAVE_DEBUG');     console.log('%c💾 KG Save Debug DISABLED', 'color:#fbbf24;font-weight:bold') },
+                status:  () => console.log(localStorage.getItem('KG_SAVE_DEBUG') === '1' ? '%c💾 Save Debug: ON' : '%c💾 Save Debug: OFF', 'color:#94a3b8'),
+            }
+        }
+
         // Init progress
         const progress = plan.map((p, i) => ({ id: i, label: p.label, icon: p.icon, status: 'pending' }))
         setSaveProgress(progress)
         setPhase('saving')
+        _dbg.start(plan.length)
 
         // ── Throttle settings (Supabase free tier safe) ───────────────────────
-        // Free tier has a small PostgREST connection pool (~10 connections).
-        // Writing sequentially with a 700ms gap keeps us well under the limit.
-        const SAVE_DELAY_MS    = 700   // pause between each write
-        const RATE_LIMIT_DELAY = 5000  // wait after a 429 / "Too Many Requests"
-        const MAX_RETRIES      = 2     // retry attempts per item on rate-limit
+        const SAVE_DELAY_MS    = 700
+        const RATE_LIMIT_DELAY = 5000
+        const MAX_RETRIES      = 2
 
         const sleep = ms => new Promise(r => setTimeout(r, ms))
 
         // Helper: attempt one save with automatic retry on rate-limit (429)
-        const saveWithRetry = async (type, data) => {
+        const saveWithRetry = async (type, data, planIdx) => {
             let lastErr
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                 try {
@@ -389,6 +475,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                         (err?.message || '').toLowerCase().includes('rate limit')
 
                     if (isRateLimit && attempt < MAX_RETRIES - 1) {
+                        _dbg.itemRetry(planIdx, attempt, `rate-limit, waiting ${RATE_LIMIT_DELAY}ms`)
                         console.warn(`[KGAgent] Rate limit on "${data.name}", waiting ${RATE_LIMIT_DELAY}ms…`)
                         await sleep(RATE_LIMIT_DELAY)
                     } else {
@@ -400,13 +487,12 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
         }
 
         // Execute saves sequentially with throttle
-        const createdCuisines = [...cuisines] // track newly created cuisines for dish linking
+        const createdCuisines = [...cuisines]
         const errors = []
 
         for (let i = 0; i < plan.length; i++) {
             const item = plan[i]
 
-            // Throttle: wait before each write except the very first
             if (i > 0) await sleep(SAVE_DELAY_MS)
 
             setSaveProgress(prev => prev.map((s, idx) =>
@@ -415,16 +501,21 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
 
             try {
                 if (item.type === 'cuisine') {
-                    const created = await saveWithRetry('cuisine', item.data)
+                    _dbg.item(i, 'cuisine', item.data)
+                    const created = await saveWithRetry('cuisine', item.data, i)
                     if (created) createdCuisines.push(created)
+                    _dbg.itemOk(i, created)
 
                 } else if (item.type === 'dish') {
-                    // Resolve cuisine_id using all known cuisines
                     const resolved = resolveDishCuisineIds([item.data], createdCuisines)
-                    await saveWithRetry('dish', resolved[0])
+                    _dbg.item(i, 'dish', resolved[0])
+                    await saveWithRetry('dish', resolved[0], i)
+                    _dbg.itemOk(i, null)
 
                 } else if (item.type === 'ingredient') {
-                    await saveWithRetry('ingredient', item.data)
+                    _dbg.item(i, 'ingredient', item.data)
+                    await saveWithRetry('ingredient', item.data, i)
+                    _dbg.itemOk(i, null)
                 }
 
                 setSaveProgress(prev => prev.map((s, idx) =>
@@ -432,6 +523,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                 ))
 
             } catch (err) {
+                _dbg.itemFail(i, err)
                 console.error(`[KGAgent] Failed to save ${item.label}:`, err)
                 errors.push(item.label)
                 setSaveProgress(prev => prev.map((s, idx) =>
@@ -441,6 +533,8 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
         }
 
         const savedCount = plan.length - errors.length
+        _dbg.end(savedCount, errors.length)
+
         setMessages(prev => [
             ...prev,
             {

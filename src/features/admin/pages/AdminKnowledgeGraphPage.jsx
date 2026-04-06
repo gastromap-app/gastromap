@@ -16,6 +16,7 @@ import {
     useKnowledgeStats, useSyncKGToLocationsMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
+import { createCuisine as createCuisineApi, createDish as createDishApi, createIngredient as createIngredientApi } from '@/shared/api/knowledge-graph.api'
 import KGAIAgent from '../components/KGAIAgent'
 
 // ─── LIST ITEM ────────────────────────────────────────────────────────────────

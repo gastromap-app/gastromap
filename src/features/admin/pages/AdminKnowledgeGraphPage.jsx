@@ -554,9 +554,9 @@ const AdminKnowledgeGraphPage = () => {
     const [toast, setToast]           = useState(null)
     const [syncStatus, setSyncStatus] = useState(null)
 
-    const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError    } = useCuisines()
-    const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError      } = useDishes()
-    const { data: ingredients  = [], isLoading: loadingIngredients, error: ingredientsError } = useIngredients()
+    const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
+    const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()
+    const { data: ingredients  = [], isLoading: loadingIngredients, error: ingredientsError, refetch: refetchIngredients } = useIngredients()
 
     const combinedError = cuisinesError || dishesError || ingredientsError
 

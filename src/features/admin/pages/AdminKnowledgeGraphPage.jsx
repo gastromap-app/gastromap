@@ -8,6 +8,7 @@ import {
     CheckCircle2, AlertCircle, Carrot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useQueryClient } from '@tanstack/react-query'
 import {
     useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
@@ -629,10 +630,16 @@ const AdminKnowledgeGraphPage = () => {
 
     // ── AI Agent save handler ─────────────────────────────────────────────────
     const handleAgentSave = async (type, data) => {
-        if (type === 'cuisine')    return await createCuisine.mutateAsync(data)
-        if (type === 'dish')       return await createDish.mutateAsync(data)
-        if (type === 'ingredient') return await createIngredient.mutateAsync(data)
-        throw new Error(`Unknown type: ${type}`)
+        let result
+        if (type === 'cuisine')    result = await createCuisine.mutateAsync(data)
+        else if (type === 'dish')       result = await createDish.mutateAsync(data)
+        else if (type === 'ingredient') result = await createIngredient.mutateAsync(data)
+        else throw new Error(`Unknown type: ${type}`)
+        // Explicitly refetch so the list updates immediately without page reload
+        refetchCuisines()
+        refetchDishes()
+        refetchIngredients()
+        return result
     }
 
     const filteredItems = useMemo(() => {

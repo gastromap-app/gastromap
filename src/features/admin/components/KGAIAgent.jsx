@@ -230,7 +230,7 @@ const SaveStatus = ({ label, icon: Icon, status }) => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) => {
+const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBatchComplete }) => {
     const [phase, setPhase]           = useState('idle')        // idle|thinking|preview|saving|done|error
     const pendingRef                  = useRef(false)            // guard: prevent double-send (StrictMode / SW)
     const [input, setInput]           = useState('')
@@ -563,7 +563,9 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
         ])
 
         setPhase('done')
-    }, [agentResult, selected, selectedCount, cuisines, onSaved])
+        // Notify parent to flush all caches and refetch
+        if (onBatchComplete) onBatchComplete(savedCount, errors)
+    }, [agentResult, selected, selectedCount, cuisines, onSaved, onBatchComplete])
 
     // ── reset ─────────────────────────────────────────────────────────────────
 

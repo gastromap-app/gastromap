@@ -533,7 +533,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         try {
             // Всегда ищем на английском — берём translatedKeywords если есть,
             // иначе используем оригинальный запрос (brave-search.js сам добавит EN bias)
-            const braveQuery = ctx.translatedKeywords?.join(' ') || userMessage
+            const braveQuery = keywords?.join(' ') || userMessage
             KGDebug.info(`Brave query (EN): "${braveQuery}"`)
             const braveResults = await searchBrave(braveQuery, braveKey, 3)
             if (braveResults) {

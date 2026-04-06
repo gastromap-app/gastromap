@@ -7,7 +7,7 @@
 
 import { supabase } from './client'
 import { simulateDelay, ApiError } from './client'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/shared/lib/cache'
 
@@ -250,22 +250,10 @@ async function saveViaProxy(type, data) {
     let jwt = ''
     try {
         console.log('[saveViaProxy] ⏳ Checking current session...')
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        
-        if (currentSession?.access_token) {
-            jwt = currentSession.access_token
-            console.log('[saveViaProxy] ✅ Using existing session')
-            
-            // Optional: If token is close to expiry, refresh it in background?
-            // For now, just use it.
-        } else {
-            console.log('[saveViaProxy] ⏳ No active session, attempting refresh...')
-            const { data: { session: refreshed }, error } = await supabase.auth.refreshSession()
-            if (refreshed?.access_token) {
-                jwt = refreshed.access_token
-                console.log('[saveViaProxy] ✅ JWT refreshed successfully')
-            }
-            if (error) console.warn('[saveViaProxy] ⚠️ Session refresh error:', error.message)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+            jwt = session.access_token
+            console.log('[saveViaProxy] ✅ Using active session')
         }
     } catch (e) {
         console.warn('[saveViaProxy] ❌ Session retrieval exception:', e.message)

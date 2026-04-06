@@ -16,7 +16,12 @@ import {
     useKnowledgeStats, useSyncKGToLocationsMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
-import { createCuisine as createCuisineApi, createDish as createDishApi, createIngredient as createIngredientApi } from '@/shared/api/knowledge-graph.api'
+import { 
+    createCuisine as createCuisineApi, 
+    createDish as createDishApi, 
+    createIngredient as createIngredientApi,
+    mergeEntities
+} from '@/shared/api/knowledge-graph.api'
 import { invalidateCacheGroup } from '@/shared/lib/cache'
 import KGAIAgent from '../components/KGAIAgent'
 import KGEnrichmentAgent from '../components/KGEnrichmentAgent'
@@ -692,7 +697,6 @@ const AdminKnowledgeGraphPage = () => {
 
         const toDeleteIds = group.filter(i => i.id !== keepId).map(i => i.id)
         try {
-            const { mergeEntities } = await import('@/shared/api/knowledge-graph.api')
             await mergeEntities(activeTab, keepId, toDeleteIds)
             
             showToast(`Merged ${toDeleteIds.length} duplicates into master record`)
@@ -811,7 +815,7 @@ const AdminKnowledgeGraphPage = () => {
     const handleCuisineEnriched = useCallback(async (id, updates) => {
         await updateCuisineMutation.mutateAsync({ id, ...updates })
         // Invalidate cache so list refreshes
-        import('@/shared/lib/cache').then(({ invalidateCacheGroup }) => invalidateCacheGroup('cuisines'))
+        invalidateCacheGroup('cuisines')
         queryClient.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
     }, [updateCuisineMutation, queryClient])
 

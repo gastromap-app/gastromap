@@ -8,7 +8,7 @@ import {
     FileText, RotateCcw, Search, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { DEFAULT_PROMPTS, testAIConnection, MODEL_CASCADE } from '@/shared/api/ai.api'
 import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'

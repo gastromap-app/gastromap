@@ -142,12 +142,13 @@ export default async function handler(req, res) {
 
 function sanitize(type, data) {
     if (type === 'cuisine') {
-        const { name, description, region, flavor_profile, aliases, typical_dishes, key_ingredients } = data
+        const { name, description, region, origin_country, flavor_profile, aliases, typical_dishes, key_ingredients } = data
         return clean({
             name:            name?.trim(),
             slug:            slugify(name),
             description,
-            region,
+            // AI sends 'region' (e.g. "Central European"), DB column is 'origin_country'
+            origin_country:  origin_country || region || null,
             flavor_profile,
             aliases:         toArray(aliases),
             typical_dishes:  toArray(typical_dishes),

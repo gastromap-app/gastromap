@@ -206,6 +206,7 @@ const SaveStatus = ({ label, icon: Icon, status }) => (
 
 const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) => {
     const [phase, setPhase]           = useState('idle')        // idle|thinking|preview|saving|done|error
+    const pendingRef                  = useRef(false)            // guard: prevent double-send (StrictMode / SW)
     const [input, setInput]           = useState('')
     const [lastPrompt, setLastPrompt] = useState('')
     const [currentModel, setCurrentModel] = useState('')
@@ -238,6 +239,9 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
     const handleSend = useCallback(async (overridePrompt) => {
         const prompt = overridePrompt ?? input.trim()
         if (!prompt || phase === 'thinking') return
+        // Guard against double invocation (React StrictMode dev / Service Worker)
+        if (pendingRef.current) return
+        pendingRef.current = true
 
         setLastPrompt(prompt)
         setInput('')
@@ -284,9 +288,11 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
             ])
 
             setPhase('preview')
+            pendingRef.current = false
         } catch (err) {
             setErrorMsg(err.message)
             setPhase('error')
+            pendingRef.current = false
             setMessages(prev => [
                 ...prev,
                 { role: 'error', content: err.message },

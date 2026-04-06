@@ -138,28 +138,36 @@ export default async function handler(req, res) {
 
         let existing = await checkResp.json()
 
-        // For cuisines: also check aliases array — e.g. "German Cuisine" → finds row "German" with aliases=["German Cuisine"]
-        if ((!Array.isArray(existing) || existing.length === 0) && type === 'cuisine') {
-            const aliasCheckUrl = `${supabaseUrl}/rest/v1/${table}?aliases=cs.${encodeURIComponent('{"' + name + '"}')}&limit=1`
-            console.log(`[kg/save] Alias dedup check: GET ${aliasCheckUrl}`)
-            try {
-                const aliasResp = await fetch(aliasCheckUrl, { headers: pgHeaders })
-                if (aliasResp.ok) {
-                    const aliasMatches = await aliasResp.json()
-                    if (Array.isArray(aliasMatches) && aliasMatches.length > 0) {
-                        existing = aliasMatches
-                        console.log(`[kg/save] Matched via alias: "${aliasMatches[0].name}"`)
+        // ── Step 1.1: Alias check (if direct name match failed) ───────────────
+        if ((!Array.isArray(existing) || existing.length === 0)) {
+            let aliasQuery = ''
+            if (type === 'cuisine')    aliasQuery = `aliases=cs.${encodeURIComponent('{"' + name + '"}')}`
+            if (type === 'dish')       aliasQuery = `alternative_names=cs.${encodeURIComponent('{"' + name + '"}')}`
+            if (type === 'ingredient') aliasQuery = `substitutes=cs.${encodeURIComponent('{"' + name + '"}')}`
+
+            if (aliasQuery) {
+                const aliasCheckUrl = `${supabaseUrl}/rest/v1/${table}?${aliasQuery}&limit=1`
+                console.log(`[kg/save] Alias dedup check: GET ${aliasCheckUrl}`)
+                try {
+                    const aliasResp = await fetch(aliasCheckUrl, { headers: pgHeaders })
+                    if (aliasResp.ok) {
+                        const aliasMatches = await aliasResp.json()
+                        if (Array.isArray(aliasMatches) && aliasMatches.length > 0) {
+                            existing = aliasMatches
+                            console.log(`[kg/save] Matched via alias/alt: "${aliasMatches[0].name}"`)
+                        }
                     }
+                } catch (e) {
+                    console.warn('[kg/save] Alias check failed (non-fatal):', e.message)
                 }
-            } catch (e) {
-                console.warn('[kg/save] Alias check failed (non-fatal):', e.message)
             }
         }
 
         if (Array.isArray(existing) && existing.length > 0) {
-            console.log(`[kg/save] Duplicate: "${name}" already exists in ${table}`)
+            console.log(`[kg/save] Duplicate: "${name}" already exists (as main name or alias) in ${table}`)
             return res.status(200).json({ data: existing[0], duplicate: true })
         }
+
 
         // ── Step 2: Insert ────────────────────────────────────────────────────
         const insertUrl = `${supabaseUrl}/rest/v1/${table}`

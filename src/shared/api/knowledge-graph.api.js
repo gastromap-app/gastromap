@@ -246,21 +246,32 @@ export async function getCuisineById(id) {
 async function saveViaProxy(type, data) {
     console.log(`[proxy] POST /api/kg/save`, { type, data })
 
-    // ── 1. Get JWT — getSession() only (no refreshSession which can hang) ─────
+    // ── 1. Proactive JWT Refresh — ensures no 401 due to expired token ───────
     let jwt = ''
     try {
-        const { data: sd, error: se } = await supabase.auth.getSession()
-        jwt = sd?.session?.access_token || ''
-        if (se) console.warn('[saveViaProxy] getSession warning:', se.message)
+        // Try to get fresh session first
+        const { data: { session }, error } = await supabase.auth.refreshSession()
+        
+        if (session?.access_token) {
+            jwt = session.access_token
+            console.log('[saveViaProxy] JWT refreshed successfully')
+        } else {
+            // Fallback to current session if refresh didn't return a session
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            jwt = currentSession?.access_token || ''
+            if (jwt) console.log('[saveViaProxy] Using current session (refresh skipped)')
+        }
+
+        if (error) console.warn('[saveViaProxy] Session refresh warning:', error.message)
     } catch (e) {
-        console.warn('[saveViaProxy] Could not get JWT:', e.message)
+        console.warn('[saveViaProxy] Could not refresh/get JWT:', e.message)
     }
 
     if (!jwt) {
-        // Last resort: try sign-in-with-password won't help here — just throw clearly
-        console.error('[saveViaProxy] No JWT available — user must be logged in')
-        throw new ApiError('Not authenticated. Please log in again.', 401, 'AUTH_ERROR')
+        console.error('[proxy] No JWT available — user must be logged in')
+        throw new ApiError('Not authenticated. Please log in to complete this action.', 401, 'AUTH_ERROR')
     }
+
 
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
@@ -722,3 +733,46 @@ export async function syncKGToLocations(onProgress) {
 }
 
 
+/**
+ * Merges multiple entities into one master record.
+ * Deletes redundant records and updates references if necessary.
+ * 
+ * @param {'cuisines' | 'dishes' | 'ingredients'} type 
+ * @param {string} keepId - ID of the record to keep
+ * @param {string[]} idsToDelete - IDs to remove
+ */
+export async function mergeEntities(type, keepId, idsToDelete) {
+    if (!supabase) return { success: true }
+    if (!idsToDelete?.length) return { success: true }
+
+    console.log(`[KG] Merging ${idsToDelete.length} ${type} into ${keepId}`)
+
+    try {
+        // Special case: if merging cuisines, we must update all dishes that pointed to deleted cuisines
+        if (type === 'cuisines') {
+            const { error: relError } = await supabase
+                .from('dishes')
+                .update({ cuisine_id: keepId })
+                .in('cuisine_id', idsToDelete)
+            
+            if (relError) {
+                console.warn('[KG] Could not update dish relations during merge:', relError.message)
+                // Continue anyway, as the main merge is priority
+            }
+        }
+
+        // Delete redundant records
+        const { error } = await supabase
+            .from(type)
+            .delete()
+            .in('id', idsToDelete)
+
+        if (error) throw error
+
+        invalidateCacheGroup(type)
+        return { success: true, count: idsToDelete.length }
+    } catch (error) {
+        console.error(`[KG] Merge error for ${type}:`, error.message)
+        throw new ApiError(error.message, 500, 'MERGE_ERROR')
+    }
+}

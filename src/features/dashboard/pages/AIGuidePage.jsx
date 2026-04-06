@@ -22,7 +22,7 @@ const AIGuidePage = () => {
             {/* Aurora Animation when typing - Full Screen Premium Effect */}
             {isTyping && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                    <div className="absolute bottom-[-10%] left-[-10%] w-[120%] h-[60%] bg-gradient-to-t from-indigo-500/20 via-purple-500/10 to-transparent blur-[120px] animate-pulse" />
+                    <div className="absolute bottom-[-10%] left-[-10%] w-[120%] h-[60%] bg-gradient-to-t from-indigo-500/20 via-indigo-500/10 to-transparent blur-[120px] animate-pulse" />
                     <motion.div
                         animate={{
                             scale: [1, 1.2, 1],

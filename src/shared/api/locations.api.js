@@ -17,9 +17,9 @@ import {
     getTranslations 
 } from './translation.api'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import { getActiveAIConfig } from './ai.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
-const AUTO_TRANSLATE = config.ai.isOpenRouterConfigured
 
 // ─── Shape normaliser ──────────────────────────────────────────────────────
 // Exposes BOTH API-canonical names (title, priceLevel, openingHours …)
@@ -340,16 +340,19 @@ async function enrichLocationWithAI(locationData) {
 /**
  * Create location with automatic translation
  * @param {Object} data - Location data
- * @param {boolean} enableTranslation - Enable auto-translation (default: true if AI configured)
+ * @param {boolean} enableTranslation - Enable auto-translation (default: null)
  * @returns {Promise<Object>} Created location with translations
  */
-export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
+export async function createLocation(data, enableTranslation = null) {
     if (!USE_SUPABASE) return _mockCreate(data)
+
+    const isAiReady = getActiveAIConfig().isConfigured
+    const shouldTranslate = enableTranslation ?? isAiReady
 
     let locationData = { ...data }
 
     // Enrich with AI keywords and embeddings if enabled
-    if (config.ai.isOpenRouterConfigured) {
+    if (isAiReady) {
         console.log('[locations.api] Enriching location with AI keywords + embedding...')
         locationData = await enrichLocationWithAI(locationData)
     }
@@ -366,7 +369,7 @@ export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
 
     // Auto-translate IN BACKGROUND (non-blocking, fire-and-forget)
     // This allows the UI to return immediately while translations happen in the background
-    if (enableTranslation && config.ai.isOpenRouterConfigured) {
+    if (shouldTranslate) {
         console.log('[locations.api] Starting background translation for location:', created.id)
 
         // Don't await this - let it run in the background
@@ -393,17 +396,20 @@ export async function createLocation(data, enableTranslation = AUTO_TRANSLATE) {
  * Update location with automatic translation
  * @param {string} id - Location ID
  * @param {Object} updates - Updated fields
- * @param {boolean} enableTranslation - Enable auto-translation (default: true if AI configured)
+ * @param {boolean} enableTranslation - Enable auto-translation (default: null)
  * @returns {Promise<Object>} Updated location
  */
-export async function updateLocation(id, updates, enableTranslation = AUTO_TRANSLATE) {
+export async function updateLocation(id, updates, enableTranslation = null) {
     if (!USE_SUPABASE) return _mockUpdate(id, updates)
+
+    const isAiReady = getActiveAIConfig().isConfigured
+    const shouldTranslate = enableTranslation ?? isAiReady
 
     let locationData = { ...updates }
     let translations = null
     
     // Auto-translate if translatable fields changed
-    if (enableTranslation && config.ai.isOpenRouterConfigured) {
+    if (shouldTranslate) {
         const translatableFields = ['title', 'description', 'address', 'insider_tip', 'what_to_try', 'ai_context']
         const hasTranslatableField = translatableFields.some(field => updates[field] !== undefined)
         

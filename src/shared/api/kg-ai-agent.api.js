@@ -14,7 +14,7 @@
  */
 
 import { config } from '@/shared/config/env'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
@@ -380,10 +380,17 @@ function translateKeywords(keywords) {
  * "Italian Cuisine" → "italian cuisine" → "italian"
  */
 function norm(str) {
-    return (str || '')
+    if (!str) return ''
+    return str
         .toLowerCase()
-        .replace(/\s+cuisine$/, '')   // убираем суффикс "cuisine"
-        .replace(/\s+food$/, '')      // убираем "food"
+        // 1. Убираем общие артикли и стоп-слова в начале
+        .replace(/^(the|a|an|le|la|el|los|las|de|di|of|для|этот|эта)\s+/i, '')
+        // 2. Убираем общие суффиксы, которые модель может добавить к имени
+        .replace(/\s+(cuisine|food|cooking|kitchen|dish|dishes|style|traditions|tradition|recipes|recipe|кухня|блюда|ингредиент|ингредиенты)$/i, '')
+        // 3. Убираем все спецсимволы и лишние пробелы (оставляем только буквы/цифры)
+        .replace(/[^a-z0-9а-яё]/gi, '')
+        // 4. Очень грубый де-плурализатор (только для EN: s/es)
+        .replace(/e?s$/, '') 
         .trim()
 }
 
@@ -497,30 +504,49 @@ function estimateMaxTokens(userMessage) {
 
 // ─── Client-side dedup (safety net) ──────────────────────────────────────────
 
+/**
+ * Фильтрует сгенерированные AI объекты, если они уже есть в БД.
+ * Использует нормализацию имен для нечёткого сравнения.
+ */
 function clientDedup(items, existingCuisines, existingDishes, existingIngredients) {
-    const n = s => s?.toLowerCase().trim() || ''
-    const exC = new Set(existingCuisines.map(c => n(c.name)))
-    const exD = new Set(existingDishes.map(d => n(d.name)))
-    const exI = new Set(existingIngredients.map(i => n(i.name)))
+    const normalize = s => norm(s) || ''
+    
+    const exC = new Set(existingCuisines.map(c => normalize(c.name)))
+    const exD = new Set(existingDishes.map(d => normalize(d.name)))
+    const exI = new Set(existingIngredients.map(i => normalize(i.name)))
+
+    // Также добавляем альтернативные имена в сеты для более умного дедупа
+    existingCuisines.forEach(c => (c.aliases || []).forEach(a => exC.add(normalize(a))))
+    existingDishes.forEach(d => (d.alternative_names || []).forEach(a => exD.add(normalize(a))))
+    existingIngredients.forEach(i => (i.substitutes || []).forEach(a => exI.add(normalize(a))))
 
     const duplicates = { cuisines: [], dishes: [], ingredients: [] }
     const filtered   = { cuisines: [], dishes: [], ingredients: [] }
 
+    // 1. Cuisines
     for (const c of (items.cuisines || [])) {
-        if (exC.has(n(c.name))) { duplicates.cuisines.push(c.name) }
-        else { filtered.cuisines.push(c); exC.add(n(c.name)) }
+        const n = normalize(c.name)
+        if (exC.has(n)) { duplicates.cuisines.push(c.name) }
+        else { filtered.cuisines.push(c); exC.add(n) }
     }
+
+    // 2. Dishes
     for (const d of (items.dishes || [])) {
-        if (exD.has(n(d.name))) { duplicates.dishes.push(d.name) }
-        else { filtered.dishes.push(d); exD.add(n(d.name)) }
+        const n = normalize(d.name)
+        if (exD.has(n)) { duplicates.dishes.push(d.name) }
+        else { filtered.dishes.push(d); exD.add(n) }
     }
+
+    // 3. Ingredients
     for (const i of (items.ingredients || [])) {
-        if (exI.has(n(i.name))) { duplicates.ingredients.push(i.name) }
-        else { filtered.ingredients.push(i); exI.add(n(i.name)) }
+        const n = normalize(i.name)
+        if (exI.has(n)) { duplicates.ingredients.push(i.name) }
+        else { filtered.ingredients.push(i); exI.add(n) }
     }
 
     return { filtered, duplicates }
 }
+
 
 // ─── Main agent call ──────────────────────────────────────────────────────────
 
@@ -795,6 +821,106 @@ export function resolveDishCuisineIds(dishes, allCuisines) {
         const { cuisine_name, ...rest } = dish
         return { ...rest, cuisine_id: match?.id ?? null }
     })
+}
+
+export async function callEnrichmentAI(cuisine, fieldsToEnrich) {
+    const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+
+    if (!apiKey) {
+        throw new Error('AI API key is not configured. Please add it in Admin → AI Settings.')
+    }
+
+    const prompt = `You are a Senior Culinary Knowledge Expert. Your goal is to accurately fill in missing metadata for a specific cuisine entry.
+
+Cuisine: "${cuisine.name}"
+${cuisine.description ? `Description: ${cuisine.description}` : ''}
+${cuisine.origin_country ? `Origin country: ${cuisine.origin_country}` : ''}
+
+REQUIRED FIELDS TO FILL: ${fieldsToEnrich.join(', ')}
+
+SCHEMAS & RULES:
+- origin_country: string (canonical country name)
+- flavor_profile: string (descriptive, comma-separated dominant tastes)
+- aliases: array of strings (local or alternative names)
+- typical_dishes: array of strings (top 3-5 iconic dishes)
+- key_ingredients: array of strings (top 3-5 foundation ingredients)
+
+OUTPUT FORMAT (STRICT JSON):
+Return ONLY a valid JSON object containing only the requested fields. No explanations, no markdown fences.
+{
+  ${fieldsToEnrich.map(f => `"${f}": ...`).join(',\n  ')}
+}`
+
+    // Reuse the same cascade as KG Agent
+    const primaryModel  = appCfg.aiPrimaryModel  || config.ai.model  || AGENT_MODELS[0]
+    const cascade = [primaryModel, ...AGENT_MODELS.filter(m => m !== primaryModel)]
+
+    KGDebug.header(`Enriching: ${cuisine.name}`)
+    KGDebug.info('Missing fields:', fieldsToEnrich)
+
+    const errors = []
+
+    for (let _mi = 0; _mi < cascade.length; _mi++) {
+        const model = cascade[_mi]
+        KGDebug.model(model, _mi + 1, cascade.length)
+        const _modelStart = performance.now()
+
+        if (_mi > 0) await new Promise(r => setTimeout(r, 1000))
+
+        try {
+            const controller = new AbortController()
+            const timeoutId  = setTimeout(() => controller.abort(), 30_000)
+
+            const resp = await fetch(OPENROUTER_URL, {
+                method: 'POST',
+                signal: controller.signal,
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://gastromap.app',
+                    'X-Title': 'GastroMap KG Enrichment',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 800,
+                    temperature: 0.2,
+                    response_format: { type: 'json_object' }
+                }),
+            })
+            clearTimeout(timeoutId)
+
+            if (!resp.ok) {
+                const errBody = await resp.text().catch(() => '')
+                errors.push(`${model}: ${resp.status} ${errBody.slice(0, 50)}`)
+                continue
+            }
+
+            const data = await resp.json()
+            const raw = data.choices?.[0]?.message?.content?.trim()
+
+            if (!raw) {
+                errors.push(`${model}: empty response`)
+                continue
+            }
+
+            // Cleanup potential markdown if response_format was ignored by model provider
+            const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim()
+            const parsed = JSON.parse(clean)
+
+            KGDebug.modelOk(model, performance.now() - _modelStart, data.usage?.total_tokens || '?')
+            KGDebug.footer(parsed)
+
+            return parsed
+        } catch (err) {
+            errors.push(`${model}: ${err.message}`)
+            KGDebug.modelFail(model, err.message)
+        }
+    }
+
+    KGDebug.footer(null)
+    throw new Error(`Enrichment failed after trying ${cascade.length} models:\n${errors.join('\n')}`)
 }
 
 // ─── Example prompts ──────────────────────────────────────────────────────────

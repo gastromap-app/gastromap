@@ -66,7 +66,7 @@ const ResetPasswordPage = () => {
             <div className="hidden lg:flex lg:w-[45%] relative bg-black text-white p-12 flex-col justify-between overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-60 pointer-events-none">
                     <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-600 rounded-full blur-[120px] animate-pulse" />
-                    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-purple-600 rounded-full blur-[120px] animate-pulse delay-700" />
+                    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-indigo-600 rounded-full blur-[120px] animate-pulse delay-700" />
                 </div>
 
                 <div className="relative z-10">
@@ -78,7 +78,7 @@ const ResetPasswordPage = () => {
 
                 <div className="relative z-10 max-w-md">
                     <h1 className="text-5xl font-bold leading-tight mb-8">
-                        Create a new <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">password</span>
+                        Create a new <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">password</span>
                     </h1>
                     <p className="text-gray-400 text-lg">
                         Make sure your new password is secure and memorable.

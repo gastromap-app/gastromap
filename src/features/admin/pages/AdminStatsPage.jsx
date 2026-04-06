@@ -19,14 +19,13 @@ const AdminStatsPage = () => {
     // Explicit color maps — Tailwind can't scan dynamic template literals like `bg-${color}-500`
     const colorMap = {
         indigo:  { glow: 'bg-indigo-500',  icon: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' },
-        purple:  { glow: 'bg-purple-500',  icon: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
         emerald: { glow: 'bg-emerald-500', icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
         orange:  { glow: 'bg-orange-500',  icon: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
     }
 
     const mainStats = [
         { label: 'Юзеры', value: '12,842', change: '+12%', isPositive: true, icon: Users, color: 'indigo' },
-        { label: 'Объекты', value: '3,456', change: '+5%', isPositive: true, icon: MapPin, color: 'purple' },
+        { label: 'Объекты', value: '3,456', change: '+5%', isPositive: true, icon: MapPin, color: 'indigo' },
         { label: 'Выручка', value: '$45.2k', change: '-2%', isPositive: false, icon: CreditCard, color: 'emerald' },
         { label: 'Конверсия', value: '18.4%', change: '+1%', isPositive: true, icon: TrendingUp, color: 'orange' },
     ]
@@ -34,8 +33,8 @@ const AdminStatsPage = () => {
     const visitsByCity = [
         { city: 'Краков', visits: 4500, color: 'bg-indigo-500' },
         { city: 'Варшава', visits: 3800, color: 'bg-blue-500' },
-        { city: 'Берлин', visits: 2900, color: 'bg-purple-500' },
-        { city: 'Прага', visits: 2100, color: 'bg-violet-500' },
+        { city: 'Берлин', visits: 2900, color: 'bg-indigo-500' },
+        { city: 'Прага', visits: 2100, color: 'bg-indigo-500' },
     ]
 
     return (
@@ -147,9 +146,9 @@ const AdminStatsPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-5 rounded-[20px] bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 group hover:bg-purple-100 dark:hover:bg-purple-500/15 transition-all">
+                        <div className="p-5 rounded-[20px] bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 group hover:bg-indigo-100 dark:hover:bg-indigo-500/15 transition-all">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-purple-500/20 text-purple-500 flex items-center justify-center shadow-sm">
+                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center shadow-sm">
                                     <Clock size={16} />
                                 </div>
                                 <div>

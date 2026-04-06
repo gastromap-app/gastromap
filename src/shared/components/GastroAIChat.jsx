@@ -112,7 +112,7 @@ export function ChatInterface({
                 ref={scrollRef}
             >
                 {isTyping && transparent && (
-                    <div className="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-purple-400/30 via-pink-300/10 to-transparent blur-3xl animate-pulse pointer-events-none z-0" />
+                    <div className="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-indigo-400/30 via-pink-300/10 to-transparent blur-3xl animate-pulse pointer-events-none z-0" />
                 )}
 
                 {messages.map((msg) => {
@@ -222,7 +222,7 @@ export function ChatInterface({
                         className={`relative flex items-center rounded-full border transition-all shadow-lg ${
                             transparent
                                 ? 'bg-white/90 dark:bg-black/70 border-white/40 dark:border-white/20 focus-within:border-white/60 focus-within:bg-white/95 dark:focus-within:bg-black/80 focus-within:shadow-2xl'
-                                : 'bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus-within:border-purple-200 focus-within:bg-white dark:focus-within:bg-gray-800 focus-within:shadow-md'
+                                : 'bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus-within:border-indigo-200 focus-within:bg-white dark:focus-within:bg-gray-800 focus-within:shadow-md'
                         }`}
                     >
                         <Input
@@ -241,7 +241,7 @@ export function ChatInterface({
                             className={`absolute right-2 w-9 h-9 rounded-full transition-all shadow-lg ${
                                 input.trim()
                                     ? transparent
-                                        ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 text-white scale-100 hover:scale-110'
+                                        ? 'bg-gradient-to-tr from-indigo-500 to-indigo-500 text-white scale-100 hover:scale-110'
                                         : 'bg-black text-white scale-100'
                                     : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 scale-90'
                             }`}

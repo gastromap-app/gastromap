@@ -14,6 +14,7 @@
 import { analyzeQuery } from './ai.api'
 import { supabase } from './client'
 import { config } from '@/shared/config/env'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = {
@@ -320,7 +321,10 @@ export function detectLanguage(text) {
  * Enable auto-translation on location create/update
  */
 export async function processLocationTranslations(locationData, autoTranslate = true) {
-    if (!autoTranslate || !config.ai.isOpenRouterConfigured) {
+    const appCfg = useAppConfigStore.getState()
+    const isAIReady = config.ai.isOpenRouterConfigured || appCfg.aiApiKey
+    
+    if (!autoTranslate || !isAIReady) {
         return locationData
     }
     

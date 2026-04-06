@@ -12,9 +12,10 @@ export const useAppConfigStore = create(
             seoKeywords: 'food, gastromap, restaurants, local food, travel, foodie',
 
             // ─── AI model config (overrides env vars at runtime) ───────────────
-            aiApiKey: '',                                              // overrides VITE_OPENROUTER_API_KEY
-            aiPrimaryModel: 'nvidia/nemotron-nano-9b-v2:free',        // overrides VITE_AI_MODEL
-            aiFallbackModel: 'z-ai/glm-4.5-air:free',                 // overrides VITE_AI_MODEL_FALLBACK
+            // Updated 2026-04-06: switched to gpt-oss-120b as primary (best JSON quality)
+            aiApiKey: '',                                                  // overrides VITE_OPENROUTER_API_KEY
+            aiPrimaryModel: 'openai/gpt-oss-120b:free',                   // overrides VITE_AI_MODEL
+            aiFallbackModel: 'meta-llama/llama-3.3-70b-instruct:free',    // overrides VITE_AI_MODEL_FALLBACK
             aiGuideActive: true,
             aiAssistantActive: true,
             aiGuideTemp: 0.7,

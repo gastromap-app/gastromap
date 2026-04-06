@@ -237,18 +237,49 @@ export async function getCuisineById(id) {
     return data
 }
 
+
+/**
+ * Internal helper — saves a KG item via the server-side proxy.
+ * Uses /api/kg/save which has SUPABASE_SERVICE_ROLE_KEY and bypasses RLS.
+ * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
+ */
+async function saveViaProxy(type, data) {
+    const res = await fetch('/api/kg/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, data }),
+    })
+
+    if (res.status === 404) return null // proxy not deployed yet — fallback to direct
+
+    const result = await res.json()
+
+    if (!res.ok) {
+        throw new ApiError(result.error || `KG save failed (proxy): ${res.status}`, res.status, 'SAVE_ERROR')
+    }
+
+    return result.data
+}
+
 export async function createCuisine(cuisine) {
     if (!supabase) {
         await simulateDelay(300)
         return { ...cuisine, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
+    // Try server proxy first (bypasses RLS with service_role key)
+    const proxyResult = await saveViaProxy('cuisine', cuisine)
+    if (proxyResult) {
+        invalidateCacheGroup('cuisines')
+        return proxyResult
+    }
+    // Fallback: direct Supabase (works only if RLS allows anon writes)
     const { data, error } = await supabase
         .from('cuisines')
         .insert([cuisine])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
-    invalidateCacheGroup('cuisines')  // bust L2 so next read fetches fresh
+    invalidateCacheGroup('cuisines')
     return data
 }
 
@@ -317,13 +348,20 @@ export async function createDish(dish) {
         await simulateDelay(300)
         return { ...dish, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
+    // Try server proxy first (bypasses RLS with service_role key)
+    const proxyResult = await saveViaProxy('dish', dish)
+    if (proxyResult) {
+        invalidateCacheGroup('dishes')
+        return proxyResult
+    }
+    // Fallback: direct Supabase
     const { data, error } = await supabase
         .from('dishes')
         .insert([dish])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
-    invalidateCacheGroup('dishes')  // bust all dishes_* cache entries
+    invalidateCacheGroup('dishes')
     return data
 }
 
@@ -392,13 +430,20 @@ export async function createIngredient(ingredient) {
         await simulateDelay(300)
         return { ...ingredient, id: Date.now().toString(), created_at: new Date().toISOString() }
     }
+    // Try server proxy first (bypasses RLS with service_role key)
+    const proxyResult = await saveViaProxy('ingredient', ingredient)
+    if (proxyResult) {
+        invalidateCacheGroup('ingredients')
+        return proxyResult
+    }
+    // Fallback: direct Supabase
     const { data, error } = await supabase
         .from('ingredients')
         .insert([ingredient])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
-    invalidateCacheGroup('ingredients')  // bust all ingredients_* cache entries
+    invalidateCacheGroup('ingredients')
     return data
 }
 

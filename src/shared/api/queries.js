@@ -434,8 +434,8 @@ export function useCuisines() {
     return useQuery({
         queryKey: ['knowledge-cuisines'],
         queryFn: getCuisines,
-        staleTime: Infinity,
-        gcTime: Infinity,
+        staleTime: 30_000,   // 30s — allows invalidateQueries to trigger refetch
+        gcTime: 5 * 60_000,
         retry: 2,
     })
 }
@@ -445,8 +445,8 @@ export function useCuisine(id) {
         queryKey: ['knowledge-cuisine', id],
         queryFn: () => getCuisineById(id),
         enabled: !!id,
-        staleTime: Infinity,
-        gcTime: Infinity,
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
     })
 }
 
@@ -482,8 +482,8 @@ export function useDishes(cuisineId = null) {
     return useQuery({
         queryKey: ['knowledge-dishes', cuisineId],
         queryFn: () => getDishes(cuisineId),
-        staleTime: Infinity,
-        gcTime: Infinity,
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
         retry: 2,
     })
 }
@@ -516,8 +516,8 @@ export function useIngredients(category = null) {
     return useQuery({
         queryKey: ['knowledge-ingredients', category],
         queryFn: () => getIngredients(category),
-        staleTime: Infinity,
-        gcTime: Infinity,
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
         retry: 2,
     })
 }

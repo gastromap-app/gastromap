@@ -813,10 +813,10 @@ const AdminKnowledgeGraphPage = () => {
     // ── KG Enrichment: update single cuisine with AI-filled fields ─────────────
     const updateCuisineMutation = useUpdateCuisineMutation()
     const handleCuisineEnriched = useCallback(async (id, updates) => {
-        await updateCuisineMutation.mutateAsync({ id, ...updates })
+        await updateCuisineMutation.mutateAsync({ id, updates })
         // Invalidate cache so list refreshes
         invalidateCacheGroup('cuisines')
-        queryClient.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
+        await queryClient.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
     }, [updateCuisineMutation, queryClient])
 
     // ── After batch save: flush ALL caches so UI shows new data ────────────────

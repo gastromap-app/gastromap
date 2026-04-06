@@ -17,6 +17,7 @@ import {
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 import { createCuisine as createCuisineApi, createDish as createDishApi, createIngredient as createIngredientApi } from '@/shared/api/knowledge-graph.api'
+import { invalidateCacheGroup } from '@/shared/lib/cache'
 import KGAIAgent from '../components/KGAIAgent'
 
 // ─── LIST ITEM ────────────────────────────────────────────────────────────────
@@ -676,6 +677,25 @@ const AdminKnowledgeGraphPage = () => {
         return result
     }
 
+    // ── After batch save: flush ALL caches so UI shows new data ────────────────
+    const handleBatchComplete = (savedCount, errors) => {
+        // 1. Wipe localStorage L2 cache for all KG entities
+        invalidateCacheGroup('cuisines')
+        invalidateCacheGroup('dishes')
+        invalidateCacheGroup('ingredients')
+        // 2. Force React Query to re-fetch from Supabase (not from cache)
+        queryClient.removeQueries({ queryKey: ['knowledge-cuisines'] })
+        queryClient.removeQueries({ queryKey: ['knowledge-dishes'] })
+        queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
+        queryClient.removeQueries({ queryKey: ['knowledge-stats'] })
+        // 3. Trigger immediate refetch
+        setTimeout(() => {
+            refetchCuisines()
+            refetchDishes()
+            refetchIngredients()
+        }, 300)
+    }
+
     const filteredItems = useMemo(() => {
         const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients
         const items  = Array.isArray(source) ? source : []
@@ -851,6 +871,7 @@ const AdminKnowledgeGraphPage = () => {
                 dishes={dishes}
                 ingredients={ingredients}
                 onSaved={handleAgentSave}
+                onBatchComplete={handleBatchComplete}
             />
 
             {/* ── Spoonacular ── */}

@@ -1,16 +1,15 @@
 /**
  * Vercel Serverless Function — Knowledge Graph Save Proxy
  *
- * Uses SUPABASE_SERVICE_ROLE_KEY (server-side only) to bypass RLS.
- * Deduplication: checks by name before insert — returns existing record if duplicate.
- * DB safety net: ON CONFLICT DO NOTHING via Prefer: resolution=ignore-duplicates.
+ * 🧠 SMART SCHEMA: перед каждым INSERT автоматически проверяет
+ *    существующие колонки таблицы и добавляет недостающие через ALTER TABLE.
+ *    Благодаря этому AI может добавить любое новое поле — БД подстроится сама.
  *
- * Schema alignment (2026-04-06):
- *  cuisines    → name, description, region, flavor_profile, aliases[], typical_dishes[], key_ingredients[]
- *  dishes      → name, cuisine_name, cuisine_id, description, ingredients(JSONB), preparation_style,
- *                dietary_tags[], flavor_notes, best_pairing
- *  ingredients → name, category, description, flavor_profile, common_pairings[], dietary_info[],
- *                season_label (TEXT — replaces season TEXT[])
+ * Flow:
+ *  1. sanitize()      — базовая типизация данных от AI
+ *  2. ensureColumns() — сравнивает поля с реальной схемой, ALTER TABLE если нужно
+ *  3. dedup check     — проверка по имени
+ *  4. INSERT          — запись с ON CONFLICT DO NOTHING
  */
 
 const TABLE_MAP = {
@@ -19,22 +18,13 @@ const TABLE_MAP = {
     ingredient: 'ingredients',
 }
 
-// Maps AI-generated category names → DB CHECK constraint values
+// Кэш схем таблиц на время жизни serverless-инстанса (не между запросами, но внутри батча)
+const schemaCache = {}
+
 const INGREDIENT_CAT_MAP = {
-    oil:       'oil',
-    sauce:     'sauce',
-    grain:     'grain',
-    protein:   'meat',
-    meat:      'meat',
-    dairy:     'dairy',
-    fruit:     'fruit',
-    vegetable: 'vegetable',
-    spice:     'spice',
-    herb:      'herb',
-    nut:       'nut',
-    legume:    'legume',
-    fish:      'fish',
-    seafood:   'seafood',
+    oil: 'oil', sauce: 'sauce', grain: 'grain', protein: 'meat', meat: 'meat',
+    dairy: 'dairy', fruit: 'fruit', vegetable: 'vegetable', spice: 'spice',
+    herb: 'herb', nut: 'nut', legume: 'legume', fish: 'fish', seafood: 'seafood',
 }
 
 export default async function handler(req, res) {
@@ -44,7 +34,7 @@ export default async function handler(req, res) {
     const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !serviceKey) {
-        return res.status(500).json({ error: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured on server' })
+        return res.status(500).json({ error: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured' })
     }
 
     const { type, data } = req.body
@@ -55,35 +45,37 @@ export default async function handler(req, res) {
 
     const cleanedData = sanitize(type, data)
     const name = cleanedData.name?.trim()
-
     if (!name) return res.status(400).json({ error: 'name is required' })
 
-    const headers = {
+    const pgHeaders = {
         'apikey':        serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
         'Content-Type':  'application/json',
-        'Prefer':        'return=representation',
     }
 
     try {
-        // ── Step 1: Check for existing record by name (case-insensitive) ──────
-        const checkUrl = `${supabaseUrl}/rest/v1/${table}?name=ilike.${encodeURIComponent(name)}&limit=1`
-        const checkResp = await fetch(checkUrl, { headers })
-        const existing = await checkResp.json()
+        // ── Step 1: Smart schema — ensure all fields exist in DB ──────────────
+        const addedCols = await ensureColumns(table, cleanedData, supabaseUrl, serviceKey)
+        if (addedCols.length > 0) {
+            console.log(`[kg/save] 🧠 Auto-migrated ${table}: added columns [${addedCols.join(', ')}]`)
+        }
 
+        // ── Step 2: Dedup check ───────────────────────────────────────────────
+        const checkResp = await fetch(
+            `${supabaseUrl}/rest/v1/${table}?name=ilike.${encodeURIComponent(name)}&limit=1`,
+            { headers: pgHeaders }
+        )
+        const existing = await checkResp.json()
         if (Array.isArray(existing) && existing.length > 0) {
-            console.log(`[kg/save] Duplicate skipped: "${name}" already in ${table} (id: ${existing[0].id})`)
+            console.log(`[kg/save] Duplicate skipped: "${name}" already in ${table}`)
             return res.status(200).json({ data: existing[0], duplicate: true })
         }
 
-        // ── Step 2: Insert ────────────────────────────────────────────────────
+        // ── Step 3: Insert ────────────────────────────────────────────────────
         const insertResp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
-            method: 'POST',
-            headers: {
-                ...headers,
-                'Prefer': 'return=representation,resolution=ignore-duplicates',
-            },
-            body: JSON.stringify(cleanedData),
+            method:  'POST',
+            headers: { ...pgHeaders, 'Prefer': 'return=representation,resolution=ignore-duplicates' },
+            body:    JSON.stringify(cleanedData),
         })
 
         const result = await insertResp.json()
@@ -96,12 +88,11 @@ export default async function handler(req, res) {
 
         const saved = Array.isArray(result) ? result[0] : result
         if (!saved) {
-            console.log(`[kg/save] Conflict ignored (UNIQUE): "${name}" already in ${table}`)
             return res.status(200).json({ data: { name }, duplicate: true })
         }
 
         console.log(`[kg/save] ✓ Saved ${type}: "${saved.name}" (id: ${saved.id})`)
-        return res.status(200).json({ data: saved, duplicate: false })
+        return res.status(200).json({ data: saved, duplicate: false, addedColumns: addedCols })
 
     } catch (err) {
         console.error('[kg/save] Unexpected error:', err.message)
@@ -109,67 +100,166 @@ export default async function handler(req, res) {
     }
 }
 
+// ─── Smart Schema Engine ──────────────────────────────────────────────────────
+
 /**
- * sanitize() — map AI-generated fields → real DB column names & types
+ * Получает список реальных колонок таблицы из information_schema.
+ * Результат кэшируется в памяти serverless-инстанса.
  */
+async function getTableColumns(table, supabaseUrl, serviceKey) {
+    if (schemaCache[table]) return schemaCache[table]
+
+    const resp = await fetch(
+        `${supabaseUrl}/rest/v1/rpc/get_table_columns`,
+        {
+            method:  'POST',
+            headers: {
+                'apikey':        serviceKey,
+                'Authorization': `Bearer ${serviceKey}`,
+                'Content-Type':  'application/json',
+            },
+            body: JSON.stringify({ p_table: table }),
+        }
+    )
+
+    if (!resp.ok) {
+        // Fallback: если RPC не создана — используем прямой information_schema запрос
+        const fallback = await fetch(
+            `${supabaseUrl}/rest/v1/information_schema_columns?table_name=eq.${table}&select=column_name,data_type`,
+            {
+                headers: {
+                    'apikey':        serviceKey,
+                    'Authorization': `Bearer ${serviceKey}`,
+                },
+            }
+        )
+        if (fallback.ok) {
+            const cols = await fallback.json()
+            const result = Object.fromEntries(cols.map(c => [c.column_name, c.data_type]))
+            schemaCache[table] = result
+            return result
+        }
+        console.warn(`[kg/save] Could not fetch schema for ${table}, skipping auto-migration`)
+        return {}
+    }
+
+    const cols = await resp.json()
+    const result = Object.fromEntries(cols.map(c => [c.column_name, c.data_type]))
+    schemaCache[table] = result
+    return result
+}
+
+/**
+ * Определяет SQL-тип для значения из JS.
+ * Массивы → TEXT[], числа → NUMERIC, булевы → BOOLEAN, остальное → TEXT
+ */
+function inferSqlType(value) {
+    if (Array.isArray(value))          return 'TEXT[]'
+    if (typeof value === 'boolean')    return 'BOOLEAN'
+    if (typeof value === 'number')     return Number.isInteger(value) ? 'INTEGER' : 'NUMERIC'
+    if (value !== null && typeof value === 'object') return 'JSONB'
+    return 'TEXT'
+}
+
+/**
+ * Для каждого поля в data которого нет в таблице — выполняет ALTER TABLE ADD COLUMN.
+ * Пропускает системные поля (id, created_at, updated_at, embedding).
+ * Возвращает список добавленных колонок.
+ */
+async function ensureColumns(table, data, supabaseUrl, serviceKey) {
+    const SKIP = new Set(['id', 'created_at', 'updated_at', 'embedding', 'created_by'])
+
+    const existing = await getTableColumns(table, supabaseUrl, serviceKey)
+    if (Object.keys(existing).length === 0) return [] // не удалось получить схему
+
+    const toAdd = []
+    for (const [col, val] of Object.entries(data)) {
+        if (SKIP.has(col)) continue
+        if (existing[col])  continue  // колонка уже есть
+        if (val === null || val === undefined) continue
+        toAdd.push({ col, type: inferSqlType(val) })
+    }
+
+    if (toAdd.length === 0) return []
+
+    // Выполняем ALTER TABLE через SQL RPC
+    const added = []
+    for (const { col, type } of toAdd) {
+        const sql = `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS "${col}" ${type}`
+        const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+            method:  'POST',
+            headers: {
+                'apikey':        serviceKey,
+                'Authorization': `Bearer ${serviceKey}`,
+                'Content-Type':  'application/json',
+            },
+            body: JSON.stringify({ query: sql }),
+        })
+
+        if (resp.ok) {
+            added.push(col)
+            // Обновить кэш
+            if (schemaCache[table]) schemaCache[table][col] = type.toLowerCase()
+        } else {
+            const err = await resp.text()
+            console.warn(`[kg/save] ALTER TABLE failed for ${table}.${col}:`, err.slice(0, 100))
+        }
+    }
+
+    return added
+}
+
+// ─── sanitize() ──────────────────────────────────────────────────────────────
+
 function sanitize(type, data) {
     if (type === 'cuisine') {
         const { name, description, region, flavor_profile, aliases, typical_dishes, key_ingredients } = data
         return clean({
             name:            name?.trim(),
-            description:     description || null,
-            region:          region || null,
-            flavor_profile:  flavor_profile || null,
+            slug:            slugify(name),
+            description,
+            region,
+            flavor_profile,
             aliases:         toArray(aliases),
             typical_dishes:  toArray(typical_dishes),
             key_ingredients: toArray(key_ingredients),
-            // slug is optional now — generate from name as fallback
-            slug: slugify(name),
         })
     }
-
     if (type === 'dish') {
         const { name, cuisine_name, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
         return clean({
             name:              name?.trim(),
-            cuisine_name:      cuisine_name || null,
-            description:       description || null,
-            // ingredients stored as JSONB array of strings
+            slug:              slugify(name),
+            cuisine_name,
+            description,
             ingredients:       toArray(ingredients),
-            preparation_style: preparation_style || null,
+            preparation_style,
             dietary_tags:      toArray(dietary_tags),
-            flavor_notes:      flavor_notes || null,
-            best_pairing:      best_pairing || null,
-            // slug optional
-            slug: slugify(name),
+            flavor_notes,
+            best_pairing,
         })
     }
-
     if (type === 'ingredient') {
         const { name, category, description, flavor_profile, common_pairings, dietary_info, season } = data
-        const mappedCategory = INGREDIENT_CAT_MAP[category?.toLowerCase()] || 'other'
         return clean({
             name:            name?.trim(),
-            description:     description || null,
-            flavor_profile:  flavor_profile || null,
-            category:        mappedCategory,
+            slug:            slugify(name),
+            description,
+            flavor_profile,
+            category:        INGREDIENT_CAT_MAP[category?.toLowerCase()] || 'other',
             common_pairings: toArray(common_pairings),
             dietary_info:    toArray(dietary_info),
-            // season comes as TEXT from AI ("year-round", "summer") → store in season_label
             season_label:    season || null,
-            // slug optional
-            slug: slugify(name),
         })
     }
-
     return data
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function slugify(str) {
     if (!str) return null
-    return str
-        .toLowerCase()
-        .trim()
+    return str.toLowerCase().trim()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_]+/g, '-')
         .replace(/^-+|-+$/g, '')

@@ -851,7 +851,28 @@ const AdminKnowledgeGraphPage = () => {
                 existingDishes={dishes}
                 existingIngredients={ingredients}
                 onImport={(type, data) => {
-                    if (type === 'dish')       handleSaveDish(data)
+                    if (type === 'dish') {
+                        // Check if dish already exists — if so, offer missing ingredients only
+                        const existingDish = dishes.find(d =>
+                            d.name?.toLowerCase().trim() === data.name?.toLowerCase().trim()
+                        )
+                        if (existingDish) {
+                            const existingIngNames = new Set(ingredients.map(i => i.name?.toLowerCase().trim()))
+                            const dishIngNames = new Set((existingDish.ingredients || []).map(n => n?.toLowerCase().trim()))
+                            const incomingIngs = (data.ingredients || []).filter(ing =>
+                                !existingIngNames.has(ing?.toLowerCase?.().trim()) &&
+                                !dishIngNames.has(ing?.toLowerCase?.().trim())
+                            )
+                            if (incomingIngs.length > 0) {
+                                showToast(`Dish exists. ${incomingIngs.length} new ingredient(s) ready to add`, 'info')
+                                incomingIngs.forEach(ingName => handleSaveIngredient({ name: ingName }))
+                            } else {
+                                showToast(`"${data.name}" and all its ingredients already exist in KG`, 'info')
+                            }
+                        } else {
+                            handleSaveDish(data)
+                        }
+                    }
                     if (type === 'ingredient') handleSaveIngredient(data)
                 }}
             />

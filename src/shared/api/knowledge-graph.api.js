@@ -251,11 +251,23 @@ async function saveViaProxy(type, data) {
 
     _log(`POST /api/kg/save`, { type, data })
 
+    // Get JWT from current Supabase session for authenticated proxy calls
+    let jwt = ''
+    try {
+        const { data: sessionData } = await supabase.auth.getSession()
+        jwt = sessionData?.session?.access_token || ''
+    } catch (e) {
+        console.warn('[saveViaProxy] Could not get JWT:', e.message)
+    }
+
     let res
     try {
         res = await fetch('/api/kg/save', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {}),
+            },
             body: JSON.stringify({ type, data }),
         })
     } catch (fetchErr) {

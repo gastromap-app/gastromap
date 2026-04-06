@@ -23,13 +23,28 @@ const INGREDIENT_CAT_MAP = {
 }
 
 export default async function handler(req, res) {
-    // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*')
+    // CORS — restrict to known origins (production + local dev)
+    const allowedOrigins = [
+        'https://gastromap.app',
+        'https://gastromap-stand-alone.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:3000',
+    ]
+    const origin = req.headers.origin || ''
+    const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin)
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     if (req.method === 'OPTIONS') return res.status(200).end()
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+    // ── JWT Authentication — verify caller is a logged-in user ────────────────
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'] || ''
+    const jwt = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!jwt) {
+        return res.status(401).json({ error: 'Missing Authorization header. Please log in.' })
+    }
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
     const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -49,6 +64,25 @@ export default async function handler(req, res) {
                 !serviceKey  ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
             ].filter(Boolean),
         })
+    }
+
+    // ── Verify JWT via Supabase Auth — ensures only authenticated users can save ──
+    try {
+        const verifyResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+                'apikey':        serviceKey,
+                'Authorization': `Bearer ${jwt}`,
+            },
+        })
+        if (!verifyResp.ok) {
+            console.error('[kg/save] JWT verification failed:', verifyResp.status)
+            return res.status(401).json({ error: 'Invalid or expired token. Please re-login.' })
+        }
+        const user = await verifyResp.json()
+        console.log(`[kg/save] Authenticated user: ${user.email || user.id}`)
+    } catch (authErr) {
+        console.error('[kg/save] Auth check error:', authErr.message)
+        return res.status(401).json({ error: 'Authentication failed' })
     }
 
     let body = req.body

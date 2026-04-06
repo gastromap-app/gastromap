@@ -664,20 +664,13 @@ const AdminKnowledgeGraphPage = () => {
     const handleAgentSave = async (type, data) => {
         // Используем прямые API функции вместо мутаций React Query
         // чтобы избежать side effects (invalidateQueries, onError toast и т.д.)
-        // которые могут прерывать batch save
-        let result
-        try {
-            if (type === 'cuisine')         result = await createCuisineApi(data)
-            else if (type === 'dish')       result = await createDishApi(data)
-            else if (type === 'ingredient') result = await createIngredientApi(data)
-            else throw new Error(`Unknown type: ${type}`)
-        } finally {
-            // Обновляем UI после каждого сохранения (не блокируем batch)
-            refetchCuisines()
-            refetchDishes()
-            refetchIngredients()
-        }
-        return result
+        // которые могут прерывать batch save.
+        // NOTE: НЕ рефетчим после каждого сохранения — это делает handleBatchComplete
+        // после завершения всего batch (экономит сетевые запросы).
+        if (type === 'cuisine')         return await createCuisineApi(data)
+        else if (type === 'dish')       return await createDishApi(data)
+        else if (type === 'ingredient') return await createIngredientApi(data)
+        else throw new Error(`Unknown type: ${type}`)
     }
 
     // ── KG Enrichment: update single cuisine with AI-filled fields ─────────────

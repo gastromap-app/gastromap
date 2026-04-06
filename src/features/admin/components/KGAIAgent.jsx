@@ -461,7 +461,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
 
         const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-        // Helper: attempt one save with automatic retry on rate-limit (429)
+        // Helper: attempt one save with automatic retry on transient errors
         const saveWithRetry = async (type, data, planIdx) => {
             let lastErr
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -474,16 +474,40 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                         (err?.message || '').toLowerCase().includes('too many') ||
                         (err?.message || '').toLowerCase().includes('rate limit')
 
-                    if (isRateLimit && attempt < MAX_RETRIES - 1) {
-                        _dbg.itemRetry(planIdx, attempt, `rate-limit, waiting ${RATE_LIMIT_DELAY}ms`)
-                        console.warn(`[KGAgent] Rate limit on "${data.name}", waiting ${RATE_LIMIT_DELAY}ms…`)
-                        await sleep(RATE_LIMIT_DELAY)
+                    const isTransient =
+                        isRateLimit ||
+                        err?.status === 502 || err?.status === 503 || err?.status === 504 ||
+                        err?.code === 'NETWORK_ERROR' ||
+                        (err?.message || '').toLowerCase().includes('fetch') ||
+                        (err?.message || '').toLowerCase().includes('timeout') ||
+                        (err?.message || '').toLowerCase().includes('network')
+
+                    if (isTransient && attempt < MAX_RETRIES - 1) {
+                        const delay = isRateLimit ? RATE_LIMIT_DELAY : SAVE_DELAY_MS * (attempt + 1)
+                        const reason = isRateLimit ? 'rate-limit' : `transient error (${err?.status || err?.code || 'network'})`
+                        _dbg.itemRetry(planIdx, attempt, `${reason}, waiting ${delay}ms`)
+                        console.warn(`[KGAgent] ${reason} on "${data.name}", retry ${attempt + 1}/${MAX_RETRIES - 1}, waiting ${delay}ms…`)
+                        await sleep(delay)
                     } else {
                         throw err
                     }
                 }
             }
             throw lastErr
+        }
+
+        // ── Schema validation: ensure AI data has required fields ────────────
+        const validateItem = (type, data) => {
+            if (!data || !data.name || typeof data.name !== 'string' || !data.name.trim()) {
+                return 'missing or empty "name" field'
+            }
+            if (type === 'dish' && !data.cuisine_name && !data.cuisine_id) {
+                return 'dish must have either "cuisine_name" or "cuisine_id"'
+            }
+            if (type === 'ingredient' && !data.category) {
+                return 'ingredient missing "category" field'
+            }
+            return null // valid
         }
 
         // Execute saves sequentially with throttle
@@ -498,6 +522,18 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
             setSaveProgress(prev => prev.map((s, idx) =>
                 idx === i ? { ...s, status: 'saving' } : s
             ))
+
+            // Validate before attempting save
+            const validationError = validateItem(item.type, item.data)
+            if (validationError) {
+                console.warn(`[KGAgent] Skipping invalid ${item.type} "${item.label}": ${validationError}`)
+                _dbg.itemFail(i, { message: `Validation failed: ${validationError}` })
+                errors.push(`${item.label} (${validationError})`)
+                setSaveProgress(prev => prev.map((s, idx) =>
+                    idx === i ? { ...s, status: 'error' } : s
+                ))
+                continue
+            }
 
             try {
                 if (item.type === 'cuisine') {
@@ -523,6 +559,18 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                             hasCuisineId ? '✅' : '⚠️ NOT FOUND',
                             '| known cuisines:', createdCuisines.map(c => `${c.name}(${c.id?.slice(0,8)})`)
                         )
+                    }
+                    // Critical: skip dish if cuisine_id could not be resolved — prevents orphaned FK
+                    if (!dishData?.cuisine_id) {
+                        const skippedName = dishData?.name || item.label
+                        const cuisineName = item.data?.cuisine_name || 'unknown'
+                        console.warn(`[KGAgent] Skipping dish "${skippedName}" — cuisine "${cuisineName}" not found in saved cuisines`)
+                        _dbg.itemFail(i, { message: `cuisine_id is null — cuisine "${cuisineName}" not found` })
+                        errors.push(`${skippedName} (cuisine not found)`)
+                        setSaveProgress(prev => prev.map((s, idx) =>
+                            idx === i ? { ...s, status: 'error' } : s
+                        ))
+                        continue
                     }
                     _dbg.item(i, 'dish', dishData)
                     await saveWithRetry('dish', dishData, i)

@@ -455,9 +455,9 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
         _dbg.start(plan.length)
 
         // ── Throttle settings (Supabase free tier safe) ───────────────────────
-        const SAVE_DELAY_MS    = 700
-        const RATE_LIMIT_DELAY = 5000
-        const MAX_RETRIES      = 2
+        const SAVE_DELAY_MS    = 1200  // увеличено: free tier throttles быстрые запросы
+        const RATE_LIMIT_DELAY = 6000
+        const MAX_RETRIES      = 3
 
         const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -503,13 +503,29 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                 if (item.type === 'cuisine') {
                     _dbg.item(i, 'cuisine', item.data)
                     const created = await saveWithRetry('cuisine', item.data, i)
-                    if (created) createdCuisines.push(created)
+                    // Добавляем в список ВСЕГДА — даже если дубликат (нужен id для dish resolve)
+                    if (created?.id && !createdCuisines.find(c => c.id === created.id)) {
+                        createdCuisines.push(created)
+                        if (_dbgOn()) console.debug(`%c[cuisine] added to local list: "${created.name}" id=${created.id?.slice(0,8)}`, 'color:#34d399')
+                    }
                     _dbg.itemOk(i, created)
 
                 } else if (item.type === 'dish') {
                     const resolved = resolveDishCuisineIds([item.data], createdCuisines)
-                    _dbg.item(i, 'dish', resolved[0])
-                    await saveWithRetry('dish', resolved[0], i)
+                    const dishData = resolved[0]
+                    // Debug: логируем резолв cuisine_id
+                    if (_dbgOn()) {
+                        const hasCuisineId = !!dishData?.cuisine_id
+                        const cuisineName  = item.data?.cuisine_name
+                        console.debug(
+                            `%c[dish resolve] "${dishData?.name}" cuisine_name="${cuisineName}" → cuisine_id=${dishData?.cuisine_id}`,
+                            hasCuisineId ? 'color:#34d399' : 'color:#fbbf24;font-weight:bold',
+                            hasCuisineId ? '✅' : '⚠️ NOT FOUND — dish will save without cuisine link',
+                            '| known cuisines:', createdCuisines.map(c => `${c.name}(${c.id?.slice(0,8)})`)
+                        )
+                    }
+                    _dbg.item(i, 'dish', dishData)
+                    await saveWithRetry('dish', dishData, i)
                     _dbg.itemOk(i, null)
 
                 } else if (item.type === 'ingredient') {

@@ -23,8 +23,6 @@
 import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { config } from '@/shared/config/env'
 import { ApiError } from './client'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { supabase } from '@/shared/api/client'
 import { getActiveAIConfig } from './ai-config.api'
 
@@ -142,9 +140,11 @@ const TOOLS = [
  * Semantic search via pgvector in Supabase.
  * Converts user query into an embedding → then searches for similar locations.
  */
-export async function semanticSearch(queryText, limit = 10) {
-    const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+export async function semanticSearch(queryText, limit = 10, apiKey = null) {
+    if (!apiKey) {
+        const { getActiveAIConfig } = await import('./ai-config.api')
+        apiKey = getActiveAIConfig().apiKey
+    }
 
     if (!apiKey || !supabase) return []
 
@@ -201,8 +201,15 @@ export async function semanticSearch(queryText, limit = 10) {
  * @param {Object} args   parsed JSON arguments from the model
  * @returns {Promise<Object>} tool result to send back to the model
  */
-async function executeTool(name, args) {
-    const { locations } = useLocationsStore.getState()
+async function executeTool(name, args, locations = []) {
+    if (!locations?.length) {
+        try {
+            const { useLocationsStore } = await import('@/features/public/hooks/useLocationsStore')
+            locations = useLocationsStore.getState().locations
+        } catch (e) {
+            console.warn('[ai.api] Failed to dynamic import useLocationsStore', e)
+        }
+    }
 
     if (name === 'search_locations') {
         const {
@@ -284,7 +291,7 @@ async function executeTool(name, args) {
             // 2. Semantic AI Search boost
             if (supabase) {
                 try {
-                    const semanticResults = await semanticSearch(keyword, limit * 2)
+                    const semanticResults = await semanticSearch(keyword, limit * 2, null)
                     const semanticIds = new Set(semanticResults.map(r => r.id))
                     
                     // We use ALL locations for semantic search, but keep only those that 
@@ -406,7 +413,14 @@ Your output is used internally for recommendations, filtering, and personalizati
  * @param {Object} userData - Dynamic user profile data (history, favorites)
  */
 async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null) {
-    const appCfg = useAppConfigStore.getState()
+    let appCfg = {}
+    try {
+        const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
+        appCfg = useAppConfigStore.getState()
+    } catch (e) {
+        const { getActiveAIConfig } = await import('./ai-config.api')
+        appCfg = getActiveAIConfig()
+    }
 
     // Use custom prompt if set, otherwise default
     const basePrompt = agentType === 'guide'
@@ -593,9 +607,10 @@ function detectIntent(text) {
  *  2. If tool_calls → execute locally → send results back → get final text.
  *
  * @param {Array} messages  Full messages array incl. system prompt
+ * @param {Array} locations Optional locations for local tool execution
  * @returns {{ text: string, usedLocations: Array, modelUsed: string }}
  */
-async function runAgentPass(messages) {
+async function runAgentPass(messages, locations = []) {
     // First call: detect tool calls
     const { response: res, modelUsed } = await fetchOpenRouter(messages, { stream: false, withTools: true })
     const data = await res.json()
@@ -623,7 +638,7 @@ async function runAgentPass(messages) {
             args = {}
         }
 
-        const result = await executeTool(toolCall.function.name, args)
+        const result = await executeTool(toolCall.function.name, args, locations)
 
         toolResults.push({
             role: 'tool',
@@ -631,17 +646,26 @@ async function runAgentPass(messages) {
             content: JSON.stringify(result),
         })
 
-        // Collect full location objects for UI cards
+        // Collect full location objects for UI cards (from the provided locations or dynamic fetch)
         if (toolCall.function.name === 'search_locations' && Array.isArray(result)) {
-            const { locations } = useLocationsStore.getState()
+            let activeLocations = locations
+            if (!activeLocations?.length) {
+                const { useLocationsStore } = await import('@/features/public/hooks/useLocationsStore')
+                activeLocations = useLocationsStore.getState().locations
+            }
+            
             usedLocations = result
-                .map(r => locations.find(l => l.id === r.id))
+                .map(r => activeLocations.find(l => l.id === r.id))
                 .filter(Boolean)
                 .slice(0, 3)
         }
         if (toolCall.function.name === 'get_location_details' && result?.id) {
-            const { locations } = useLocationsStore.getState()
-            const loc = locations.find(l => l.id === result.id)
+            let activeLocations = locations
+            if (!activeLocations?.length) {
+                const { useLocationsStore } = await import('@/features/public/hooks/useLocationsStore')
+                activeLocations = useLocationsStore.getState().locations
+            }
+            const loc = activeLocations.find(l => l.id === result.id)
             if (loc) usedLocations = [loc]
         }
     }
@@ -697,7 +721,7 @@ export async function analyzeQuery(message, context = {}) {
                 { role: 'user', content: message },
             ]
 
-            const { text, usedLocations } = await runAgentPass(messages)
+            const { text, usedLocations } = await runAgentPass(messages, context.locations || [])
 
             return { content: text, matches: usedLocations, intent }
         } catch (err) {
@@ -740,7 +764,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 { role: 'user', content: message },
             ]
 
-            const { text, usedLocations } = await runAgentPass(messages)
+            const { text, usedLocations } = await runAgentPass(messages, context.locations || [])
 
             // Simulate streaming: emit word by word
             if (onChunk && text) {

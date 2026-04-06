@@ -11,10 +11,10 @@
  * - ru: Russian
  */
 
-import { analyzeQuery } from './ai.api'
+// import { analyzeQuery } from './ai.api'
 import { supabase } from './client'
 import { config } from '@/shared/config/env'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+// import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = {
@@ -58,6 +58,7 @@ Text to translate:
             setTimeout(() => reject(new Error('Translation request timeout')), 30000)
         )
 
+        const { analyzeQuery } = await import('./ai.api')
         const response = await Promise.race([
             analyzeQuery(prompt, {
                 systemPrompt: 'You are a professional translator. Translate accurately while preserving meaning and tone.',
@@ -321,6 +322,7 @@ export function detectLanguage(text) {
  * Enable auto-translation on location create/update
  */
 export async function processLocationTranslations(locationData, autoTranslate = true) {
+    const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
     const appCfg = useAppConfigStore.getState()
     const isAIReady = config.ai.isOpenRouterConfigured || appCfg.aiApiKey
     

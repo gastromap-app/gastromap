@@ -17,7 +17,8 @@ import {
     useInfiniteQuery,
     useQueryClient,
 } from '@tanstack/react-query'
-import { queryClient } from '@/shared/config/queryClient'
+// Removed static queryClient import to avoid circular dependency/initialization issues.
+// Use useQueryClient() within hooks instead.
 
 // ─── API Module Imports (Refactored to minimize top-level cycles) ────────────────
 // Note: We use dynamic imports inside the hooks to prevent "ReferenceError: Cannot access before initialization" cycles.
@@ -274,12 +275,13 @@ export function useProfiles() {
 }
 
 export function useUpdateProfileRoleMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, role }) => {
             const { updateProfileRole } = await import('./admin.api')
             return updateProfileRole(userId, role)
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
     })
 }
 
@@ -296,14 +298,15 @@ export function usePendingReviews() {
 }
 
 export function useUpdateReviewStatusMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ reviewId, status, comment }) => {
             const { updateReviewStatus } = await import('./admin.api')
             return updateReviewStatus(reviewId, status, comment)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['pending-reviews'] })
-            queryClient.invalidateQueries({ queryKey: ['reviews'] })
+            qc.invalidateQueries({ queryKey: ['pending-reviews'] })
+            qc.invalidateQueries({ queryKey: ['reviews'] })
         },
     })
 }
@@ -320,14 +323,15 @@ export function usePendingLocations() {
 }
 
 export function useUpdateLocationStatusMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ id, status }) => {
             const { updateLocation } = await import('./locations.api')
             return updateLocation(id, { status })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['locations'] })
-            queryClient.invalidateQueries({ queryKey: ['pending-locations'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+            qc.invalidateQueries({ queryKey: ['pending-locations'] })
         },
     })
 }
@@ -386,9 +390,6 @@ export function usePaymentStats() {
 }
 
 // ─── Favorites ───
-// ─── Favorites ───
-
-// ─── Favorites ───
 export function useUserFavorites(userId) {
     return useQuery({ 
         queryKey: ['favorites', userId], 
@@ -414,33 +415,32 @@ export function useUserFavoritesWithLocations(userId) {
 }
 
 export function useAddFavoriteMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, locationId }) => {
             const { addFavorite } = await import('./favorites.api')
             return addFavorite(userId, locationId)
         },
         onSuccess: (_, { userId }) => {
-            queryClient.invalidateQueries({ queryKey: ['favorites', userId] })
-            queryClient.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
+            qc.invalidateQueries({ queryKey: ['favorites', userId] })
+            qc.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
         },
     })
 }
 
 export function useRemoveFavoriteMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, locationId }) => {
             const { removeFavorite } = await import('./favorites.api')
             return removeFavorite(userId, locationId)
         },
         onSuccess: (_, { userId }) => {
-            queryClient.invalidateQueries({ queryKey: ['favorites', userId] })
-            queryClient.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
+            qc.invalidateQueries({ queryKey: ['favorites', userId] })
+            qc.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
         },
     })
 }
-
-// ─── Visits ───
-// ─── Visits ───
 
 // ─── Visits ───
 export function useUserVisits(userId) {
@@ -468,33 +468,32 @@ export function useUserVisitsWithLocations(userId) {
 }
 
 export function useAddVisitMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, locationId, rating, reviewText }) => {
             const { addVisit } = await import('./visits.api')
             return addVisit(userId, locationId, rating, reviewText)
         },
         onSuccess: (_, { userId }) => {
-            queryClient.invalidateQueries({ queryKey: ['visits', userId] })
-            queryClient.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
+            qc.invalidateQueries({ queryKey: ['visits', userId] })
+            qc.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
         },
     })
 }
 
 export function useDeleteVisitMutation() {
+    const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ visitId, userId }) => {
+        mutationFn: async ({ visitId }) => {
             const { deleteVisit } = await import('./visits.api')
             return deleteVisit(visitId)
         },
         onSuccess: (_, { userId }) => {
-            queryClient.invalidateQueries({ queryKey: ['visits', userId] })
-            queryClient.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
+            qc.invalidateQueries({ queryKey: ['visits', userId] })
+            qc.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
         },
     })
 }
-
-// ─── Reviews ───
-// ─── Reviews ───
 
 // ─── Reviews ───
 export function useLocationReviews(locationId) {
@@ -521,19 +520,17 @@ export function useUserReviews(userId) {
 }
 
 export function useCreateReviewMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, locationId, rating, reviewText }) => {
             const { createReview } = await import('./reviews.api')
             return createReview(userId, locationId, rating, reviewText)
         },
         onSuccess: (_, { locationId }) => {
-            queryClient.invalidateQueries({ queryKey: ['reviews', locationId] })
+            qc.invalidateQueries({ queryKey: ['reviews', locationId] })
         },
     })
 }
-
-// ─── Leaderboard ───
-// ─── Leaderboard ───
 
 // ─── Leaderboard ───
 export function useLeaderboard(limit = 50) {
@@ -560,9 +557,6 @@ export function useUserRank(userId) {
 }
 
 // ─── Preferences ───
-// ─── Preferences ───
-
-// ─── Preferences ───
 export function useUserPreferences(userId) {
     return useQuery({ 
         queryKey: ['user-preferences', userId], 
@@ -576,19 +570,17 @@ export function useUserPreferences(userId) {
 }
 
 export function useUpdatePreferencesMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async ({ userId, preferences }) => {
             const { updateUserPreferences } = await import('./preferences.api')
             return updateUserPreferences(userId, preferences)
         },
         onSuccess: (_, { userId }) => {
-            queryClient.invalidateQueries({ queryKey: ['user-preferences', userId] })
+            qc.invalidateQueries({ queryKey: ['user-preferences', userId] })
         },
     })
 }
-
-// ─── Knowledge Graph ───
-// ─── Knowledge Graph hooks ────────────────────────────────────────────────────
 
 // ─── Knowledge Graph hooks ────────────────────────────────────────────────────
 // staleTime: Infinity  → React Query never considers KG data stale in-memory.
@@ -822,8 +814,6 @@ export function useSearchCuisinesSemantic(query, enabled = true) {
         staleTime: 5 * 60_000,
     })
 }
-
-export { getAIContextForQuery }
 
 // ─── Culinary & Ingredient Context ───
 

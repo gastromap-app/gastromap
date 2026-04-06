@@ -50,13 +50,14 @@ const MODEL_CASCADE = [
  * Get active AI config — admin store overrides env vars at runtime.
  * Admin can change model/key in AdminAIPage without redeploying.
  */
-function getActiveAIConfig() {
+export function getActiveAIConfig() {
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
     return {
         apiKey,
         model:         appCfg.aiPrimaryModel  || config.ai.model,
         fallbackModel: appCfg.aiFallbackModel || config.ai.modelFallback,
+        isConfigured:  !!apiKey && apiKey !== '',
         /** 
          * Use proxy only if NO key is provided (Store or Env) 
          * AND we are in Production. In Dev, always direct unless specified.
@@ -159,7 +160,7 @@ const TOOLS = [
  * Semantic search via pgvector in Supabase.
  * Converts user query into an embedding → then searches for similar locations.
  */
-async function semanticSearch(queryText, limit = 10) {
+export async function semanticSearch(queryText, limit = 10) {
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
 

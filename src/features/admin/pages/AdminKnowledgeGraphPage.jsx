@@ -950,6 +950,23 @@ const AdminKnowledgeGraphPage = () => {
                         />
                     </div>
 
+                    <button
+                        onClick={() => {
+                            import('@/shared/lib/cache').then(({ invalidateCacheGroup }) => {
+                                invalidateCacheGroup('cuisines')
+                                invalidateCacheGroup('dishes')
+                                invalidateCacheGroup('ingredients')
+                            })
+                            queryClient.removeQueries({ queryKey: ['knowledge-cuisines'] })
+                            queryClient.removeQueries({ queryKey: ['knowledge-dishes'] })
+                            queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
+                            setTimeout(() => { refetchCuisines(); refetchDishes(); refetchIngredients() }, 100)
+                        }}
+                        className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors text-xs font-medium"
+                        title="Clear cache and reload from database"
+                    >
+                        ↺
+                    </button>
                     <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all flex-shrink-0">
                         <Filter size={14} />
                         <span className="text-xs font-medium hidden sm:inline">Filter</span>

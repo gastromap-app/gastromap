@@ -244,56 +244,54 @@ export async function getCuisineById(id) {
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    // 🔍 KGSaveDebug proxy logging
-    const _dbgOn = () => { try { return localStorage.getItem('KG_SAVE_DEBUG') === '1' } catch { return false } }
-    const _log = (label, ...args) => { if (_dbgOn()) console.log(`%c🌐 [proxy] ${label}`, 'color:#c084fc;font-style:italic', ...args) }
-    const _err = (label, ...args) => { if (_dbgOn()) console.error(`%c🌐 [proxy] ${label}`, 'color:#f87171;font-weight:bold', ...args) }
+    console.log(`[proxy] POST /api/kg/save`, { type, data })
 
-    _log(`POST /api/kg/save`, { type, data })
-
-    // Get JWT from current Supabase session for authenticated proxy calls
-    // Always refresh first to avoid 401 from expired tokens
+    // ── 1. Get JWT — getSession() only (no refreshSession which can hang) ─────
     let jwt = ''
     try {
-        // Try to refresh the session first (fixes expired token errors)
-        const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession()
-        if (refreshData?.session?.access_token) {
-            jwt = refreshData.session.access_token
-        } else {
-            // Fallback: use existing session (may still be valid)
-            const { data: sessionData } = await supabase.auth.getSession()
-            jwt = sessionData?.session?.access_token || ''
-        }
-        if (refreshErr) {
-            console.warn('[saveViaProxy] Session refresh warning:', refreshErr.message)
-        }
+        const { data: sd, error: se } = await supabase.auth.getSession()
+        jwt = sd?.session?.access_token || ''
+        if (se) console.warn('[saveViaProxy] getSession warning:', se.message)
     } catch (e) {
         console.warn('[saveViaProxy] Could not get JWT:', e.message)
     }
-    
+
     if (!jwt) {
+        // Last resort: try sign-in-with-password won't help here — just throw clearly
+        console.error('[saveViaProxy] No JWT available — user must be logged in')
         throw new ApiError('Not authenticated. Please log in again.', 401, 'AUTH_ERROR')
     }
+
+    // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10_000)
 
     let res
     try {
         res = await fetch('/api/kg/save', {
             method: 'POST',
+            signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
-                ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {}),
+                'Authorization': `Bearer ${jwt}`,
             },
             body: JSON.stringify({ type, data }),
         })
     } catch (fetchErr) {
-        _err(`Network error (server unreachable)`, fetchErr.message)
-        throw new ApiError(`Network error calling /api/kg/save: ${fetchErr.message}`, 0, 'NETWORK_ERROR')
+        clearTimeout(timeout)
+        const msg = fetchErr.name === 'AbortError'
+            ? 'Request timed out after 10s'
+            : `Network error: ${fetchErr.message}`
+        console.error('[proxy] fetch failed:', msg)
+        throw new ApiError(msg, 0, 'NETWORK_ERROR')
+    } finally {
+        clearTimeout(timeout)
     }
 
-    _log(`Response: HTTP ${res.status}`)
+    console.log(`[proxy] Response: HTTP ${res.status}`)
 
     if (res.status === 404) {
-        _log('Proxy returned 404 — falling back to direct Supabase insert')
+        console.log('[proxy] 404 — falling back to direct Supabase insert')
         return null
     }
 
@@ -301,21 +299,22 @@ async function saveViaProxy(type, data) {
     try {
         result = await res.json()
     } catch (parseErr) {
-        _err(`Could not parse JSON response`, parseErr.message)
-        throw new ApiError(`/api/kg/save returned non-JSON (status ${res.status})`, res.status, 'PARSE_ERROR')
+        const raw = await res.text().catch(() => '')
+        console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
+        throw new ApiError(`/api/kg/save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
     }
 
-    _log(`Response body`, result)
+    console.log(`[proxy] Response body`, result)
 
     if (!res.ok) {
-        _err(`Save failed`, { status: res.status, error: result.error, details: result.details })
-        throw new ApiError(result.error || `KG save failed (proxy): ${res.status}`, res.status, 'SAVE_ERROR')
+        console.error(`[proxy] Save failed`, { status: res.status, error: result.error, details: result.details })
+        throw new ApiError(result.error || `KG save failed: ${res.status}`, res.status, 'SAVE_ERROR')
     }
 
     if (result.duplicate) {
-        _log(`Duplicate — already exists: "${data.name}"`)
+        console.log(`[proxy] Duplicate — already exists: "${data.name}"`)
     } else {
-        _log(`✓ Saved "${data.name}" → id: ${result.data?.id}`, result.addedColumns?.length ? `(new cols: ${result.addedColumns.join(', ')})` : '')
+        console.log(`[proxy] ✓ Saved "${data.name}" → id: ${result.data?.id}`)
     }
 
     return result.data
@@ -721,4 +720,5 @@ export async function syncKGToLocations(onProgress) {
 
     return { success: true, count: updatedCount }
 }
+
 

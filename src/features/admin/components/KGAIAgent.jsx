@@ -29,30 +29,36 @@ const ItemPreviewCard = ({ type, item, selected, onToggle }) => {
     const config = {
         cuisines: {
             Icon: Globe,
-            accent: 'indigo',
-            bg: 'bg-indigo-50 dark:bg-indigo-500/10',
+            bg: 'bg-indigo-50 dark:bg-indigo-500/15',
             text: 'text-indigo-600 dark:text-indigo-400',
-            border: 'border-indigo-200 dark:border-indigo-500/30',
-            selectedBg: 'bg-indigo-50/80 dark:bg-indigo-500/8',
-            badge: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
+            border: 'border-indigo-300 dark:border-indigo-500/50',
+            accent: 'border-l-indigo-500 dark:border-l-indigo-400',
+            selectedBg: 'bg-indigo-50 dark:bg-indigo-500/10',
+            checkBg: 'bg-indigo-500',
+            badge: 'bg-indigo-100 dark:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300',
+            glow: 'shadow-indigo-100 dark:shadow-indigo-500/10',
         },
         dishes: {
             Icon: UtensilsCrossed,
-            accent: 'emerald',
-            bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+            bg: 'bg-emerald-50 dark:bg-emerald-500/15',
             text: 'text-emerald-600 dark:text-emerald-400',
-            border: 'border-emerald-200 dark:border-emerald-500/30',
-            selectedBg: 'bg-emerald-50/80 dark:bg-emerald-500/8',
-            badge: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+            border: 'border-emerald-300 dark:border-emerald-500/50',
+            accent: 'border-l-emerald-500 dark:border-l-emerald-400',
+            selectedBg: 'bg-emerald-50 dark:bg-emerald-500/10',
+            checkBg: 'bg-emerald-500',
+            badge: 'bg-emerald-100 dark:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300',
+            glow: 'shadow-emerald-100 dark:shadow-emerald-500/10',
         },
         ingredients: {
             Icon: Carrot,
-            accent: 'amber',
-            bg: 'bg-amber-50 dark:bg-amber-500/10',
+            bg: 'bg-amber-50 dark:bg-amber-500/15',
             text: 'text-amber-600 dark:text-amber-400',
-            border: 'border-amber-200 dark:border-amber-500/30',
-            selectedBg: 'bg-amber-50/80 dark:bg-amber-500/8',
-            badge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300',
+            border: 'border-amber-300 dark:border-amber-500/50',
+            accent: 'border-l-amber-500 dark:border-l-amber-400',
+            selectedBg: 'bg-amber-50 dark:bg-amber-500/10',
+            checkBg: 'bg-amber-500',
+            badge: 'bg-amber-100 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300',
+            glow: 'shadow-amber-100 dark:shadow-amber-500/10',
         },
     }[type]
 
@@ -73,22 +79,29 @@ const ItemPreviewCard = ({ type, item, selected, onToggle }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={cn(
-                'rounded-2xl border transition-all cursor-pointer select-none',
+                'rounded-2xl border-l-4 border transition-all duration-200 cursor-pointer select-none',
                 selected
-                    ? `${config.border} ${config.selectedBg}`
-                    : 'border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-900/30 opacity-60',
+                    ? [
+                        config.border,
+                        config.accent,
+                        config.selectedBg,
+                        'shadow-md',
+                        config.glow,
+                        'scale-[1.005]',
+                      ].join(' ')
+                    : 'border-l-transparent border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/20 opacity-50 hover:opacity-70 hover:border-slate-200 dark:hover:border-slate-700',
             )}
             onClick={onToggle}
         >
             <div className="flex items-start gap-3 p-3 lg:p-4">
                 {/* Checkbox */}
                 <div className={cn(
-                    'w-5 h-5 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5 border-2 transition-all',
+                    'w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5 transition-all duration-200',
                     selected
-                        ? `${config.bg} ${config.border}`
-                        : 'border-slate-200 dark:border-slate-700'
+                        ? config.checkBg
+                        : 'border-2 border-slate-200 dark:border-slate-600 bg-transparent'
                 )}>
-                    {selected && <Check size={11} className={config.text} strokeWidth={3} />}
+                    {selected && <Check size={10} className="text-white" strokeWidth={3} />}
                 </div>
 
                 {/* Icon */}
@@ -100,7 +113,10 @@ const ItemPreviewCard = ({ type, item, selected, onToggle }) => {
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                            <span className="font-semibold text-sm text-slate-900 dark:text-white truncate block">{item.name}</span>
+                            <span className={cn(
+                                'font-semibold text-sm truncate block transition-colors',
+                                selected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'
+                            )}>{item.name}</span>
                             {meta && (
                                 <span className={cn('text-[10px] font-bold uppercase tracking-wide', config.text)}>{meta}</span>
                             )}

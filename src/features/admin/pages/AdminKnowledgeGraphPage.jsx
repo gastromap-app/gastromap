@@ -412,11 +412,20 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
 
 // ─── SPOONACULAR ENRICHER ─────────────────────────────────────────────────────
 
-function SpoonacularEnricher({ onImport }) {
+function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredients = [] }) {
     const [query, setQuery] = useState('')
     const searchMutation = useSpoonacularSearchMutation()
     const [results, setResults] = useState(null)
     const [open, setOpen] = useState(false)
+
+    // Normalization for case-insensitive comparison
+    const existingDishNames = new Set(existingDishes.map(d => d.name?.toLowerCase().trim()))
+    const existingIngNames  = new Set(existingIngredients.map(i => i.name?.toLowerCase().trim()))
+
+    const isDuplicate = (name, type) => {
+        const normalized = name?.toLowerCase().trim()
+        return type === 'dish' ? existingDishNames.has(normalized) : existingIngNames.has(normalized)
+    }
 
     const handleSearch = async () => {
         if (!query.trim()) return
@@ -486,20 +495,29 @@ function SpoonacularEnricher({ onImport }) {
                                                 Dishes ({results.dishes.length})
                                             </p>
                                             <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                                                {results.dishes.map(dish => (
-                                                    <div key={dish.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                                                        <div className="flex items-center gap-3">
-                                                            {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
-                                                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{dish.name}</span>
+                                                {results.dishes.map(dish => {
+                                                    const already = isDuplicate(dish.name, 'dish')
+                                                    return (
+                                                        <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-700/30 opacity-60' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50')}>
+                                                            <div className="flex items-center gap-3">
+                                                                {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+                                                                <div>
+                                                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{dish.name}</span>
+                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">Already in KG</span>}
+                                                                </div>
+                                                            </div>
+                                                            {!already && (
+                                                                <button
+                                                                    onClick={() => onImport('dish', dish)}
+                                                                    className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 transition-all"
+                                                                    title="Import to Knowledge Graph"
+                                                                >
+                                                                    <Download size={13} />
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        <button
-                                                            onClick={() => onImport('dish', dish)}
-                                                            className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 transition-all"
-                                                        >
-                                                            <Download size={13} />
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     )}
@@ -511,20 +529,29 @@ function SpoonacularEnricher({ onImport }) {
                                                 Ingredients ({results.ingredients.length})
                                             </p>
                                             <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                                                {results.ingredients.map(ing => (
-                                                    <div key={ing.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                                                        <div className="flex items-center gap-3">
-                                                            {ing.image && <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
-                                                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{ing.name}</span>
+                                                {results.ingredients.map(ing => {
+                                                    const already = isDuplicate(ing.name, 'ingredient')
+                                                    return (
+                                                        <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-700/30 opacity-60' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50')}>
+                                                            <div className="flex items-center gap-3">
+                                                                {ing.image && <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+                                                                <div>
+                                                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{ing.name}</span>
+                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">Already in KG</span>}
+                                                                </div>
+                                                            </div>
+                                                            {!already && (
+                                                                <button
+                                                                    onClick={() => onImport('ingredient', ing)}
+                                                                    className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 transition-all"
+                                                                    title="Import to Knowledge Graph"
+                                                                >
+                                                                    <Download size={13} />
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        <button
-                                                            onClick={() => onImport('ingredient', ing)}
-                                                            className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 transition-all"
-                                                        >
-                                                            <Download size={13} />
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     )}
@@ -821,6 +848,8 @@ const AdminKnowledgeGraphPage = () => {
 
             {/* ── Spoonacular ── */}
             <SpoonacularEnricher
+                existingDishes={dishes}
+                existingIngredients={ingredients}
                 onImport={(type, data) => {
                     if (type === 'dish')       handleSaveDish(data)
                     if (type === 'ingredient') handleSaveIngredient(data)

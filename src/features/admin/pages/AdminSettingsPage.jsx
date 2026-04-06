@@ -6,7 +6,7 @@ import {
     CheckCircle2, Info, Image as ImageIcon, Upload
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
     <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-6 lg:p-8 shadow-sm">

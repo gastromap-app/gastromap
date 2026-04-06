@@ -249,22 +249,26 @@ async function saveViaProxy(type, data) {
     // ── 1. Proactive JWT Refresh — ensures no 401 due to expired token ───────
     let jwt = ''
     try {
-        console.log('[saveViaProxy] ⏳ Attempting JWT refresh/get...')
-        const { data: { session }, error } = await supabase.auth.refreshSession()
+        console.log('[saveViaProxy] ⏳ Checking current session...')
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
         
-        if (session?.access_token) {
-            jwt = session.access_token
-            console.log('[saveViaProxy] ✅ JWT refreshed successfully')
+        if (currentSession?.access_token) {
+            jwt = currentSession.access_token
+            console.log('[saveViaProxy] ✅ Using existing session')
+            
+            // Optional: If token is close to expiry, refresh it in background?
+            // For now, just use it.
         } else {
-            // Fallback to current session if refresh didn't return a session
-            const { data: { session: currentSession } } = await supabase.auth.getSession()
-            jwt = currentSession?.access_token || ''
-            if (jwt) console.log('[saveViaProxy] ⚠️ Using current session (refresh skipped/failed)')
+            console.log('[saveViaProxy] ⏳ No active session, attempting refresh...')
+            const { data: { session: refreshed }, error } = await supabase.auth.refreshSession()
+            if (refreshed?.access_token) {
+                jwt = refreshed.access_token
+                console.log('[saveViaProxy] ✅ JWT refreshed successfully')
+            }
+            if (error) console.warn('[saveViaProxy] ⚠️ Session refresh error:', error.message)
         }
-
-        if (error) console.warn('[saveViaProxy] ⚠️ Session refresh warning:', error.message)
     } catch (e) {
-        console.warn('[saveViaProxy] ❌ Could not refresh/get JWT:', e.message)
+        console.warn('[saveViaProxy] ❌ Session retrieval exception:', e.message)
     }
 
     if (!jwt) {

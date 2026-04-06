@@ -249,33 +249,37 @@ async function saveViaProxy(type, data) {
     // ── 1. Proactive JWT Refresh — ensures no 401 due to expired token ───────
     let jwt = ''
     try {
-        // Try to get fresh session first
+        console.log('[saveViaProxy] ⏳ Attempting JWT refresh/get...')
         const { data: { session }, error } = await supabase.auth.refreshSession()
         
         if (session?.access_token) {
             jwt = session.access_token
-            console.log('[saveViaProxy] JWT refreshed successfully')
+            console.log('[saveViaProxy] ✅ JWT refreshed successfully')
         } else {
             // Fallback to current session if refresh didn't return a session
             const { data: { session: currentSession } } = await supabase.auth.getSession()
             jwt = currentSession?.access_token || ''
-            if (jwt) console.log('[saveViaProxy] Using current session (refresh skipped)')
+            if (jwt) console.log('[saveViaProxy] ⚠️ Using current session (refresh skipped/failed)')
         }
 
-        if (error) console.warn('[saveViaProxy] Session refresh warning:', error.message)
+        if (error) console.warn('[saveViaProxy] ⚠️ Session refresh warning:', error.message)
     } catch (e) {
-        console.warn('[saveViaProxy] Could not refresh/get JWT:', e.message)
+        console.warn('[saveViaProxy] ❌ Could not refresh/get JWT:', e.message)
     }
 
     if (!jwt) {
-        console.error('[proxy] No JWT available — user must be logged in')
+        console.error('[proxy] 🛑 No JWT available — user must be logged in')
         throw new ApiError('Not authenticated. Please log in to complete this action.', 401, 'AUTH_ERROR')
     }
 
+    console.log('[saveViaProxy] 🌐 Sending POST to /api/kg/save with JWT (len:', jwt.length, ')')
 
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 10_000)
+    const timeout = setTimeout(() => {
+        console.error('[saveViaProxy] ⏱️ SHIT! fetch timed out after 10s')
+        controller.abort()
+    }, 10_000)
 
     let res
     try {
@@ -288,18 +292,17 @@ async function saveViaProxy(type, data) {
             },
             body: JSON.stringify({ type, data }),
         })
+        console.log(`[saveViaProxy] 📡 Fetch response status: ${res.status} (${res.statusText})`)
     } catch (fetchErr) {
         clearTimeout(timeout)
         const msg = fetchErr.name === 'AbortError'
             ? 'Request timed out after 10s'
             : `Network error: ${fetchErr.message}`
-        console.error('[proxy] fetch failed:', msg)
+        console.error('[proxy] ❌ fetch failed:', msg)
         throw new ApiError(msg, 0, 'NETWORK_ERROR')
     } finally {
         clearTimeout(timeout)
     }
-
-    console.log(`[proxy] Response: HTTP ${res.status}`)
 
     if (res.status === 404) {
         console.log('[proxy] 404 — falling back to direct Supabase insert')

@@ -272,6 +272,7 @@ INGREDIENT SCHEMA:
  */
 function extractKeywords(message) {
     const STOP_WORDS = new Set([
+        // English
         'add', 'create', 'insert', 'put', 'include', 'generate',
         'the', 'a', 'an', 'and', 'or', 'with', 'of', 'in', 'for',
         'all', 'some', 'its', 'their', 'from', 'into', 'to', 'by',
@@ -279,14 +280,63 @@ function extractKeywords(message) {
         'top', 'best', 'classic', 'traditional', 'famous', 'popular',
         'key', 'main', 'typical', 'common', 'new', 'enrich',
         'knowledge', 'graph', 'database', 'gastromap',
+        // Русский
+        'добавь', 'добавить', 'создай', 'создать', 'включи', 'включить',
+        'все', 'всех', 'всё', 'это', 'для', 'или', 'что', 'как',
+        'кухня', 'кухни', 'кухню', 'блюда', 'блюдо', 'блюд',
+        'ингредиент', 'ингредиенты', 'ингредиентов', 'ингредиентами',
+        'топ', 'лучшие', 'классические', 'традиционные', 'популярные',
+        'основные', 'главные', 'типичные', 'новые', 'его', 'её', 'их',
+        'самые', 'самых', 'самое',
+        // Польский  
+        'dodaj', 'kuchnia', 'danie', 'dania', 'skladnik', 'skladniki',
     ])
 
+    // Поддержка кириллицы, латиницы, цифр — всё остальное заменяем пробелом
     return message
         .toLowerCase()
-        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+        .replace(/[^a-zA-Zа-яёА-ЯЁ0-9\s]/g, ' ')
         .split(/\s+/)
         .map(w => w.trim())
         .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+}
+
+/**
+ * Русско-английский словарь кухонь для матчинга.
+ * "немецкую" → "german", чтобы найти "German" в БД.
+ */
+const CUISINE_TRANSLATIONS = {
+    // RU → EN
+    'немецк': 'german', 'итальянск': 'italian', 'французск': 'french',
+    'японск': 'japanese', 'китайск': 'chinese', 'мексиканск': 'mexican',
+    'испанск': 'spanish', 'греческ': 'greek', 'индийск': 'indian',
+    'тайск': 'thai', 'турецк': 'turkish', 'польск': 'polish',
+    'русск': 'russian', 'украинск': 'ukrainian', 'американск': 'american',
+    'британск': 'british', 'корейск': 'korean', 'вьетнамск': 'vietnamese',
+    'арабск': 'arabic', 'марокканск': 'moroccan', 'перуанск': 'peruvian',
+    'аргентинск': 'argentinian', 'бразильск': 'brazilian',
+    // Прямые совпадения
+    'немецкая': 'german', 'итальянская': 'italian', 'французская': 'french',
+    'японская': 'japanese', 'китайская': 'chinese', 'мексиканская': 'mexican',
+}
+
+function translateKeywords(keywords) {
+    const result = [...keywords]
+    for (const kw of keywords) {
+        // Прямой матч
+        if (CUISINE_TRANSLATIONS[kw]) {
+            result.push(CUISINE_TRANSLATIONS[kw])
+            continue
+        }
+        // Матч по префиксу (немецкую → немецк → german)
+        for (const [prefix, en] of Object.entries(CUISINE_TRANSLATIONS)) {
+            if (kw.startsWith(prefix) && !result.includes(en)) {
+                result.push(en)
+                break
+            }
+        }
+    }
+    return result
 }
 
 /**
@@ -325,7 +375,9 @@ function isMatch(keyword, name) {
  *  }
  */
 function buildSmartContext(userMessage, cuisines, dishes, ingredients) {
-    const keywords = extractKeywords(userMessage)
+    const rawKeywords = extractKeywords(userMessage)
+    // Переводим русские ключевые слова в английские для матчинга с БД
+    const keywords = translateKeywords(rawKeywords)
 
     console.debug('[KG Agent] Keywords extracted:', keywords)
 
@@ -453,7 +505,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
 
     const ctxTokens = Math.ceil(smartContext.length / 4)
     KGDebug.stepDone('CTX', 'Smart context built', {
-        keywords: extractKeywords(userMessage),
+        rawKeywords,
+        translatedKeywords: keywords,
         matches: found,
         contextSize: `~${ctxTokens} tokens (${smartContext.length} chars)`,
         context: smartContext,
@@ -465,10 +518,12 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     if (braveKey.trim()) {
         KGDebug.step('BRAVE', 'Brave Search enrichment')
         try {
-            const braveResults = await searchBrave(userMessage, braveKey, 5)
+            const braveResults = await searchBrave(userMessage, braveKey, 3)
             if (braveResults) {
-                webContext = '\n\nWEB SEARCH RESULTS (use as reference):\n' + braveResults
-                KGDebug.stepDone('BRAVE', 'Brave results fetched', braveResults.slice(0, 200) + '...')
+                // Обрезаем до 400 символов чтобы не раздувать prompt (экономим токены)
+                const trimmedBrave = braveResults.slice(0, 400)
+                webContext = '\n\nWEB CONTEXT (brief reference only):\n' + trimmedBrave
+                KGDebug.stepDone('BRAVE', `Brave results fetched (trimmed to ${trimmedBrave.length} chars)`, trimmedBrave)
             } else {
                 KGDebug.stepWarn('BRAVE', 'No Brave results')
             }

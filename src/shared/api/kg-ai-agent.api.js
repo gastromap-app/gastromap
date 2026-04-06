@@ -20,6 +20,49 @@ import { useAppConfigStore } from '@/store/useAppConfigStore'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+// ─── Brave Search helper ──────────────────────────────────────────────────────
+
+const BRAVE_SEARCH_URL = 'https://api.search.brave.com/res/v1/web/search'
+
+/**
+ * Search the web via Brave Search API (free tier: 2 000 req/month).
+ * Returns up to `count` result snippets as a single string, or null if
+ * no API key is configured / the request fails.
+ *
+ * @param {string} query   - Search query
+ * @param {string} apiKey  - Brave Search API key
+ * @param {number} [count] - Number of results to fetch (default 5, max 20)
+ * @returns {Promise<string|null>}
+ */
+export async function searchBrave(query, apiKey, count = 5) {
+    if (!apiKey || !apiKey.trim()) return null
+    try {
+        const url = `${BRAVE_SEARCH_URL}?q=${encodeURIComponent(query)}&count=${count}&search_lang=en&result_filter=web`
+        const resp = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'Accept-Encoding': 'gzip',
+                'X-Subscription-Token': apiKey.trim(),
+            },
+        })
+        if (!resp.ok) {
+            console.warn(`[KG Agent] Brave search failed: ${resp.status}`)
+            return null
+        }
+        const data = await resp.json()
+        const results = data?.web?.results || []
+        if (!results.length) return null
+        return results
+            .slice(0, count)
+            .map((r, i) => `[${i + 1}] ${r.title}\n${r.description || r.url}`)
+            .join('\n\n')
+    } catch (err) {
+        console.warn('[KG Agent] Brave search error:', err.message)
+        return null
+    }
+}
+
+
 /**
  * Models tried in order — free tier, good JSON output.
  * Skips to next on rate-limit (429) or empty response.
@@ -48,6 +91,7 @@ Enrich the GastroMap database with accurate, structured culinary knowledge sourc
 - Open Food Facts (world's largest open food database)
 - Wikipedia culinary articles and Wikidata food taxonomy
 - Academic culinary references and regional cuisine encyclopedias
+- Brave Search web results (provided in context when available)
 
 YOUR ROLE:
 You populate three core entity types that power GastroGuide's semantic search and personalized recommendations:
@@ -151,13 +195,29 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         ...ingredients.map(i => `[ingredient] ${i.name}`),
     ].join('\n') || '(Knowledge Graph is empty — add freely)'
 
+    // ── Brave Search enrichment (if API key is set) ──────────────────────
+    const braveKey = appCfg.braveSearchApiKey || ''
+    let webContext = ''
+    if (braveKey.trim()) {
+        try {
+            const braveResults = await searchBrave(userMessage, braveKey, 5)
+            if (braveResults) {
+                webContext = '\n\nWEB SEARCH RESULTS (use as reference, do not copy verbatim):\n' + braveResults
+                console.info('[KG Agent] Brave search enrichment loaded')
+            }
+        } catch (e) {
+            console.warn('[KG Agent] Brave search skipped:', e.message)
+        }
+    }
+
     // Use admin-customized prompt if set, otherwise DEFAULT_KG_SYSTEM_PROMPT
     const basePrompt = (appCfg.aiKGAgentSystemPrompt && appCfg.aiKGAgentSystemPrompt.trim())
         ? appCfg.aiKGAgentSystemPrompt
         : DEFAULT_KG_SYSTEM_PROMPT
-    const systemPrompt = basePrompt.includes('{EXISTING_NAMES}')
+    const systemPrompt = (basePrompt.includes('{EXISTING_NAMES}')
         ? basePrompt.replace('{EXISTING_NAMES}', existingNames)
         : basePrompt + '\n\nEXISTING DATA (never duplicate these):\n' + existingNames
+    ) + webContext
 
     const errors = []
 

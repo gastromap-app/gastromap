@@ -639,6 +639,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                                                     {agentResult.items.cuisines.map((item, idx) => (
                                                         <ItemPreviewCard
                                                             key={`cuisine-${idx}`}
+                                                            status="new"
                                                             type="cuisines"
                                                             item={item}
                                                             selected={selected.cuisines.includes(idx)}
@@ -659,6 +660,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                                                     {agentResult.items.dishes.map((item, idx) => (
                                                         <ItemPreviewCard
                                                             key={`dish-${idx}`}
+                                                            status="new"
                                                             type="dishes"
                                                             item={item}
                                                             selected={selected.dishes.includes(idx)}
@@ -679,6 +681,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                                                     {agentResult.items.ingredients.map((item, idx) => (
                                                         <ItemPreviewCard
                                                             key={`ingredient-${idx}`}
+                                                            status="new"
                                                             type="ingredients"
                                                             item={item}
                                                             selected={selected.ingredients.includes(idx)}

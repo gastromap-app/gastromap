@@ -18,19 +18,20 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * When _direct_model=false, cascade starts from the requested model index.
  * Updated: April 2026.
  */
+// Updated April 2026 — only confirmed live models
 const MODEL_CASCADE = [
-    'stepfun/step-3.5-flash:free',             // Step 3.5 Flash — fastest
-    'nvidia/nemotron-nano-9b-v2:free',          // Nemotron Nano 9B — very fast
-    'z-ai/glm-4.5-air:free',                    // GLM-4.5-Air — fast & capable
-    'mistralai/mistral-small-3.1:free',          // Mistral Small — multilingual
-    'openai/gpt-oss-20b:free',                  // GPT-OSS 20B — Apache 2.0
-    'minimax/minimax-m2.5:free',                // MiniMax M2.5 — large context
-    'mistralai/devstral-2512:free',              // Devstral — coding
-    'meta-llama/llama-3.3-70b-instruct:free',   // Llama 3.3 70B — best quality
-    'qwen/qwen3-coder:free',                    // Qwen3 Coder — strong reasoning
-    'qwen/qwen3.6-plus:free',                   // Qwen3.6 Plus — 1M context
+    'openai/gpt-oss-120b:free',                 // GPT-OSS 120B — best JSON quality
+    'meta-llama/llama-3.3-70b-instruct:free',   // Llama 3.3 70B — reliable
     'google/gemma-3-27b-it:free',               // Gemma 3 27B — vision + multilingual
-    'google/gemma-3-12b-it:free',               // Gemma 3 12B — balanced
+    'nvidia/nemotron-3-super-120b-a12b:free',   // Nemotron Super — 262K ctx, RAG
+    'openai/gpt-oss-20b:free',                  // GPT-OSS 20B — Apache 2.0
+    'stepfun/step-3.5-flash:free',              // Step 3.5 Flash — fastest
+    'nvidia/nemotron-nano-9b-v2:free',          // Nemotron Nano 9B — high availability
+    'qwen/qwen3.6-plus:free',                   // Qwen3.6 Plus — 1M context
+    'qwen/qwen3-next-80b-a3b-instruct:free',    // Qwen3 Next 80B — MoE
+    'minimax/minimax-m2.5:free',                // MiniMax M2.5 — large context
+    'z-ai/glm-4.5-air:free',                    // GLM-4.5-Air — multilingual
+    'nousresearch/hermes-3-llama-3.1-405b:free',// Hermes 3 405B — largest free
 ]
 
 export default async function handler(req, res) {
@@ -66,7 +67,7 @@ export default async function handler(req, res) {
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {
-                    'Authorization': ,
+                    'Authorization': `Bearer ${apiKey}`,
                     'HTTP-Referer': 'https://gastromap.app',
                     'X-Title': 'GastroMap',
                     'Content-Type': 'application/json',
@@ -115,7 +116,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKey, res) {
         const response = await fetch(OPENROUTER_URL, {
             method: 'POST',
             headers: {
-                'Authorization': ,
+                'Authorization': `Bearer ${apiKey}`,
                 'HTTP-Referer': 'https://gastromap.app',
                 'X-Title': 'GastroMap',
                 'Content-Type': 'application/json',

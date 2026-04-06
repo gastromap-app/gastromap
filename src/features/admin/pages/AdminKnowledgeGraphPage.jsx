@@ -577,6 +577,8 @@ const TABS = [
 ]
 
 const AdminKnowledgeGraphPage = () => {
+    const queryClient = useQueryClient()
+
     const [activeTab, setActiveTab]   = useState('cuisines')
     const [searchTerm, setSearchTerm] = useState('')
     const [showModal, setShowModal]   = useState(null)

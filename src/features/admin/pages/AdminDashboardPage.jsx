@@ -91,7 +91,7 @@ const AdminDashboardPage = () => {
         { title: 'Locations', value: loadingLocations ? '...' : (locations.length || '—'), icon: MapPin, color: 'bg-orange-500' },
         { title: 'Users', value: totalUsers, icon: Users, color: 'bg-blue-500' },
         { title: 'Supporters', value: totalSupporters, icon: MessageSquare, color: 'bg-emerald-500' },
-        { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-purple-500' },
+        { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-indigo-500' },
     ]
 
     return (

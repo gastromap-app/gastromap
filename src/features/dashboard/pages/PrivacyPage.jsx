@@ -57,7 +57,7 @@ const PrivacyPage = () => {
 
             <div className="px-5 space-y-6">
                 {/* Intro Card */}
-                <div className={`p-8 rounded-[40px] border ${cardBg} bg-gradient-to-br from-blue-500/5 to-purple-500/5`}>
+                <div className={`p-8 rounded-[40px] border ${cardBg} bg-gradient-to-br from-blue-500/5 to-indigo-500/5`}>
                     <Shield size={40} className="text-blue-500 mb-6" />
                     <h2 className={`text-xl font-black mb-4 ${textStyle}`}>Your Privacy is our Priority</h2>
                     <p className={`text-sm leading-relaxed ${subTextStyle}`}>

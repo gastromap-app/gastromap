@@ -66,7 +66,7 @@ export function InstallPrompt() {
                 >
                     <div className="bg-[#0f172a]/95 backdrop-blur-2xl border border-white/15 rounded-[28px] shadow-[0_20px_60px_rgba(37,99,235,0.25)] overflow-hidden">
                         {/* Gradient top accent */}
-                        <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+                        <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-indigo-500" />
 
                         <div className="p-5">
                             <div className="flex items-start gap-4">

@@ -96,7 +96,7 @@ const ProfileEditPage = () => {
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
+                        <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
                             {formData.name.charAt(0)}
                         </div>
                         <button className="absolute -bottom-1 -right-1 bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg border-[4px] border-[#0F1115] hover:scale-105 transition-transform">

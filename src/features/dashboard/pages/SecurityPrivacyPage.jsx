@@ -79,7 +79,7 @@ const SecurityPrivacyPage = () => {
                                 className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== privacyItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+                                    <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
                                         <item.icon size={20} />
                                     </div>
                                     <div className="text-left">

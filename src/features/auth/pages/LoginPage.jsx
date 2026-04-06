@@ -43,7 +43,7 @@ const LoginPage = () => {
                 {/* Aurora Background */}
                 <div className="absolute top-0 left-0 w-full h-full opacity-60 pointer-events-none">
                     <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-600 rounded-full blur-[120px] animate-pulse" />
-                    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-purple-600 rounded-full blur-[120px] animate-pulse delay-700" />
+                    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-indigo-600 rounded-full blur-[120px] animate-pulse delay-700" />
                 </div>
 
                 <div className="relative z-10">
@@ -60,7 +60,7 @@ const LoginPage = () => {
                         transition={{ delay: 0.3 }}
                     >
                         <h1 className="text-5xl font-bold leading-tight mb-8">
-                            Curated flavors for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">modern palate.</span>
+                            Curated flavors for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">modern palate.</span>
                         </h1>
 
                         <div className="space-y-6">
@@ -74,7 +74,7 @@ const LoginPage = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center text-purple-400">
+                                <div className="w-10 h-10 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400">
                                     <CheckCircle2 size={20} />
                                 </div>
                                 <div>

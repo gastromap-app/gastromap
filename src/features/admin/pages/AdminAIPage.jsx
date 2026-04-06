@@ -104,7 +104,7 @@ const FREE_MODELS = [
         context: '1M',
         languages: '100+ incl. RU / PL / UA',
         badge: '1M Context',
-        badgeColor: 'bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400',
+        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
         description: 'Massive 1M context. Hybrid thinking + vision + tool use.',
         toolUse: true,
     },
@@ -115,7 +115,7 @@ const FREE_MODELS = [
         context: '262K',
         languages: '100+ incl. RU / PL / UA',
         badge: 'New',
-        badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400',
+        badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400',
         description: 'Next-gen Qwen3 with MoE architecture. 262K context, fast inference.',
         toolUse: true,
     },
@@ -126,7 +126,7 @@ const FREE_MODELS = [
         context: '262K',
         languages: '100+ incl. RU / PL / UA',
         badge: 'Best Coding',
-        badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400',
+        badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
         description: '480B MoE model. State-of-the-art coding. Also great for structured JSON.',
         toolUse: true,
     },
@@ -265,6 +265,38 @@ const AdminAIPage = () => {
     const [kgAgentPrompt, setKgAgentPrompt] = useState(appConfig.aiKGAgentSystemPrompt ?? '')
     const [braveApiKey, setBraveApiKey] = useState(appConfig.braveSearchApiKey ?? '')
     const [showBraveKey, setShowBraveKey] = useState(false)
+
+    // ── Key Status (Functional Improvement)
+    const [apiKeyStatus, setApiKeyStatus] = useState('idle') // idle | validating | valid | invalid | error
+    const [apiKeyError, setApiKeyError] = useState('')
+    const [validationTrigger, setValidationTrigger] = useState(0)
+
+    React.useEffect(() => {
+        if (apiKey && apiKey.startsWith('sk-or-')) {
+            validateKey(apiKey)
+        } else {
+            setApiKeyStatus(apiKey ? 'invalid' : 'idle')
+            setApiKeyError(apiKey ? 'Must start with sk-or-' : '')
+        }
+    }, [apiKey, validationTrigger])
+
+    const validateKey = async (key) => {
+        setApiKeyStatus('validating')
+        try {
+            // Test with a quick 1-token query
+            const result = await testAIConnection('ping', primaryModel)
+            if (result.ok) {
+                setApiKeyStatus('valid')
+                setApiKeyError('')
+            } else {
+                setApiKeyStatus('invalid')
+                setApiKeyError(result.text || 'Invalid API Key')
+            }
+        } catch (err) {
+            setApiKeyStatus('error')
+            setApiKeyError(err.message)
+        }
+    }
 
     // ── Agents
     const [agentActive, setAgentActive] = useState({
@@ -530,6 +562,37 @@ const AdminAIPage = () => {
                                 {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setValidationTrigger(v => v + 1)}
+                                disabled={apiKeyStatus === 'validating' || !apiKey}
+                                className={cn(
+                                    "px-4 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all",
+                                    apiKeyStatus === 'valid' 
+                                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
+                                        : "bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
+                                )}
+                            >
+                                {apiKeyStatus === 'validating' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                                <span className="ml-2">Test Key</span>
+                            </button>
+                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50">
+                                <div className={cn(
+                                    "w-2 h-2 rounded-full",
+                                    apiKeyStatus === 'valid' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                                    apiKeyStatus === 'invalid' || apiKeyStatus === 'error' ? "bg-red-500" :
+                                    apiKeyStatus === 'validating' ? "bg-amber-500 animate-pulse" : "bg-slate-300 dark:bg-slate-600"
+                                )} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                    Status: {apiKeyStatus === 'idle' ? 'Not Checked' : apiKeyStatus.toUpperCase()}
+                                </span>
+                                {apiKeyError && (
+                                    <span className="text-[10px] text-red-500 truncate max-w-[200px]">
+                                        — {apiKeyError}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                         Get your free API key from{' '}
@@ -668,8 +731,8 @@ const AdminAIPage = () => {
                     <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-500/20">
-                                    <Globe className="text-violet-500" size={16} />
+                                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
+                                    <Globe className="text-indigo-500" size={16} />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm text-slate-900 dark:text-white">Knowledge Graph Agent</h3>
@@ -684,8 +747,8 @@ const AdminAIPage = () => {
                                 Reset
                             </button>
                         </div>
-                        <div className="mb-3 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
-                            <p className="text-xs text-violet-700 dark:text-violet-300 font-medium leading-relaxed">
+                        <div className="mb-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                            <p className="text-xs text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
                                 This agent connects to Open Food Facts, Wikipedia, and other culinary sources to populate
                                 the Knowledge Graph with cuisines, dishes, and ingredients.
                                 GastroGuide reads this data for semantic, context-aware recommendations.
@@ -694,7 +757,7 @@ const AdminAIPage = () => {
                         {/* Brave Search API Key */}
                         <div className="mb-4">
                             <div className="flex items-center gap-2 mb-2">
-                                <Search size={13} className="text-violet-500" />
+                                <Search size={13} className="text-indigo-500" />
                                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Brave Search API Key</label>
                                 <span className="text-xs text-slate-400">(free tier: 2 000 req/month)</span>
                             </div>
@@ -706,7 +769,7 @@ const AdminAIPage = () => {
                                         value={braveApiKey}
                                         onChange={(e) => setBraveApiKey(e.target.value)}
                                         placeholder="BSA..."
-                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-violet-500 transition-all"
+                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                                 <button
@@ -719,7 +782,7 @@ const AdminAIPage = () => {
                             </div>
                             <p className="text-xs text-slate-400 mt-1.5">
                                 Get a free key at{" "}
-                                <a href="https://api.search.brave.com" target="_blank" rel="noopener noreferrer" className="text-violet-500 hover:underline">api.search.brave.com</a>.
+                                <a href="https://api.search.brave.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">api.search.brave.com</a>.
                                 {braveApiKey ? " ✓ Web search enrichment active" : " Leave empty to skip web search."}
                             </p>
                         </div>
@@ -728,7 +791,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setKgAgentPrompt(e.target.value)}
                             placeholder={DEFAULT_KG_SYSTEM_PROMPT}
                             rows={8}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-violet-500 transition-all resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {kgAgentPrompt.length} characters {kgAgentPrompt.length === 0 && '(using default — Open Food Facts + Wikipedia sources)'}

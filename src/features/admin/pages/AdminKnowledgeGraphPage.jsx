@@ -199,7 +199,7 @@ const InfoModal = ({ onClose }) => (
                     { icon: Database, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '1. База Знаний (Ontology)', text: 'Кулинарная энциклопедия со связями: Кухни (Итальянская) → Блюда (Паста) → Ингредиенты (Базилик). Приложение понимает контекст еды.' },
                     { icon: Sparkles, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10', title: '2. Искусственный Интеллект', text: 'AI наполняет базу "семенами" знаний — автоматически генерирует блюда, описания и теги по мировым кулинарным стандартам.' },
                     { icon: RefreshCw, color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10', title: '3. Синхронизация (Mapping)', text: 'Рестораны привязываются к базе знаний. Если ресторан подаёт пиццу — он становится частью "Итальянской кухни" автоматически.' },
-                    { icon: Search, color: 'text-purple-600 bg-purple-50 dark:bg-purple-500/10', title: '4. Семантический поиск', text: 'Пользователи ищут не по именам, а по смыслу: "хочу что-то острое", "веганская Азия". Система находит рестораны через связи в графе.' },
+                    { icon: Search, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '4. Семантический поиск', text: 'Пользователи ищут не по именам, а по смыслу: "хочу что-то острое", "веганская Азия". Система находит рестораны через связи в графе.' },
                 ].map(({ icon: Icon, color, title, text }) => (
                     <div key={title} className="flex gap-4">
                         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', color)}>
@@ -568,6 +568,85 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
     )
 }
 
+// ─── MERGE MODAL ──────────────────────────────────────────────────────────────
+/**
+ * UI for merging duplicates.
+ * Shows groups of similar items, allows keeping one and deleting others.
+ */
+const MergeModal = ({ groups, type, onMerge, onClose }) => {
+    const [selectedGroupIdx, setSelectedGroupIdx] = useState(0)
+    const [masterId, setMasterId] = useState('')
+    
+    const activeGroup = groups[selectedGroupIdx] || []
+    
+    return (
+        <FormModalBase title={`Merge Duplicate ${type}`} onClose={onClose} onSave={() => onMerge(activeGroup, masterId)}>
+            <div className="space-y-6">
+                {/* Group Selector */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    {groups.map((group, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                setSelectedGroupIdx(idx)
+                                setMasterId('')
+                            }}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border",
+                                selectedGroupIdx === idx 
+                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400"
+                            )}
+                        >
+                            Group {idx + 1} ({group[0]?.name})
+                        </button>
+                    ))}
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-4">
+                        Select WHICH entry to keep. Others in this group will be <span className="text-rose-500 font-bold uppercase">deleted</span>.
+                    </p>
+                    
+                    <div className="space-y-3">
+                        {activeGroup.map((item) => (
+                            <div 
+                                key={item.id}
+                                onClick={() => setMasterId(item.id)}
+                                className={cn(
+                                    "p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between",
+                                    masterId === item.id 
+                                        ? "border-indigo-500 bg-white dark:bg-slate-900 shadow-sm"
+                                        : "border-transparent bg-white/50 dark:bg-slate-900/30 hover:border-slate-200 dark:hover:border-slate-700"
+                                )}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.name}</h4>
+                                    <p className="text-[10px] text-slate-400 mt-0.5 truncate uppercase">ID: {item.id.slice(0, 8)}...</p>
+                                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{item.description || 'No description'}</p>
+                                </div>
+                                <div className={cn(
+                                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                    masterId === item.id ? "bg-indigo-600 border-indigo-600" : "border-slate-300 dark:border-slate-700"
+                                )}>
+                                    {masterId === item.id && <CheckCircle2 size={12} className="text-white" />}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-700 dark:text-indigo-300">
+                    <Info size={14} className="flex-shrink-0" />
+                    <p className="text-[10px] font-medium leading-relaxed">
+                        Currently, only simple merging is supported. Relationships registered via ID won't be updated. Use this primarily for cleaning name collisions.
+                    </p>
+                </div>
+            </div>
+        </FormModalBase>
+    )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 const TABS = [
@@ -585,6 +664,8 @@ const AdminKnowledgeGraphPage = () => {
     const [isInfoOpen, setIsInfoOpen] = useState(false)
     const [toast, setToast]           = useState(null)
     const [syncStatus, setSyncStatus] = useState(null)
+    const [showMergeModal, setShowMergeModal] = useState(false)
+    const [duplicateGroups, setDuplicateGroups] = useState([])
 
     const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
     const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()
@@ -602,6 +683,58 @@ const AdminKnowledgeGraphPage = () => {
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
     const syncKG           = useSyncKGToLocationsMutation()
+
+    const handleMerge = async (group, keepId) => {
+        if (!keepId) {
+            alert('Select which record to keep first')
+            return
+        }
+
+        const toDeleteIds = group.filter(i => i.id !== keepId).map(i => i.id)
+        try {
+            const { mergeEntities } = await import('@/shared/api/knowledge-graph.api')
+            await mergeEntities(activeTab, keepId, toDeleteIds)
+            
+            showToast(`Merged ${toDeleteIds.length} duplicates into master record`)
+            setShowMergeModal(false)
+            setDuplicateGroups([])
+            
+            // Refetch to sync UI
+            handleBatchComplete()
+        } catch (e) {
+            showToast('Merge failed: ' + e.message, 'error')
+        }
+    }
+
+    const checkForDuplicates = () => {
+        const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients
+        if (!source || source.length === 0) return
+
+        // Simple normalization for grouping
+        const norm = (str) => (str || '')
+            .toLowerCase()
+            .replace(/^(the|a|an|le|la|el|los|las|de|di|of|для|этот|эта)\s+/i, '')
+            .replace(/\s+(cuisine|food|cooking|kitchen|dish|dishes|style|traditions|tradition|recipes|recipe|кухня|блюда|ингредиент|ингредиенты)$/i, '')
+            .replace(/[^a-z0-9а-яё]/gi, '')
+            .replace(/e?s$/, '') 
+            .trim()
+        
+        const groups = {}
+        source.forEach(item => {
+            const n = norm(item.name)
+            if (!groups[n]) groups[n] = []
+            groups[n].push(item)
+        })
+
+        const duplicates = Object.values(groups).filter(g => g.length > 1)
+        if (duplicates.length === 0) {
+            showToast('No duplicates found in ' + activeTab, 'info')
+            return
+        }
+
+        setDuplicateGroups(duplicates)
+        setShowMergeModal(true)
+    }
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
@@ -769,7 +902,7 @@ const AdminKnowledgeGraphPage = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsInfoOpen(true)}
-                        className="h-10 px-4 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-300 dark:hover:border-indigo-700 text-sm font-medium transition-all"
+                        className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
                     >
                         <Info size={15} />
                         <span className="hidden sm:inline">How it works</span>
@@ -950,6 +1083,16 @@ const AdminKnowledgeGraphPage = () => {
                         })}
                     </div>
 
+                    {/* Duplicate Finder */}
+                    <button
+                        onClick={checkForDuplicates}
+                        className="h-9 px-3 flex items-center gap-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-[11px] font-bold uppercase tracking-wider transition-all border border-transparent hover:border-indigo-100"
+                        title="Scan current tab for duplicate names"
+                    >
+                        <Zap size={14} className="text-amber-500" />
+                        Clean Duplicates
+                    </button>
+
                     {/* Search */}
                     <div className="relative flex-1 group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={15} />
@@ -1060,6 +1203,14 @@ const AdminKnowledgeGraphPage = () => {
                 )}
                 {isInfoOpen && (
                     <InfoModal onClose={() => setIsInfoOpen(false)} />
+                )}
+                {showMergeModal && (
+                    <MergeModal 
+                        groups={duplicateGroups} 
+                        type={activeTab.slice(0, -1)} 
+                        onMerge={handleMerge}
+                        onClose={() => setShowMergeModal(false)} 
+                    />
                 )}
             </AnimatePresence>
         </div>

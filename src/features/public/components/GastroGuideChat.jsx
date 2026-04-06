@@ -19,17 +19,17 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                 className="fixed inset-0 z-[100] flex flex-col items-center justify-center md:inset-auto md:right-6 md:bottom-24 md:w-[420px] md:h-[650px] p-4 md:p-0 pointer-events-none"
             >
                 {/* The "Siri" Glow Container */}
-                <div className={`pointer-events-auto relative w-full h-full md:max-h-[650px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-white/50 dark:border-gray-700/50 overflow-hidden flex flex-col ${isTyping ? 'ring-2 ring-purple-400/50' : ''}`}>
+                <div className={`pointer-events-auto relative w-full h-full md:max-h-[650px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-white/50 dark:border-gray-700/50 overflow-hidden flex flex-col ${isTyping ? 'ring-2 ring-indigo-400/50' : ''}`}>
 
                     {/* Aurora Animation when typing */}
                     {isTyping && (
-                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-purple-200/50 via-pink-100/30 to-transparent blur-2xl animate-pulse pointer-events-none" />
+                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-200/50 via-pink-100/30 to-transparent blur-2xl animate-pulse pointer-events-none" />
                     )}
 
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-5 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-gray-900/50">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-200">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-200">
                                 <Sparkles className="h-4 w-4 text-white" />
                             </div>
                             <span className="font-semibold text-sm tracking-tight text-gray-900 dark:text-white">GastroGuide</span>

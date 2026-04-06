@@ -126,7 +126,7 @@ const LocationDetailsPage = () => {
                 {[
                     { icon: Clock, label: openLabel || "Hours Today", value: location.openingHours || '—', color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
                     { icon: Phone, label: "Contact", value: location.phone || '—', color: "bg-green-500/10 text-green-500", hidden: !location.phone },
-                    { icon: MessageSquare, label: "Total Reviews", value: aggregate.count ? `${aggregate.count} reviews` : 'No reviews', color: "bg-purple-500/10 text-purple-500" },
+                    { icon: MessageSquare, label: "Total Reviews", value: aggregate.count ? `${aggregate.count} reviews` : 'No reviews', color: "bg-indigo-500/10 text-indigo-500" },
                     { icon: Navigation, label: "Directions", value: location.address ? 'Open in Maps' : '—', color: "bg-orange-500/10 text-orange-500" }
                 ].filter(info => !info.hidden).map((info, i) => (
                     <motion.div

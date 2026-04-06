@@ -178,13 +178,19 @@ export async function searchBrave(query, apiKey, count = 5) {
     }
 }
 
+// Cascade priority:
+// 1. gpt-oss-20b  — доказал стабильность (6/8 в сессии выше), хороший JSON
+// 2. llama-3.3-70b — мощная, стабильная, хорошо следует JSON-схеме
+// 3. mistral-small — быстрая, часто отвечает
+// 4. stepfun-flash — быстрая но иногда пустой ответ
+// 5-7. резервные
 const AGENT_MODELS = [
-    'stepfun/step-3.5-flash:free',
-    'mistralai/mistral-small-3.1:free',
-    'z-ai/glm-4.5-air:free',
-    'nvidia/nemotron-nano-9b-v2:free',
     'openai/gpt-oss-20b:free',
     'meta-llama/llama-3.3-70b-instruct:free',
+    'mistralai/mistral-small-3.1:free',
+    'stepfun/step-3.5-flash:free',
+    'nvidia/nemotron-nano-9b-v2:free',
+    'z-ai/glm-4.5-air:free',
     'qwen/qwen-2-7b-instruct:free',
 ]
 
@@ -438,18 +444,25 @@ function buildSmartContext(userMessage, cuisines, dishes, ingredients) {
 
 function estimateMaxTokens(userMessage) {
     const msg = userMessage.toLowerCase()
-    if (
-        msg.includes('all ') ||
-        msg.includes('every ') ||
-        (msg.includes('cuisine') && msg.includes('dish') && msg.includes('ingredient'))
-    ) return 3500
-    if (
-        msg.includes('cuisine') ||
-        msg.includes('dishes') ||
-        msg.includes('top ') ||
-        /\d+\s+dish/.test(msg)
-    ) return 2000
-    return 800
+
+    // Большой запрос — всё сразу (EN + RU)
+    const isMassive =
+        msg.includes('all ') || msg.includes('every ') || msg.includes('все ') ||
+        msg.includes('всё ') || msg.includes('полный') || msg.includes('весь') ||
+        (msg.includes('cuisine') && msg.includes('dish') && msg.includes('ingredient')) ||
+        (msg.includes('кухн') && msg.includes('блюд') && msg.includes('ингред'))
+    if (isMassive) return 3000
+
+    // Средний — кухня + блюда или топ N (EN + RU)
+    const isMedium =
+        msg.includes('cuisine') || msg.includes('dishes') ||
+        msg.includes('кухн') || msg.includes('блюд') ||
+        msg.includes('top ') || msg.includes('топ ') ||
+        /\d+\s*(dish|блюд)/.test(msg)
+    if (isMedium) return 2000
+
+    // Маленький — один ингредиент / уточнение
+    return 1000
 }
 
 // ─── Client-side dedup (safety net) ──────────────────────────────────────────
@@ -572,8 +585,13 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         const _modelStart = performance.now()
 
         try {
+            // 45 sec timeout — если модель молчит дольше, пробуем следующую
+            const controller = new AbortController()
+            const timeoutId  = setTimeout(() => controller.abort(), 45_000)
+
             const resp = await fetch(OPENROUTER_URL, {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                     'HTTP-Referer': 'https://gastromap.app',
@@ -591,6 +609,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
                     response_format: { type: 'json_object' },
                 }),
             })
+            clearTimeout(timeoutId)
 
             if (resp.status === 429 || resp.status === 503) {
                 KGDebug.modelFail(model, `rate-limited (${resp.status})`)
@@ -669,8 +688,10 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             return parsed
 
         } catch (err) {
-            KGDebug.stepFail('AI', `${model} threw error`, err.message)
-            errors.push(`${model}: ${err.message}`)
+            const isTimeout = err.name === 'AbortError'
+            const errMsg    = isTimeout ? 'timeout (45s)' : err.message
+            KGDebug.stepFail('AI', `${model} — ${errMsg}`, errMsg)
+            errors.push(`${model}: ${errMsg}`)
         }
     }
 

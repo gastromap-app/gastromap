@@ -20,9 +20,10 @@ export const useAppConfigStore = create(
             aiGuideTemp: 0.7,
             aiAssistantTemp: 0.4,
 
-            // Custom system prompts (empty = use defaults from ai.api.js)
+            // Custom system prompts (empty = use defaults from ai.api.js / kg-ai-agent.api.js)
             aiGuideSystemPrompt: '',
             aiAssistantSystemPrompt: '',
+            aiKGAgentSystemPrompt: '',   // KG Agent instructions (empty = use DEFAULT_KG_SYSTEM_PROMPT)
 
             updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
             setAppStatus: (status) => set({ appStatus: status }),

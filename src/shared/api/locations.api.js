@@ -17,7 +17,7 @@ import {
     getTranslations 
 } from './translation.api'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { getActiveAIConfig } from './ai.api'
+import { getActiveAIConfig } from './ai-config.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
 

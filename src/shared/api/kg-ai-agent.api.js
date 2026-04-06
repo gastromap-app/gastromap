@@ -22,38 +22,35 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // ─── Brave Search helper ──────────────────────────────────────────────────────
 
-const BRAVE_SEARCH_URL = 'https://api.search.brave.com/res/v1/web/search'
-
 /**
  * Search the web via Brave Search API (free tier: 2 000 req/month).
- * Returns up to `count` result snippets as a single string, or null if
- * no API key is configured / the request fails.
+ * Requests are routed through /api/brave-search (Vercel serverless proxy)
+ * to avoid CORS — the API key never needs to be exposed client-side.
+ *
+ * The proxy accepts either a server-side BRAVE_SEARCH_API_KEY env var
+ * OR a client-supplied apiKey in the request body (from admin store).
  *
  * @param {string} query   - Search query
- * @param {string} apiKey  - Brave Search API key
+ * @param {string} apiKey  - Brave Search API key (passed to proxy as fallback)
  * @param {number} [count] - Number of results to fetch (default 5, max 20)
  * @returns {Promise<string|null>}
  */
 export async function searchBrave(query, apiKey, count = 5) {
     if (!apiKey || !apiKey.trim()) return null
     try {
-        const url = `${BRAVE_SEARCH_URL}?q=${encodeURIComponent(query)}&count=${count}&search_lang=en&result_filter=web`
-        const resp = await fetch(url, {
-            headers: {
-                'Accept': 'application/json',
-                'Accept-Encoding': 'gzip',
-                'X-Subscription-Token': apiKey.trim(),
-            },
+        const resp = await fetch('/api/brave-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, count, apiKey }),
         })
         if (!resp.ok) {
-            console.warn(`[KG Agent] Brave search failed: ${resp.status}`)
+            console.warn(`[KG Agent] Brave search proxy failed: ${resp.status}`)
             return null
         }
         const data = await resp.json()
-        const results = data?.web?.results || []
+        const results = data?.results || []
         if (!results.length) return null
         return results
-            .slice(0, count)
             .map((r, i) => `[${i + 1}] ${r.title}\n${r.description || r.url}`)
             .join('\n\n')
     } catch (err) {

@@ -226,11 +226,13 @@ function sanitize(type, data) {
         })
     }
     if (type === 'dish') {
-        const { name, cuisine_name, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
+        // NOTE: cuisine_name is NOT stored in DB — dishes link via cuisine_id (FK)
+        // resolveDishCuisineIds() in KGAIAgent converts cuisine_name → cuisine_id before calling here
+        const { name, cuisine_id, description, ingredients, preparation_style, dietary_tags, flavor_notes, best_pairing } = data
         return clean({
             name:              name?.trim(),
             slug:              slugify(name),
-            cuisine_name,
+            cuisine_id:        cuisine_id || null,
             description,
             ingredients:       toArray(ingredients),
             preparation_style,

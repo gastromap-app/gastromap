@@ -23,7 +23,7 @@ import { callKGAgent, resolveDishCuisineIds, AGENT_EXAMPLE_PROMPTS } from '@/sha
 
 // ─── Preview card for a single generated item ─────────────────────────────────
 
-const ItemPreviewCard = ({ type, item, selected, onToggle }) => {
+const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => {
     const [expanded, setExpanded] = useState(false)
 
     const config = {
@@ -117,6 +117,16 @@ const ItemPreviewCard = ({ type, item, selected, onToggle }) => {
                                 'font-semibold text-sm truncate block transition-colors',
                                 selected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'
                             )}>{item.name}</span>
+                            {status === 'exists' && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded-full mt-0.5">
+                                    Already in KG
+                                </span>
+                            )}
+                            {status === 'new' && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full mt-0.5">
+                                    New
+                                </span>
+                            )}
                             {meta && (
                                 <span className={cn('text-[10px] font-bold uppercase tracking-wide', config.text)}>{meta}</span>
                             )}
@@ -300,6 +310,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                         dishes:      result.items.dishes.length,
                         ingredients: result.items.ingredients.length,
                     },
+                    skipped: result.skipped || { cuisines: [], dishes: [], ingredients: [] },
                 },
             ])
 

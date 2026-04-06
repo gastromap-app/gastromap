@@ -52,10 +52,16 @@ const MODEL_CASCADE = [
  */
 function getActiveAIConfig() {
     const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
     return {
-        apiKey:        appCfg.aiApiKey        || config.ai.openRouterKey,
+        apiKey,
         model:         appCfg.aiPrimaryModel  || config.ai.model,
         fallbackModel: appCfg.aiFallbackModel || config.ai.modelFallback,
+        /** 
+         * Use proxy only if NO key is provided (Store or Env) 
+         * AND we are in Production. In Dev, always direct unless specified.
+         */
+        useProxy: (!apiKey || apiKey === '') && import.meta.env.PROD
     }
 }
 
@@ -491,8 +497,7 @@ export const DEFAULT_PROMPTS = {
  * @returns {Promise<{response: Response, modelUsed: string}>}
  */
 async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride } = {}) {
-    const { apiKey, model: activeModel, fallbackModel } = getActiveAIConfig()
-    const useProxy = config.ai.useProxy
+    const { apiKey, model: activeModel, fallbackModel, useProxy } = getActiveAIConfig()
 
     // Build cascade: start with preferred model, then try all others
     const preferredModel = modelOverride ?? activeModel

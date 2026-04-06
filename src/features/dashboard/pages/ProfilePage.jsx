@@ -74,7 +74,7 @@ const ProfilePage = () => {
         { label: t('profile.level'), val: 'Expert', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
         { label: t('profile.visited'), val: '12', icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
         { label: t('profile.reviews'), val: '8', icon: Utensils, color: 'text-green-500 bg-green-500/10' },
-        { label: t('profile.reward'), val: 'Coffee', icon: Coffee, color: 'text-purple-500 bg-purple-500/10' },
+        { label: t('profile.reward'), val: 'Coffee', icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10' },
     ]
 
     const contributions = [
@@ -152,7 +152,7 @@ const ProfilePage = () => {
             {/* Profile Header - Compact */}
             <div className="pt-24 px-6 flex flex-col items-center text-center">
                 <div className="relative mb-4">
-                    <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/30">
+                    <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/30">
                         {user.name.charAt(0)}
                     </div>
                     <div className="absolute -bottom-1 -right-1 bg-yellow-400 p-1.5 rounded-full text-white shadow-lg border-[3px] border-[#0F1115]">
@@ -259,7 +259,7 @@ const ProfilePage = () => {
                         {/* Preferred Atmosphere */}
                         <div className="space-y-3">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.atmosphere_label')}</label>
-                            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-purple-500/5 border-purple-500/10' : 'bg-purple-50/50 border-purple-100/50'}`}>
+                            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-indigo-500/5 border-indigo-500/10' : 'bg-indigo-50/50 border-indigo-100/50'}`}>
                                 <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
                                     {user.preferences?.longTerm?.atmospherePreference || t('profile.no_atmosphere')}
                                 </p>
@@ -307,20 +307,20 @@ const ProfilePage = () => {
                     </div>
 
                     {/* Dine With Me Placeholder */}
-                    <div className={`p-5 rounded-[24px] border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-transparent relative overflow-hidden group`}>
+                    <div className={`p-5 rounded-[24px] border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-transparent relative overflow-hidden group`}>
                         <div className="flex items-center gap-3 mb-3 relative z-10">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                                 <Users size={20} />
                             </div>
                             <div>
                                 <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.dine_title')}</h4>
-                                <p className="text-xs text-purple-500 font-bold tracking-wide uppercase">{t('profile.dine_beta')}</p>
+                                <p className="text-xs text-indigo-500 font-bold tracking-wide uppercase">{t('profile.dine_beta')}</p>
                             </div>
                         </div>
                         <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
                             {t('profile.dine_desc')}
                         </p>
-                        <button className="mt-4 px-4 py-2 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-xs relative z-10 hover:bg-purple-500/30 transition-colors">
+                        <button className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs relative z-10 hover:bg-indigo-500/30 transition-colors">
                             {t('profile.dine_btn')}
                         </button>
                     </div>

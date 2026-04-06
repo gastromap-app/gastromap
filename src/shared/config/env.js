@@ -23,15 +23,19 @@ export const config = {
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
         proxyUrl: '/api/ai/chat',
+        /** 
+         * @deprecated Use checkAIStatus() from ai.api.js or check appCfg.aiApiKey || config.ai.openRouterKey
+         * This getter only checks ENV variables.
+         */
         get isConfigured() {
-            return Boolean(this.openRouterKey)
+            return Boolean(this.openRouterKey) || import.meta.env.DEV
         },
         get isOpenRouterConfigured() {
-            return Boolean(this.openRouterKey)
+            return Boolean(this.openRouterKey) || import.meta.env.DEV
         },
         /** In production the key is absent from the client bundle — use the proxy */
         get useProxy() {
-            return !this.openRouterKey && import.meta.env.PROD
+            return (!this.openRouterKey || this.openRouterKey === '') && import.meta.env.PROD
         },
     },
 

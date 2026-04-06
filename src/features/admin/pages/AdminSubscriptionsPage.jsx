@@ -16,7 +16,7 @@ const AdminSubscriptionsPage = () => {
     const plans = payments?.plans || [
         { name: 'Coffee', price: '$3', period: 'one-time', users: '345', color: 'bg-amber-500', icon: Coffee },
         { name: 'Supporter', price: '$5', period: 'monthly', users: '854', color: 'bg-indigo-600', icon: Heart, popular: true },
-        { name: 'Champion', price: '$25', period: 'one-time', users: '92', color: 'bg-purple-600', icon: Star },
+        { name: 'Champion', price: '$25', period: 'one-time', users: '92', color: 'bg-indigo-600', icon: Star },
     ]
 
     const allTransactions = payments?.recent_transactions || [

@@ -506,7 +506,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                     // Добавляем в список ВСЕГДА — даже если дубликат (нужен id для dish resolve)
                     if (created?.id && !createdCuisines.find(c => c.id === created.id)) {
                         createdCuisines.push(created)
-                        if (_dbgOn()) console.debug(`%c[cuisine] added to local list: "${created.name}" id=${created.id?.slice(0,8)}`, 'color:#34d399')
+                        if (localStorage.getItem('KG_SAVE_DEBUG') === '1') console.debug(`%c[cuisine] added to local list: "${created.name}" id=${created.id?.slice(0,8)}`, 'color:#34d399')
                     }
                     _dbg.itemOk(i, created)
 
@@ -514,13 +514,13 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved }) =>
                     const resolved = resolveDishCuisineIds([item.data], createdCuisines)
                     const dishData = resolved[0]
                     // Debug: логируем резолв cuisine_id
-                    if (_dbgOn()) {
+                    if (localStorage.getItem('KG_SAVE_DEBUG') === '1') {
                         const hasCuisineId = !!dishData?.cuisine_id
                         const cuisineName  = item.data?.cuisine_name
                         console.debug(
                             `%c[dish resolve] "${dishData?.name}" cuisine_name="${cuisineName}" → cuisine_id=${dishData?.cuisine_id}`,
                             hasCuisineId ? 'color:#34d399' : 'color:#fbbf24;font-weight:bold',
-                            hasCuisineId ? '✅' : '⚠️ NOT FOUND — dish will save without cuisine link',
+                            hasCuisineId ? '✅' : '⚠️ NOT FOUND',
                             '| known cuisines:', createdCuisines.map(c => `${c.name}(${c.id?.slice(0,8)})`)
                         )
                     }

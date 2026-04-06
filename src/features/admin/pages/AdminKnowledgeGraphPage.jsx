@@ -705,6 +705,7 @@ const AdminKnowledgeGraphPage = () => {
             return (item.name || '').toLowerCase().includes(q)
                 || (item.description || '').toLowerCase().includes(q)
                 || (item.region || '').toLowerCase().includes(q)
+                || (item.origin_country || '').toLowerCase().includes(q)
         })
     }, [activeTab, cuisines, dishes, ingredients, searchTerm])
 

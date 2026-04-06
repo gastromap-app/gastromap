@@ -178,20 +178,23 @@ export async function searchBrave(query, apiKey, count = 5) {
     }
 }
 
-// Cascade priority:
-// 1. gpt-oss-20b  — доказал стабильность (6/8 в сессии выше), хороший JSON
-// 2. llama-3.3-70b — мощная, стабильная, хорошо следует JSON-схеме
-// 3. mistral-small — быстрая, часто отвечает
-// 4. stepfun-flash — быстрая но иногда пустой ответ
-// 5-7. резервные
+// Cascade priority (updated 2026-04-06):
+// 1. gpt-oss-120b  — большая модель OpenAI, лучше держит JSON-схему на больших запросах
+// 2. llama-3.3-70b — мощная, стабильная, хорошо следует JSON-схеме (65k ctx)
+// 3. gemma-3-27b   — Google, хороша для структурированных JSON ответов (131k ctx)
+// 4. nemotron-super — NVIDIA 120B, огромный контекст 262k (но медленная)
+// 5. gpt-oss-20b   — резерв (иногда rate-limit)
+// 6. stepfun-flash — быстрая но иногда пустой ответ на сложных запросах
+// REMOVED: mistral-small-3.1 (404), qwen-2-7b (404), z-ai/glm-4.5-air (часто timeout)
 const AGENT_MODELS = [
-    'openai/gpt-oss-20b:free',
+    'openai/gpt-oss-120b:free',
     'meta-llama/llama-3.3-70b-instruct:free',
-    'mistralai/mistral-small-3.1:free',
+    'google/gemma-3-27b-it:free',
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    'openai/gpt-oss-20b:free',
     'stepfun/step-3.5-flash:free',
     'nvidia/nemotron-nano-9b-v2:free',
-    'z-ai/glm-4.5-air:free',
-    'qwen/qwen-2-7b-instruct:free',
+    'arcee-ai/trinity-large-preview:free',
 ]
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -451,7 +454,7 @@ function estimateMaxTokens(userMessage) {
         msg.includes('всё ') || msg.includes('полный') || msg.includes('весь') ||
         (msg.includes('cuisine') && msg.includes('dish') && msg.includes('ingredient')) ||
         (msg.includes('кухн') && msg.includes('блюд') && msg.includes('ингред'))
-    if (isMassive) return 3000
+    if (isMassive) return 6000
 
     // Средний — кухня + блюда или топ N (EN + RU)
     const isMedium =
@@ -459,10 +462,10 @@ function estimateMaxTokens(userMessage) {
         msg.includes('кухн') || msg.includes('блюд') ||
         msg.includes('top ') || msg.includes('топ ') ||
         /\d+\s*(dish|блюд)/.test(msg)
-    if (isMedium) return 2000
+    if (isMedium) return 4000
 
     // Маленький — один ингредиент / уточнение
-    return 1000
+    return 2000
 }
 
 // ─── Client-side dedup (safety net) ──────────────────────────────────────────
@@ -587,6 +590,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
         onModelAttempt?.(model)
         KGDebug.model(model, _mi + 1, cascade.length)
         const _modelStart = performance.now()
+        // Small delay between model attempts to avoid rate limits
+        if (_mi > 0) await new Promise(r => setTimeout(r, 1500))
 
         try {
             // 45 sec timeout — если модель молчит дольше, пробуем следующую
@@ -618,6 +623,8 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             if (resp.status === 429 || resp.status === 503) {
                 KGDebug.modelFail(model, `rate-limited (${resp.status})`)
                 errors.push(`${model}: rate-limited (${resp.status})`)
+                // Wait before trying next model to avoid cascading 429s
+                await new Promise(r => setTimeout(r, 2000))
                 continue
             }
             if (!resp.ok) {

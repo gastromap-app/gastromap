@@ -202,140 +202,14 @@ export async function getLocation(id, { adminMode = false } = {}) {
  * 2. Generates ai_context (brief expert summary)
  * 3. Generates vector embedding for semantic search
  */
+/**
+ * Enrich location with AI data using the new enrichment module.
+ * This function is deprecated - use enrichLocationData from @/features/admin/components/LocationForm/enrichment.js
+ * Kept for backward compatibility during migration.
+ */
 async function enrichLocationWithAI(locationData) {
-    const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
-    const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-
-    if (!apiKey) {
-        console.warn('[locations.api] AI enrichment skipped: No API key found')
-        return locationData
-    }
-
-    try {
-        // Collect text for analysis
-        const textForAI = [
-            locationData.title,
-            locationData.description,
-            locationData.address,
-            locationData.city,
-            locationData.cuisine,
-            locationData.category,
-            ...(locationData.tags || []),
-            ...(locationData.vibe || []),
-            ...(locationData.best_for || []),
-            locationData.insider_tip,
-        ].filter(Boolean).join(', ')
-
-        // Set attempt timestamp
-        locationData.ai_enrichment_last_attempt = new Date().toISOString()
-
-        // 1. Generate search keywords (using Step 3.5 Flash Free)
-        const keywordResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'X-Title': 'GastroMap',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'stepfun/step-3.5-flash:free',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a gastronomy expert. Generate 10-15 search keywords for a location. Keywords should cover mood, occasion, food style, and specific features. Return ONLY a JSON array of strings.'
-                    },
-                    {
-                        role: 'user',
-                        content: `Generate keywords for this location:\n${textForAI}`
-                    }
-                ],
-                max_tokens: 300,
-            }),
-        })
-
-        if (keywordResponse.ok) {
-            const kwData = await keywordResponse.json()
-            const content = kwData.choices?.[0]?.message?.content || '[]'
-            const match = content.match(/\[[\s\S]*\]/)
-            if (match) {
-                locationData.ai_keywords = JSON.parse(match[0])
-            }
-        }
-
-        // 2. Generate expert summary (context)
-        const contextResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'stepfun/step-3.5-flash:free',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Write a 2-sentence expert summary of this restaurant for an AI assistant. Focus on uniqueness and target audience.'
-                    },
-                    {
-                        role: 'user',
-                        content: textForAI
-                    }
-                ],
-                max_tokens: 150,
-            }),
-        })
-
-        if (contextResponse.ok) {
-            const ctxData = await contextResponse.json()
-            locationData.ai_context = ctxData.choices?.[0]?.message?.content || ''
-        }
-
-        // 3. Generate pgvector embedding
-        const embeddingText = [
-            locationData.title,
-            locationData.description,
-            locationData.category,
-            ...(locationData.ai_keywords || []),
-            locationData.ai_context
-        ].filter(Boolean).join(' ')
-
-        const embeddingResponse = await fetch('https://openrouter.ai/api/v1/embeddings', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'openai/text-embedding-3-small',
-                input: embeddingText,
-            }),
-        })
-
-        if (embeddingResponse.ok) {
-            const embData = await embeddingResponse.json()
-            locationData.embedding = embData.data?.[0]?.embedding || null
-        }
-
-        // Mark as success if we got at least keywords or embedding
-        if (locationData.ai_keywords?.length || locationData.embedding) {
-            locationData.ai_enrichment_status = 'success'
-            locationData.ai_enrichment_error = null
-        } else {
-            locationData.ai_enrichment_status = 'failed'
-            locationData.ai_enrichment_error = 'No keywords or embedding generated'
-        }
-
-    } catch (error) {
-        console.warn('[locations.api] AI enrichment failed (non-blocking):', error.message)
-        locationData.ai_enrichment_status = 'failed'
-        locationData.ai_enrichment_error = error.message
-    }
-
-    return locationData
+    const { enrichLocationData } = await import('@/features/admin/components/LocationForm/enrichment')
+    return enrichLocationData(locationData)
 }
 
 /**

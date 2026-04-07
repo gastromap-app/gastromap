@@ -1,0 +1,156 @@
+/**
+ * AI / GastroIntelligence Constants
+ *
+ * This module exports all constants used by the AI system:
+ * - API URLs and endpoints
+ * - Model cascade (fallback chain for free models)
+ * - Tool definitions for function calling
+ * - Default system prompts
+ */
+
+export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+
+/**
+ * Cascading free models for production.
+ * Ordered by reliability and availability - models less likely to be rate-limited first.
+ * The system tries these in order until one succeeds.
+ */
+export const MODEL_CASCADE = [
+    'stepfun/step-3.5-flash:free',          // User preferred free model
+    'nvidia/nemotron-nano-9b-v2:free',      // Often available, very fast
+    'z-ai/glm-4.5-air:free',                 // Good availability
+    'mistralai/mistral-small-3.1:free',      // Reliable multilingual
+    'openai/gpt-oss-20b:free',               // OpenAI open-weight
+    'minimax/minimax-m2.5:free',             // Large context
+    'mistralai/devstral-2512:free',          // Good but often rate-limited
+    'meta-llama/llama-3.3-70b-instruct:free', // Often rate-limited
+    'qwen/qwen3-coder:free',                 // Last resort, often rate-limited
+]
+
+/**
+ * Tool definitions (OpenAI function calling format)
+ * These are the tools the AI can use to search and get location details
+ */
+export const TOOLS = [
+    {
+        type: 'function',
+        function: {
+            name: 'search_locations',
+            description: 'Search gastro locations (restaurants, cafes, bars) by filters. ALWAYS call this tool before making any specific recommendations. Do not recommend places you have not retrieved via this tool.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    city: {
+                        type: 'string',
+                        description: 'City name, e.g. "Krakow"',
+                    },
+                    cuisine_types: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Cuisine types, e.g. ["French", "Italian", "Polish"]',
+                    },
+                    tags: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Atmosphere vibes/tags, e.g. ["Romantic", "Casual", "Sophisticated", "Energetic"]',
+                    },
+                    price_range: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Price levels: "$", "$$", "$$$", "$$$$"',
+                    },
+                    category: {
+                        type: 'string',
+                        description: 'Category: Restaurant, Cafe, Bar, Fine Dining, Street Food',
+                    },
+                    amenities: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Features/amenities, e.g. ["outdoor seating", "wifi", "pet-friendly", "river view"]',
+                    },
+                    best_for: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Occasion, e.g. ["date", "family", "business", "solo", "party", "anniversary"]',
+                    },
+                    dietary_options: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Dietary needs, e.g. ["vegan", "vegetarian", "gluten-free"]',
+                    },
+                    min_rating: {
+                        type: 'number',
+                        description: 'Minimum rating (1–5)',
+                    },
+                    keyword: {
+                        type: 'string',
+                        description: 'Free-text keyword to match against name, description, tags, and hidden ai_keywords (e.g. "proposal spot", "jazz", "sunday brunch")',
+                    },
+                    michelin: {
+                        type: 'boolean',
+                        description: 'True to filter only Michelin-recognized places',
+                    },
+                    limit: {
+                        type: 'integer',
+                        description: 'Max results to return (default 5)',
+                    },
+                },
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_location_details',
+            description: 'Get full details for a specific location by ID, including insider tips, dishes to try, and expert notes.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    location_id: {
+                        type: 'string',
+                        description: 'The location ID',
+                    },
+                },
+                required: ['location_id'],
+            },
+        },
+    },
+]
+
+/**
+ * Default system prompt for GastroGuide (dining assistant)
+ */
+export const DEFAULT_GUIDE_PROMPT = `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
+
+CORE RULES:
+- NEVER invent or guess restaurant names. ALWAYS use the search_locations tool before recommending any places.
+- When the user asks for recommendations, call search_locations with appropriate filters first.
+- When the user asks about a specific place by name or ID, use get_location_details.
+- Use the insider_tip and must_try fields from tool results to make your response feel personal and expert.
+- Respond in the same language the user writes in (Russian, English, Polish — match their language).
+- Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
+- When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+
+When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.`
+
+/**
+ * Default system prompt for GastroAssistant (background helper)
+ */
+export const DEFAULT_ASSISTANT_PROMPT = `You are GastroAssistant — a background AI agent that powers smart search, recommendations, and personalization for GastroMap.
+
+CORE RULES:
+- Be precise and factual. You run silently in the background to enhance user experience.
+- When analyzing queries, extract structured filters (cuisine, price, vibe, location, dietary).
+- Prioritize accuracy over creativity. Return actionable data.
+- Respond in the same language as the user's query.
+- Keep responses concise and structured when possible.
+
+Your output is used internally for recommendations, filtering, and personalization. Focus on extracting intent and relevant parameters.`
+
+/**
+ * Default prompts export for backward compatibility
+ */
+export const DEFAULT_PROMPTS = {
+    guide: DEFAULT_GUIDE_PROMPT,
+    assistant: DEFAULT_ASSISTANT_PROMPT,
+}

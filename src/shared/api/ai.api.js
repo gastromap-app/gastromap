@@ -61,17 +61,17 @@ const TOOLS = [
                         type: 'string',
                         description: 'City name, e.g. "Krakow"',
                     },
-                    cuisine: {
+                    cuisine_types: {
                         type: 'array',
                         items: { type: 'string' },
                         description: 'Cuisine types, e.g. ["French", "Italian", "Polish"]',
                     },
-                    vibe: {
+                    tags: {
                         type: 'array',
                         items: { type: 'string' },
-                        description: 'Atmosphere vibes, e.g. ["Romantic", "Casual", "Sophisticated", "Energetic"]',
+                        description: 'Atmosphere vibes/tags, e.g. ["Romantic", "Casual", "Sophisticated", "Energetic"]',
                     },
-                    price_level: {
+                    price_range: {
                         type: 'array',
                         items: { type: 'string' },
                         description: 'Price levels: "$", "$$", "$$$", "$$$$"',
@@ -80,17 +80,17 @@ const TOOLS = [
                         type: 'string',
                         description: 'Category: Restaurant, Cafe, Bar, Fine Dining, Street Food',
                     },
-                    features: {
+                    amenities: {
                         type: 'array',
                         items: { type: 'string' },
-                        description: 'Features, e.g. ["outdoor seating", "wifi", "pet-friendly", "river view"]',
+                        description: 'Features/amenities, e.g. ["outdoor seating", "wifi", "pet-friendly", "river view"]',
                     },
                     best_for: {
                         type: 'array',
                         items: { type: 'string' },
                         description: 'Occasion, e.g. ["date", "family", "business", "solo", "party", "anniversary"]',
                     },
-                    dietary: {
+                    dietary_options: {
                         type: 'array',
                         items: { type: 'string' },
                         description: 'Dietary needs, e.g. ["vegan", "vegetarian", "gluten-free"]',
@@ -231,26 +231,26 @@ async function executeTool(name, args, locations = []) {
         }
         if (cuisine?.length) {
             results = results.filter(l =>
-                cuisine.some(c => l.cuisine?.toLowerCase().includes(c.toLowerCase()))
+                cuisine.some(c => l.cuisine_types?.some(ct => ct.toLowerCase().includes(c.toLowerCase())))
             )
         }
         if (vibe?.length) {
             results = results.filter(l => {
-                const locVibes = Array.isArray(l.vibe) ? l.vibe : [l.vibe]
+                const locVibes = Array.isArray(l.tags) ? l.tags : [l.tags]
                 return vibe.some(v =>
                     locVibes.some(lv => lv?.toLowerCase().includes(v.toLowerCase()))
                 )
             })
         }
         if (price_level?.length) {
-            results = results.filter(l => price_level.includes(l.priceLevel))
+            results = results.filter(l => price_level.includes(l.price_range))
         }
         if (min_rating) {
-            results = results.filter(l => (l.rating ?? 0) >= min_rating)
+            results = results.filter(l => (l.google_rating ?? 0) >= min_rating)
         }
         if (features?.length) {
             results = results.filter(l => {
-                const locFeatures = (l.features ?? []).map(f => f.toLowerCase())
+                const locFeatures = (l.amenities ?? []).map(f => f.toLowerCase())
                 return features.some(f =>
                     locFeatures.some(lf => lf.includes(f.toLowerCase()))
                 )
@@ -266,7 +266,7 @@ async function executeTool(name, args, locations = []) {
         }
         if (dietary?.length) {
             results = results.filter(l => {
-                const locDietary = (l.dietary ?? []).map(d => d.toLowerCase())
+                const locDietary = (l.dietary_options ?? []).map(d => d.toLowerCase())
                 return dietary.some(d =>
                     locDietary.some(ld => ld.includes(d.toLowerCase()))
                 )
@@ -285,7 +285,7 @@ async function executeTool(name, args, locations = []) {
                 l.ai_keywords?.some(k => k.toLowerCase().includes(kw)) ||
                 l.ai_context?.toLowerCase().includes(kw) ||
                 l.insider_tip?.toLowerCase().includes(kw) ||
-                l.what_to_try?.some(w => w.toLowerCase().includes(kw))
+                l.must_try?.some(w => w.toLowerCase().includes(kw))
             )
 
             // 2. Semantic AI Search boost
@@ -304,19 +304,19 @@ async function executeTool(name, args, locations = []) {
                         
                         // Priority: 1. Semantic match, 2. Rating
                         if (aInSemantic !== bInSemantic) return bInSemantic - aInSemantic
-                        return (b.rating ?? 0) - (a.rating ?? 0)
+                        return (b.google_rating ?? 0) - (a.google_rating ?? 0)
                     })
                 } catch (err) {
                     console.warn('[ai.api] Semantic search failed, using literal filter:', err)
                     results = literalMatches
-                    results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                    results.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
                 }
             } else {
                 results = literalMatches
-                results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                results.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
             }
         } else {
-            results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            results.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
         }
 
         results = results.slice(0, limit)
@@ -325,23 +325,23 @@ async function executeTool(name, args, locations = []) {
             id: l.id,
             name: l.title,
             category: l.category,
-            cuisine: l.cuisine,
-            vibe: l.vibe,
-            price_level: l.priceLevel,
-            rating: l.rating,
+            cuisine_types: l.cuisine_types ?? [],
+            tags: l.tags ?? [],
+            price_range: l.price_range,
+            google_rating: l.google_rating,
             address: l.address,
-            opening_hours: l.openingHours,
+            opening_hours: l.opening_hours,
             phone: l.phone ?? null,
             website: l.website ?? null,
-            features: l.features ?? [],
+            amenities: l.amenities ?? [],
             best_for: l.best_for ?? [],
-            dietary: l.dietary ?? [],
+            dietary_options: l.dietary_options ?? [],
             michelin_stars: l.michelin_stars ?? 0,
             michelin_bib: l.michelin_bib ?? false,
             description: l.description,
             // Expert data — included for AI context, NOT shown in raw UI
             insider_tip: l.insider_tip ?? null,
-            what_to_try: l.what_to_try ?? [],
+            must_try: l.must_try ?? [],
             ai_context: l.ai_context ?? null,
         }))
     }
@@ -354,22 +354,22 @@ async function executeTool(name, args, locations = []) {
             id: loc.id,
             name: loc.title,
             category: loc.category,
-            cuisine: loc.cuisine,
-            vibe: loc.vibe,
-            price_level: loc.priceLevel,
-            rating: loc.rating,
+            cuisine_types: loc.cuisine_types ?? [],
+            tags: loc.tags ?? [],
+            price_range: loc.price_range,
+            google_rating: loc.google_rating,
             review_count: loc.review_count ?? 0,
             address: loc.address,
-            opening_hours: loc.openingHours,
+            opening_hours: loc.opening_hours ?? null,
             phone: loc.phone ?? null,
             website: loc.website ?? null,
-            features: loc.features ?? [],
-            dietary: loc.dietary ?? [],
+            amenities: loc.amenities ?? [],
+            dietary_options: loc.dietary_options ?? [],
             michelin_stars: loc.michelin_stars ?? 0,
             michelin_bib: loc.michelin_bib ?? false,
             description: loc.description,
             insider_tip: loc.insider_tip ?? null,
-            what_to_try: loc.what_to_try ?? [],
+            must_try: loc.must_try ?? [],
             ai_context: loc.ai_context ?? null,
         }
     }
@@ -385,7 +385,7 @@ CORE RULES:
 - NEVER invent or guess restaurant names. ALWAYS use the search_locations tool before recommending any places.
 - When the user asks for recommendations, call search_locations with appropriate filters first.
 - When the user asks about a specific place by name or ID, use get_location_details.
-- Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
+- Use the insider_tip and must_try fields from tool results to make your response feel personal and expert.
 - Respond in the same language the user writes in (Russian, English, Polish — match their language).
 - Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
 - When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
@@ -1071,7 +1071,7 @@ Return ONLY a valid JSON object:
     "phone": "Phone number with country code",
     "booking_url": "Reservation URL (if known)",
     "insider_tip": "Expert local tip in Russian based on the venue's reputation (if known)",
-    "what_to_try": ["Must-try dish 1", "Must-try dish 2"],
+    "must_try": ["Must-try dish 1", "Must-try dish 2"],
     "latitude": number or null,
     "longitude": number or null,
     "tags": ["tag1", "tag2"],

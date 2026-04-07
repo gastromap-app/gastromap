@@ -266,19 +266,36 @@ const AdminAIPage = () => {
     const [braveApiKey, setBraveApiKey] = useState(appConfig.braveSearchApiKey ?? '')
     const [showBraveKey, setShowBraveKey] = useState(false)
 
+    // ── Models (MUST be declared before useEffect that uses them in dependencies)
+    const [primaryModel, setPrimaryModel] = useState(
+        appConfig.aiPrimaryModel || 'nvidia/nemotron-nano-9b-v2:free'
+    )
+    const [fallbackModel, setFallbackModel] = useState(
+        appConfig.aiFallbackModel || 'z-ai/glm-4.5-air:free'
+    )
+
+    // ── API key (MUST be declared before useEffect that uses it)
+    const [apiKey, setApiKey] = useState(appConfig.aiApiKey || '')
+    const [showKey, setShowKey] = useState(false)
+
     // ── Key Status (Functional Improvement)
     const [apiKeyStatus, setApiKeyStatus] = useState('idle') // idle | validating | valid | invalid | error
     const [apiKeyError, setApiKeyError] = useState('')
     const [validationTrigger, setValidationTrigger] = useState(0)
 
+    // ── Validate API Key when it changes
+    // Note: validateKey is defined below but used in useEffect (OK because React hoists function declarations)
     React.useEffect(() => {
+        // Only validate if we have a model selected
+        if (!primaryModel) return
+
         if (apiKey && apiKey.startsWith('sk-or-')) {
             validateKey(apiKey)
         } else {
             setApiKeyStatus(apiKey ? 'invalid' : 'idle')
             setApiKeyError(apiKey ? 'Must start with sk-or-' : '')
         }
-    }, [apiKey, validationTrigger])
+    }, [apiKey, primaryModel, validationTrigger])
 
     const validateKey = async (key) => {
         setApiKeyStatus('validating')
@@ -303,18 +320,6 @@ const AdminAIPage = () => {
         guide: appConfig.aiGuideActive ?? true,
         assistant: appConfig.aiAssistantActive ?? true,
     })
-
-    // ── Models
-    const [primaryModel, setPrimaryModel] = useState(
-        appConfig.aiPrimaryModel || 'nvidia/nemotron-nano-9b-v2:free'
-    )
-    const [fallbackModel, setFallbackModel] = useState(
-        appConfig.aiFallbackModel || 'z-ai/glm-4.5-air:free'
-    )
-
-    // ── API key
-    const [apiKey, setApiKey] = useState(appConfig.aiApiKey || '')
-    const [showKey, setShowKey] = useState(false)
 
     // ── UI state
     const [saved, setSaved] = useState(false)

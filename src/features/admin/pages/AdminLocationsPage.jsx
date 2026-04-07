@@ -118,29 +118,6 @@ const AdminLocationsPage = () => {
         { id: 'late_night', label: 'Поздняя ночь', icon: Clock }
     ]
 
-    const addImageUrl = (url) => {
-        if (!url) return;
-        setFormData(prev => {
-            if (!prev) return prev;
-            return {
-                ...prev,
-                images: [...(prev.images || []), url],
-                image_url: prev.image_url || url // Set as main if it's the first one
-            }
-        })
-    }
-
-    const removeImage = (index) => {
-        setFormData(prev => {
-            if (!prev || !prev.images) return prev;
-            const newImages = prev.images.filter((_, i) => i !== index);
-            return {
-                ...prev,
-                images: newImages,
-                image_url: prev.image_url === prev.images[index] ? (newImages[0] || '') : prev.image_url
-            }
-        })
-    }
 
     const renderListView = (filtered) => (
         <div className="overflow-x-auto custom-scrollbar">

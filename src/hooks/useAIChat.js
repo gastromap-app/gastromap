@@ -4,7 +4,7 @@ import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { config } from '@/shared/config/env'
 

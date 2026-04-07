@@ -213,8 +213,8 @@ async function executeTool(name, args, locations = []) {
 
     if (name === 'search_locations') {
         const {
-            city, cuisine, vibe, price_level, category,
-            features, best_for, dietary, min_rating, keyword, michelin, limit = 5
+            city, cuisine_types, tags, price_range, category,
+            amenities, best_for, dietary_options, min_rating, keyword, michelin, limit = 5
         } = args
 
         let results = [...locations]
@@ -229,30 +229,30 @@ async function executeTool(name, args, locations = []) {
         if (category) {
             results = results.filter(l => l.category?.toLowerCase() === category.toLowerCase())
         }
-        if (cuisine?.length) {
+        if (cuisine_types?.length) {
             results = results.filter(l =>
-                cuisine.some(c => l.cuisine_types?.some(ct => ct.toLowerCase().includes(c.toLowerCase())))
+                cuisine_types.some(c => l.cuisine_types?.some(ct => ct.toLowerCase().includes(c.toLowerCase())))
             )
         }
-        if (vibe?.length) {
+        if (tags?.length) {
             results = results.filter(l => {
-                const locVibes = Array.isArray(l.tags) ? l.tags : [l.tags]
-                return vibe.some(v =>
-                    locVibes.some(lv => lv?.toLowerCase().includes(v.toLowerCase()))
+                const locTags = Array.isArray(l.tags) ? l.tags : [l.tags]
+                return tags.some(t =>
+                    locTags.some(lt => lt?.toLowerCase().includes(t.toLowerCase()))
                 )
             })
         }
-        if (price_level?.length) {
-            results = results.filter(l => price_level.includes(l.price_range))
+        if (price_range?.length) {
+            results = results.filter(l => price_range.includes(l.price_range))
         }
         if (min_rating) {
             results = results.filter(l => (l.google_rating ?? 0) >= min_rating)
         }
-        if (features?.length) {
+        if (amenities?.length) {
             results = results.filter(l => {
-                const locFeatures = (l.amenities ?? []).map(f => f.toLowerCase())
-                return features.some(f =>
-                    locFeatures.some(lf => lf.includes(f.toLowerCase()))
+                const locAmenities = (l.amenities ?? []).map(f => f.toLowerCase())
+                return amenities.some(f =>
+                    locAmenities.some(lf => lf.includes(f.toLowerCase()))
                 )
             })
         }
@@ -264,10 +264,10 @@ async function executeTool(name, args, locations = []) {
                 )
             })
         }
-        if (dietary?.length) {
+        if (dietary_options?.length) {
             results = results.filter(l => {
                 const locDietary = (l.dietary_options ?? []).map(d => d.toLowerCase())
-                return dietary.some(d =>
+                return dietary_options.some(d =>
                     locDietary.some(ld => ld.includes(d.toLowerCase()))
                 )
             })
@@ -797,8 +797,8 @@ export async function generateLocationSemanticSummary(location, extraContext = n
         const { enrichCulinaryTerm } = await import('./spoonacular.api')
         const { getIngredientCulinaryContext } = await import('./openfoodfacts.api')
         
-        // Search by cuisine or category for deep context
-        const queryTerm = location.cuisine || location.category
+        // Search by cuisine_types or category for deep context
+        const queryTerm = location.cuisine_types?.[0] || location.category
         const [spoonData, offData] = await Promise.all([
             enrichCulinaryTerm(queryTerm),
             getIngredientCulinaryContext(queryTerm).catch(() => null)
@@ -825,10 +825,10 @@ export async function generateLocationSemanticSummary(location, extraContext = n
         
         NAME: ${location.title}
         CATEGORY: ${location.category}
-        CUISINE: ${location.cuisine}
+        CUISINE TYPES: ${(location.cuisine_types || []).join(', ')}
         DESCRIPTION: ${location.description}
-        FEATURES: ${(location.features || []).join(', ')}
-        VIBE: ${location.vibe}
+        AMENITIES: ${(location.amenities || []).join(', ')}
+        TAGS: ${(location.tags || []).join(', ')}
         BEST FOR: ${(location.best_for || []).join(', ')}
         
         ${culinaryContext ? `CULINARY ENRICHMENT CONTEXT:\n${culinaryContext}` : ''}
@@ -837,7 +837,7 @@ export async function generateLocationSemanticSummary(location, extraContext = n
         1. Create a "Semantic Summary" (ai_context): A dense, keyword-rich 2-3 paragraph description that captures the essence, 
            flavor profile, target audience, and unique selling points. Use actual culinary terminology and mention potential signature dishes.
         2. Extract "AI Keywords" (ai_keywords): A list of 15-20 highly specific tags (e.g. "rare single origin coffee", "mibrasa charcoal oven", "secret dinner spot").
-        3. If cuisine is ${location.cuisine}, ensure you use terminology specific to that culture.
+        3. If cuisine types include ${location.cuisine_types?.[0] || 'local'}, ensure you use terminology specific to that culture.
         4. Focus on SEMANTIC searchability - think about what a user might search for beyond just "Italian food".
         
         RETURN JSON ONLY:
@@ -1064,8 +1064,8 @@ Return ONLY a valid JSON object:
     "country": "Country",
     "address": "Full official street address",
     "description": "Compelling 2-3 sentence description in Russian (based ONLY on factual data)",
-    "cuisine": "Comma-separated cuisines (e.g. 'Polish, Fusion')",
-    "price_level": "$|$$|$$$|$$$$",
+    "cuisine_types": ["Italian", "Mediterranean"],
+    "price_range": "$|$$|$$$|$$$$",
     "opening_hours": "Opening hours (e.g. '10:00-22:00')",
     "website": "Official website URL",
     "phone": "Phone number with country code",
@@ -1075,9 +1075,8 @@ Return ONLY a valid JSON object:
     "latitude": number or null,
     "longitude": number or null,
     "tags": ["tag1", "tag2"],
-    "vibe": ["cozy", "modern"],
-    "features": ["wifi", "outdoor_seating"],
-    "dietary": ["vegetarian", "vegan"]
+    "amenities": ["wifi", "outdoor_seating"],
+    "dietary_options": ["vegetarian", "vegan"]
 }
 
 RULES:
@@ -1085,7 +1084,8 @@ RULES:
 2. MISSING DATA: If data is missing or uncertain, return null.
 3. LANGUAGES: "description" and "insider_tip" MUST be in Russian.
 4. COORDINATES: Only provide if you have high confidence in the specific location.
-5. NO HALLUCINATION: We are building a real-world map. Incorrect data ruins trust.`
+5. NO HALLUCINATION: We are building a real-world map. Incorrect data ruins trust.
+6. FIELD NAMES: Use EXACTLY these field names: cuisine_types (NOT cuisine), price_range (NOT price_level), tags (NOT vibe), amenities (NOT features), dietary_options (NOT dietary).`
 
     const messages = [
         { role: 'system', content: systemPrompt },

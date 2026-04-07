@@ -59,6 +59,9 @@ import LocationListItem from '../components/LocationListItem'
 import LocationFormSlideOver from '../components/LocationFormSlideOver'
 import LocationFilters from '../components/LocationFilters'
 import LocationStats from '../components/LocationStats'
+import AdminLocationsHeader from '../components/AdminLocationsHeader'
+import ListViewSection from '../components/ListViewSection'
+import ModerationQueueView from '../components/ModerationQueueView'
 
 const AdminLocationsPage = () => {
     const hook = useAdminLocations()
@@ -119,36 +122,6 @@ const AdminLocationsPage = () => {
     ]
 
 
-    const renderListView = (filtered) => (
-        <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-900/50">
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest pl-8 lg:pl-10">Объект</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Локация</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Рейтинг</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Статус</th>
-                        <th className="px-6 py-4 text-right pr-8 lg:pr-10"></th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {filtered.map((loc) => (
-                        <LocationListItem
-                            key={loc.id}
-                            loc={loc}
-                            onEdit={handleEdit}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
-                            onDelete={handleDelete}
-                            isOpenActionMenu={openActionMenuId === loc.id}
-                            onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
-                        />
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    )
-
     return (
         <div className="space-y-6 lg:space-y-8 pb-10">
             {/* Error Message Display */}
@@ -168,40 +141,19 @@ const AdminLocationsPage = () => {
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Локации</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">База объектов и инструменты модерации.</p>
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto p-1 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/20 dark:border-slate-800/50">
-                    <button
-                        onClick={() => setIsImportWizardOpen(true)}
-                        className="flex-1 sm:px-6 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all"
-                    >
-                        Импорт
-                    </button>
-                    <button
-                        onClick={handleCreateNew}
-                        className="flex-1 sm:px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
-                    >
-                        Создать
-                    </button>
-                    <button
-                        onClick={() => {
-                            if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
-                                bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {
-                                    onSuccess: (data) => alert(`Обработано ${data.processed} объектов`)
-                                })
-                            }
-                        }}
-                        disabled={bulkReindexMutation.isPending}
-                        className="px-4 py-2.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-amber-200/50 dark:border-amber-500/20 active:scale-95 transition-all hover:bg-amber-100 disabled:opacity-50"
-                        title="AI Bulk Indexing"
-                    >
-                        {bulkReindexMutation.isPending ? 'AI...' : <Sparkles size={14} />}
-                    </button>
-                </div>
-            </div>
+            <AdminLocationsHeader
+                onCreateNew={handleCreateNew}
+                onImport={() => setIsImportWizardOpen(true)}
+                onExport={() => {}}
+                onBulkReindex={() => {
+                    if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
+                        bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {
+                            onSuccess: (data) => alert(`Обработано ${data.processed} объектов`)
+                        })
+                    }
+                }}
+                isBulkReindexPending={bulkReindexMutation.isPending}
+            />
 
             <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
@@ -219,43 +171,26 @@ const AdminLocationsPage = () => {
                 />
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
-                    <AnimatePresence mode="wait">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={view}>
-                            {view === 'list' && (
-                                viewMode === 'list' ? renderListView(filteredLocations) : (
-                                    <div className="h-[600px] w-full p-4 lg:p-10">
-                                        <MapTab />
-                                    </div>
-                                )
-                            )}
-                            {view === 'moderation' && (
-                                <div className="p-8 lg:p-14 space-y-6">
-                                    {pendingLocations.length > 0 ? pendingLocations.map(loc => (
-                                        <div key={loc.id} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-indigo-500/10 transition-all">
-                                            <div className="flex items-center gap-6">
-                                                <div className="w-16 h-16 rounded-[24px] bg-white dark:bg-slate-800 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform"><Building2 size={24} /></div>
-                                                <div>
-                                                    <h3 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white leading-none mb-2">{loc.title}</h3>
-                                                    <p className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><MapPin size={12} /> {loc.city}, {loc.country}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 w-full sm:w-auto">
-                                                <button onClick={() => handleEdit(loc)} className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all">Проверить</button>
-                                                <button onClick={() => handleApprove(loc.id)} className="flex-1 sm:px-6 py-3.5 bg-indigo-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">Одобрить</button>
-                                                <button onClick={() => handleReject(loc.id)} className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-slate-800 text-orange-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all">Отклонить</button>
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="text-center py-20">
-                                            <AlertCircle size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
-                                            <p className="text-lg font-bold text-slate-400">Очередь пуста</p>
-                                            <p className="text-sm text-slate-400 mt-1">Нет объектов на модерации</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </motion.div>
-                    </AnimatePresence>
+                    {view === 'list' && (
+                        <ListViewSection
+                            filteredLocations={filteredLocations}
+                            viewMode={viewMode}
+                            onEditLocation={handleEdit}
+                            onDelete={handleDelete}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            openActionMenuId={openActionMenuId}
+                            onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
+                        />
+                    )}
+                    {view === 'moderation' && (
+                        <ModerationQueueView
+                            pendingLocations={pendingLocations}
+                            onEdit={handleEdit}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                        />
+                    )}
                 </div>
             </div>
 

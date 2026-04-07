@@ -16,12 +16,7 @@ import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
-import { 
-    useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
-    useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
-    useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
-    useAIQueryMutation, useCulinaryContextMutation 
-} from '@/shared/api/queries'
+import { useAdminLocations } from '../hooks/useAdminLocations'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -61,325 +56,28 @@ function LocationPicker({ position, onLocationSelect }) {
 }
 
 import LocationListItem from '../components/LocationListItem'
+import LocationFormSlideOver from '../components/LocationFormSlideOver'
+import LocationFilters from '../components/LocationFilters'
+import LocationStats from '../components/LocationStats'
 
 const AdminLocationsPage = () => {
-    const [view, setView] = useState('list')
-    const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'active' | 'pending' | 'rejected'
-    const [selectedLocation, setSelectedLocation] = useState(null)
-    const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
-    const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
-    const [viewMode, setViewMode] = useState('list') // 'list' | 'map'
-    const [formData, setFormData] = useState(null)
-    const [aiSearchQuery, setAiSearchQuery] = useState('')
-    const [culinarySearchQuery, setCulinarySearchQuery] = useState('')
-    const [culinaryResults, setCulinaryResults] = useState(null)
-    const location = useLocation()
-    const navigate = useNavigate()
-    const [openActionMenuId, setOpenActionMenuId] = useState(null)
-    const [isImproving, setIsImproving] = useState(null) // Field name currently being improved
-
-    // useLocations returns { data: [], total, hasMore } — not a plain array
-    const { data: locsData, isLoading: loadingLocations, error: loadError } = useLocations({ all: true, limit: 500 })
-    const locationsList = locsData?.data ?? []
+    const hook = useAdminLocations()
     
-    useEffect(() => {
-        console.log('[Admin] locsData:', locsData)
-        if (loadError) console.error('[Admin] Load Error:', loadError)
-    }, [locsData, loadError])
-    const createLocMutation = useCreateLocationMutation()
-    const updateLocMutation = useUpdateLocationMutation()
-    const deleteLocMutation = useDeleteLocationMutation()
-    const updateLocStatusMutation = useUpdateLocationStatusMutation()
-    const { data: pendingLocations = [] } = usePendingLocations()
-    const extractMutation = useExtractLocationMutation()
-    const reindexMutation = useReindexLocationSemanticMutation()
-    const bulkReindexMutation = useBulkReindexLocationsMutation()
-    const spoonacularMutation = useSpoonacularSearchMutation()
-    const aiQueryMutation = useAIQueryMutation()
-    const culinaryContextMutation = useCulinaryContextMutation()
-
-    const handleCreateNew = () => {
-        const emptyLocation = {
-            id: 'NEW',
-            title: '',
-            category: 'Cafe',
-            city: '',
-            country: '',
-            address: '',
-            description: '',
-            insider_tip: '',
-            must_try: '',
-            price_level: '$$',
-            website: '',
-            phone: '',
-            opening_hours: '',
-            booking_url: '',
-            social_instagram: '',
-            social_facebook: '',
-            image: '',
-            images: [],
-            lat: 50.0647,
-            lng: 19.9450,
-            tags: [],
-            vibe: [],
-            special_labels: [],
-            cuisine: '',
-            status: 'pending'
-        }
-        setSelectedLocation(emptyLocation)
-        setFormData(emptyLocation)
-        setIsSlideOverOpen(true)
-    }
-
-    const handleEdit = (loc) => {
-        if (!loc) return
-        setSelectedLocation(loc)
-        
-        // Prepare formData with aliases for UI compatibility
-        const prepared = { ...loc };
-        
-        // Handle must_try alias for the UI string input
-        if (Array.isArray(loc.what_to_try)) {
-            prepared.must_try = loc.what_to_try.join(', ');
-        } else {
-            prepared.must_try = loc.what_to_try || '';
-        }
-        
-        // Map canonical fields to UI field names for editing
-        // cuisine_types → cuisine (string for input)
-        if (loc.cuisine_types?.length) {
-            prepared.cuisine = loc.cuisine_types.join(', ');
-        }
-        
-        // price_range → price_level
-        if (loc.price_range) {
-            prepared.price_level = loc.price_range;
-        }
-        
-        // Keep tags as-is, but ensure vibe is also populated for backwards compatibility
-        if (loc.tags?.length) {
-            prepared.vibe = [...loc.tags];
-        }
-
-        setFormData(prepared)
-        setIsSlideOverOpen(true)
-    }
-
-    const handleAIMagic = async () => {
-        if (!aiSearchQuery.trim()) return
-
-        try {
-            const data = await extractMutation.mutateAsync(aiSearchQuery)
-            if (data) {
-                setFormData(prev => ({
-                    ...prev,
-                    ...data,
-                    must_try: Array.isArray(data.must_try) ? data.must_try.join(', ') : (data.must_try || prev.must_try || ''),
-                    ...(data.what_to_try ? { must_try: data.what_to_try.join(', ') } : {})
-                }))
-                setAiSearchQuery('')
-            }
-        } catch (error) {
-            console.error('[Admin] AI Magic failed:', error)
-            alert('Failed to extract data. Check AI settings or connection.')
-        }
-    }
-
-    const handleCulinarySearch = async () => {
-        if (!culinarySearchQuery.trim()) return
-        try {
-            const results = await spoonacularMutation.mutateAsync({ query: culinarySearchQuery })
-            setCulinaryResults(results)
-        } catch (error) {
-            console.error('[Admin] Culinary Search failed:', error)
-        }
-    }
-
-    const addCulinaryItem = (item, type) => {
-        if (type === 'dish') {
-            const currentTry = formData.must_try ? formData.must_try.split(',').map(s => s.trim()) : []
-            if (!currentTry.includes(item.name)) {
-                setFormData({
-                    ...formData,
-                    must_try: [...currentTry, item.name].join(', '),
-                    description: formData.description + `\n\nSignature dish: ${item.description}`
-                })
-            }
-        } else if (type === 'ingredient') {
-            const currentTags = formData.tags || []
-            if (!currentTags.includes(item.name)) {
-                setFormData({
-                    ...formData,
-                    tags: [...currentTags, item.name]
-                })
-            }
-        }
-    }
-
-    useEffect(() => {
-        const params = new URLSearchParams(location.search)
-        if (params.get('create') === 'true') {
-            const timer = setTimeout(() => {
-                handleCreateNew()
-                navigate(location.pathname, { replace: true })
-            }, 0)
-            return () => clearTimeout(timer)
-        } else if (params.get('import') === 'true') {
-            const timer = setTimeout(() => {
-                setIsImportWizardOpen(true)
-                navigate(location.pathname, { replace: true })
-            }, 0)
-            return () => clearTimeout(timer)
-        }
-    }, [location.search])
-
-
-    const stats = [
-        { label: 'Всего', val: locationsList.length.toString(), icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
-        { label: 'В очереди', val: pendingLocations.length.toString(), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-        { label: 'Approved', val: locationsList.filter(l => l.status === 'approved').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
-    ]
-
-    const handleApprove = async (id) => {
-        try {
-            await updateLocStatusMutation.mutateAsync({ id, status: 'approved' })
-        } catch (error) {
-            console.error('Approve failed:', error)
-        }
-    }
-
-    const handleReject = async (id) => {
-        try {
-            await updateLocStatusMutation.mutateAsync({ id, status: 'rejected' })
-        } catch (error) {
-            console.error('Reject failed:', error)
-        }
-    }
-
-    const handleDelete = (id) => {
-        if (confirm('Вы уверены, что хотите удалить этот объект? Это действие нельзя отменить.')) {
-            deleteLocMutation.mutate(id)
-        }
-    }
-
-    const handleImproveText = async (field) => {
-        const text = formData[field];
-        if (!text || text.length < 5) {
-            alert('Сначала введите хотя бы немного текста для улучшения');
-            return;
-        }
-        
-        setIsImproving(field);
-        try {
-            const prompt = `Improve this Gastronomic location ${field}. Make it engaging, evocative and professional, while keeping the original intent. Length should be proportional. Here is the text: "${text}"`;
-            const result = await aiQueryMutation.mutateAsync({ message: prompt });
-            // Advanced extraction for varied AI responses
-            let improvedText = "";
-            if (typeof result === 'string') {
-                improvedText = result;
-            } else if (result && typeof result === 'object') {
-                improvedText = result.text || result.content || result.result || result.output || JSON.stringify(result);
-            }
-            
-            // Cleanup: remove surrounding quotes if AI added them
-            improvedText = improvedText.replace(/^["']|["']$/g, '').trim();
-            
-            setFormData(prev => ({ ...prev, [field]: improvedText }));
-        } catch (error) {
-            console.error('AI improvement failed:', error);
-        } finally {
-            setIsImproving(null);
-        }
-    };
-
-    const handleSave = () => {
-        // Validation
-        if (!formData.title?.trim()) return alert('Название обязательно');
-        if (!formData.category) return alert('Категория обязательна');
-        if (!formData.city) return alert('Город обязателен');
-
-        // Basic URL Validation
-        const urlFields = ['website', 'booking_url', 'social_instagram', 'social_facebook'];
-        for (const field of urlFields) {
-            const val = formData[field]?.trim();
-            if (val && !val.startsWith('http') && !val.startsWith('www')) {
-                return alert(`Поле ${field} должно быть ссылкой (напр. https://...)`);
-            }
-        }
-
-        const submissionData = { ...formData };
-        
-        // Map old field names to canonical Supabase schema
-        // cuisine → cuisine_types
-        if (submissionData.cuisine) {
-            submissionData.cuisine_types = typeof submissionData.cuisine === 'string' 
-                ? submissionData.cuisine.split(',').map(s => s.trim()).filter(Boolean)
-                : submissionData.cuisine;
-            delete submissionData.cuisine;
-        }
-        
-        // price_level → price_range
-        if (submissionData.price_level) {
-            submissionData.price_range = submissionData.price_level;
-            delete submissionData.price_level;
-        }
-        
-        // vibe → tags (merge if both exist)
-        if (submissionData.vibe?.length) {
-            const existingTags = submissionData.tags || [];
-            submissionData.tags = [...new Set([...existingTags, ...submissionData.vibe])];
-            delete submissionData.vibe;
-        }
-        
-        // Handle must_try alias for the UI string input
-        if (typeof submissionData.must_try === 'string') {
-            submissionData.what_to_try = submissionData.must_try
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean);
-        }
-
-        if (selectedLocation.id === 'NEW') {
-            // New items are pending by default
-            submissionData.status = 'pending'
-            createLocMutation.mutate(submissionData, { 
-                onSuccess: () => {
-                    setIsSlideOverOpen(false)
-                    setFormData(null)
-                    setSelectedLocation(null)
-                } 
-            })
-        } else {
-            updateLocMutation.mutate({ 
-                id: selectedLocation.id, 
-                updates: submissionData 
-            }, { 
-                onSuccess: () => {
-                    setIsSlideOverOpen(false)
-                    setFormData(null)
-                    setSelectedLocation(null)
-                } 
-            })
-        }
-    }
-
-    const filteredLocations = locationsList.filter(loc => {
-        const matchesSearch = !searchQuery ||
-            loc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
-        
-        const matchesStatus = statusFilter === 'all' || loc.status === statusFilter
-        
-        return matchesSearch && matchesStatus
-    })
-
-    useEffect(() => {
-        console.log('[Admin] locationsList.length:', locationsList.length)
-        console.log('[Admin] filteredLocations.length:', filteredLocations.length)
-        console.log('[Admin] pendingLocations.length:', pendingLocations.length)
-    }, [locationsList.length, filteredLocations.length, pendingLocations.length])
+    const {
+        view, setView, searchQuery, setSearchQuery, statusFilter, setStatusFilter,
+        selectedLocation, setSelectedLocation, isSlideOverOpen, setIsSlideOverOpen,
+        isImportWizardOpen, setIsImportWizardOpen, viewMode, setViewMode,
+        formData, setFormData, aiSearchQuery, setAiSearchQuery,
+        culinarySearchQuery, setCulinarySearchQuery, culinaryResults, setCulinaryResults,
+        openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
+        locationsList, pendingLocations, loadingLocations, loadError, filteredLocations,
+        createLocMutation, updateLocMutation, deleteLocMutation, updateLocStatusMutation,
+        extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
+        aiQueryMutation, culinaryContextMutation,
+        handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
+        handleApprove, handleReject, handleDelete, handleImproveText, handleSave,
+        addImageUrl, removeImage
+    } = hook
 
     const categories = [
         'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
@@ -420,29 +118,6 @@ const AdminLocationsPage = () => {
         { id: 'late_night', label: 'Поздняя ночь', icon: Clock }
     ]
 
-    const addImageUrl = (url) => {
-        if (!url) return;
-        setFormData(prev => {
-            if (!prev) return prev;
-            return {
-                ...prev,
-                images: [...(prev.images || []), url],
-                image_url: prev.image_url || url // Set as main if it's the first one
-            }
-        })
-    }
-
-    const removeImage = (index) => {
-        setFormData(prev => {
-            if (!prev || !prev.images) return prev;
-            const newImages = prev.images.filter((_, i) => i !== index);
-            return {
-                ...prev,
-                images: newImages,
-                image_url: prev.image_url === prev.images[index] ? (newImages[0] || '') : prev.image_url
-            }
-        })
-    }
 
     const renderListView = (filtered) => (
         <div className="overflow-x-auto custom-scrollbar">
@@ -528,79 +203,20 @@ const AdminLocationsPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 lg:gap-8">
-                {stats.map((s, i) => (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} key={i} className="bg-white dark:bg-slate-900/50 p-4 lg:p-6 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/10 transition-all">
-                        <div className={cn("w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner overflow-hidden relative", s.bg, s.color)}>
-                            <s.icon size={20} className="lg:w-6 lg:h-6 group-hover:scale-110 transition-transform" />
-                        </div>
-                        <div className="text-center sm:text-left min-w-0">
-                            <p className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-1">{s.label}</p>
-                            <p className="text-sm lg:text-2xl font-bold text-slate-900 dark:text-white leading-none tracking-tight truncate">{s.val}</p>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+            <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
             <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-slate-800/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                    <div className="flex gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/50 rounded-2xl w-full lg:w-fit overflow-x-auto no-scrollbar border border-slate-100/50 dark:border-slate-800/50">
-                        {[
-                            { id: 'list', label: 'Все объекты', icon: ListIcon },
-                            { id: 'moderation', label: 'В очереди', icon: AlertCircle, count: pendingLocations.length }
-                        ].map(tab => (
-                            <button key={tab.id} onClick={() => setView(tab.id)} className={cn(
-                                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-                                view === tab.id ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                            )}>
-                                <tab.icon size={14} />{tab.label}
-                                {tab.count > 0 && <span className="w-5 h-5 flex items-center justify-center bg-indigo-500 text-white rounded-lg text-[9px] ml-1 shadow-lg shadow-indigo-500/20">{tab.count}</span>}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-4 w-full lg:w-auto">
-                        <div className="flex gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-100/50 dark:border-slate-800/50">
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={cn(
-                                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                                    viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400'
-                                )}
-                            >
-                                Список
-                            </button>
-                            <button
-                                onClick={() => setViewMode('map')}
-                                className={cn(
-                                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                                    viewMode === 'map' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400'
-                                )}
-                            >
-                                Карта
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 px-1 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-100/50 dark:border-slate-800/50">
-                            <Filter size={14} className="ml-3 text-slate-400" />
-                            <select 
-                                value={statusFilter} 
-                                onChange={e => setStatusFilter(e.target.value)}
-                                className="bg-transparent border-none py-2.5 pl-1 pr-8 text-[11px] font-bold uppercase tracking-widest outline-none appearance-none cursor-pointer text-slate-600 dark:text-slate-400"
-                            >
-                                <option value="all">Все статусы</option>
-                                <option value="approved">Активен</option>
-                                <option value="pending">Ожидает</option>
-                                <option value="rejected">Отклонен</option>
-                            </select>
-                        </div>
-
-                        <div className="relative flex-1 lg:w-80 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск объектов..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all font-black leading-none" />
-                        </div>
-                    </div>
-                </div>
+                <LocationFilters
+                    view={view}
+                    onViewChange={setView}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={setStatusFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    pendingCount={pendingLocations.length}
+                />
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
                     <AnimatePresence mode="wait">

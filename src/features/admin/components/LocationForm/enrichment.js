@@ -11,6 +11,7 @@
  */
 
 import { config } from '@/shared/config/env'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 /**
  * Enrich location data with AI-generated fields
@@ -20,7 +21,6 @@ import { config } from '@/shared/config/env'
  */
 export async function enrichLocationData(locationData, apiKey = null) {
     if (!apiKey) {
-        const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
         const appCfg = useAppConfigStore.getState()
         apiKey = appCfg.aiApiKey || config.ai.openRouterKey
     }

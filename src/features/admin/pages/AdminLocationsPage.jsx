@@ -134,7 +134,7 @@ const AdminLocationsPage = () => {
         if (!loc) return
         setSelectedLocation(loc)
         
-        // Prepare formData with aliases
+        // Prepare formData with aliases for UI compatibility
         const prepared = { ...loc };
         
         // Handle must_try alias for the UI string input
@@ -142,6 +142,22 @@ const AdminLocationsPage = () => {
             prepared.must_try = loc.what_to_try.join(', ');
         } else {
             prepared.must_try = loc.what_to_try || '';
+        }
+        
+        // Map canonical fields to UI field names for editing
+        // cuisine_types → cuisine (string for input)
+        if (loc.cuisine_types?.length) {
+            prepared.cuisine = loc.cuisine_types.join(', ');
+        }
+        
+        // price_range → price_level
+        if (loc.price_range) {
+            prepared.price_level = loc.price_range;
+        }
+        
+        // Keep tags as-is, but ensure vibe is also populated for backwards compatibility
+        if (loc.tags?.length) {
+            prepared.vibe = [...loc.tags];
         }
 
         setFormData(prepared)
@@ -292,6 +308,29 @@ const AdminLocationsPage = () => {
 
         const submissionData = { ...formData };
         
+        // Map old field names to canonical Supabase schema
+        // cuisine → cuisine_types
+        if (submissionData.cuisine) {
+            submissionData.cuisine_types = typeof submissionData.cuisine === 'string' 
+                ? submissionData.cuisine.split(',').map(s => s.trim()).filter(Boolean)
+                : submissionData.cuisine;
+            delete submissionData.cuisine;
+        }
+        
+        // price_level → price_range
+        if (submissionData.price_level) {
+            submissionData.price_range = submissionData.price_level;
+            delete submissionData.price_level;
+        }
+        
+        // vibe → tags (merge if both exist)
+        if (submissionData.vibe?.length) {
+            const existingTags = submissionData.tags || [];
+            submissionData.tags = [...new Set([...existingTags, ...submissionData.vibe])];
+            delete submissionData.vibe;
+        }
+        
+        // Handle must_try alias for the UI string input
         if (typeof submissionData.must_try === 'string') {
             submissionData.what_to_try = submissionData.must_try
                 .split(',')

@@ -61,6 +61,9 @@ function LocationPicker({ position, onLocationSelect }) {
 }
 
 import LocationListItem from '../components/LocationListItem'
+import LocationFormSlideOver from '../components/LocationFormSlideOver'
+import LocationFilters from '../components/LocationFilters'
+import LocationStats from '../components/LocationStats'
 
 const AdminLocationsPage = () => {
     const [view, setView] = useState('list')
@@ -233,13 +236,6 @@ const AdminLocationsPage = () => {
             return () => clearTimeout(timer)
         }
     }, [location.search])
-
-
-    const stats = [
-        { label: 'Всего', val: locationsList.length.toString(), icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
-        { label: 'В очереди', val: pendingLocations.length.toString(), icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-        { label: 'Approved', val: locationsList.filter(l => l.status === 'approved').length.toString(), icon: Zap, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
-    ]
 
     const handleApprove = async (id) => {
         try {
@@ -528,79 +524,20 @@ const AdminLocationsPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 lg:gap-8">
-                {stats.map((s, i) => (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} key={i} className="bg-white dark:bg-slate-900/50 p-4 lg:p-6 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/10 transition-all">
-                        <div className={cn("w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner overflow-hidden relative", s.bg, s.color)}>
-                            <s.icon size={20} className="lg:w-6 lg:h-6 group-hover:scale-110 transition-transform" />
-                        </div>
-                        <div className="text-center sm:text-left min-w-0">
-                            <p className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-1">{s.label}</p>
-                            <p className="text-sm lg:text-2xl font-bold text-slate-900 dark:text-white leading-none tracking-tight truncate">{s.val}</p>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+            <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
             <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-slate-800/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                    <div className="flex gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/50 rounded-2xl w-full lg:w-fit overflow-x-auto no-scrollbar border border-slate-100/50 dark:border-slate-800/50">
-                        {[
-                            { id: 'list', label: 'Все объекты', icon: ListIcon },
-                            { id: 'moderation', label: 'В очереди', icon: AlertCircle, count: pendingLocations.length }
-                        ].map(tab => (
-                            <button key={tab.id} onClick={() => setView(tab.id)} className={cn(
-                                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-                                view === tab.id ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                            )}>
-                                <tab.icon size={14} />{tab.label}
-                                {tab.count > 0 && <span className="w-5 h-5 flex items-center justify-center bg-indigo-500 text-white rounded-lg text-[9px] ml-1 shadow-lg shadow-indigo-500/20">{tab.count}</span>}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-4 w-full lg:w-auto">
-                        <div className="flex gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-100/50 dark:border-slate-800/50">
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={cn(
-                                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                                    viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400'
-                                )}
-                            >
-                                Список
-                            </button>
-                            <button
-                                onClick={() => setViewMode('map')}
-                                className={cn(
-                                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                                    viewMode === 'map' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400'
-                                )}
-                            >
-                                Карта
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 px-1 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-100/50 dark:border-slate-800/50">
-                            <Filter size={14} className="ml-3 text-slate-400" />
-                            <select 
-                                value={statusFilter} 
-                                onChange={e => setStatusFilter(e.target.value)}
-                                className="bg-transparent border-none py-2.5 pl-1 pr-8 text-[11px] font-bold uppercase tracking-widest outline-none appearance-none cursor-pointer text-slate-600 dark:text-slate-400"
-                            >
-                                <option value="all">Все статусы</option>
-                                <option value="approved">Активен</option>
-                                <option value="pending">Ожидает</option>
-                                <option value="rejected">Отклонен</option>
-                            </select>
-                        </div>
-
-                        <div className="relative flex-1 lg:w-80 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск объектов..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all font-black leading-none" />
-                        </div>
-                    </div>
-                </div>
+                <LocationFilters
+                    view={view}
+                    onViewChange={setView}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={setStatusFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    pendingCount={pendingLocations.length}
+                />
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
                     <AnimatePresence mode="wait">

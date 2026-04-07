@@ -17,43 +17,16 @@
  * - ai/utils.js      (utility functions)
  */
 
-// Re-export all from constants for now
+// Re-export constants
 export * from './constants'
 
-// TODO: Once ai.api.js is fully split, import and re-export from individual modules:
-// export { semanticSearch } from './search'
-// export { analyzQuery, analyzeQueryStream } from './analysis'
-// export { testAIConnection } from './utils'
-// etc.
-
-// For now, maintain backward compatibility by importing from the original file
-// This will be removed once migration is complete
-import {
-    semanticSearch,
-    executeTool,
-    buildSystemPrompt,
-    fetchOpenRouter,
-    detectIntent,
-    runAgentPass,
-    analyzeQuery,
-    analyzeQueryStream,
-    generateLocationSemanticSummary,
-    testAIConnection,
-    robustParseJSON,
-    extractLocationData,
-} from '../ai.api'
-
-export {
-    semanticSearch,
-    executeTool,
-    buildSystemPrompt,
-    fetchOpenRouter,
-    detectIntent,
-    runAgentPass,
-    analyzeQuery,
-    analyzeQueryStream,
-    generateLocationSemanticSummary,
-    testAIConnection,
-    robustParseJSON,
-    extractLocationData,
-}
+// Re-export all modularized functions
+export { semanticSearch } from './search'
+export { executeTool } from './tools'
+export { buildSystemPrompt } from './prompts'
+export { fetchOpenRouter } from './openrouter'
+export { detectIntent } from './intents'
+export { runAgentPass } from './agents'
+export { analyzeQuery, analyzeQueryStream } from './analysis'
+export { generateLocationSemanticSummary, extractLocationData } from './location'
+export { testAIConnection, robustParseJSON } from './utils'

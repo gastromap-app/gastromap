@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 /**
  * useLocationFilter — convenient access to filter state + derived values.

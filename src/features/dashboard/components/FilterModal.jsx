@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const isDark = theme === 'dark'

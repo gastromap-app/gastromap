@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { geocodeCity } from '@/services/nominatimApi'
 import { fetchPlacesByBoundingBox } from '@/services/overpassApi'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 
 /**

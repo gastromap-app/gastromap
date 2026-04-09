@@ -16,15 +16,14 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * The system tries these in order until one succeeds.
  */
 export const MODEL_CASCADE = [
-    'stepfun/step-3.5-flash:free',          // User preferred free model
-    'nvidia/nemotron-nano-9b-v2:free',      // Often available, very fast
-    'z-ai/glm-4.5-air:free',                 // Good availability
-    'mistralai/mistral-small-3.1:free',      // Reliable multilingual
-    'openai/gpt-oss-20b:free',               // OpenAI open-weight
-    'minimax/minimax-m2.5:free',             // Large context
-    'mistralai/devstral-2512:free',          // Good but often rate-limited
-    'meta-llama/llama-3.3-70b-instruct:free', // Often rate-limited
-    'qwen/qwen3-coder:free',                 // Last resort, often rate-limited
+    'openai/gpt-oss-120b:free',
+    'google/gemma-4-31b-it:free',
+    'qwen/qwen3.6-plus:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'nvidia/nemotron-nano-12b-v2-vl:free',
+    'liquid/lfm-2.5-1.2b-instruct:free',
+    'stepfun/step-3.5-flash:free',
+    'nvidia/nemotron-nano-9b-v2:free',
 ]
 
 /**

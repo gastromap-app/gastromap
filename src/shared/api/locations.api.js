@@ -20,6 +20,10 @@ import { config } from '@/shared/config/env'
 // import { getActiveAIConfig } from './ai-config.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
+console.log('[locations.api] 🔌 Database Mode:', USE_SUPABASE ? 'SUPABASE' : 'MOCKS fall-back')
+if (USE_SUPABASE) {
+    console.log('[locations.api] 🌐 Supabase URL:', config.supabase.url)
+}
 
 // ─── Shape normaliser ──────────────────────────────────────────────────────
 // Exposes BOTH API-canonical names (title, priceLevel, openingHours …)

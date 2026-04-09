@@ -9,7 +9,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check, CheckCheck, Settings, Trash2, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useNotificationStore, useUnreadCount } from '@/store/useNotificationStore'
+import { useNotificationStore, useUnreadCount } from '@/shared/store/useNotificationStore'
 import {
     getNotificationHistory,
     markNotificationRead,

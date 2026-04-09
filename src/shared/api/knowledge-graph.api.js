@@ -317,8 +317,9 @@ async function saveViaProxy(type, data) {
         clearTimeout(timeout)
     }
 
-    if (res.status === 404) {
-        console.log('[proxy] 404 — falling back to direct Supabase insert')
+    if (res.status === 404 || res.status === 401 || res.status === 500) {
+        const reason = res.status === 404 ? 'Proxy not found' : res.status === 401 ? 'Auth failure' : 'Server error'
+        console.warn(`[proxy] ${res.status} (${reason}) — falling back to direct Supabase insert`)
         return null
     }
 

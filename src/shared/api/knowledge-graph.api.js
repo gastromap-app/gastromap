@@ -244,24 +244,45 @@ export async function getCuisineById(id) {
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    console.log(`[proxy] POST /api/kg/save`, { type, data })
+    console.log(`[proxy] 🛰️ POST /api/kg/save | type: ${type} | item: "${data.name}"`)
 
-    // ── 1. Proactive JWT Refresh — ensures no 401 due to expired token ───────
+    // ── 1. Proactive JWT Retrieval with Timeout ──────────────────────────────
+    // If it hangs at getSession, it might be due to auth-refresh locking.
     let jwt = ''
     try {
-        console.log('[saveViaProxy] ⏳ Checking current session...')
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('[saveViaProxy] ⏳ Checking session...')
+        
+        // Race getSession against a 3s timeout
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session check timeout')), 3000))
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
+        
         if (session?.access_token) {
             jwt = session.access_token
-            console.log('[saveViaProxy] ✅ Using active session')
+            console.log(`[saveViaProxy] ✅ JWT ready (len: ${jwt.length})`)
+        } else {
+            console.warn('[saveViaProxy] ⚠️ No active session found — proxy might reject with 401')
         }
     } catch (e) {
-        console.warn('[saveViaProxy] ❌ Session retrieval exception:', e.message)
+        console.warn('[saveViaProxy] ❌ Session retrieval failed/timed out:', e.message)
     }
 
     if (!jwt) {
-        console.error('[proxy] 🛑 No JWT available — user must be logged in')
-        throw new ApiError('Not authenticated. Please log in to complete this action.', 401, 'AUTH_ERROR')
+        // We try once more from localStorage before giving up
+        try {
+            const stored = localStorage.getItem('sb-gastromap-auth')
+            if (stored) {
+                const parsed = JSON.parse(stored)
+                jwt = parsed.access_token
+                console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    if (!jwt) {
+        console.error('[proxy] 🛑 No JWT available — proxy will likely fail')
+        // We still TRY the fetch, maybe it's local dev without auth
     }
 
     console.log('[saveViaProxy] 🌐 Sending POST to /api/kg/save with JWT (len:', jwt.length, ')')

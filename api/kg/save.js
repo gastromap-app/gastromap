@@ -58,36 +58,42 @@ export default async function handler(req, res) {
     }
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+    // Normalize URL: remove trailing slash if present to avoid //auth/v1
+    const cleanUrl = supabaseUrl?.replace(/\/+$/, '')
+    const serviceKey  = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
     // Debug: логируем наличие env vars (без значений)
     console.log('[kg/save] env check:', {
         hasSupabaseUrl:      !!supabaseUrl,
         hasServiceKey:       !!serviceKey,
-        supabaseUrlPrefix:   supabaseUrl?.slice(0, 30) || 'MISSING',
+        serviceKeyLen:       serviceKey.length,
+        cleanUrl:            cleanUrl,
     })
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!cleanUrl || !serviceKey) {
         return res.status(500).json({
-            error: 'Server misconfiguration',
-            missing: [
-                !supabaseUrl ? 'SUPABASE_URL' : null,
-                !serviceKey  ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
-            ].filter(Boolean),
+            error: 'Server misconfiguration on Vercel',
+            details: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.',
+            hint: 'Check Vercel Dashboard -> Project Settings -> Environment Variables.'
         })
     }
 
     // ── Verify JWT via Supabase Auth — ensures only authenticated users can save ──
     try {
-        const verifyResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        const verifyResp = await fetch(`${cleanUrl}/auth/v1/user`, {
             headers: {
                 'apikey':        serviceKey,
                 'Authorization': `Bearer ${jwt}`,
             },
         })
         if (!verifyResp.ok) {
-            console.error('[kg/save] JWT verification failed:', verifyResp.status)
-            return res.status(401).json({ error: 'Invalid or expired token. Please re-login.' })
+            const errBody = await verifyResp.text().catch(() => 'No body')
+            console.error('[kg/save] JWT verification failed:', verifyResp.status, errBody)
+            return res.status(401).json({ 
+                error: 'Invalid or expired token. Please re-login.',
+                details: `Supabase Auth returned ${verifyResp.status}`,
+                url_checked: `${cleanUrl}/auth/v1/user`
+            })
         }
         const user = await verifyResp.json()
         console.log(`[kg/save] Authenticated user: ${user.email || user.id}`)

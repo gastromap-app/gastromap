@@ -277,9 +277,6 @@ const AgentCard = ({ name, role, isActive, onToggle, icon: Icon, color, descript
 const AdminAIPage = () => {
     const appConfig = useAppConfigStore()
 
-    // ── Temps
-    const [guideTemp, setGuideTemp] = useState(appConfig.aiGuideTemp ?? 0.7)
-    const [assistantTemp, setAssistantTemp] = useState(appConfig.aiAssistantTemp ?? 0.4)
 
     // ── System Prompts
     const [guidePrompt, setGuidePrompt] = useState(appConfig.aiGuideSystemPrompt ?? '')
@@ -361,8 +358,6 @@ const AdminAIPage = () => {
 
     const handleSave = () => {
         appConfig.updateSettings({
-            aiGuideTemp: guideTemp,
-            aiAssistantTemp: assistantTemp,
             aiGuideActive: agentActive.guide,
             aiAssistantActive: agentActive.assistant,
             aiPrimaryModel: primaryModel,
@@ -630,55 +625,6 @@ const AdminAIPage = () => {
                 </div>
             </div>
 
-            {/* Temperature */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
-                    <Sliders size={16} className="text-indigo-500" />
-                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Temperature Settings</h2>
-                </div>
-                <div className="p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
-                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-lg">{guideTemp.toFixed(1)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="2"
-                                step="0.1"
-                                value={guideTemp}
-                                onChange={(e) => setGuideTemp(parseFloat(e.target.value))}
-                                className="w-full accent-indigo-600"
-                            />
-                            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-wider">
-                                <span>Precise (0)</span>
-                                <span>Creative (2)</span>
-                            </div>
-                        </div>
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant</h3>
-                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-lg">{assistantTemp.toFixed(1)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="2"
-                                step="0.1"
-                                value={assistantTemp}
-                                onChange={(e) => setAssistantTemp(parseFloat(e.target.value))}
-                                className="w-full accent-indigo-600"
-                            />
-                            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-semibold uppercase tracking-wider">
-                                <span>Precise (0)</span>
-                                <span>Creative (2)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* System Prompts */}
             <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">

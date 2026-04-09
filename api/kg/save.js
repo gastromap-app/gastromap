@@ -282,8 +282,6 @@ function sanitize(type, data) {
             best_pairing:      best_pairing || null,
             serving_temp:      SERVING_TEMPS.includes(serving_temp) ? serving_temp : null,
             course:            COURSES.includes(course) ? course : null,
-            cook_time_min:     Number.isInteger(cook_time_min) ? cook_time_min : null,
-            difficulty:        DIFFICULTIES.includes(difficulty) ? difficulty : null,
             origin_city:       origin_city || null,
             alternative_names: toArray(alternative_names),
             spicy_level:       typeof spicy_level === 'number' ? Math.max(0, Math.min(5, spicy_level)) : null,

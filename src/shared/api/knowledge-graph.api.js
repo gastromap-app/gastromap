@@ -94,6 +94,62 @@ async function generateEmbedding(text) {
  * @property {string} created_at
  */
 
+// ─── Smart Schema Filter (Filter out fields that don't exist in DB) ──────────
+const SCHEMA_WHITELIST = {
+    cuisines: [
+        'name', 'slug', 'description', 'parent_id', 'origin_country', 
+        'region', 'flavor_profile', 'aliases', 'typical_dishes', 'key_ingredients'
+    ],
+    dishes: [
+        'name', 'description', 'cuisine_id', 'category', 'price_range', 
+        'is_signature', 'vegetarian', 'vegan', 'gluten_free', 
+        'spicy_level', 'ingredients', 'allergens', 'preparation_style',
+        'dietary_tags', 'flavor_notes', 'best_pairing', 'course', 'origin_city'
+    ],
+    ingredients: [
+        'name', 'slug', 'category', 'is_allergen', 'is_vegetarian', 
+        'is_vegan', 'origin', 'season', 'flavor_profile', 'common_pairings', 
+        'dietary_info', 'description', 'origin_region', 'health_notes', 
+        'substitutes', 'storage_tip'
+    ]
+}
+
+const slugify = (text) => {
+    if (!text) return ''
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')     // Replace spaces with -
+        .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+        .replace(/--+/g, '-')     // Replace multiple - with single -
+}
+
+function sanitizeForDB(type, data) {
+    const table = type.endsWith('s') ? type : `${type}s`
+    const allowed = SCHEMA_WHITELIST[table] || []
+    const clean = {}
+    
+    // Default values for mandatory fields
+    if (table === 'ingredients' && !data.category) {
+        data.category = 'other'
+    }
+    
+    // Auto-generate slug if missing but name is present
+    if (!data.slug && data.name) {
+        data.slug = slugify(data.name)
+    }
+
+    // Only keep fields that are in our whitelist
+    Object.keys(data).forEach(key => {
+        if (allowed.includes(key)) {
+            clean[key] = data[key]
+        }
+    })
+    
+    return clean
+}
+
 // ─── Mock Data for Development ──────────────────────────────────────────────
 
 const mockCuisines = [
@@ -359,10 +415,11 @@ export async function createCuisine(cuisine) {
         invalidateCacheGroup('cuisines')
         return proxyResult
     }
+    const cleanData = sanitizeForDB('cuisines', cuisine)
     // Fallback: direct Supabase (works only if RLS allows anon writes)
     const { data, error } = await supabase
         .from('cuisines')
-        .insert([cuisine])
+        .insert([cleanData])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
@@ -441,10 +498,11 @@ export async function createDish(dish) {
         invalidateCacheGroup('dishes')
         return proxyResult
     }
+    const cleanData = sanitizeForDB('dishes', dish)
     // Fallback: direct Supabase
     const { data, error } = await supabase
         .from('dishes')
-        .insert([dish])
+        .insert([cleanData])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
@@ -523,10 +581,11 @@ export async function createIngredient(ingredient) {
         invalidateCacheGroup('ingredients')
         return proxyResult
     }
+    const cleanData = sanitizeForDB('ingredients', ingredient)
     // Fallback: direct Supabase
     const { data, error } = await supabase
         .from('ingredients')
-        .insert([ingredient])
+        .insert([cleanData])
         .select()
         .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')

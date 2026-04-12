@@ -85,3 +85,61 @@ export async function rejectSubmission(id, reason) {
             .eq('id', id)
     )
 }
+
+// ─── Photo upload ──────────────────────────────────────────────────────────
+
+/**
+ * Compress an image file using the Canvas API.
+ * Returns a new JPEG File, never larger than the original.
+ *
+ * @param {File}   file
+ * @param {object} opts
+ * @param {number} opts.maxWidth    — default 1400px
+ * @param {number} opts.maxHeight   — default 1050px
+ * @param {number} opts.quality     — JPEG quality 0–1, default 0.82
+ */
+export function compressImage(file, { maxWidth = 1400, maxHeight = 1050, quality = 0.82 } = {}) {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        const objectUrl = URL.createObjectURL(file)
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl)
+            const scale = Math.min(maxWidth / img.width, maxHeight / img.height, 1)
+            const canvas = document.createElement('canvas')
+            canvas.width  = Math.round(img.width  * scale)
+            canvas.height = Math.round(img.height * scale)
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob) return reject(new Error('Compression failed'))
+                    const safeName = file.name.replace(/\.\w+$/, '.jpg')
+                    resolve(new File([blob], safeName, { type: 'image/jpeg' }))
+                },
+                'image/jpeg',
+                quality,
+            )
+        }
+        img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image load failed')) }
+        img.src = objectUrl
+    })
+}
+
+/**
+ * Upload a single (already-compressed) photo to Supabase Storage.
+ * Bucket: 'submissions'  (create it in Supabase with public read access).
+ *
+ * @param {File}   file
+ * @param {string} userId
+ * @returns {Promise<string>} public URL
+ */
+export async function uploadSubmissionPhoto(file, userId) {
+    if (!USE_SUPABASE) {
+        // Dev mock — return a local object URL (valid for current session only)
+        return URL.createObjectURL(file)
+    }
+    const path = `${userId}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('submissions').upload(path, file, { upsert: false })
+    if (error) throw new ApiError(error.message, 400, 'PHOTO_UPLOAD_ERROR')
+    const { data } = supabase.storage.from('submissions').getPublicUrl(path)
+    return data.publicUrl
+}

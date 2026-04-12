@@ -68,6 +68,7 @@ const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPassword
 // ─── LAZY: Dashboard pages ─────────────────────────────────────────────────
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const AddPlacePage = lazy(() => import('@/features/dashboard/pages/AddPlacePage'))
+const MySubmissionsPage = lazy(() => import('@/features/dashboard/pages/MySubmissionsPage'))
 const LeaderboardPage = lazy(() => import('@/features/dashboard/pages/LeaderboardPage'))
 const ProfilePage = lazy(() => import('@/features/dashboard/pages/ProfilePage'))
 const ProfileEditPage = lazy(() => import('@/features/dashboard/pages/ProfileEditPage'))
@@ -147,6 +148,7 @@ export const AppRouter = () => {
                     <Route element={<RequireAuth />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/dashboard/add-place" element={<AddPlacePage />} />
+                        <Route path="/dashboard/my-submissions" element={<MySubmissionsPage />} />
                         <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/profile/edit" element={<ProfileEditPage />} />

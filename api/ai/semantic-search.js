@@ -2,7 +2,7 @@
  * /api/ai/semantic-search.js
  * Semantic search via OpenRouter embeddings + Supabase float8[] cosine similarity
  */
-const handler = async (req, res) => {
+export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -18,8 +18,7 @@ const handler = async (req, res) => {
   const OR_KEY = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY
 
   if (!SUPABASE_URL || !SUPABASE_KEY || !OR_KEY) {
-    console.error('Missing env vars:', { hasSupabaseUrl: !!SUPABASE_URL, hasSupabaseKey: !!SUPABASE_KEY, hasOrKey: !!OR_KEY })
-    return res.status(500).json({ error: 'Server configuration error' })
+    return res.status(500).json({ error: 'Server configuration error: missing env vars' })
   }
 
   try {
@@ -46,7 +45,10 @@ const handler = async (req, res) => {
     const locRes = await fetch(sbUrl, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     })
-    if (!locRes.ok) throw new Error(`Supabase ${locRes.status}`)
+    if (!locRes.ok) {
+      const errText = await locRes.text()
+      throw new Error(`Supabase ${locRes.status}: ${errText.slice(0, 200)}`)
+    }
     const locations = await locRes.json()
 
     // 3. Compute cosine similarity (vectors are already normalized)
@@ -63,7 +65,7 @@ const handler = async (req, res) => {
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, limit)
 
-    console.log(`[semantic-search] "${query}" -> ${scored.length} results (from ${locations.length} locations)`)
+    console.log(`[semantic-search] "${query}" -> ${scored.length} results / ${locations.length} checked`)
 
     return res.status(200).json({ results: scored, count: scored.length, total_checked: locations.length })
 
@@ -72,5 +74,3 @@ const handler = async (req, res) => {
     return res.status(500).json({ error: err.message })
   }
 }
-
-module.exports = handler

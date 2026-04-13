@@ -1,41 +1,120 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import {
-    Users, MapPin, CreditCard, TrendingUp, TrendingDown,
-    ArrowUpRight, ArrowDownRight, Calendar, Filter, Download,
-    Search, MousePointer2, Clock, Globe
+    Users, MapPin, CreditCard, TrendingUp,
+    ArrowUpRight, Calendar, Filter, Download,
+    MousePointer2, Clock, Star, Activity, Eye
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useCategoryStats, useTopLocations, useEngagementStats, usePaymentStats } from '@/shared/api/queries'
+import {
+    useCategoryStats, useTopLocations,
+    useEngagementStats, usePaymentStats, useAdminStats,
+} from '@/shared/api/queries'
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const fmt = (n, fallback = '—') => (n == null ? fallback : Number(n).toLocaleString())
+const fmtMoney = (n, fallback = '—') =>
+    n == null ? fallback : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+const StatCard = ({ label, value, change, isPositive, icon: Icon, color, delay = 0 }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: delay * 0.1 }}
+        className="bg-white dark:bg-slate-900 p-4 lg:p-6 rounded-[20px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-500/10 transition-colors"
+    >
+        <div className={cn(
+            'absolute -top-4 -right-4 w-20 lg:w-32 h-20 lg:h-32 rounded-full blur-[40px] lg:blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity',
+            color === 'indigo' ? 'bg-indigo-500' : color === 'emerald' ? 'bg-emerald-500' : 'bg-orange-500'
+        )} />
+
+        <div className="flex justify-between items-start mb-4 lg:mb-6 relative z-10">
+            <div className={cn(
+                'p-2.5 lg:p-3 rounded-xl lg:rounded-[18px] shadow-inner',
+                color === 'indigo' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                    : color === 'emerald' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+            )}>
+                <Icon size={20} className="lg:w-6 lg:h-6" />
+            </div>
+            {change != null && (
+                <div className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider',
+                    isPositive ? 'bg-green-50 dark:bg-green-500/10 text-green-600' : 'bg-red-50 dark:bg-red-500/10 text-red-600'
+                )}>
+                    <ArrowUpRight size={12} className={isPositive ? '' : 'rotate-180'} />
+                    {change}
+                </div>
+            )}
+        </div>
+
+        <div className="relative z-10">
+            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-0.5 lg:mb-1">{label}</p>
+            <h3 className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight truncate">{value}</h3>
+        </div>
+    </motion.div>
+)
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const Skeleton = ({ className }) => (
+    <div className={cn('animate-pulse bg-slate-100 dark:bg-slate-800 rounded-xl', className)} />
+)
+
+// ─── AdminStatsPage ───────────────────────────────────────────────────────────
 
 const AdminStatsPage = () => {
-    const { data: categoryStats = {}, isLoading: loadingCategoryStats } = useCategoryStats()
-    const { data: topLocations = [], isLoading: loadingTopLocations } = useTopLocations(5)
+    const { data: stats = {}, isLoading: loadingStats } = useAdminStats()
+    const { data: topLocations = [], isLoading: loadingTop } = useTopLocations(5)
     const { data: engagement = {}, isLoading: loadingEngagement } = useEngagementStats()
     const { data: payments = {}, isLoading: loadingPayments } = usePaymentStats()
+    const { data: categoryStats = {} } = useCategoryStats()
 
-    const isLoading = loadingCategoryStats || loadingTopLocations || loadingEngagement || loadingPayments
+    const isLoading = loadingStats || loadingTop || loadingEngagement || loadingPayments
 
-    // Explicit color maps — Tailwind can't scan dynamic template literals like `bg-${color}-500`
-    const colorMap = {
-        indigo:  { glow: 'bg-indigo-500',  icon: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' },
-        emerald: { glow: 'bg-emerald-500', icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-        orange:  { glow: 'bg-orange-500',  icon: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
-    }
-
+    // Real stats from DB
     const mainStats = [
-        { label: 'Юзеры', value: '12,842', change: '+12%', isPositive: true, icon: Users, color: 'indigo' },
-        { label: 'Объекты', value: '3,456', change: '+5%', isPositive: true, icon: MapPin, color: 'indigo' },
-        { label: 'Выручка', value: '$45.2k', change: '-2%', isPositive: false, icon: CreditCard, color: 'emerald' },
-        { label: 'Конверсия', value: '18.4%', change: '+1%', isPositive: true, icon: TrendingUp, color: 'orange' },
+        {
+            label: 'Пользователи',
+            value: fmt(stats?.users?.total),
+            change: stats?.users?.this_month ? `+${fmt(stats.users.this_month)} за месяц` : null,
+            isPositive: true,
+            icon: Users,
+            color: 'indigo',
+        },
+        {
+            label: 'Локации',
+            value: fmt(stats?.locations?.published),
+            change: stats?.locations?.pending ? `${fmt(stats.locations.pending)} на модерации` : null,
+            isPositive: true,
+            icon: MapPin,
+            color: 'indigo',
+        },
+        {
+            label: 'Выручка',
+            value: fmtMoney(payments?.total_revenue),
+            change: payments?.this_month_revenue != null ? `${fmtMoney(payments.this_month_revenue)} за месяц` : null,
+            isPositive: true,
+            icon: CreditCard,
+            color: 'emerald',
+        },
+        {
+            label: 'Активных подписок',
+            value: fmt(payments?.active_subscriptions),
+            change: null,
+            isPositive: true,
+            icon: TrendingUp,
+            color: 'orange',
+        },
     ]
 
-    const visitsByCity = [
-        { city: 'Краков', visits: 4500, color: 'bg-indigo-500' },
-        { city: 'Варшава', visits: 3800, color: 'bg-blue-500' },
-        { city: 'Берлин', visits: 2900, color: 'bg-indigo-500' },
-        { city: 'Прага', visits: 2100, color: 'bg-indigo-500' },
-    ]
+    // Build city bars from locations categories or engagement if available
+    const maxVisits = topLocations.length > 0
+        ? Math.max(...topLocations.map(l => l.review_count || l.visit_count || 1))
+        : 1
 
     return (
         <div className="space-y-6 lg:space-y-8 pb-10 font-sans">
@@ -43,170 +122,151 @@ const AdminStatsPage = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
                 <div>
                     <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight">Аналитика</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-xs lg:text-sm truncate">Общая статистика производительности.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-xs lg:text-sm">
+                        Данные из базы данных в реальном времени.
+                    </p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm grow sm:grow-0">
                         <Calendar size={16} className="text-slate-400" />
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none">30 Дней</span>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none">Всё время</span>
                     </div>
-                    <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                        <Download size={16} />
-                        Экспорт
-                    </button>
                 </div>
             </div>
 
             {/* Main Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-                {mainStats.map((stat, i) => (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        key={i}
-                        className="bg-white dark:bg-slate-900 p-4 lg:p-6 rounded-[20px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-500/10 transition-colors"
-                    >
-                        <div className={cn(
-                            "absolute -top-4 -right-4 w-20 lg:w-32 h-20 lg:h-32 rounded-full blur-[40px] lg:blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity",
-                            colorMap[stat.color]?.glow
-                        )} />
-
-                        <div className="flex justify-between items-start mb-4 lg:mb-6 relative z-10">
-                            <div className={cn(
-                                "p-2.5 lg:p-3 rounded-xl lg:rounded-[18px] shadow-inner",
-                                colorMap[stat.color]?.icon
-                            )}>
-                                <stat.icon size={20} className="lg:w-6 lg:h-6" />
-                            </div>
-                            <div className={cn(
-                                "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                                stat.isPositive ? 'bg-green-50 dark:bg-green-500/10 text-green-600' : 'bg-red-50 dark:bg-red-500/10 text-red-600'
-                            )}>
-                                {stat.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                                {stat.change}
-                            </div>
-                        </div>
-
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-0.5 lg:mb-1">{stat.label}</p>
-                            <h3 className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight truncate">{stat.value}</h3>
-                        </div>
-                    </motion.div>
-                ))}
+                {isLoading
+                    ? Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 lg:h-40 rounded-[20px] lg:rounded-[32px]" />
+                    ))
+                    : mainStats.map((stat, i) => (
+                        <StatCard key={i} {...stat} delay={i} />
+                    ))
+                }
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
-                {/* Popular Cities Chart */}
+
+                {/* Top Locations */}
                 <div className="xl:col-span-2 bg-white dark:bg-slate-900 p-5 lg:p-10 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex justify-between items-center mb-8 lg:mb-10 pl-1">
-                        <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">Популярность по городам</h2>
-                        <button className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-300 hover:text-indigo-600 transition-all shadow-inner">
-                            <Filter size={18} />
-                        </button>
+                        <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">Топ локаций</h2>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">по активности</span>
                     </div>
 
-                    <div className="space-y-8">
-                        {visitsByCity.map((item, i) => (
-                            <div key={i} className="space-y-3">
-                                <div className="flex justify-between items-center text-[10px] lg:text-xs font-bold uppercase tracking-wider">
-                                    <span className="text-slate-500 dark:text-slate-400">{item.city}</span>
-                                    <span className="text-slate-900 dark:text-white">{item.visits.toLocaleString()}</span>
-                                </div>
-                                <div className="h-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200/5 dark:border-slate-700/50">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(item.visits / 5000) * 100}%` }}
-                                        transition={{ duration: 1, delay: 0.3 + i * 0.1 }}
-                                        className={cn("h-full rounded-full shadow-lg", item.color)}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    {loadingTop ? (
+                        <div className="space-y-5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Skeleton key={i} className="h-10" />
+                            ))}
+                        </div>
+                    ) : topLocations.length > 0 ? (
+                        <div className="space-y-6">
+                            {topLocations.map((loc, i) => {
+                                const score = loc.review_count || loc.visit_count || loc.rating || 0
+                                const pct = maxVisits > 0 ? (score / maxVisits) * 100 : 0
+                                return (
+                                    <div key={loc.id || i} className="space-y-2">
+                                        <div className="flex justify-between items-center text-[10px] lg:text-xs font-bold uppercase tracking-wider">
+                                            <span className="text-slate-500 dark:text-slate-400 truncate max-w-[60%]">{loc.title || loc.name || `Локация ${i+1}`}</span>
+                                            <span className="text-slate-900 dark:text-white">{fmt(score)}</span>
+                                        </div>
+                                        <div className="h-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200/5 dark:border-slate-700/50">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${pct}%` }}
+                                                transition={{ duration: 1, delay: 0.3 + i * 0.1 }}
+                                                className="h-full rounded-full bg-indigo-500 shadow-lg"
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <MapPin size={32} className="text-slate-200 dark:text-slate-700 mb-3" />
+                            <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">Нет данных по активности</p>
+                            <p className="text-xs text-slate-300 dark:text-slate-600 mt-1">Данные появятся по мере роста аудитории</p>
+                        </div>
+                    )}
                 </div>
 
-                {/* AI efficiency */}
-                <div className="bg-white dark:bg-slate-900/50 p-6 lg:p-8 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm">
-                    <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white mb-6 pl-1">AI Impact</h2>
-                    <div className="space-y-4">
-                        <div className="p-5 rounded-[20px] bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 group hover:bg-indigo-100 dark:hover:bg-indigo-500/15 transition-all">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center shadow-sm">
-                                    <MousePointer2 size={16} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">CTR AI Rec</p>
-                                    <p className="text-xl font-bold text-slate-900 dark:text-white">24.8%</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                <ArrowUpRight size={13} />
-                                <span>+4.2% vs last period</span>
-                            </div>
-                        </div>
+                {/* Engagement & Summary */}
+                <div className="bg-white dark:bg-slate-900/50 p-6 lg:p-8 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm space-y-4">
+                    <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white mb-2 pl-1">Активность</h2>
 
-                        <div className="p-5 rounded-[20px] bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 group hover:bg-indigo-100 dark:hover:bg-indigo-500/15 transition-all">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-9 h-9 rounded-xl bg-white dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center shadow-sm">
-                                    <Clock size={16} />
+                    {loadingEngagement ? (
+                        <div className="space-y-3">
+                            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
+                        </div>
+                    ) : (
+                        <>
+                            {[
+                                { label: 'Визиты', value: fmt(engagement?.total_visits), icon: Eye, color: 'bg-indigo-500/10 text-indigo-500' },
+                                { label: 'Отзывы', value: fmt(engagement?.total_reviews), icon: Star, color: 'bg-amber-500/10 text-amber-500' },
+                                { label: 'Избранное', value: fmt(engagement?.total_favorites), icon: Activity, color: 'bg-emerald-500/10 text-emerald-500' },
+                                { label: 'Ожидают модерации', value: fmt(engagement?.pending_reviews), icon: Clock, color: 'bg-orange-500/10 text-orange-500' },
+                            ].map(({ label, value, icon: Icon, color }, i) => (
+                                <div key={i} className="flex items-center gap-3 p-4 rounded-[20px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100/60 dark:border-slate-700/30">
+                                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', color)}>
+                                        <Icon size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">{label}</p>
+                                        <p className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{value}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Retention</p>
-                                    <p className="text-xl font-bold text-slate-900 dark:text-white">68.2%</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                <ArrowUpRight size={13} />
-                                <span>Healthy range</span>
+                            ))}
+                        </>
+                    )}
+
+                    {/* Category breakdown */}
+                    {categoryStats && Object.keys(categoryStats).length > 0 && (
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-3 pl-1">По категориям</p>
+                            <div className="space-y-2">
+                                {Object.entries(categoryStats).slice(0, 4).map(([key, val], i) => (
+                                    <div key={i} className="flex justify-between items-center text-xs px-1">
+                                        <span className="text-slate-500 dark:text-slate-400 capitalize">{key}</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{fmt(val)}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
-            {/* Recent Conversions Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[300px]">
-                <div className="p-6 lg:p-10 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/20 dark:bg-slate-800/20">
-                    <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Последние подписки</h2>
-                </div>
-                <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-800/30">
-                                <th className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">User</th>
-                                <th className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">План</th>
-                                <th className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Дата</th>
-                                <th className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800 font-medium">
-                            {[
-                                { name: 'Алексей Иванов', plan: 'Premium', date: '2 м. назад', amount: '$120.00', status: 'Success' },
-                                { name: 'Мария Петрова', plan: 'Basic', date: '45 м. назад', amount: '$12.00', status: 'Success' },
-                            ].map((tx, i) => (
-                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-none">
-                                    <td className="px-6 lg:px-10 py-4 lg:py-5 text-[13px] lg:text-sm font-bold text-slate-900 dark:text-white truncate">{tx.name}</td>
-                                    <td className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{tx.plan}</td>
-                                    <td className="px-6 lg:px-10 py-4 lg:py-5 text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</td>
-                                    <td className="px-6 lg:px-10 py-4 lg:py-5">
-                                        <div className={cn(
-                                            "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-bold border uppercase tracking-wider leading-none",
-                                            tx.status === 'Success' ? 'bg-green-50 dark:bg-green-500/5 text-green-600 border-green-100/50' : 'bg-red-50 text-red-500 border-red-100'
-                                        )}>
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", tx.status === 'Success' ? 'bg-green-500' : 'bg-red-500')} />
-                                            {tx.status === 'Success' ? 'PASSED' : 'ERROR'}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            {/* Locations stats breakdown */}
+            <div className="bg-white dark:bg-slate-900 p-5 lg:p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white mb-6 pl-1">Статус локаций</h2>
+                {isLoading ? (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                            { label: 'Всего', value: fmt(stats?.locations?.total), dot: 'bg-slate-400' },
+                            { label: 'Опубликовано', value: fmt(stats?.locations?.published), dot: 'bg-emerald-500' },
+                            { label: 'На проверке', value: fmt(stats?.locations?.pending), dot: 'bg-amber-500' },
+                            { label: 'Отклонено', value: fmt(stats?.locations?.rejected), dot: 'bg-red-500' },
+                        ].map(({ label, value, dot }, i) => (
+                            <div key={i} className="p-4 rounded-[18px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100/60 dark:border-slate-700/30">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className={cn('w-2 h-2 rounded-full', dot)} />
+                                    <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{label}</p>
+                                </div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
 }
-
 
 export default AdminStatsPage

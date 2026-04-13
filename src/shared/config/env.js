@@ -4,11 +4,18 @@
  * via import.meta.env in components or services.
  */
 
+// Supabase Edge Functions base URL
+const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
+  ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
+  : 'https://myyzguendoruefiiufop.supabase.co/functions/v1'
+
 export const config = {
     // ─── Supabase ─────────────────────────────────────────────────────────────
     supabase: {
         url: import.meta.env.VITE_SUPABASE_URL ?? '',
         anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
+        /** Edge Functions base URL — lower latency than Vercel Functions */
+        functionsUrl: SUPABASE_FUNCTIONS_URL,
         get isConfigured() {
             return Boolean(this.url && this.anonKey)
         },
@@ -17,29 +24,37 @@ export const config = {
     // ─── AI / LLM (OpenRouter — free models, cascading) ──────────────────────
     ai: {
         openRouterKey: import.meta.env.VITE_OPENROUTER_API_KEY ?? '',
-        // Default to models that are more reliably available
         model: import.meta.env.VITE_AI_MODEL ?? 'nvidia/nemotron-nano-9b-v2:free',
         modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'z-ai/glm-4.5-air:free',
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
-        proxyUrl: '/api/ai/chat',
-        /** 
-         * @deprecated Use checkAIStatus() from ai.api.js or check appCfg.aiApiKey || config.ai.openRouterKey
-         * This getter only checks ENV variables.
+        /**
+         * Primary proxy: Supabase Edge Function (lower latency, no cold starts).
+         * Fallback: Vercel Function (kept for compatibility).
          */
+        proxyUrl: `${SUPABASE_FUNCTIONS_URL}/ai-chat`,
+        proxyUrlFallback: '/api/ai/chat',
+        semanticSearchUrl: `${SUPABASE_FUNCTIONS_URL}/semantic-search`,
+        semanticSearchFallback: '/api/ai/semantic-search',
         get isConfigured() {
             return Boolean(this.openRouterKey) || import.meta.env.DEV
         },
         get isOpenRouterConfigured() {
             return Boolean(this.openRouterKey) || import.meta.env.DEV
         },
-        /** In production the key is absent from the client bundle — use the proxy */
         get useProxy() {
             return (!this.openRouterKey || this.openRouterKey === '') && import.meta.env.PROD
         },
     },
 
-    // ─── Culinary APIs (Food Databases) ──────────────────────────────────────
+    // ─── Knowledge Graph ──────────────────────────────────────────────────────
+    kg: {
+        /** Primary: Supabase Edge Function (auth, dedup, sanitize) */
+        saveUrl: `${SUPABASE_FUNCTIONS_URL}/kg-save`,
+        saveUrlFallback: '/api/kg/save',
+    },
+
+    // ─── Culinary APIs ────────────────────────────────────────────────────────
     culinary: {
         spoonacularKey: import.meta.env.VITE_SPOONACULAR_API_KEY ?? '1b1558e8934f47daafb5a28ce844f9be',
         get isSpoonacularConfigured() {
@@ -49,7 +64,7 @@ export const config = {
 
     // ─── Map ──────────────────────────────────────────────────────────────────
     map: {
-        defaultCenter: { lat: 50.0619, lng: 19.9368 }, // Krakow
+        defaultCenter: { lat: 50.0619, lng: 19.9368 },
         defaultZoom: 14,
         tiles: {
             light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',

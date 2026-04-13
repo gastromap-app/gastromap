@@ -296,11 +296,11 @@ export async function getCuisineById(id) {
 
 /**
  * Internal helper — saves a KG item via the server-side proxy.
- * Uses /api/kg/save which has SUPABASE_SERVICE_ROLE_KEY and bypasses RLS.
+ * Uses Supabase Edge Function (primary) or /api/kg/save (fallback).
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    console.log(`[proxy] 🛰️ POST /api/kg/save | type: ${type} | item: "${data.name}"`)
+    console.log(`[proxy] 🛰️ POST kg-save | type: ${type} | item: "${data.name}"`)
 
     // ── 1. Proactive JWT Retrieval with Timeout ──────────────────────────────
     // If it hangs at getSession, it might be due to auth-refresh locking.
@@ -341,7 +341,7 @@ async function saveViaProxy(type, data) {
         // We still TRY the fetch, maybe it's local dev without auth
     }
 
-    console.log('[saveViaProxy] 🌐 Sending POST to /api/kg/save with JWT (len:', jwt.length, ')')
+    console.log('[saveViaProxy] 🌐 Sending POST to kg-save Edge Function with JWT (len:', jwt.length, ')')
 
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
@@ -352,7 +352,7 @@ async function saveViaProxy(type, data) {
 
     let res
     try {
-        res = await fetch('/api/kg/save', {
+        res = await fetch(config.kg?.saveUrl || '/api/kg/save', {
             method: 'POST',
             signal: controller.signal,
             headers: {
@@ -385,7 +385,7 @@ async function saveViaProxy(type, data) {
     } catch (parseErr) {
         const raw = await res.text().catch(() => '')
         console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
-        throw new ApiError(`/api/kg/save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
+        throw new ApiError(`kg-save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
     }
 
     console.log(`[proxy] Response body`, result)

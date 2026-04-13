@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react'
+import { config } from '@/shared/config/env'
+import { supabase } from '@/shared/api/client'
 
 /**
- * useSemanticSearch — хук для AI-powered семантического поиска локаций.
+ * useSemanticSearch — AI-powered semantic location search.
  *
- * Использует /api/ai/semantic-search который:
- *   1. Генерирует embedding запроса через OpenRouter
- *   2. Загружает локации с float8[] embeddings из Supabase
- *   3. Вычисляет cosine similarity на стороне сервера
+ * Uses Supabase Edge Function (primary) with Vercel fallback:
+ *   1. Generates query embedding via OpenRouter
+ *   2. Fetches locations with float8[] embeddings from Supabase
+ *   3. Returns cosine-similarity ranked results
  *
  * @param {object} options
- * @param {number} options.threshold - порог схожести (default: 0.3)
- * @param {number} options.limit - макс кол-во результатов (default: 10)
+ * @param {number} options.threshold - similarity threshold (default: 0.3)
+ * @param {number} options.limit - max results (default: 10)
  */
 export function useSemanticSearch({ threshold = 0.3, limit = 10 } = {}) {
     const [results, setResults] = useState([])
@@ -19,33 +21,45 @@ export function useSemanticSearch({ threshold = 0.3, limit = 10 } = {}) {
     const [lastQuery, setLastQuery] = useState('')
 
     const search = useCallback(async (query, { city, category } = {}) => {
-        if (!query?.trim()) return
+        if (!query?.trim()) return []
 
         setIsLoading(true)
         setError(null)
         setLastQuery(query)
 
-        try {
-            const response = await fetch('/api/ai/semantic-search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, city, category, limit, threshold }),
-            })
+        // Build headers — include Supabase anon key for Edge Function auth
+        const headers = { 'Content-Type': 'application/json' }
+        const anonKey = config.supabase.anonKey
+        if (anonKey) headers['Authorization'] = `Bearer ${anonKey}`
 
-            if (!response.ok) {
-                throw new Error(`Search failed: ${response.status}`)
+        const body = JSON.stringify({ query, city, category, limit, threshold })
+
+        // Try Edge Function first, then Vercel fallback
+        const urls = [
+            config.ai.semanticSearchUrl,
+            config.ai.semanticSearchFallback,
+        ].filter(Boolean)
+
+        let lastErr = null
+        for (const url of urls) {
+            try {
+                const response = await fetch(url, { method: 'POST', headers, body })
+                if (!response.ok) {
+                    lastErr = `${url}: HTTP ${response.status}`
+                    continue
+                }
+                const data = await response.json()
+                const res = data.results ?? []
+                setResults(res)
+                return res
+            } catch (err) {
+                lastErr = err.message
             }
-
-            const data = await response.json()
-            setResults(data.results ?? [])
-            return data.results ?? []
-        } catch (err) {
-            console.error('[useSemanticSearch] error:', err)
-            setError(err.message)
-            return []
-        } finally {
-            setIsLoading(false)
         }
+
+        console.error('[useSemanticSearch] all endpoints failed:', lastErr)
+        setError(lastErr)
+        return []
     }, [threshold, limit])
 
     const clear = useCallback(() => {

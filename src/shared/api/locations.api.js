@@ -31,95 +31,97 @@ if (USE_SUPABASE) {
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
 function normalise(row) {
     if (!row) return null;
-    
+
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
-    
+
+    // ── Dual-schema support ──────────────────────────────────────────────────
+    // Legacy schema (001_locations.sql): image, rating, price_level, cuisine (string)
+    // New schema (post-refactor):        image_url, google_rating, price_range, cuisine_types (array)
+    const image      = row.image_url    ?? row.image    ?? ''
+    const rating     = Number(row.google_rating ?? row.rating ?? 0)
+    const priceLevel = row.price_range  ?? row.price_level ?? '$$'
+    const cuisineRaw = row.cuisine_types ?? (row.cuisine ? [row.cuisine] : [])
+
+    // Status normalisation: legacy uses 'active', new schema uses 'approved'
+    const status = row.status ?? 'active'
+
     return {
         id: row.id,
-        // Canonical name is title
         title: row.title ?? '',
-        // UI-legacy fallback (can be phased out)
         name: row.title ?? '',
 
-        // Textual
         description: row.description ?? '',
         address: row.address ?? '',
         city: row.city ?? '',
         country: row.country ?? '',
 
-        // Coordinates (flat as well as nested for different UI components)
         coordinates: { lat, lng },
         lat,
         lng,
 
-        // Canonical category
         category: row.category ?? 'other',
-        // UI-legacy fallback
         type: row.category ?? 'other',
-        
-        cuisine: row.cuisine_types?.[0] ?? '', // Taking first from array
-        cuisine_types: row.cuisine_types ?? [],
 
-        // Media
-        image: row.image_url ?? '',
-        image_url: row.image_url ?? '',
-        photos: row.google_photos ?? [],
-        images: row.google_photos ?? [],
+        cuisine: Array.isArray(cuisineRaw) ? (cuisineRaw[0] ?? '') : (cuisineRaw ?? ''),
+        cuisine_types: Array.isArray(cuisineRaw) ? cuisineRaw : [cuisineRaw].filter(Boolean),
 
-        // Core stats
-        rating: Number(row.google_rating ?? 0),
-        google_rating: Number(row.google_rating ?? 0),
+        image,
+        image_url: image,
+        photos: row.google_photos ?? row.photos ?? [],
+        images: row.google_photos ?? row.photos ?? [],
+
+        rating,
+        google_rating: rating,
         google_user_ratings_total: row.google_user_ratings_total ?? 0,
-        
-        price_level: row.price_range ?? '$$',
-        priceLevel: row.price_range ?? '$$', 
-        price_range: row.price_range ?? '$$',
 
-        // Operational
+        price_level: priceLevel,
+        priceLevel,
+        price_range: priceLevel,
+
         opening_hours: row.opening_hours ?? '',
         openingHours: row.opening_hours ?? '',
         booking_url: row.booking_url ?? '',
         website: row.website ?? '',
         phone: row.phone ?? '',
 
-        // Arrays
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
-        vibe: row.vibe ?? [], // Note: vibe is not in schema directly, might be part of tags or tags in code is vibe?
-        features: row.amenities ?? [],
-        amenities: row.amenities ?? [],
+        vibe: row.vibe ?? [],
+        features: row.amenities ?? row.features ?? [],
+        amenities: row.amenities ?? row.features ?? [],
         best_for: row.best_for ?? [],
-        dietary: row.dietary_options ?? [],
-        dietary_options: row.dietary_options ?? [],
+        dietary: row.dietary_options ?? row.dietary ?? [],
+        dietary_options: row.dietary_options ?? row.dietary ?? [],
 
-        // Booleans
-        has_wifi: !!row.wifi_quality && row.wifi_quality !== 'none',
-        has_outdoor_seating: row.outdoor_seating ?? false,
-        reservations_required: row.reservation_required ?? false,
+        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : (row.has_wifi ?? false),
+        has_outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
+        reservations_required: row.reservation_required ?? row.reservations_required ?? false,
 
-        // Expert notes
+        michelin_stars: row.michelin_stars ?? 0,
+        michelin_bib: row.michelin_bib ?? false,
+
         insider_tip: row.insider_tip ?? '',
-        what_to_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
-        must_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
+        what_to_try: typeof row.must_try === 'string'
+            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            : (row.must_try ?? row.what_to_try ?? []),
+        must_try: typeof row.must_try === 'string'
+            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            : (row.must_try ?? row.what_to_try ?? []),
 
-        // AI Metadata
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
         embedding: row.embedding ?? null,
-        
-        // Enrichment Status
+
         ai_enrichment_status: row.ai_enrichment_status ?? 'pending',
         ai_enrichment_error: row.ai_enrichment_error ?? null,
         ai_enrichment_last_attempt: row.ai_enrichment_last_attempt ?? null,
 
-        // Meta
-        status: row.status ?? 'pending',
+        status,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',
     }
 }
-
 
 // ─── Read ──────────────────────────────────────────────────────────────────
 
@@ -142,7 +144,7 @@ export async function getLocations(filters = {}) {
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
     if (!bypassStatus) {
-        q = q.eq('status', status ?? 'approved')
+        q = q.eq('status', status ?? 'active')
     } else if (status) {
         // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)

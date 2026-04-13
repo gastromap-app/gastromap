@@ -1,36 +1,72 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { geocodeCity } from '@/services/nominatimApi'
-import { fetchPlacesByBoundingBox } from '@/services/overpassApi'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { MOCK_LOCATIONS } from '@/mocks/locations'
+import { config } from '@/shared/config/env'
 
 /**
- * Fetch real venue data from OpenStreetMap for a given city+country.
- * - Geocodes city → bounding box via Nominatim
- * - Fetches restaurants/cafes/bars via Overpass API
- * - Syncs results to Zustand store (filteredLocations updates automatically)
- * - Falls back to MOCK_LOCATIONS if API is unreachable or returns nothing
+ * useLocationsQuery — основной хук загрузки локаций.
  *
- * React Query handles caching: staleTime 1h, gcTime 24h.
+ * Стратегия источника данных:
+ *   1. Supabase (locations таблица) — если VITE_SUPABASE_URL настроен
+ *   2. OpenStreetMap Overpass API — fallback если Supabase недоступен
+ *   3. MOCK_LOCATIONS — последний резерв
+ *
+ * React Query кэширует: staleTime 1h, gcTime 24h.
+ * Результат синхронизируется в Zustand store (filteredLocations обновится автоматически).
  */
 export function useLocationsQuery(city, country) {
     const setLocations = useLocationsStore((s) => s.setLocations)
+    const USE_SUPABASE = config.supabase.isConfigured
 
     const query = useQuery({
-        queryKey: ['locations', city?.toLowerCase(), country?.toLowerCase()],
+        queryKey: ['locations', city?.toLowerCase(), country?.toLowerCase(), USE_SUPABASE ? 'supabase' : 'osm'],
         queryFn: async () => {
-            const geo = await geocodeCity(city, country)
-            const places = await fetchPlacesByBoundingBox(geo.boundingbox, 100)
-            return places.length ? places : MOCK_LOCATIONS
+            // ── Путь 1: Supabase ─────────────────────────────────────────
+            if (USE_SUPABASE) {
+                try {
+                    const { getLocations } = await import('@/shared/api/locations.api')
+                    const result = await getLocations({
+                        city,
+                        country,
+                        limit: 200,
+                        status: 'approved',
+                    })
+                    const places = result?.data ?? []
+                    if (places.length > 0) {
+                        console.log('[useLocationsQuery] ✅ Supabase:', places.length, 'locations for', city, country)
+                        return places
+                    }
+                    console.warn('[useLocationsQuery] Supabase returned 0 results — falling back to OSM')
+                } catch (err) {
+                    console.warn('[useLocationsQuery] Supabase error, falling back to OSM:', err.message)
+                }
+            }
+
+            // ── Путь 2: OpenStreetMap (Overpass) ─────────────────────────
+            try {
+                const { geocodeCity } = await import('@/services/nominatimApi')
+                const { fetchPlacesByBoundingBox } = await import('@/services/overpassApi')
+                const geo = await geocodeCity(city, country)
+                const places = await fetchPlacesByBoundingBox(geo.boundingbox, 100)
+                if (places.length > 0) {
+                    console.log('[useLocationsQuery] ✅ OSM fallback:', places.length, 'places')
+                    return places
+                }
+            } catch (err) {
+                console.warn('[useLocationsQuery] OSM error, falling back to mocks:', err.message)
+            }
+
+            // ── Путь 3: Mock data ────────────────────────────────────────
+            const { MOCK_LOCATIONS } = await import('@/mocks/locations')
+            console.warn('[useLocationsQuery] ⚠️  Using MOCK_LOCATIONS')
+            return MOCK_LOCATIONS
         },
-        staleTime: 60 * 60 * 1000,        // consider fresh for 1 hour
-        gcTime: 24 * 60 * 60 * 1000,      // keep in memory cache 24 hours
+        staleTime: 60 * 60 * 1000,
+        gcTime: 24 * 60 * 60 * 1000,
         enabled: !!(city && country),
         retry: 1,
     })
 
-    // Push fetched data into the Zustand store so all consumers (map, filters, etc.) see it
     useEffect(() => {
         if (query.data) {
             setLocations(query.data)

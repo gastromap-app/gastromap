@@ -355,13 +355,15 @@ export function useCategoryStats() {
 
 export function useTopLocations(limit = 5) {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped, no extra request
+        queryKey: ['admin-stats'],
         queryFn: async () => {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         },
         staleTime: 60_000,
-        select: (data) => (data?.top_locations || []).slice(0, limit),
+        select: (data) => (data?.top_locations || [])
+            .slice(0, limit)
+            .map(loc => ({ ...loc, visit_count: null, review_count: null })),
     })
 }
 

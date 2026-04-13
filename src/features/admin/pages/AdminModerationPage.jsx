@@ -18,10 +18,10 @@ export default function AdminModerationPage() {
         ...pendingReviews.map(r => ({
             ...r,
             queueType: 'review',
-            name: r.location_name || 'Unknown Location',
+            name: r.locations?.title || r.location_name || 'Unknown Location',
             type: 'Review',
-            city: r.location_city || '\u2014',
-            author: r.user_name || r.user_email || 'Anonymous',
+            city: r.locations?.city || r.location_city || '\u2014',
+            author: r.profiles?.name || r.profiles?.full_name || r.user_name || r.user_email || 'Anonymous',
             date: r.created_at,
             insiderTip: r.review_text?.substring(0, 100) || '\u2014',
             mustTry: `Rating: ${r.rating}/5`,
@@ -31,7 +31,7 @@ export default function AdminModerationPage() {
         ...pendingLocations.map(l => ({
             ...l,
             queueType: 'location',
-            name: l.name,
+            name: l.title || l.name || 'Unknown',
             type: l.category || 'Location',
             city: l.city || '\u2014',
             author: l.created_by || 'System',

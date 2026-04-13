@@ -31,7 +31,7 @@ const AdminUsersPage = () => {
     const filteredUsers = useMemo(() => {
         const q = searchQuery.toLowerCase()
         return profiles.filter(u => {
-            const name = u.full_name || u.email || ''
+            const name = u.name || u.email || ''
             const matchesSearch = !q || name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
             const matchesRole = roleFilter === 'All' || u.role === roleFilter
             return matchesSearch && matchesRole
@@ -48,11 +48,11 @@ const AdminUsersPage = () => {
     const handleUpdate = async () => {
         await updateProfileRole.mutateAsync({ userId: selectedUser.id, role: editRole })
         setIsSlideOverOpen(false)
-        showToast(`${selectedUser.full_name || selectedUser.email} updated successfully.`)
+        showToast(`${selectedUser.name || selectedUser.email} updated successfully.`)
     }
 
     const handleBanToggle = (user) => {
-        showToast(`${user.full_name || user.email} ${user.status === 'active' ? 'restricted' : 'reactivated'}.`)
+        showToast(`${user.name || user.email} ${user.status === 'active' ? 'restricted' : 'reactivated'}.`)
     }
 
     const stats = [
@@ -189,10 +189,10 @@ const AdminUsersPage = () => {
                                         <td className="px-6 py-5 pl-10 lg:pl-12">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-[14px] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-900 dark:text-white font-bold text-xs shadow-inner group-hover:scale-110 transition-transform">
-                                                    {(user.full_name || user.email || 'U').charAt(0)}
+                                                    {(user.name || user.email || 'U').charAt(0)}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{user.full_name || user.email}</p>
+                                                    <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{user.name || user.email}</p>
                                                     <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1 font-medium">
                                                         <Mail size={10} className="opacity-50" />{user.email}
                                                     </p>
@@ -223,7 +223,7 @@ const AdminUsersPage = () => {
                                         </td>
                                         <td className="px-6 py-5 text-right pr-10 lg:pr-12">
                                             <button
-                                                aria-label={`Ban or activate ${user.full_name || user.email}`}
+                                                aria-label={`Ban or activate ${user.name || user.email}`}
                                                 onClick={(e) => { e.stopPropagation(); handleBanToggle(user) }}
                                                 className={cn(
                                                     "p-2 rounded-xl transition-all",
@@ -260,8 +260,8 @@ const AdminUsersPage = () => {
 
                             <div className="flex-1 overflow-y-auto p-10 lg:p-14 space-y-12 custom-scrollbar">
                                 <div className="flex flex-col items-center py-10 bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-inner group">
-                                    <div className="w-28 h-28 rounded-[36px] bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/20 mb-6 group-hover:scale-105 transition-transform">{(selectedUser.full_name || selectedUser.email || 'U').charAt(0)}</div>
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.full_name || selectedUser.email}</h3>
+                                    <div className="w-28 h-28 rounded-[36px] bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/20 mb-6 group-hover:scale-105 transition-transform">{(selectedUser.name || selectedUser.email || 'U').charAt(0)}</div>
+                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.name || selectedUser.email}</h3>
                                     <p className="text-[13px] font-medium text-slate-400 mt-2">{selectedUser.email}</p>
                                     <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-2">
                                         Joined {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('en-GB') : '—'}

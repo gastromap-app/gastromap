@@ -148,7 +148,7 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
-          }
+          },
           // ─── Supabase Edge Functions: semantic-search — StaleWhileRevalidate ────
           // GET-like search results can be cached; POST with same query body reuses cache
           {

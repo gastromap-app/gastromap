@@ -45,7 +45,7 @@ export async function getProfiles() {
     if (!supabase) return mockProfiles
     const { data } = await supabase
         .from('profiles')
-        .select('id, email, full_name, role, avatar_url, created_at')
+        .select('id, email, name, role, avatar_url, created_at')
         .order('created_at', { ascending: false })
     return data || []
 }

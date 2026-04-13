@@ -29,7 +29,8 @@ export function useLocationsQuery(city, country) {
                         city,
                         country,
                         limit: 200,
-                        status: 'approved',
+                        // БД использует статус 'active' (не 'approved')
+                        status: 'active',
                     })
                     const places = result?.data ?? []
                     if (places.length > 0) {

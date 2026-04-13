@@ -24,11 +24,13 @@ const PREFIX = 'gm_cache_'
  * Locations change more often — 10 min.
  */
 export const TTL = {
-    cuisines:    24 * 60 * 60 * 1000,  // 24 hours
-    dishes:      24 * 60 * 60 * 1000,  // 24 hours
-    ingredients: 24 * 60 * 60 * 1000,  // 24 hours
-    locations:   10 * 60 * 1000,        // 10 minutes
-    categories:  60 * 60 * 1000,        // 1 hour
+    cuisines:       24 * 60 * 60 * 1000,  // 24 hours
+    dishes:         24 * 60 * 60 * 1000,  // 24 hours
+    ingredients:    24 * 60 * 60 * 1000,  // 24 hours
+    locations:      10 * 60 * 1000,        // 10 minutes
+    categories:     60 * 60 * 1000,        // 1 hour
+    semanticSearch: 10 * 60 * 1000,        // 10 minutes — same query shouldn't hit API again
+    braveSearch:    30 * 60 * 1000,        // 30 minutes — news/search results
 }
 
 /**

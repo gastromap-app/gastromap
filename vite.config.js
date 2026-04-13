@@ -42,23 +42,25 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Only cache JS/CSS/HTML — not images (they are fetched fresh or via runtimeCaching)
+        // Precache: только JS/CSS/HTML бандлы (без картинок — они тяжёлые и меняются)
+        // iOS Safari лимит: 50MB. Chrome: без лимита, но зачем занимать?
+        // Целевой размер кэша: < 10MB
         globPatterns: ['**/*.{js,css,html}'],
         navigateFallback: 'index.html',
-        // Total precache size limit: 5 MB (warn if exceeded)
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Файлы > 3MB не кэшируем (защита от больших чанков)
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         runtimeCaching: [
-          // ─── Google Fonts CSS ──────────────────────────────────────────────────────
+          // ─── Google Fonts CSS — кэш на год, меняется редко ──────────────────────
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Google Fonts files ────────────────────────────────────────────────────
+          // ─── Google Fonts files ─────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
@@ -68,30 +70,21 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Unsplash images — reduced limit + size cap ────────────────────────────
+          // ─── Supabase Storage (фото локаций) — небольшой кэш ───────────────────
+          // Только 20 последних просмотренных, чтобы уложиться в iOS лимит
           {
-            urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'unsplash-images-cache',
+              cacheName: 'supabase-storage-cache',
               expiration: {
-                maxEntries: 20,               // было 60 → 20
-                maxAgeSeconds: 60 * 60 * 24 * 14  // было 30 дней → 14
+                maxEntries: 20,               // ~20 фото × ~200KB = ~4MB
+                maxAgeSeconds: 60 * 60 * 24 * 3  // 3 дня
               },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Avatars ───────────────────────────────────────────────────────────────
-          {
-            urlPattern: /^https:\/\/i\.pravatar\.cc\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'avatar-images-cache',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          // ─── Supabase REST API — NetworkFirst ──────────────────────────────────────
+          // ─── Supabase REST — NetworkFirst (свежие данные важнее кэша) ──────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
@@ -99,67 +92,37 @@ export default defineConfig({
               cacheName: 'supabase-rest-cache',
               networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 50,               // было 100 → 50
-                maxAgeSeconds: 60 * 60 * 6    // было 24h → 6h
+                maxEntries: 30,               // ~30 запросов, небольшие JSON
+                maxAgeSeconds: 60 * 60 * 2    // 2 часа
               },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase Storage (location images) ────────────────────────────────────
-          {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'supabase-storage-cache',
-              expiration: {
-                maxEntries: 50,               // было 200 → 50
-                maxAgeSeconds: 60 * 60 * 24 * 7  // было 30 дней → 7
-              },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          // ─── Map tiles — жёсткий лимит ─────────────────────────────────────────────
-          {
-            urlPattern: /^https:\/\/[abc]\.basemaps\.cartocdn\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'map-tiles-cache',
-              expiration: {
-                maxEntries: 100,              // было 500 → 100 (главный виновник!)
-                maxAgeSeconds: 60 * 60 * 24 * 3  // было 7 дней → 3
-              },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          // ─── Semantic search edge function ────────────────────────────────────────
-          {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/semantic-search/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'edge-semantic-search-cache',
-              networkTimeoutSeconds: 8,
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 10 },
-              cacheableResponse: { statuses: [200] }
-            }
-          },
-          // ─── AI chat — never cache ─────────────────────────────────────────────────
+          // ─── AI chat — никогда не кэшировать ───────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/ai-chat/i,
             handler: 'NetworkOnly'
           },
-          // ─── KG save — never cache ────────────────────────────────────────────────
+          // ─── Edge functions (kg-save, etc) — только сеть ───────────────────────
           {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/kg-save/i,
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/.*/i,
             handler: 'NetworkOnly'
           },
-          // ─── Brave search API ─────────────────────────────────────────────────────
+          // ─── Карты CartoDB — НЕ кэшируем (тайлы = главный виновник 1.4GB) ──────
+          // Карта без сети бесполезна, а тайлы весят сотни МБ
+          // Если нужен оффлайн-вид — использовать vector tiles через MapLibre
           {
-            urlPattern: /\/api\/brave-search/i,
+            urlPattern: /^https:\/\/[abc]\.basemaps\.cartocdn\.com\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          // ─── Vercel API — NetworkFirst, короткий кэш ───────────────────────────
+          {
+            urlPattern: /\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'brave-search-cache',
-              networkTimeoutSeconds: 10,
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 30 },
+              cacheName: 'vercel-api-cache',
+              networkTimeoutSeconds: 8,
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 15 },
               cacheableResponse: { statuses: [200] }
             }
           }

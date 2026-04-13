@@ -149,6 +149,49 @@ export default defineConfig({
               }
             }
           }
+          // ─── Supabase Edge Functions: semantic-search — StaleWhileRevalidate ────
+          // GET-like search results can be cached; POST with same query body reuses cache
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/semantic-search/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'edge-semantic-search-cache',
+              networkTimeoutSeconds: 8,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 10 // 10 minutes — results stay fresh
+              },
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          },
+          // ─── Supabase Edge Functions: ai-chat — NetworkOnly (LLM must be fresh) ─
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/ai-chat/i,
+            handler: 'NetworkOnly'
+          },
+          // ─── Supabase Edge Functions: kg-save — NetworkOnly (writes) ────────────
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/kg-save/i,
+            handler: 'NetworkOnly'
+          },
+          // ─── Vercel API functions (brave-search, etc.) — NetworkFirst ────────────
+          {
+            urlPattern: /\/api\/brave-search/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'brave-search-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 30 // 30 minutes
+              },
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          }
         ]
       }
     })

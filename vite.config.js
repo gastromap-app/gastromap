@@ -34,8 +34,6 @@ export default defineConfig({
             purpose: 'any'
           },
           {
-            // Separate maskable entry (PWA spec requires purpose split — combined
-            // 'any maskable' is deprecated and fails Lighthouse audit)
             src: 'pwa-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
@@ -44,66 +42,56 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Only cache JS/CSS/HTML — not images (they are fetched fresh or via runtimeCaching)
+        globPatterns: ['**/*.{js,css,html}'],
         navigateFallback: 'index.html',
+        // Total precache size limit: 5 MB (warn if exceeded)
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
+          // ─── Google Fonts CSS ──────────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
+          // ─── Google Fonts files ────────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-webfonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
+          // ─── Unsplash images — reduced limit + size cap ────────────────────────────
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'unsplash-images-cache',
               expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 20,               // было 60 → 20
+                maxAgeSeconds: 60 * 60 * 24 * 14  // было 30 дней → 14
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
+          // ─── Avatars ───────────────────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/i\.pravatar\.cc\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'avatar-images-cache',
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase REST API — NetworkFirst for fresh data, falls back to cache ──
+          // ─── Supabase REST API — NetworkFirst ──────────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
@@ -111,85 +99,68 @@ export default defineConfig({
               cacheName: 'supabase-rest-cache',
               networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours offline fallback
+                maxEntries: 50,               // было 100 → 50
+                maxAgeSeconds: 60 * 60 * 6    // было 24h → 6h
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase Storage (location images) — CacheFirst, long TTL ───────────
+          // ─── Supabase Storage (location images) ────────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage-cache',
               expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 50,               // было 200 → 50
+                maxAgeSeconds: 60 * 60 * 24 * 7  // было 30 дней → 7
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── OpenStreetMap / CartoDB map tiles — CacheFirst (tiles change rarely) ─
+          // ─── Map tiles — жёсткий лимит ─────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/[abc]\.basemaps\.cartocdn\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles-cache',
               expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+                maxEntries: 100,              // было 500 → 100 (главный виновник!)
+                maxAgeSeconds: 60 * 60 * 24 * 3  // было 7 дней → 3
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase Edge Functions: semantic-search — StaleWhileRevalidate ────
-          // GET-like search results can be cached; POST with same query body reuses cache
+          // ─── Semantic search edge function ────────────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/semantic-search/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'edge-semantic-search-cache',
               networkTimeoutSeconds: 8,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 10 // 10 minutes — results stay fresh
-              },
-              cacheableResponse: {
-                statuses: [200]
-              }
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 10 },
+              cacheableResponse: { statuses: [200] }
             }
           },
-          // ─── Supabase Edge Functions: ai-chat — NetworkOnly (LLM must be fresh) ─
+          // ─── AI chat — never cache ─────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/ai-chat/i,
             handler: 'NetworkOnly'
           },
-          // ─── Supabase Edge Functions: kg-save — NetworkOnly (writes) ────────────
+          // ─── KG save — never cache ────────────────────────────────────────────────
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/kg-save/i,
             handler: 'NetworkOnly'
           },
-          // ─── Vercel API functions (brave-search, etc.) — NetworkFirst ────────────
+          // ─── Brave search API ─────────────────────────────────────────────────────
           {
             urlPattern: /\/api\/brave-search/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'brave-search-cache',
               networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 30 // 30 minutes
-              },
-              cacheableResponse: {
-                statuses: [200]
-              }
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 30 },
+              cacheableResponse: { statuses: [200] }
             }
           }
         ]
@@ -200,21 +171,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React - always needed
           'react-core': ['react', 'react-dom'],
-          // Router
           'react-router': ['react-router-dom'],
-          // Heavy animation library
           'framer-motion': ['framer-motion'],
-          // Icons (large library)
           'lucide': ['lucide-react'],
-          // Map libraries (only loaded on explore/map pages)
           'leaflet': ['leaflet', 'react-leaflet'],
-          // i18n
           'i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          // TanStack utilities
           'tanstack': ['@tanstack/react-query', '@tanstack/react-virtual'],
-          // Admin — one chunk for all admin pages (never loaded on public/user routes)
           'admin': [
             '/src/features/admin/layout/AdminLayout.jsx',
             '/src/features/admin/pages/AdminDashboardPage.jsx',
@@ -233,7 +196,6 @@ export default defineConfig({
         }
       }
     },
-    // Raise the chunk warning threshold
     chunkSizeWarningLimit: 600,
   },
   resolve: {

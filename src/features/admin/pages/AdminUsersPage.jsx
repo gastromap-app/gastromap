@@ -57,7 +57,7 @@ const AdminUsersPage = () => {
 
     const stats = [
         { label: 'Total Users', val: loadingProfiles ? '...' : profiles.length.toString(), icon: Users, bg: 'bg-blue-50 dark:bg-blue-500/10', color: 'text-blue-600' },
-        { label: 'Premium', val: profiles.filter(u => u.role === 'premium').length.toString(), icon: Star, bg: 'bg-yellow-50 dark:bg-yellow-500/10', color: 'text-yellow-600' },
+                { label: 'Moderators', val: profiles.filter(u => u.role === 'moderator').length.toString(), icon: Star, bg: 'bg-indigo-50 dark:bg-indigo-500/10', color: 'text-indigo-600 dark:text-indigo-400' }
         { label: 'Active', val: profiles.filter(u => u.status === 'active').length.toString(), icon: Zap, bg: 'bg-green-50 dark:bg-green-500/10', color: 'text-green-600' },
     ]
 
@@ -143,7 +143,7 @@ const AdminUsersPage = () => {
                                 className="overflow-hidden"
                             >
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                    {['All', 'User', 'Premium', 'Moderator'].map(role => (
+                                    {['All', 'admin', 'moderator', 'user'].map(role => (
                                         <button
                                             key={role}
                                             onClick={() => setRoleFilter(role)}
@@ -154,7 +154,7 @@ const AdminUsersPage = () => {
                                                     : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600"
                                             )}
                                         >
-                                            {role}
+                                            {role === 'admin' ? 'Admin' : role === 'moderator' ? 'Moderator' : role === 'user' ? 'User' : role}
                                         </button>
                                     ))}
                                 </div>
@@ -202,7 +202,7 @@ const AdminUsersPage = () => {
                                         <td className="px-6 py-5">
                                             <Badge variant="outline" className={cn(
                                                 "bg-transparent border border-slate-100 dark:border-slate-800/50 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest",
-                                                user.role === 'premium' ? 'text-yellow-600' : user.role === 'moderator' ? 'text-indigo-500' : 'text-slate-400'
+                                                user.role === 'admin' ? 'text-rose-600 dark:text-rose-400' : user.role === 'moderator' ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
                                             )}>
                                                 {user.role}
                                             </Badge>
@@ -287,10 +287,9 @@ const AdminUsersPage = () => {
                                             onChange={(e) => setEditRole(e.target.value)}
                                             className={selectClass}
                                         >
-                                            <option value="user">Regular User</option>
-                                            <option value="premium">Premium Member</option>
-                                            <option value="moderator">System Moderator</option>
-                                            <option value="admin">Administrator</option>
+                                            <option value="user">User</option>
+                                            <option value="moderator">Moderator</option>
+                                            <option value="admin">Admin</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">

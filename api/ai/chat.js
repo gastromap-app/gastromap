@@ -8,18 +8,18 @@
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+// TAIL FALLBACK — primary model is passed via req.body.model from the client
+// (which reads it from AdminAIPage → useAppConfigStore). This list kicks in
+// only if the primary model fails. Updated 2026-04-14.
 const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'google/gemma-3-27b-it:free',
-    'nvidia/nemotron-3-super-120b-a12b:free',
-    'openai/gpt-oss-20b:free',
-    'stepfun/step-3.5-flash:free',
-    'nvidia/nemotron-nano-9b-v2:free',
-    'qwen/qwen3.6-plus:free',
-    'qwen/qwen3-next-80b-a3b-instruct:free',
-    'minimax/minimax-m2.5:free',
-    'z-ai/glm-4.5-air:free',
+    'openai/gpt-oss-120b:free',               // ✅ best JSON quality
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
+    'arcee-ai/trinity-large-preview:free',    // ✅ stable
+    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast
+    'liquid/lfm-2.5-1.2b-thinking:free',
+    'meta-llama/llama-3.3-70b-instruct:free', // sometimes 429
+    'google/gemma-4-31b-it:free',             // sometimes 429
+    'google/gemma-3-27b-it:free',             // sometimes 429
     'nousresearch/hermes-3-llama-3.1-405b:free',
 ]
 

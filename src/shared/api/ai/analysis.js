@@ -49,7 +49,15 @@ export async function analyzeQuery(message, context = {}) {
                 { role: 'user', content: message },
             ]
 
-            const { text, usedLocations } = await runAgentPass(messages, context.locations || [])
+            // locations from context, or fallback to store
+            let locations = context.locations
+            if (!locations?.length) {
+                try {
+                    const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                    locations = useLocationsStore.getState().locations
+                } catch { locations = [] }
+            }
+            const { text, usedLocations } = await runAgentPass(messages, locations)
 
             return { content: text, matches: usedLocations, intent }
         } catch (err) {
@@ -91,7 +99,15 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 { role: 'user', content: message },
             ]
 
-            const { text, usedLocations } = await runAgentPass(messages, context.locations || [])
+            // locations from context, or fallback to store
+            let locations = context.locations
+            if (!locations?.length) {
+                try {
+                    const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                    locations = useLocationsStore.getState().locations
+                } catch { locations = [] }
+            }
+            const { text, usedLocations } = await runAgentPass(messages, locations)
 
             // Simulate streaming: emit word by word
             if (onChunk && text) {

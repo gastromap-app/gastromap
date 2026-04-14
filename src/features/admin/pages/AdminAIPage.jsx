@@ -8,6 +8,7 @@ import {
     FileText, RotateCcw, Search, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { DEFAULT_PROMPTS, MODEL_CASCADE } from '@/shared/api/ai/constants'
@@ -398,31 +399,27 @@ const AdminAIPage = () => {
     return (
         <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">AI &amp; Agents</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Configure GastroGuide AI models, agents, and API settings.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    {saved && (
-                        <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm"
-                        >
-                            <CheckCircle2 size={16} />
-                            Saved!
-                        </motion.div>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        className="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all shadow-sm"
-                    >
-                        <Save size={15} />
-                        Save Settings
-                    </button>
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="AI Agents"
+                subtitle="Configure AI models, agents, and system prompts."
+                actions={
+                    <div className="flex items-center gap-2">
+                        {saved && (
+                            <motion.span
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400"
+                            >
+                                <CheckCircle2 size={14} /> Saved!
+                            </motion.span>
+                        )}
+                        <button onClick={handleSave} className={adminBtnPrimary}>
+                            <Save size={13} /> Save Settings
+                        </button>
+                    </div>
+                }
+            />
 
             {/* Agents */}
             <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">

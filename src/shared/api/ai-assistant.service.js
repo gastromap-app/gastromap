@@ -1,111 +1,176 @@
 /**
  * AI Assistant Service
- * 
- * Provides high-level AI operations for locations and Knowledge Graph.
- * Bridging modular AI system with database operations.
+ *
+ * High-level AI operations for locations and Knowledge Graph.
  */
 
 import { getLocationById, updateLocation, getLocations } from './locations.api'
 import { generateLocationSemanticSummary } from './ai/index'
 import { matchLocationWithKG } from './knowledge-graph.api'
 
+// ─── Semantic indexing ───────────────────────────────────────────────────────
+
 /**
- * Admin: Trigger deep semantic indexing for a single location.
- * Fetches context, generates AI summary/keywords, and updates the database.
- * 
- * @param {string} id - Location ID
- * @returns {Promise<Object>} Updated location
+ * Admin: Deep semantic indexing for a single location.
  */
 export async function reindexLocationSemantic(id) {
-    console.log('[ai-assistant.service] Reindexing location semantic:', id)
-    
-    // 1. Fetch current location data
+    console.log('[ai-assistant.service] Reindexing semantic:', id)
     const location = await getLocationById(id, { adminMode: true })
     if (!location) throw new Error('Location not found')
-    
-    // 2. Generate new semantic summary and keywords via AI
-    // generateLocationSemanticSummary handles culinary enrichment internally
+
     const { summary, keywords } = await generateLocationSemanticSummary(location)
-    
-    // 3. Update the location record
+
     return await updateLocation(id, {
-        ai_context: summary,
-        ai_keywords: keywords,
-        ai_enrichment_status: 'success',
-        ai_enrichment_last_attempt: new Date().toISOString()
+        ai_context:                  summary,
+        ai_keywords:                 keywords,
+        ai_enrichment_status:        'success',
+        ai_enrichment_last_attempt:  new Date().toISOString(),
     })
 }
 
 /**
- * Admin: Trigger bulk semantic re-indexing for multiple locations.
- * 
- * @param {Object} config - Filtering config (limit, onlyPending, etc.)
- * @returns {Promise<{ success: boolean, count: number }>}
+ * Admin: Bulk semantic re-indexing.
  */
 export async function bulkReindexLocations(config = {}) {
     const { limit = 10, onlyPending = false } = config
-    
-    // 1. Fetch target locations
+
     const filters = { limit, all: true }
     if (onlyPending) filters.ai_enrichment_status = 'pending'
-    
+
     const { data: locations } = await getLocations(filters)
     if (!locations?.length) return { success: true, count: 0 }
-    
+
     console.log(`[ai-assistant.service] Bulk reindexing ${locations.length} locations...`)
-    
+
     let count = 0
     for (const loc of locations) {
         try {
             await reindexLocationSemantic(loc.id)
             count++
         } catch (err) {
-            console.error(`[ai-assistant.service] Failed to reindex location ${loc.id}:`, err.message)
+            console.error(`[ai-assistant.service] Failed ${loc.id}:`, err.message)
         }
     }
-    
     return { success: true, count }
 }
 
+// ─── KG sync ────────────────────────────────────────────────────────────────
+
 /**
- * Admin: Synchronize location with updated Knowledge Graph logic.
- * Matches location against KG entities and updates ai_keywords.
- * 
+ * Synchronize a location with Knowledge Graph.
+ * Writes structured data to kg_cuisines / kg_dishes / kg_ingredients / kg_allergens.
+ *
  * @param {string} id - Location ID
  * @returns {Promise<Object>} Updated location
  */
 export async function syncLocationWithKnowledgeGraph(id) {
-    console.log('[ai-assistant.service] Synchronizing location with KG:', id)
-    
-    // 1. Fetch current location
+    console.log('[ai-assistant.service] KG sync for:', id)
+
     const location = await getLocationById(id, { adminMode: true })
     if (!location) throw new Error('Location not found')
-    
-    // 2. Perform KG matching (Cuisines, Dishes, Ingredients)
+
     const kgMatches = await matchLocationWithKG(location)
-    
-    // 3. Merge KG entities into ai_keywords
+
+    // 1. Deduplicate kg_ arrays
+    const kg_cuisines    = Array.from(new Set(kgMatches.cuisines    || []))
+    const kg_dishes      = Array.from(new Set(kgMatches.dishes      || []))
+    const kg_ingredients = Array.from(new Set(kgMatches.ingredients || []))
+
+    // 2. Derive allergens from matched ingredients
+    const kg_allergens   = deriveAllergens(kg_ingredients)
+
+    // 3. Merge into ai_keywords as well (for backward compat & search)
     const existingKeywords = location.ai_keywords || []
-    const newKeywords = Array.from(new Set([
+    const ai_keywords = Array.from(new Set([
         ...existingKeywords,
-        ...kgMatches.cuisines,
-        ...kgMatches.dishes,
-        ...kgMatches.ingredients
+        ...kg_cuisines,
+        ...kg_dishes,
+        ...kg_ingredients,
     ]))
-    
-    // 4. Update if changed
-    if (newKeywords.length !== existingKeywords.length) {
-        return await updateLocation(id, {
-            ai_keywords: newKeywords,
-            updated_at: new Date().toISOString()
-        })
+
+    const hasChanges =
+        JSON.stringify(location.kg_cuisines)    !== JSON.stringify(kg_cuisines)    ||
+        JSON.stringify(location.kg_dishes)      !== JSON.stringify(kg_dishes)      ||
+        JSON.stringify(location.kg_ingredients) !== JSON.stringify(kg_ingredients)
+
+    if (!hasChanges && ai_keywords.length === existingKeywords.length) {
+        console.log('[ai-assistant.service] No KG changes for:', id)
+        return location
     }
-    
-    return location
+
+    return await updateLocation(id, {
+        kg_cuisines,
+        kg_dishes,
+        kg_ingredients,
+        kg_allergens,
+        ai_keywords,
+        kg_enriched_at: new Date().toISOString(),
+    })
+}
+
+/**
+ * Full KG enrichment pipeline for a location:
+ *   1. Semantic reindex (ai_context + ai_keywords)
+ *   2. KG match (kg_cuisines / kg_dishes / kg_ingredients / kg_allergens)
+ *
+ * @param {string} id - Location ID
+ * @returns {Promise<{ semantic: Object, kg: Object }>}
+ */
+export async function enrichLocationFull(id) {
+    const [semantic, kg] = await Promise.allSettled([
+        reindexLocationSemantic(id),
+        syncLocationWithKnowledgeGraph(id),
+    ])
+    return {
+        semantic: semantic.status === 'fulfilled' ? semantic.value : { error: semantic.reason?.message },
+        kg:       kg.status       === 'fulfilled' ? kg.value       : { error: kg.reason?.message },
+    }
+}
+
+/**
+ * Bulk KG sync for all locations.
+ */
+export async function bulkSyncKG(limit = 50) {
+    const { data: locations } = await getLocations({ limit, all: true })
+    if (!locations?.length) return { success: true, count: 0 }
+
+    console.log(`[ai-assistant.service] Bulk KG sync for ${locations.length} locations...`)
+    let count = 0
+    for (const loc of locations) {
+        try {
+            await syncLocationWithKnowledgeGraph(loc.id)
+            count++
+        } catch (err) {
+            console.error(`[ai-assistant.service] KG sync failed ${loc.id}:`, err.message)
+        }
+    }
+    return { success: true, count }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const ALLERGEN_MAP = {
+    gluten:  ['wheat', 'flour', 'bread', 'pasta', 'rye', 'barley', 'oat', 'semolina'],
+    dairy:   ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'lactose'],
+    nuts:    ['almond', 'walnut', 'cashew', 'peanut', 'hazelnut', 'pistachio', 'pecan'],
+    eggs:    ['egg', 'eggs', 'mayonnaise'],
+    soy:     ['soy', 'tofu', 'edamame', 'miso'],
+    fish:    ['fish', 'cod', 'salmon', 'tuna', 'anchovy', 'sardine'],
+    shellfish: ['shrimp', 'crab', 'lobster', 'oyster', 'mussel', 'scallop', 'clam'],
+    sesame:  ['sesame', 'tahini'],
+}
+
+function deriveAllergens(ingredients) {
+    const lower = ingredients.map(i => i.toLowerCase())
+    return Object.entries(ALLERGEN_MAP)
+        .filter(([, keywords]) => keywords.some(kw => lower.some(ing => ing.includes(kw))))
+        .map(([allergen]) => allergen)
 }
 
 export default {
     reindexLocationSemantic,
     bulkReindexLocations,
-    syncLocationWithKnowledgeGraph
+    syncLocationWithKnowledgeGraph,
+    enrichLocationFull,
+    bulkSyncKG,
 }

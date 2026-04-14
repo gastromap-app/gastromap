@@ -456,7 +456,7 @@ const LocationsPage = () => {
                                 Explore <span className="text-blue-600">{city}</span>
                             </h1>
                             <p className={`text-lg ${subTextStyle}`}>
-                                Premium restaurants and hidden gems in the heart of {city}.
+                                Top restaurants and hidden gems in the heart of {city}.
                             </p>
                         </div>
 

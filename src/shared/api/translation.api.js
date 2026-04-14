@@ -11,7 +11,6 @@
  * - ru: Russian
  */
 
-// analyzeQuery now imported dynamically from ./ai/analysis below
 import { supabase } from './client'
 import { config } from '@/shared/config/env'
 // import { useAppConfigStore } from '@/shared/store/useAppConfigStore'

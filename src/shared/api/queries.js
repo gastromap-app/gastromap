@@ -343,51 +343,50 @@ export function useUpdateLocationStatusMutation() {
 
 export function useCategoryStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key as useAdminStats()
+        queryKey: ['category-stats'],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getCategoryStats } = await import('./admin.api')
+            return getCategoryStats()
         },
-        staleTime: 60_000,
-        select: (data) => data?.locations || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function useTopLocations(limit = 5) {
     return useQuery({
-        queryKey: ['admin-stats'],
+        queryKey: ['top-locations', limit],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getTopLocations } = await import('./admin.api')
+            return getTopLocations(limit)
         },
-        staleTime: 0, // admin: always fresh
-        select: (data) => (data?.top_locations || [])
-            .slice(0, limit)
-            .map(loc => ({ ...loc, visit_count: null, review_count: null })),
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function useEngagementStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryKey: ['detailed-engagement'],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getDetailedEngagement } = await import('./admin.api')
+            return getDetailedEngagement()
         },
-        staleTime: 0, // admin: always fresh
-        select: (data) => data?.engagement || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function usePaymentStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryKey: ['payment-stats'],
         queryFn: async () => {
             const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const stats = await getAdminStats()
+            return stats?.payments || {}
         },
-        staleTime: 0, // admin: always fresh
-        select: (data) => data?.payments || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
@@ -825,5 +824,43 @@ export function useCulinaryContextMutation() {
             const { getIngredientCulinaryContext } = await import('./openfoodfacts.api')
             return getIngredientCulinaryContext(searchTerm)
         },
+    })
+}
+
+// ─── Stats page — Timeline & Growth ────────────────────────────────────────
+
+export function useCityStats() {
+    return useQuery({
+        queryKey: ['city-stats'],
+        queryFn: async () => {
+            const { getCityStats } = await import('./admin.api')
+            return getCityStats()
+        },
+        staleTime: 0,
+        refetchOnMount: true,
+    })
+}
+
+export function useReviewsTimeline(days = 30) {
+    return useQuery({
+        queryKey: ['reviews-timeline', days],
+        queryFn: async () => {
+            const { getReviewsTimeline } = await import('./admin.api')
+            return getReviewsTimeline(days)
+        },
+        staleTime: 0,
+        refetchOnMount: true,
+    })
+}
+
+export function useUserGrowth(days = 30) {
+    return useQuery({
+        queryKey: ['user-growth', days],
+        queryFn: async () => {
+            const { getUserGrowth } = await import('./admin.api')
+            return getUserGrowth(days)
+        },
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }

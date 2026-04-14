@@ -23,15 +23,24 @@ export async function generateLocationSemanticSummary(location, extraContext = n
     if (!apiKey) return { summary: location.description || '', keywords: [] }
 
     // 1. Enrich with Culinary context (Spoonacular + OpenFoodFacts)
+    // Both are optional — failures are non-blocking
     let culinaryContext = ''
     try {
-        const { enrichCulinaryTerm } = await import('../spoonacular.api')
+        const { enrichCulinaryTerm, isSpoonacularAvailable } = await import('../spoonacular.api')
         const { getIngredientCulinaryContext } = await import('../openfoodfacts.api')
 
-        // Search by cuisine_types or category for deep context
         const queryTerm = location.cuisine_types?.[0] || location.category
+        
+        // Only call Spoonacular if key is present and quota not exhausted
+        const spoonPromise = isSpoonacularAvailable()
+            ? enrichCulinaryTerm(queryTerm).catch(err => {
+                console.warn('[ai.location] Spoonacular unavailable:', err.message)
+                return null
+              })
+            : Promise.resolve(null)
+
         const [spoonData, offData] = await Promise.all([
-            enrichCulinaryTerm(queryTerm),
+            spoonPromise,
             getIngredientCulinaryContext(queryTerm).catch(() => null)
         ])
 
@@ -42,7 +51,8 @@ export async function generateLocationSemanticSummary(location, extraContext = n
             culinaryContext += `\nFOOD FACTS: Categories: ${offData.categories.join(', ')}, Allergens: ${offData.allergens.join(', ')}`
         }
     } catch (err) {
-        console.warn('[ai.location] Culinary enrichment partial success:', err.message)
+        // Culinary enrichment is optional — never block semantic summary generation
+        console.warn('[ai.location] Culinary enrichment skipped:', err.message)
     }
 
     // Merge manual extra context if provided

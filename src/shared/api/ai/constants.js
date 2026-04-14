@@ -15,15 +15,22 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * Ordered by reliability and availability - models less likely to be rate-limited first.
  * The system tries these in order until one succeeds.
  */
+// ──────────────────────────────────────────────────────────────────────────────
+// IMPORTANT: This is the TAIL FALLBACK only.
+// The PRIMARY model is always read from AdminAIPage → useAppConfigStore.aiPrimaryModel
+// (set in Admin → AI Agents tab). This list is used only when all configured models fail.
+// Updated 2026-04-14 — verified working against OpenRouter /v1/models
+// ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',
-    'google/gemma-4-31b-it:free',
-    'qwen/qwen3.6-plus:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'nvidia/nemotron-nano-12b-v2-vl:free',
-    'liquid/lfm-2.5-1.2b-instruct:free',
-    'stepfun/step-3.5-flash:free',
-    'nvidia/nemotron-nano-9b-v2:free',
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
+    'arcee-ai/trinity-large-preview:free',    // ✅ stable fallback
+    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast fallback
+    'liquid/lfm-2.5-1.2b-thinking:free',      // ✅ thinking variant
+    'meta-llama/llama-3.3-70b-instruct:free', // sometimes 429
+    'google/gemma-4-31b-it:free',             // sometimes 429
+    'google/gemma-3-27b-it:free',             // sometimes 429
+    'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
 ]
 
 /**

@@ -30,9 +30,9 @@ const STRIPE_CONFIG = {
 // Mock products/prices
 const MOCK_PRODUCTS = [
     {
-        id: 'prod_premium_monthly',
-        name: 'GastroMap Premium',
-        description: 'Premium subscription with AI features',
+        id: 'prod_subscription_monthly',
+        name: 'GastroMap Pro',
+        description: 'Subscription with AI features',
         price: 2999, // in cents/gr groszy
         currency: 'PLN',
         interval: 'month',
@@ -44,14 +44,14 @@ const MOCK_PRODUCTS = [
         ]
     },
     {
-        id: 'prod_premium_yearly',
-        name: 'GastroMap Premium (Yearly)',
+        id: 'prod_subscription_yearly',
+        name: 'GastroMap Pro (Yearly)',
         description: 'Annual subscription with 20% discount',
         price: 28790, // in cents/gr groszy
         currency: 'PLN',
         interval: 'year',
         features: [
-            'All Premium features',
+            'All Pro features',
             '2 months free',
             'Early access to new features'
         ]

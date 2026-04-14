@@ -42,36 +42,34 @@ export async function translateText(text, targetLang, sourceLang = 'auto') {
         return text
     }
 
-    const sourceLanguage = sourceLang || 'auto'
     const targetLanguage = SUPPORTED_LANGUAGES[targetLang]?.name || targetLang
 
-    const prompt = `Translate the following text to ${targetLanguage}.
-Preserve formatting, proper nouns, and brand names.
-Return ONLY the translation, no explanations.
-
-Text to translate:
-"${text}"`
+    const messages = [
+        {
+            role: 'system',
+            content: 'You are a professional translator. Translate accurately while preserving meaning, tone, proper nouns, and brand names. Return ONLY the translation — no explanations, no quotes.'
+        },
+        {
+            role: 'user',
+            content: `Translate the following text to ${targetLanguage}:\n\n${text}`
+        }
+    ]
 
     try {
-        // Add timeout to prevent hanging translation requests
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Translation request timeout')), 30000)
+            setTimeout(() => reject(new Error('Translation timeout')), 30000)
         )
 
-        const { analyzeQuery } = await import('./ai/analysis')
+        const { fetchOpenRouter } = await import('./ai/openrouter')
         const response = await Promise.race([
-            analyzeQuery(prompt, {
-                systemPrompt: 'You are a professional translator. Translate accurately while preserving meaning and tone.',
-                temperature: 0.3,
-                maxTokens: 1000
-            }),
+            fetchOpenRouter(messages, { stream: false, withTools: false }),
             timeoutPromise
         ])
 
-        return response?.content?.trim() || text
+        return response?.text?.trim() || text
     } catch (error) {
-        console.error('[Translation API] Error translating text:', error.message)
-        return text
+        console.error('[Translation API] translateText error:', error.message)
+        return text  // graceful fallback — never block location creation
     }
 }
 
@@ -324,7 +322,7 @@ export function detectLanguage(text) {
 export async function processLocationTranslations(locationData, autoTranslate = true) {
     const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
     const appCfg = useAppConfigStore.getState()
-    const isAIReady = config.ai.isOpenRouterConfigured || appCfg.aiApiKey
+    const isAIReady = config.ai.isConfigured || appCfg.aiApiKey
     
     if (!autoTranslate || !isAIReady) {
         return locationData

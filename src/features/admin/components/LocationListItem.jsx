@@ -59,14 +59,14 @@ const LocationListItem = ({
             <td className="px-6 py-4">
                 <div className={cn(
                     "inline-flex items-center p-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                    loc.status === 'approved' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
-                        loc.status === 'pending' ? 'bg-orange-50 dark:bg-orange-500/5 text-orange-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                    (loc.status === 'approved' || loc.status === 'active') ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
+                        loc.status === 'pending' ? 'bg-orange-50 dark:bg-orange-500/5 text-orange-600' : 'bg-rose-50 dark:bg-rose-500/5 text-rose-500'
                 )}>
                     <div className={cn("w-1.5 h-1.5 rounded-full mr-2", 
-                        loc.status === 'approved' ? 'bg-green-500' : 
-                        loc.status === 'pending' ? 'bg-orange-500' : 'bg-slate-300')} 
+                    (loc.status === 'approved' || loc.status === 'active') ? 'bg-green-50 dark:bg-green-500/5 text-green-600' :
+                        loc.status === 'pending' ? 'bg-orange-500' : 'bg-rose-400')} 
                     />
-                    {loc.status === 'approved' ? 'Активен' : loc.status === 'pending' ? 'Ожидает' : 'Отклонен'}
+                    {(loc.status === 'approved' || loc.status === 'active') ? 'Активен' : loc.status === 'pending' ? 'Ожидает' : 'Отклонён'}
                 </div>
             </td>
             <td className="px-6 py-4 text-right pr-8 lg:pr-10 relative">

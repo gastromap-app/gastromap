@@ -49,6 +49,11 @@ export default defineConfig({
         navigateFallback: 'index.html',
         // Файлы > 3MB не кэшируем (защита от больших чанков)
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Автоматически чистим кэш от старых версий при обновлении SW
+        cleanupOutdatedCaches: true,
+        // SW сразу берёт управление без ожидания перезагрузки
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           // ─── Google Fonts CSS — кэш на год, меняется редко ──────────────────────
           {

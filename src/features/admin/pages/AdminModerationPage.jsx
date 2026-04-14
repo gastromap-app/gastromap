@@ -5,6 +5,7 @@ import {
     MapPin, User, Calendar, MessageSquare, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {
@@ -130,17 +131,12 @@ export default function AdminModerationPage() {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Модерация</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Одобряйте новые заведения и управляйте контентом.</p>
-                </div>
-                {queue.length > 0 && (
-                    <span className="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl text-sm font-semibold border border-amber-100 dark:border-amber-500/20">
-                        {queue.length} в очереди
-                    </span>
-                )}
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Модерация"
+                subtitle="Одобряйте новые заведения и управляйте контентом."
+                badge={queue.length > 0 ? { label: `${queue.length} в очереди`, color: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20' } : undefined}
+            />
 
             {/* Search */}
             <div className="flex gap-3">

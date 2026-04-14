@@ -61,12 +61,14 @@ export async function translateText(text, targetLang, sourceLang = 'auto') {
         )
 
         const { fetchOpenRouter } = await import('./ai/openrouter')
-        const response = await Promise.race([
+        const { response } = await Promise.race([
             fetchOpenRouter(messages, { stream: false, withTools: false }),
             timeoutPromise
         ])
 
-        return response?.text?.trim() || text
+        const data = await response.json()
+        const translated = data?.choices?.[0]?.message?.content?.trim()
+        return translated || text
     } catch (error) {
         console.error('[Translation API] translateText error:', error.message)
         return text  // graceful fallback — never block location creation

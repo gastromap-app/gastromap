@@ -51,6 +51,8 @@ export function useLocations(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
+        staleTime: 0,          // always refetch — admin needs fresh data
+        refetchOnWindowFocus: true,
     })
 }
 

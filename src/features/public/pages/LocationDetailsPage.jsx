@@ -19,7 +19,7 @@ import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
-import { useCreateReviewMutation, useLocationReviews } from '@/shared/api/queries'
+import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation } from '@/shared/api/queries'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -35,11 +35,33 @@ const LocationDetailsPage = () => {
         ?? null
 
     // Connect to real stores
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
-    const { prefs, addVisited } = useUserPrefsStore()
+    const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
+    const { prefs, addVisited: localAddVisited } = useUserPrefsStore()
     const { user } = useAuthStore()
-    const isSaved = isFavorite(location?.id)
+    const addFavMut   = useAddFavoriteMutation()
+    const removeFavMut = useRemoveFavoriteMutation()
+    const addVisitMut = useAddVisitMutation()
+    const { data: dbFavs = [] } = useUserFavorites(user?.id)
+    const dbFavIds = dbFavs.map(f => f.location_id)
+    const isSaved   = dbFavIds.includes(location?.id) || isLocalFav(location?.id)
     const isVisited = prefs.lastVisited?.includes(location?.id)
+
+    const toggleFavorite = async (id) => {
+        localToggle(id)  // optimistic local
+        if (!user?.id) return
+        if (dbFavIds.includes(id)) {
+            await removeFavMut.mutateAsync({ userId: user.id, locationId: id })
+        } else {
+            await addFavMut.mutateAsync({ userId: user.id, locationId: id })
+        }
+    }
+
+    const addVisited = async (id) => {
+        localAddVisited(id)  // optimistic local
+        if (user?.id) {
+            await addVisitMut.mutateAsync({ userId: user.id, locationId: id })
+        }
+    }
     const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
 
     // Reviews — Supabase

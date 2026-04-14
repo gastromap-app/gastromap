@@ -141,11 +141,13 @@ export const useAdminLocations = () => {
         setIsSlideOverOpen(true)
     }
 
-    const handleAIMagic = async () => {
-        if (!aiSearchQuery.trim()) return
+    const handleAIMagic = async (externalQuery) => {
+        // Accept query from card component or fall back to internal state
+        const query = (typeof externalQuery === 'string' ? externalQuery : aiSearchQuery).trim()
+        if (!query) return
 
         try {
-            const data = await extractMutation.mutateAsync(aiSearchQuery)
+            const data = await extractMutation.mutateAsync(query)
             if (data) {
                 const source = data._source === 'google_places' ? '✅ Google Places' : '⚠️ AI (fallback)'
                 console.log(`[GastroAssistant] Data source: ${source}`, data)

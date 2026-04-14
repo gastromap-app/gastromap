@@ -68,6 +68,5 @@
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ],
-  "_ui_refresh": "2026-04-14-admin-pageheader"
+  ]
 }

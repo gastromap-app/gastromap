@@ -86,7 +86,7 @@ const AdminSubscriptionsPage = () => {
                         <div className={cn("w-8 h-8 lg:w-16 lg:h-16 rounded-[12px] lg:rounded-[24px] flex items-center justify-center text-white mb-8 shadow-xl", plan.color)}>
                             <plan.icon size={22} className="lg:w-8 lg:h-8" />
                         </div>
-                        <h3 className="text-[11px] lg:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-none truncate">plan.name}</h3>
+                        <h3 className="text-[11px] lg:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-none truncate">{plan.name}</h3>
                         <div className="flex items-baseline gap-1 mb-3">
                             <span className="text-base lg:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">{plan.price}</span>
                             <span className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">/ {plan.period}</span>

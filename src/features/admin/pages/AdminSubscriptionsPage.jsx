@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePaymentStats } from '@/shared/api/queries'
 
 const AdminSubscriptionsPage = () => {
@@ -43,29 +44,28 @@ const AdminSubscriptionsPage = () => {
     return (
         <div className="space-y-6 lg:space-y-10 pb-12 font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Donations</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Monitor donations and community support.</p>
-                </div>
-                <button
-                    onClick={() => {
-                        const csv = ['User,Plan,Date,Amount,Status', ...allTransactions.map(t =>
-                            `"${t.user}","${t.plan}","${t.date}","${t.amount}","${t.status}"`
-                        )].join('\n')
-                        const blob = new Blob([csv], { type: 'text/csv' })
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'donations-report.csv'
-                        a.click()
-                        URL.revokeObjectURL(url)
-                    }}
-                    className="flex items-center justify-center gap-2.5 px-8 py-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-[0.97] transition-all"
-                >
-                    <Download size={16} />Export CSV
-                </button>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Donations"
+                subtitle="Monitor donations and community support."
+                actions={
+                    <button
+                        onClick={() => {
+                            const csv = ['User,Plan,Date,Amount,Status', ...allTransactions.map(t =>
+                                `"${t.user}","${t.plan}","${t.date}","${t.amount}","${t.status}"`
+                            )].join('\n')
+                            const blob = new Blob([csv], { type: 'text/csv' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url; a.download = 'donations-report.csv'; a.click()
+                            URL.revokeObjectURL(url)
+                        }}
+                        className={adminBtnSecondary}
+                    >
+                        <Download size={13} /> Export CSV
+                    </button>
+                }
+            />
 
             {/* Plans Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8">

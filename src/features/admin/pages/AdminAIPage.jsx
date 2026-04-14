@@ -10,7 +10,8 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
-import { DEFAULT_PROMPTS, testAIConnection, MODEL_CASCADE } from '@/shared/api/ai.api'
+import { DEFAULT_PROMPTS, MODEL_CASCADE } from '@/shared/api/ai/constants'
+import { testAIConnection } from '@/shared/api/ai/utils'
 import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'
 
 // ─── Available OpenRouter free models (April 2026) ──────────────────────────

@@ -115,76 +115,157 @@ export async function generateLocationSemanticSummary(location, extraContext = n
  * @param {string} query - Restaurant name or "Name, City" or description
  * @returns {Promise<Object>} - Structured location data with validated fields
  */
+/**
+ * Admin helper to extract structured restaurant data from a name or description.
+ * 
+ * STRATEGY:
+ *   1. Google Places API (via /api/places/search proxy) — real, verified data
+ *   2. LLM fallback (OpenRouter) — only if Places returns nothing or fails
+ *
+ * @param {string} query - Restaurant name or "Name, City" or description
+ * @returns {Promise<Object>} - Structured location data
+ */
 export async function extractLocationData(query) {
     if (!query?.trim()) throw new Error('Query cannot be empty')
 
-    // Enhanced system prompt with comprehensive field extraction
-    const systemPrompt = `You are GastroData Extractor AI - a precision-focused restaurant intelligence system.
+    // ── Step 1: Try Google Places (real data, no hallucinations) ────────────
+    try {
+        console.log('[ai.location] Trying Google Places for:', query)
+        const baseUrl = typeof window !== 'undefined'
+            ? window.location.origin
+            : 'https://gastromap-five.vercel.app'
 
-Your task: Extract structured information about a restaurant/cafe/bar based ONLY on verifiable facts.
-CRITICAL: DO NOT hallucinate or make up data. If you are not 100% sure about a specific field (like phone, website, or exact opening hours), leave it as NULL.
-Accuracy is prioritized over completeness. It is better to return NULL than wrong data.
+        const res = await fetch(`${baseUrl}/api/places/search`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query.trim() }),
+        })
 
-Return ONLY a valid JSON object:
-{
-    "title": "Full official name",
-    "category": "Map any establishment to one of: restaurant, cafe, bar, bakery, street_food, fine_dining, casual_dining, fast_food, food_truck, market, other",
-    "city": "City name",
-    "country": "Country",
-    "address": "Full official street address",
-    "description": "Compelling 2-3 sentence description in Russian (based ONLY on factual data)",
-    "cuisine_types": ["Italian", "Mediterranean"],
-    "price_range": "$|$$|$$$|$$$$",
-    "opening_hours": "Opening hours (e.g. '10:00-22:00')",
-    "website": "Official website URL",
-    "phone": "Phone number with country code",
-    "booking_url": "Reservation URL (if known)",
-    "insider_tip": "Expert local tip in Russian based on the venue's reputation (if known)",
-    "must_try": ["Must-try dish 1", "Must-try dish 2"],
-    "latitude": number or null,
-    "longitude": number or null,
-    "tags": ["tag1", "tag2"],
-    "amenities": ["wifi", "outdoor_seating"],
-    "dietary_options": ["vegetarian", "vegan"]
+        if (res.ok) {
+            const { result, candidates } = await res.json()
+            if (result?.title) {
+                console.log('[ai.location] Google Places found:', result.title)
+
+                // Enrich with LLM: translate description to Russian, add tags/tips
+                const enriched = await enrichWithLLM(result, query)
+                return { ...result, ...enriched, _source: 'google_places', _candidates: candidates }
+            }
+        }
+        console.warn('[ai.location] Google Places returned no result, falling back to LLM')
+    } catch (err) {
+        console.warn('[ai.location] Google Places failed, using LLM fallback:', err.message)
+    }
+
+    // ── Step 2: LLM fallback (OpenRouter) ───────────────────────────────────
+    return extractWithLLM(query)
 }
 
-RULES:
-1. TRUTHFULNESS: Never invent phone numbers, addresses, or URLs. If it's not in your certain knowledge base, return NULL for that field.
-2. MISSING DATA: If data is missing or uncertain, return null.
-3. LANGUAGES: "description" and "insider_tip" MUST be in Russian.
-4. COORDINATES: Only provide if you have high confidence in the specific location.
-5. NO HALLUCINATION: We are building a real-world map. Incorrect data ruins trust.
-6. FIELD NAMES: Use EXACTLY these field names: cuisine_types (NOT cuisine), price_range (NOT price_level), tags (NOT vibe), amenities (NOT features), dietary_options (NOT dietary).`
-
-    const messages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `EXTRACT FACTUAL DATA FOR: "${query}"
-
-        Instructions:
-        1. Only include information you are certain about.
-        2. If you don't know a detail, return null for that field.
-        3. DO NOT make educated guesses. If you haven't heard of this place, return a JSON with just the name you can infer and nulls for everything else.
-        4. Focus on the most recent known state of this establishment.` },
-    ]
-
+/**
+ * After Google Places returns core data, enrich it with LLM:
+ * - Translate/expand description to Russian
+ * - Generate insider_tip
+ * - Suggest tags, best_for, what_to_try
+ */
+async function enrichWithLLM(placesData, originalQuery) {
     try {
-        console.log('[ai.location] Extracting enhanced location data for:', query)
+        const { getActiveAIConfig } = await import('../ai-config.api')
+        const { apiKey } = getActiveAIConfig()
+        if (!apiKey) return {}
 
-        const { response } = await fetchOpenRouter(messages, {
-            stream: false,
-            withTools: false,
-            modelOverride: 'deepseek/deepseek-chat-v3-0324:free',
-        })
+        const { fetchOpenRouter } = await import('./openrouter')
+        const { robustParseJSON } = await import('./utils')
+
+        const prompt = `You have verified Google Places data for a restaurant. Enhance it with culinary expertise.
+
+VERIFIED DATA:
+Name: ${placesData.title}
+Category: ${placesData.category}
+Address: ${placesData.address}
+Cuisine type (inferred from tags/types): ${(placesData.tags || []).join(', ') || 'unknown'}
+Rating: ${placesData.rating || 'N/A'}
+Price level: ${placesData.price_level || 'N/A'}
+Original description (English): ${placesData.description || 'N/A'}
+Google types: ${(placesData._raw_types || []).join(', ')}
+
+TASK: Return a JSON object with these fields (fill only what you can reasonably infer):
+{
+  "description": "2-3 sentence description in Russian, warm and inviting tone",
+  "insider_tip": "One expert insider tip in Russian (e.g. best dish, best time to visit, hidden gem detail)",
+  "tags": ["atmosphere/vibe tags in English, e.g. Romantic, Cozy, Trendy — max 5"],
+  "best_for": ["occasions: date, family, business, solo, friends — pick 2-3 relevant"],
+  "what_to_try": ["2-4 likely signature dishes based on cuisine type — in English"],
+  "cuisine": "single cuisine type string (e.g. Italian, Polish, Japanese)",
+  "dietary": ["dietary options if obvious from context: vegan, vegetarian, gluten-free"]
+}
+
+RULES: description and insider_tip MUST be in Russian. Other fields in English. No hallucinations — if unsure, omit.`
+
+        const { response } = await fetchOpenRouter([
+            { role: 'system', content: 'You are a culinary expert. Return valid JSON only.' },
+            { role: 'user', content: prompt }
+        ], { stream: false, withTools: false })
 
         const data = await response.json()
         const text = data.choices?.[0]?.message?.content || '{}'
-
-        const extracted = robustParseJSON(text)
-        console.log('[ai.location] Successfully extracted:', extracted)
-
-        return extracted
+        return robustParseJSON(text) || {}
     } catch (err) {
-        console.error('[ai.location] Failed to extract location data:', err)
+        console.warn('[ai.location] LLM enrichment failed:', err.message)
+        return {}
+    }
+}
+
+/**
+ * Pure LLM extraction fallback (no Google Places available)
+ */
+async function extractWithLLM(query) {
+    const { getActiveAIConfig } = await import('../ai-config.api')
+    const { fetchOpenRouter } = await import('./openrouter')
+    const { robustParseJSON } = await import('./utils')
+
+    const systemPrompt = `You are GastroData Extractor AI. Extract structured restaurant information.
+CRITICAL: DO NOT hallucinate. If unsure about a field (phone, website, exact address), return null.
+Return ONLY valid JSON.`
+
+    const userPrompt = `Extract factual data for: "${query}"
+
+Return JSON with these exact fields:
+{
+  "title": "official name",
+  "category": "Restaurant|Cafe|Bar|Bakery|Street Food|Fine Dining|Fast Food",
+  "city": "city name",
+  "country": "country",
+  "address": "street address or null",
+  "description": "2-3 sentences in Russian or null",
+  "cuisine": "single cuisine type or null",
+  "price_level": "$|$$|$$$|$$$$|null",
+  "opening_hours": "hours string or null",
+  "website": "URL or null",
+  "phone": "phone with country code or null",
+  "insider_tip": "expert tip in Russian or null",
+  "what_to_try": ["dish1", "dish2"] or [],
+  "tags": ["tag1", "tag2"] or [],
+  "amenities": ["wifi", "outdoor_seating"] or [],
+  "dietary": ["vegetarian", "vegan"] or [],
+  "lat": number or null,
+  "lng": number or null
+}
+
+Rules: description and insider_tip in Russian. Other fields in English. Null if uncertain.
+_source field: set to "llm_fallback"`
+
+    try {
+        const { response } = await fetchOpenRouter([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ], { stream: false, withTools: false })
+
+        const data = await response.json()
+        const text = data.choices?.[0]?.message?.content || '{}'
+        const extracted = robustParseJSON(text)
+        console.log('[ai.location] LLM fallback extracted:', extracted?.title)
+        return { ...extracted, _source: 'llm_fallback' }
+    } catch (err) {
+        console.error('[ai.location] LLM extraction also failed:', err)
         throw err
     }
 }

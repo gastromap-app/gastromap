@@ -147,11 +147,40 @@ export const useAdminLocations = () => {
         try {
             const data = await extractMutation.mutateAsync(aiSearchQuery)
             if (data) {
+                const source = data._source === 'google_places' ? '✅ Google Places' : '⚠️ AI (fallback)'
+                console.log(`[GastroAssistant] Data source: ${source}`, data)
+
                 setFormData(prev => ({
                     ...prev,
-                    ...data,
-                    must_try: Array.isArray(data.must_try) ? data.must_try.join(', ') : (data.must_try || prev.must_try || ''),
-                    ...(data.what_to_try ? { must_try: data.what_to_try.join(', ') } : {})
+                    // Core fields — prefer Google Places data
+                    title:         data.title         ?? prev.title,
+                    category:      data.category      ?? prev.category,
+                    city:          data.city           ?? prev.city,
+                    country:       data.country        ?? prev.country,
+                    address:       data.address        ?? prev.address,
+                    lat:           data.lat            ?? prev.lat,
+                    lng:           data.lng            ?? prev.lng,
+                    // Contact
+                    phone:         data.phone          ?? prev.phone,
+                    website:       data.website        ?? prev.website,
+                    // Content
+                    description:   data.description    ?? prev.description,
+                    insider_tip:   data.insider_tip    ?? prev.insider_tip,
+                    cuisine:       data.cuisine        ?? prev.cuisine,
+                    price_level:   data.price_level    ?? prev.price_level,
+                    opening_hours: data.opening_hours  ?? prev.opening_hours,
+                    // Arrays — merge or replace
+                    tags:          data.tags?.length       ? data.tags       : prev.tags,
+                    amenities:     data.amenities?.length  ? data.amenities  : prev.amenities,
+                    dietary:       data.dietary?.length    ? data.dietary    : prev.dietary,
+                    best_for:      data.best_for?.length   ? data.best_for   : prev.best_for,
+                    // what_to_try from either field name
+                    what_to_try:   data.what_to_try?.length ? data.what_to_try
+                                   : data.must_try?.length  ? (typeof data.must_try === 'string' ? data.must_try.split(',').map(s=>s.trim()) : data.must_try)
+                                   : prev.what_to_try,
+                    // Meta
+                    _data_source: source,
+                    _candidates:  data._candidates ?? null,
                 }))
                 setAiSearchQuery('')
             }

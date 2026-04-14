@@ -182,6 +182,45 @@ export function useExtractLocationMutation() {
 /**
  * Admin: Trigger deep semantic indexing for a single location.
  */
+// ─── KG Sync mutations ────────────────────────────────────────────────────────
+
+/**
+ * Sync one location with Knowledge Graph.
+ * Writes kg_cuisines, kg_dishes, kg_ingredients, kg_allergens.
+ */
+export function useSyncLocationKGMutation() {
+    return useMutation({
+        mutationFn: async (locationId) => {
+            const { syncLocationWithKnowledgeGraph } = await import('./ai-assistant.service')
+            return syncLocationWithKnowledgeGraph(locationId)
+        },
+    })
+}
+
+/**
+ * Full enrichment: semantic + KG for one location.
+ */
+export function useEnrichLocationFullMutation() {
+    return useMutation({
+        mutationFn: async (locationId) => {
+            const { enrichLocationFull } = await import('./ai-assistant.service')
+            return enrichLocationFull(locationId)
+        },
+    })
+}
+
+/**
+ * Bulk KG sync for all locations.
+ */
+export function useBulkSyncKGMutation() {
+    return useMutation({
+        mutationFn: async (limit = 50) => {
+            const { bulkSyncKG } = await import('./ai-assistant.service')
+            return bulkSyncKG(limit)
+        },
+    })
+}
+
 export function useReindexLocationSemanticMutation() {
     const qc = useQueryClient()
     return useMutation({

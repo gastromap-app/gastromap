@@ -293,5 +293,6 @@ export async function getDetailedEngagement() {
         admin_users:       uv.filter(u => u.role === 'admin').length,
         moderator_users:   uv.filter(u => u.role === 'moderator').length,
         regular_users:     uv.filter(u => u.role === 'user').length,
+        // Canonical roles: 'admin' | 'moderator' | 'user' (no premium in system)
     }
 }

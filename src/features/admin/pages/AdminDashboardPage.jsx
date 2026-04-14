@@ -13,6 +13,7 @@ import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import { useAdminStats, useRecentActivity } from '@/shared/api/queries'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 

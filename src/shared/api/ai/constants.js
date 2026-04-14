@@ -138,6 +138,10 @@ IMPORTANT FIELD NOTES (when reading tool results):
 - 'insider_tip' — exclusive expert insight (always share if available)
 - 'tags' and 'vibe' — atmosphere descriptors (use for mood-based recommendations)
 - 'ai_context' — deep culinary context (reference if user wants details)
+- 'kg_cuisines' — verified cuisine types from Knowledge Graph
+- 'kg_dishes' — verified signature dishes from Knowledge Graph (prefer these over guessing)
+- 'kg_ingredients' — key ingredients used in this restaurant
+- 'kg_allergens' — allergen flags (gluten, dairy, nuts, etc.) — critical for dietary questions
 - 'special_labels' — accolades like "Michelin Bib", "Signature Cuisine" (highlight these)
 
 When a user asks in Russian, respond in Russian. In Polish — in Polish. Match their language always.`

@@ -69,7 +69,7 @@ export default function AdminModerationPage() {
             } else {
                 await updateLocationStatus.mutateAsync({
                     id: item.id,
-                    status: 'active'
+                    status: 'approved'
                 })
             }
             setSelectedItem(null)

@@ -8,6 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { useProfiles, useUpdateProfileRoleMutation } from '@/shared/api/queries'
 
 const AdminUsersPage = () => {
@@ -94,12 +95,11 @@ const AdminUsersPage = () => {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Users</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Member database and access management.</p>
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Users"
+                subtitle="Member database and access management."
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 lg:gap-8">

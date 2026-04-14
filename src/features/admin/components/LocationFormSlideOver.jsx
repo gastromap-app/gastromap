@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import PlacesAutocomplete from '@/shared/components/PlacesAutocomplete'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Building2, Sparkles, Wand2, MapPin, Phone, Globe,
@@ -141,6 +142,29 @@ const LocationFormSlideOver = ({
         setFormData(prev => ({ ...prev, [field]: val })),
     [setFormData])
 
+    const handlePlaceSelected = useCallback((place) => {
+        if (!place) return
+        setFormData(prev => ({
+            ...prev,
+            title:         place.title         || prev?.title         || '',
+            category:      place.category       || prev?.category      || 'Restaurant',
+            address:       place.address        || prev?.address       || '',
+            city:          place.city           || prev?.city          || '',
+            country:       place.country        || prev?.country       || '',
+            lat:           place.lat            ?? prev?.lat           ?? null,
+            lng:           place.lng            ?? prev?.lng           ?? null,
+            phone:         place.phone          || prev?.phone         || '',
+            website:       place.website        || prev?.website       || '',
+            rating:        place.rating         ?? prev?.rating        ?? null,
+            price_level:   place.price_level    || prev?.price_level   || '$$',
+            opening_hours: place.opening_hours  || prev?.opening_hours || '',
+            description:   place.description    || prev?.description   || '',
+            google_place_id: place.google_place_id || prev?.google_place_id || null,
+            google_maps_url: place.google_maps_url || prev?.google_maps_url || null,
+            _source:       'google_places',
+        }))
+    }, [setFormData])
+
     const handleAutoFill = async () => {
         if (!aiQuery.trim()) return
         setAiStatus('loading')
@@ -262,54 +286,24 @@ const LocationFormSlideOver = ({
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="p-6 space-y-8">
 
-                        {/* ── AI Auto-fill ── */}
-                        <div className="rounded-2xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/5 overflow-hidden">
-                            <div className="px-4 py-3 flex items-center gap-2.5">
-                                <Wand2 size={14} className="text-indigo-500 shrink-0" />
-                                <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
-                                    Автозаполнение из Google Places
-                                </span>
-                                {formData._source && (
-                                    <span className={cn(
-                                        "ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                                        formData._source === 'google_places'
-                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"
-                                            : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
-                                    )}>
-                                        {formData._source === 'google_places' ? '✓ Google Places' : '~ AI Fallback'}
+                        {/* ── Google Places Autocomplete ── */}
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <Wand2 size={11} className="text-indigo-500" />
+                                Найти заведение
+                                {formData._source === 'google_places' && (
+                                    <span className="ml-auto text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold normal-case tracking-normal">
+                                        ✓ Google Places
                                     </span>
                                 )}
-                            </div>
-                            <div className="px-4 pb-4 flex gap-2">
-                                <input
-                                    type="text"
-                                    value={aiQuery}
-                                    onChange={e => setAiQuery(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleAutoFill()}
-                                    placeholder="Название и город — напр. «Hamsa Krakow»"
-                                    className="flex-1 px-3 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-indigo-200 dark:border-indigo-500/30 text-sm placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all font-medium"
-                                />
-                                <button
-                                    onClick={handleAutoFill}
-                                    disabled={extractMutation.isPending || !aiQuery.trim()}
-                                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shrink-0 flex items-center gap-1.5"
-                                >
-                                    {extractMutation.isPending
-                                        ? <><RefreshCw size={12} className="animate-spin" /> Поиск…</>
-                                        : <><Wand2 size={12} /> Заполнить</>
-                                    }
-                                </button>
-                            </div>
-                            {aiStatus === 'done' && (
-                                <div className="px-4 pb-3 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
-                                    ✓ Данные заполнены — проверьте и сохраните
-                                </div>
-                            )}
-                            {aiStatus === 'error' && (
-                                <div className="px-4 pb-3 text-[10px] text-rose-500 font-semibold flex items-center gap-1.5">
-                                    <AlertCircle size={10} /> Не удалось получить данные — заполните вручную
-                                </div>
-                            )}
+                            </label>
+                            <PlacesAutocomplete
+                                onPlaceSelected={handlePlaceSelected}
+                                placeholder="Название и город — напр. «Hamsa Krakow»"
+                            />
+                            <p className="text-[10px] text-slate-400 px-1">
+                                Начните вводить — выберите из списка, поля заполнятся автоматически
+                            </p>
                         </div>
 
                         {/* ── 1. Основное ── */}

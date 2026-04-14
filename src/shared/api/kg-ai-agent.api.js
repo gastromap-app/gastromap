@@ -186,15 +186,17 @@ export async function searchBrave(query, apiKey, count = 5) {
 // 5. gpt-oss-20b   — резерв (иногда rate-limit)
 // 6. stepfun-flash — быстрая но иногда пустой ответ на сложных запросах
 // REMOVED: mistral-small-3.1 (404), qwen-2-7b (404), z-ai/glm-4.5-air (часто timeout)
+// Updated 2026-04-14 — verified working models (tested against OpenRouter /v1/models)
 const AGENT_MODELS = [
-    'openai/gpt-oss-120b:free',
-    'google/gemma-4-31b-it:free',
-    'google/gemma-4-26b-a4b-it:free',
-    'qwen/qwen3.6-plus:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'nvidia/nemotron-nano-12b-v2-vl:free',
-    'arcee-ai/trinity-large-preview:free',
-    'liquid/lfm-2.5-1.2b-instruct:free',
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
+    'arcee-ai/trinity-large-preview:free',    // ✅ 131K ctx, reliable
+    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast fallback
+    'liquid/lfm-2.5-1.2b-thinking:free',      // ✅ thinking variant
+    'meta-llama/llama-3.3-70b-instruct:free', // 429 sometimes — keep as deeper fallback
+    'google/gemma-4-31b-it:free',             // 429 sometimes — keep as deeper fallback
+    'google/gemma-3-27b-it:free',             // 429 sometimes — deeper fallback
+    'nousresearch/hermes-3-llama-3.1-405b:free', // 429 sometimes — deeper fallback
 ]
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -915,7 +917,14 @@ Return ONLY a valid JSON object containing only the requested fields. No explana
 
             if (!resp.ok) {
                 const errBody = await resp.text().catch(() => '')
-                errors.push(`${model}: ${resp.status} ${errBody.slice(0, 50)}`)
+                const errCode = resp.status
+                errors.push(`${model}: ${errCode} ${errBody.slice(0, 80)}`)
+                // 404 = deprecated/not-found → skip immediately
+                if (errCode === 404) { continue }
+                // 429 = rate limit → wait 2s before next model
+                if (errCode === 429 || errCode === 402) {
+                    await new Promise(r => setTimeout(r, 2000))
+                }
                 continue
             }
 

@@ -655,10 +655,10 @@ const AdminLocationsPage = () => {
                                         <div className="space-y-4">
 
                                             <div className="space-y-4">
-                                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Фотографии ({formData.images.length})</label>
+                                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Фотографии ({(formData.images || []).length})</label>
 
                                                 <div className="grid grid-cols-4 gap-4">
-                                                    {formData.images.map((img, idx) => (
+                                                    {(formData.images || []).map((img, idx) => (
                                                         <div key={idx} className={cn(
                                                             "relative aspect-square rounded-2xl overflow-hidden group border-2 transition-all",
                                                             formData.image_url === img ? "border-indigo-500 shadow-lg shadow-indigo-500/10" : "border-transparent"

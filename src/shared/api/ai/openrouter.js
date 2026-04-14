@@ -81,6 +81,11 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
             const errBody = await res.json().catch(() => ({}))
             lastError = errBody
 
+            // Skip 404 (deprecated/removed models) — try next in cascade
+            if (res.status === 404) {
+                console.warn(`[GastroAI] Model ${currentModel} is deprecated (404), skipping...`)
+                continue
+            }
             // Only retry on rate-limit or server errors
             if (res.status !== 429 && res.status !== 500 && res.status !== 502 && res.status !== 503) {
                 const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`

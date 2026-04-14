@@ -41,7 +41,8 @@ function normalise(row) {
     const priceLevel = row.price_level ?? '$$'
     const cuisineRaw = row.cuisine ?? ''
 
-    const status = row.status ?? 'active'
+    // Normalise legacy 'active' → 'approved' for UI consistency
+    const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
 
     return {
         id: row.id,

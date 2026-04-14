@@ -1,545 +1,671 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { X, Building2, Sparkles, Wand2, Activity, Zap, Search, Plus, Clock } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import React, { useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    X, Building2, Sparkles, Wand2, MapPin, Phone, Globe,
+    Clock, Star, DollarSign, ChevronDown, Image, Plus, Trash2,
+    RefreshCw, Zap, Info, ChevronUp, AlertCircle
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const LocationFormSlideOver = ({ 
-    isOpen, 
-    onClose, 
-    selectedLocation, 
-    formData, 
-    setFormData, 
-    onSave, 
+// ─── Field helpers ────────────────────────────────────────────────────────────
+
+const CATEGORIES = [
+    'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
+    'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining'
+]
+
+const PRICE_LEVELS = [
+    { value: '$',    label: '$ — бюджетно' },
+    { value: '$$',   label: '$$ — средне' },
+    { value: '$$$',  label: '$$$ — дорого' },
+    { value: '$$$$', label: '$$$$ — люкс' },
+]
+
+const CUISINE_OPTIONS = [
+    'Polish', 'Italian', 'Japanese', 'French', 'Mexican', 'Thai', 'Greek',
+    'Georgian', 'Ukrainian', 'Spanish', 'Indian', 'Vietnamese', 'American',
+    'Mediterranean', 'Israeli', 'Turkish', 'Chinese', 'Korean', 'Fusion',
+]
+
+const LABEL_GROUPS = {
+    "Кухня и Меню": [
+        "Авторская кухня", "Веганское меню", "Вкусные десерты", "Завтраки целый день",
+        "Местные продукты", "Меню завтраков", "Меню ланча", "Фьюжен",
+        "Итальянская", "Французская", "Японская", "Китайская", "Греческая",
+        "Испанская", "Мексиканская", "Тайская", "Грузинская", "Польская",
+        "Израильская", "Американская", "Средиземноморская", "Индийская", "Вьетнамская"
+    ].sort(),
+    "Бар и Напитки": [
+        "Авторские коктейли", "Винная карта", "Гостевые смены", "Дегустация вин",
+        "DJ сеты", "Крафтовое пиво", "Спешиалти кофе", "Широкий выбор джина"
+    ].sort(),
+    "Атмосфера": [
+        "Живописный вид", "Живая музыка", "Коворкинг", "Настольные игры",
+        "Романтическая атмосфера", "Скрытый вход (Speakeasy)",
+        "Счастливые часы", "Тихая атмосфера", "Уютно", "Оживлённая атмосфера"
+    ].sort(),
+    "Удобства и Сервис": [
+        "Балкончики", "Детская игровая зона", "Доставка", "Инклюзивность",
+        "Любимое у местных", "Парковка", "Pet friendly",
+        "Самовывоз", "Терраса во дворе", "Терраса на крыше", "WiFi"
+    ].sort(),
+    "Награды": ["Гид Мишлен", "Звезда Мишлен", "Кальян", "Поздний ужин"].sort(),
+}
+
+const VISIT_TIMES = [
+    { id: 'morning',    label: 'Утро',         emoji: '🌅' },
+    { id: 'day',        label: 'День',          emoji: '☀️' },
+    { id: 'evening',    label: 'Вечер',         emoji: '🌆' },
+    { id: 'late_night', label: 'Ночь',          emoji: '🌙' },
+]
+
+// ─── Micro-components ─────────────────────────────────────────────────────────
+
+const SectionHeader = ({ title, subtitle, icon: Icon, iconColor = 'text-indigo-500', count }) => (
+    <div className="flex items-center gap-3 pb-1">
+        {Icon && (
+            <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-800", iconColor.replace('text-', 'text-'))}>
+                <Icon size={14} className={iconColor} />
+            </div>
+        )}
+        <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-none flex items-center gap-2">
+                {title}
+                {count !== undefined && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-black">
+                        {count}
+                    </span>
+                )}
+            </h3>
+            {subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{subtitle}</p>}
+        </div>
+    </div>
+)
+
+const Field = ({ label, required, hint, children, className }) => (
+    <div className={cn("space-y-2", className)}>
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+            {label}
+            {required && <span className="text-rose-400">*</span>}
+            {hint && (
+                <span className="ml-auto text-[9px] font-normal normal-case tracking-normal text-slate-400 capitalize">
+                    {hint}
+                </span>
+            )}
+        </label>
+        {children}
+    </div>
+)
+
+const input = "w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/50 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all"
+const textarea = cn(input, "resize-none")
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const LocationFormSlideOver = ({
+    isOpen,
+    onClose,
+    selectedLocation,
+    formData,
+    setFormData,
+    onSave,
+    // AI props
     extractMutation,
     aiQueryMutation,
     reindexMutation,
+    isImproving,
+    setIsImproving,
+    handleAIMagic,
+    // unused but accepted to avoid prop warnings
     spoonacularMutation,
     culinarySearchQuery,
     setCulinarySearchQuery,
     culinaryResults,
-    handleAIMagic,
     handleCulinarySearch,
     addCulinaryItem,
-    isImproving,
-    setIsImproving
+    aiSearchQuery: _aiSearchQuery,
+    setAiSearchQuery: _setAiSearchQuery,
 }) => {
-    const [aiSearchQuery, setAiSearchQuery] = useState('')
+    const [aiQuery, setAiQuery]         = useState('')
+    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [newImageUrl, setNewImageUrl]  = useState('')
+    const [aiStatus, setAiStatus]       = useState(null) // null | 'loading' | 'done' | 'error'
+
+    const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
 
     if (!isOpen || !formData) return null
 
-    const handleImproveText = async (field) => {
-        const text = formData[field];
-        if (!text || text.length < 5) {
-            alert('Сначала введите хотя бы немного текста для улучшения');
-            return;
-        }
-        
-        setIsImproving(field);
+    // ─── helpers ──────────────────────────────────────────────────────────────
+
+    const set = useCallback((field, val) =>
+        setFormData(prev => ({ ...prev, [field]: val })),
+    [setFormData])
+
+    const handleAutoFill = async () => {
+        if (!aiQuery.trim()) return
+        setAiStatus('loading')
         try {
-            const prompt = `Improve this Gastronomic location ${field}. Make it engaging, evocative and professional, while keeping the original intent. Length should be proportional. Here is the text: "${text}"`;
-            const result = await aiQueryMutation.mutateAsync({ message: prompt });
-            let improvedText = "";
-            if (typeof result === 'string') {
-                improvedText = result;
-            } else if (result && typeof result === 'object') {
-                improvedText = result.text || result.content || result.result || result.output || JSON.stringify(result);
-            }
-            
-            improvedText = improvedText.replace(/^["']|["']$/g, '').trim();
-            setFormData(prev => ({ ...prev, [field]: improvedText }));
-        } catch (error) {
-            console.error('AI improvement failed:', error);
-        } finally {
-            setIsImproving(null);
+            await handleAIMagic(aiQuery)
+            setAiStatus('done')
+            setAiQuery('')
+            setTimeout(() => setAiStatus(null), 3000)
+        } catch {
+            setAiStatus('error')
+            setTimeout(() => setAiStatus(null), 4000)
         }
-    };
+    }
 
-    const addImageUrl = (url) => {
-        if (!url) return;
-        setFormData(prev => {
-            if (!prev) return prev;
-            return {
-                ...prev,
-                images: [...(prev.images || []), url],
-                image_url: prev.image_url || url
+    const handleImproveDesc = async () => {
+        const text = formData.description
+        if (!text || text.length < 10) return
+        setIsImproving('description')
+        try {
+            const prompt = `Improve this restaurant description. Keep the original language (Russian or English). Make it warm, evocative, 2-3 sentences. Text: "${text}"`
+            const result = await aiQueryMutation.mutateAsync({ message: prompt })
+            const improved = (typeof result === 'string' ? result : result?.text || result?.content || '')
+                .replace(/^["']|["']$/g, '').trim()
+            if (improved) set('description', improved)
+        } catch (e) {
+            console.error('Improve failed:', e)
+        } finally {
+            setIsImproving(null)
+        }
+    }
+
+    const handleReindex = () => {
+        if (isNew) return
+        reindexMutation.mutate(selectedLocation.id, {
+            onSuccess: (updated) => {
+                setFormData(prev => ({ ...prev, ...updated }))
             }
         })
     }
 
-    const removeImage = (index) => {
+    const addPhoto = () => {
+        const url = newImageUrl.trim()
+        if (!url) return
+        setFormData(prev => ({
+            ...prev,
+            photos: [...(Array.isArray(prev.photos) ? prev.photos : []), url],
+            image: prev.image || url,
+        }))
+        setNewImageUrl('')
+    }
+
+    const removePhoto = (idx) => {
         setFormData(prev => {
-            if (!prev || !prev.images) return prev;
-            const newImages = prev.images.filter((_, i) => i !== index);
-            return {
-                ...prev,
-                images: newImages,
-                image_url: prev.image_url === prev.images[index] ? (newImages[0] || '') : prev.image_url
-            }
+            const photos = (Array.isArray(prev.photos) ? prev.photos : []).filter((_, i) => i !== idx)
+            return { ...prev, photos, image: prev.image === (prev.photos || [])[idx] ? (photos[0] || '') : prev.image }
         })
     }
-
-    const categories = [
-        'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
-        'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop'
-    ]
-
-    const LABEL_GROUPS = {
-        "Кухня и Меню": [
-            "Авторская кухня", "Веганское меню", "Вкусные десерты", "Завтраки целый день",
-            "Импортные продукты", "Местные продукты", "Меню завтраков", "Меню ланча", "Фьюжен",
-            "Итальянская", "Французская", "Японская", "Китайская", "Греческая", "Испанская",
-            "Мексиканская", "Тайская", "Грузинская", "Польская", "Израильская", "Американская",
-            "Средиземноморская", "Индийская", "Вьетнамская", "Турецкая"
-        ].sort(),
-        "Бар и Напитки": [
-            "Авторские коктейли", "Винная карта", "Гостевые смены", "Дегустация вин",
-            "DJ сеты", "Крафтовое пиво", "Миксология (без меню)", "Спешиалти кофе", "Широкий выбор джина"
-        ].sort(),
-        "Атмосфера": [
-            "Живописный вид", "Живая музыка", "Коворкинг", "Настольные игры",
-            "Оживленная атмосфера", "Романтическая атмосфера", "Скрытый вход (Speakeasy)",
-            "Счастливые часы", "Тематический интерьер", "Тихая атмосфера", "Уютно"
-        ].sort(),
-        "Удобства и Сервис": [
-            "Балкончики", "Детская игровая зона", "Детские стульчики", "Доставка",
-            "Инклюзивность", "Любимое у местных", "Парковка", "Pet friendly",
-            "Самовывоз", "Терраса во дворе", "Терраса на крыше", "WiFi"
-        ].sort(),
-        "Награды и Особое": [
-            "Гид Мишлен", "Звезда Мишлен", "Кальян", "Поздний ужин"
-        ].sort()
-    }
-
-    const BEST_TIMES = [
-        { id: 'morning', label: 'Утро', icon: Clock },
-        { id: 'day', label: 'День', icon: Clock },
-        { id: 'evening', label: 'Вечер', icon: Clock },
-        { id: 'late_night', label: 'Поздняя ночь', icon: Clock }
-    ]
 
     const toggleLabel = (label) => {
-        setFormData(prev => {
-            const current = prev.special_labels || []
-            return {
-                ...prev,
-                special_labels: current.includes(label)
-                    ? current.filter(l => l !== label)
-                    : [...current, label]
-            }
-        })
+        const cur = formData.special_labels || []
+        set('special_labels', cur.includes(label) ? cur.filter(l => l !== label) : [...cur, label])
     }
 
-    const toggleBestTime = (timeId) => {
-        setFormData(prev => {
-            const current = prev.best_for || []
-            return {
-                ...prev,
-                best_for: current.includes(timeId)
-                    ? current.filter(t => t !== timeId)
-                    : [...current, timeId]
-            }
-        })
+    const toggleTime = (id) => {
+        const cur = formData.best_for || []
+        set('best_for', cur.includes(id) ? cur.filter(t => t !== id) : [...cur, id])
     }
+
+    // what_to_try helpers
+    const whatToTry = Array.isArray(formData.what_to_try) ? formData.what_to_try : []
+    const addDish = (dish) => {
+        const val = dish.trim()
+        if (!val || whatToTry.includes(val)) return
+        set('what_to_try', [...whatToTry, val])
+    }
+    const removeDish = (i) => set('what_to_try', whatToTry.filter((_, idx) => idx !== i))
+
+    const photos = Array.isArray(formData.photos) ? formData.photos : (formData.image ? [formData.image] : [])
+
+    // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
         <>
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={onClose} 
-                className="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-md" 
+            {/* Backdrop */}
+            <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm"
             />
-            <motion.div 
-                initial={{ x: '100%' }} 
-                animate={{ x: 0 }} 
-                exit={{ x: '100%' }} 
-                transition={{ type: 'spring', damping: 30, stiffness: 250 }} 
-                className="fixed top-0 right-0 w-full sm:w-[600px] bg-white dark:bg-slate-900 h-full z-[110] flex flex-col shadow-2xl overflow-hidden font-sans"
+
+            {/* Panel */}
+            <motion.div
+                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 260 }}
+                className="fixed top-0 right-0 w-full sm:w-[580px] bg-white dark:bg-slate-900 h-full z-[110] flex flex-col shadow-2xl overflow-hidden"
             >
-                {/* Header */}
-                <div className="p-6 lg:p-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4 lg:gap-5">
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                            <Building2 size={20} className="lg:w-6 lg:h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-none mb-1.5">
-                                {selectedLocation.id === 'NEW' ? 'Новый объект' : 'Редактирование'}
-                            </h2>
-                            <p className="text-[9px] lg:text-[10px] font-bold text-indigo-500 uppercase tracking-[0.2em] leading-none">
-                                {selectedLocation.id === 'NEW' ? 'Черновик Gastro AI' : `ID: #${selectedLocation.id}`}
-                            </p>
-                        </div>
+                {/* ── Header ── */}
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4 shrink-0 bg-white dark:bg-slate-900">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
+                        <Building2 size={18} />
                     </div>
-                    <button onClick={onClose} aria-label="close-panel" className="p-2.5 lg:p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl lg:rounded-2xl hover:rotate-90 transition-all">
-                        <X size={18} className="lg:w-5 lg:h-5" />
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-base font-bold text-slate-900 dark:text-white leading-none truncate">
+                            {isNew ? 'Новый объект' : (formData.title || 'Редактирование')}
+                        </h2>
+                        <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-widest font-semibold">
+                            {isNew ? 'Создание' : `ID: ${selectedLocation.id?.slice(0, 8)}…`}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-all"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10 lg:space-y-12 custom-scrollbar relative">
-                    
-                    {/* Section: Gastro AI Smart Fill */}
-                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-indigo-600 to-indigo-700 text-white relative overflow-hidden shadow-lg shadow-indigo-500/20 group border border-white/10 transition-all hover:shadow-indigo-500/30">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl group-hover:bg-white/20 transition-all duration-700" />
-                        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-                            <div className="flex items-center gap-3 shrink-0">
-                                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/10 group-hover:bg-white/20 transition-all">
-                                    <Sparkles size={18} className="text-amber-300 animate-pulse" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Gastro AI</h4>
-                                    <p className="text-[8px] font-bold text-white/50 whitespace-nowrap">Умное заполнение</p>
-                                </div>
-                            </div>
+                {/* ── Body ── */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="p-6 space-y-8">
 
-                            <div className="flex-1 w-full flex gap-3">
-                                <div className="relative flex-1 group/input">
-                                    <input
-                                        type="text"
-                                        value={aiSearchQuery}
-                                        onChange={e => setAiSearchQuery(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleAIMagic()}
-                                        className="w-full pl-5 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold placeholder:text-white/30 outline-none focus:bg-white/10 focus:border-white/20 transition-all"
-                                        placeholder="Название и город..."
-                                    />
-                                    <Wand2 size={12} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/input:text-white/60 group-focus-within/input:scale-110 transition-all" />
-                                </div>
-                                <button 
-                                    onClick={handleAIMagic}
-                                    disabled={extractMutation.isPending}
-                                    className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-[0.96] hover:bg-indigo-50 transition-all shrink-0 disabled:opacity-50"
+                        {/* ── AI Auto-fill ── */}
+                        <div className="rounded-2xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/5 overflow-hidden">
+                            <div className="px-4 py-3 flex items-center gap-2.5">
+                                <Wand2 size={14} className="text-indigo-500 shrink-0" />
+                                <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
+                                    Автозаполнение из Google Places
+                                </span>
+                                {formData._source && (
+                                    <span className={cn(
+                                        "ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                                        formData._source === 'google_places'
+                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"
+                                            : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
+                                    )}>
+                                        {formData._source === 'google_places' ? '✓ Google Places' : '~ AI Fallback'}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="px-4 pb-4 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={aiQuery}
+                                    onChange={e => setAiQuery(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleAutoFill()}
+                                    placeholder="Название и город — напр. «Hamsa Krakow»"
+                                    className="flex-1 px-3 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-indigo-200 dark:border-indigo-500/30 text-sm placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all font-medium"
+                                />
+                                <button
+                                    onClick={handleAutoFill}
+                                    disabled={extractMutation.isPending || !aiQuery.trim()}
+                                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shrink-0 flex items-center gap-1.5"
                                 >
-                                    {extractMutation.isPending ? 'Запрос...' : 'Заполнить'}
+                                    {extractMutation.isPending
+                                        ? <><RefreshCw size={12} className="animate-spin" /> Поиск…</>
+                                        : <><Wand2 size={12} /> Заполнить</>
+                                    }
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Section: AI Semantic Identity */}
-                    {selectedLocation.id !== 'NEW' && (
-                        <div className="p-6 rounded-[28px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                        <Activity size={16} className="text-indigo-600 dark:text-indigo-400" />
-                                    </div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">AI Semantic Identity</h4>
-                                </div>
-                                <Badge variant="secondary" className={cn(
-                                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5",
-                                    formData.has_embedding ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 text-slate-400"
-                                )}>
-                                    {formData.has_embedding ? 'Indexed' : 'Not Indexed'}
-                                </Badge>
-                            </div>
-
-                            {formData.ai_context && (
-                                <div className="space-y-2">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">AI Semantic Summary</p>
-                                    <div className="p-4 bg-white dark:bg-slate-950/50 rounded-2xl text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-400 border border-slate-100/50 dark:border-slate-800/50 italic">
-                                        {formData.ai_context}
-                                    </div>
+                            {aiStatus === 'done' && (
+                                <div className="px-4 pb-3 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                                    ✓ Данные заполнены — проверьте и сохраните
                                 </div>
                             )}
-
-                            {formData.ai_keywords && formData.ai_keywords.length > 0 && (
-                                <div className="space-y-3">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">AI Keywords</p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {formData.ai_keywords.map((kw, idx) => (
-                                            <Badge key={idx} variant="outline" className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 dark:border-slate-700/50 text-[9px] font-bold text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg">
-                                                {kw}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="pt-2">
-                                <button 
-                                    onClick={() => {
-                                        reindexMutation.mutate(selectedLocation.id, {
-                                            onSuccess: (updated) => {
-                                                setFormData(prev => ({ ...prev, ...updated }));
-                                                alert('Semantic indexing complete!');
-                                            }
-                                        })
-                                    }}
-                                    disabled={reindexMutation.isPending}
-                                    className="w-full py-3 bg-indigo-600/5 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl font-black text-[9px] uppercase tracking-widest border border-indigo-600/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
-                                >
-                                    <Zap size={14} className={cn("group-hover:scale-110", reindexMutation.isPending && "animate-pulse")} />
-                                    {reindexMutation.isPending ? 'Процесс AI индексации...' : 'Переиндексировать семантику (Deep AI)'}
-                                </button>
-                                <p className="text-[8px] font-bold text-slate-400 text-center mt-3 uppercase tracking-widest opacity-60">
-                                    Это обновит векторные данные, AI-теги и детальное описание для рекомендаций.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Section: Culinary Enrichment */}
-                    {selectedLocation.id !== 'NEW' && (
-                        <div className="p-6 rounded-[28px] bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-amber-500/10 rounded-lg">
-                                        <Sparkles size={16} className="text-amber-600 dark:text-amber-400" />
-                                    </div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">Culinary Enrichment</h4>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <div className="relative flex-1 group/input">
-                                    <input
-                                        type="text"
-                                        value={culinarySearchQuery}
-                                        onChange={e => setCulinarySearchQuery(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleCulinarySearch()}
-                                        className="w-full pl-5 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                        placeholder="Поиск блюд или ингредиентов..."
-                                    />
-                                    <Search size={12} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                </div>
-                                <button 
-                                    onClick={handleCulinarySearch}
-                                    disabled={spoonacularMutation.isPending}
-                                    className="px-4 py-3 bg-slate-950 text-white dark:bg-white dark:text-slate-950 rounded-xl font-bold text-[10px] uppercase tracking-widest disabled:opacity-50"
-                                >
-                                    {spoonacularMutation.isPending ? '...' : 'Найти'}
-                                </button>
-                            </div>
-
-                            {culinaryResults && (
-                                <div className="space-y-4">
-                                    {culinaryResults.dishes?.length > 0 && (
-                                        <div className="space-y-2">
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Блюда (Spoonacular)</p>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {culinaryResults.dishes.map(dish => (
-                                                    <div key={dish.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all">
-                                                        <div className="flex items-center gap-3">
-                                                            {dish.image && <img src={dish.image} className="w-8 h-8 rounded-lg object-cover" alt="" />}
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{dish.name}</p>
-                                                                <p className="text-[9px] text-slate-400 line-clamp-1">{dish.description}</p>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            onClick={() => addCulinaryItem(dish, 'dish')}
-                                                            className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                                        >
-                                                            <Plus size={14} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {culinaryResults.ingredients?.length > 0 && (
-                                        <div className="space-y-2">
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Ингредиенты</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {culinaryResults.ingredients.map(ing => (
-                                                    <Badge 
-                                                        key={ing.id} 
-                                                        variant="outline" 
-                                                        className="cursor-pointer hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all flex items-center gap-1.5 px-3 py-1"
-                                                        onClick={() => addCulinaryItem(ing, 'ingredient')}
-                                                    >
-                                                        {ing.image && <img src={ing.image} className="w-3 h-3 rounded-full" alt="" />}
-                                                        {ing.name}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                            {aiStatus === 'error' && (
+                                <div className="px-4 pb-3 text-[10px] text-rose-500 font-semibold flex items-center gap-1.5">
+                                    <AlertCircle size={10} /> Не удалось получить данные — заполните вручную
                                 </div>
                             )}
                         </div>
-                    )}
 
-                    {/* Section: General */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-white">Основная информация</h3>
-                        </div>
+                        {/* ── 1. Основное ── */}
+                        <div className="space-y-5">
+                            <SectionHeader title="Основная информация" icon={Building2} />
 
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Название объекта *</label>
-                                <div className="relative group">
-                                    <input
-                                        type="text"
-                                        value={formData.title}
-                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                        className="w-full px-6 py-4.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-bold text-sm outline-none transition-all"
-                                        placeholder="Напр. Zen Garden"
-                                    />
-                                </div>
-                            </div>
+                            <Field label="Название" required>
+                                <input
+                                    type="text"
+                                    value={formData.title || ''}
+                                    onChange={e => set('title', e.target.value)}
+                                    className={input}
+                                    placeholder="Напр. Hamsa"
+                                />
+                            </Field>
 
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Тип / Категория</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Категория">
                                     <div className="relative">
                                         <select
-                                            value={formData.category}
-                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full px-6 py-4 bg-slate-50/40 dark:bg-slate-800/40 rounded-2xl border-none font-bold text-xs outline-none focus:ring-4 ring-indigo-500/5 transition-all appearance-none"
+                                            value={formData.category || 'Restaurant'}
+                                            onChange={e => set('category', e.target.value)}
+                                            className={cn(input, "appearance-none pr-8")}
                                         >
-                                            {categories.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
+                                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
-                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Ценовой диапазон</label>
+                                </Field>
+                                <Field label="Цена">
                                     <div className="relative">
                                         <select
-                                            value={formData.price_level}
-                                            onChange={e => setFormData({ ...formData, price_level: e.target.value })}
-                                            className="w-full px-6 py-4 bg-slate-50/40 dark:bg-slate-800/40 rounded-2xl border-none font-bold text-xs outline-none focus:ring-4 ring-indigo-500/5 transition-all appearance-none"
+                                            value={formData.price_level || '$$'}
+                                            onChange={e => set('price_level', e.target.value)}
+                                            className={cn(input, "appearance-none pr-8")}
                                         >
-                                            {['$', '$$', '$$$', '$$$$'].map(price => (
-                                                <option key={price} value={price}>{price}</option>
-                                            ))}
+                                            {PRICE_LEVELS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                         </select>
-                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>
-                                </div>
+                                </Field>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Описание</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Кухня">
+                                    <div className="relative">
+                                        <select
+                                            value={formData.cuisine || ''}
+                                            onChange={e => set('cuisine', e.target.value)}
+                                            className={cn(input, "appearance-none pr-8")}
+                                        >
+                                            <option value="">— выбрать —</option>
+                                            {CUISINE_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                        <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    </div>
+                                </Field>
+                                <Field label="Рейтинг" hint="0 – 5">
+                                    <div className="relative">
+                                        <Star size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400" />
+                                        <input
+                                            type="number" min="0" max="5" step="0.1"
+                                            value={formData.rating || ''}
+                                            onChange={e => set('rating', parseFloat(e.target.value) || null)}
+                                            className={cn(input, "pl-8")}
+                                            placeholder="4.5"
+                                        />
+                                    </div>
+                                </Field>
+                            </div>
+
+                            <Field label="Режим работы">
+                                <div className="relative">
+                                    <Clock size={13} className="absolute left-3 top-3.5 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={formData.opening_hours || ''}
+                                        onChange={e => set('opening_hours', e.target.value)}
+                                        className={cn(input, "pl-8")}
+                                        placeholder="Пн-Пт 10:00-22:00 | Сб-Вс 11:00-23:00"
+                                    />
+                                </div>
+                            </Field>
+                        </div>
+
+                        {/* ── 2. Описание ── */}
+                        <div className="space-y-5">
+                            <SectionHeader title="Контент" icon={Sparkles} iconColor="text-amber-500" />
+
+                            <Field label="Описание">
                                 <div className="relative">
                                     <textarea
-                                        value={formData.description}
-                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        value={formData.description || ''}
+                                        onChange={e => set('description', e.target.value)}
                                         rows={4}
-                                        className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all resize-none"
+                                        className={textarea}
                                         placeholder="Расскажите об атмосфере, кухне и особенностях..."
                                     />
-                                    <button
-                                        onClick={() => handleImproveText('description')}
-                                        disabled={isImproving === 'description'}
-                                        className="absolute top-3 right-3 p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all disabled:opacity-50"
-                                        title="Улучшить с AI"
-                                    >
-                                        <Sparkles size={14} className={isImproving === 'description' ? 'animate-spin' : ''} />
-                                    </button>
+                                    {aiQueryMutation && (
+                                        <button
+                                            onClick={handleImproveDesc}
+                                            disabled={isImproving === 'description' || !formData.description}
+                                            title="Улучшить текст с AI"
+                                            className="absolute bottom-2.5 right-2.5 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 disabled:opacity-40 transition-all flex items-center gap-1 text-[10px] font-bold"
+                                        >
+                                            {isImproving === 'description'
+                                                ? <><RefreshCw size={10} className="animate-spin" /> AI…</>
+                                                : <><Sparkles size={10} /> Улучшить</>
+                                            }
+                                        </button>
+                                    )}
                                 </div>
+                            </Field>
+
+                            <Field label="Совет знатока (insider tip)">
+                                <textarea
+                                    value={formData.insider_tip || ''}
+                                    onChange={e => set('insider_tip', e.target.value)}
+                                    rows={2}
+                                    className={textarea}
+                                    placeholder="Лучший столик у окна, спросите фирменный безалкогольный коктейль…"
+                                />
+                            </Field>
+
+                            {/* What to try */}
+                            <Field label="Что попробовать" hint="нажмите Enter чтобы добавить">
+                                <div className="space-y-2">
+                                    {whatToTry.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {whatToTry.map((dish, i) => (
+                                                <span
+                                                    key={i}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 group"
+                                                >
+                                                    {dish}
+                                                    <button
+                                                        onClick={() => removeDish(i)}
+                                                        className="text-slate-400 hover:text-rose-500 transition-colors"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <input
+                                        type="text"
+                                        className={input}
+                                        placeholder="Название блюда + Enter"
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addDish(e.target.value)
+                                                e.target.value = ''
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </Field>
+                        </div>
+
+                        {/* ── 3. Локация и Контакты ── */}
+                        <div className="space-y-5">
+                            <SectionHeader title="Локация и Контакты" icon={MapPin} iconColor="text-rose-500" />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Город" required>
+                                    <input
+                                        type="text"
+                                        value={formData.city || ''}
+                                        onChange={e => set('city', e.target.value)}
+                                        className={input}
+                                        placeholder="Krakow"
+                                    />
+                                </Field>
+                                <Field label="Страна">
+                                    <input
+                                        type="text"
+                                        value={formData.country || ''}
+                                        onChange={e => set('country', e.target.value)}
+                                        className={input}
+                                        placeholder="Poland"
+                                    />
+                                </Field>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Что попробовать (must try)</label>
+                            <Field label="Адрес">
                                 <input
                                     type="text"
-                                    value={formData.must_try}
-                                    onChange={e => setFormData({ ...formData, must_try: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all"
-                                    placeholder="Через запятую: Тирамису, Ризотто, Панна котта"
+                                    value={formData.address || ''}
+                                    onChange={e => set('address', e.target.value)}
+                                    className={input}
+                                    placeholder="ul. Szeroka 2"
                                 />
-                            </div>
-                        </div>
-                    </div>
+                            </Field>
 
-                    {/* Section: Location & Contact */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-white">Локация и Контакты</h3>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Город *</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Широта (lat)">
                                     <input
-                                        type="text"
-                                        value={formData.city}
-                                        onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-bold text-sm outline-none transition-all"
-                                        placeholder="Напр. Krakow"
+                                        type="number" step="any"
+                                        value={formData.lat || ''}
+                                        onChange={e => set('lat', parseFloat(e.target.value) || null)}
+                                        className={input}
+                                        placeholder="50.0647"
                                     />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Страна</label>
+                                </Field>
+                                <Field label="Долгота (lng)">
                                     <input
-                                        type="text"
-                                        value={formData.country}
-                                        onChange={e => setFormData({ ...formData, country: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all"
-                                        placeholder="Напр. Poland"
+                                        type="number" step="any"
+                                        value={formData.lng || ''}
+                                        onChange={e => set('lng', parseFloat(e.target.value) || null)}
+                                        className={input}
+                                        placeholder="19.9450"
                                     />
-                                </div>
+                                </Field>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Адрес</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Сайт">
+                                    <div className="relative">
+                                        <Globe size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="url"
+                                            value={formData.website || ''}
+                                            onChange={e => set('website', e.target.value)}
+                                            className={cn(input, "pl-8")}
+                                            placeholder="https://..."
+                                        />
+                                    </div>
+                                </Field>
+                                <Field label="Телефон">
+                                    <div className="relative">
+                                        <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="tel"
+                                            value={formData.phone || ''}
+                                            onChange={e => set('phone', e.target.value)}
+                                            className={cn(input, "pl-8")}
+                                            placeholder="+48 12 …"
+                                        />
+                                    </div>
+                                </Field>
+                            </div>
+                        </div>
+
+                        {/* ── 4. Фото ── */}
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title="Фотографии"
+                                icon={Image}
+                                iconColor="text-violet-500"
+                                count={photos.length}
+                            />
+
+                            {photos.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2">
+                                    {photos.map((url, idx) => (
+                                        <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                            <img
+                                                src={url} alt=""
+                                                className="w-full h-full object-cover"
+                                                onError={e => { e.target.style.display = 'none' }}
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                                                <button
+                                                    onClick={() => set('image', url)}
+                                                    title="Сделать главным"
+                                                    className={cn(
+                                                        "p-1.5 rounded-lg text-white text-[9px] font-bold",
+                                                        formData.image === url ? "bg-amber-500" : "bg-white/20 hover:bg-white/30"
+                                                    )}
+                                                >
+                                                    <Star size={11} />
+                                                </button>
+                                                <button
+                                                    onClick={() => removePhoto(idx)}
+                                                    className="p-1.5 rounded-lg bg-rose-500/80 hover:bg-rose-500 text-white"
+                                                >
+                                                    <Trash2 size={11} />
+                                                </button>
+                                            </div>
+                                            {formData.image === url && (
+                                                <div className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 bg-amber-400 text-amber-900 rounded-md uppercase">
+                                                    Главное
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
                                 <input
-                                    type="text"
-                                    value={formData.address}
-                                    onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all"
-                                    placeholder="Улица, дом"
+                                    type="url"
+                                    value={newImageUrl}
+                                    onChange={e => setNewImageUrl(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && addPhoto()}
+                                    className={cn(input, "flex-1")}
+                                    placeholder="https://... (URL фото)"
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Website</label>
-                                    <input
-                                        type="text"
-                                        value={formData.website}
-                                        onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all"
-                                        placeholder="https://..."
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Phone</label>
-                                    <input
-                                        type="text"
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border-2 border-transparent focus:border-indigo-500/20 focus:bg-white dark:focus:bg-slate-800 font-medium text-sm outline-none transition-all"
-                                        placeholder="+48 ..."
-                                    />
-                                </div>
+                                <button
+                                    onClick={addPhoto}
+                                    disabled={!newImageUrl.trim()}
+                                    className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-all flex items-center gap-1.5 text-[11px] font-bold"
+                                >
+                                    <Plus size={14} />
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Section: Labels & Tags */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 dark:text-white">Лейблы и Теги</h3>
+                        {/* ── 5. Лучшее время ── */}
+                        <div className="space-y-4">
+                            <SectionHeader title="Лучшее время для посещения" icon={Clock} iconColor="text-sky-500" />
+                            <div className="grid grid-cols-4 gap-2">
+                                {VISIT_TIMES.map(t => {
+                                    const active = (formData.best_for || []).includes(t.id)
+                                    return (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => toggleTime(t.id)}
+                                            className={cn(
+                                                "flex flex-col items-center gap-1.5 py-3 rounded-xl border text-center transition-all",
+                                                active
+                                                    ? "bg-indigo-600 border-indigo-600 text-white"
+                                                    : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300 dark:hover:border-indigo-500/50"
+                                            )}
+                                        >
+                                            <span className="text-lg leading-none">{t.emoji}</span>
+                                            <span className="text-[9px] font-bold uppercase tracking-wider">{t.label}</span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
 
-                        <div className="space-y-6">
+                        {/* ── 6. Лейблы ── */}
+                        <div className="space-y-5">
+                            <SectionHeader
+                                title="Лейблы и Теги"
+                                count={(formData.special_labels || []).length}
+                            />
                             {Object.entries(LABEL_GROUPS).map(([group, labels]) => (
-                                <div key={group} className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">{group}</label>
-                                    <div className="flex flex-wrap gap-2">
+                                <div key={group} className="space-y-2.5">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{group}</p>
+                                    <div className="flex flex-wrap gap-1.5">
                                         {labels.map(label => {
-                                            const isActive = (formData.special_labels || []).includes(label)
+                                            const active = (formData.special_labels || []).includes(label)
                                             return (
                                                 <button
                                                     key={label}
                                                     onClick={() => toggleLabel(label)}
                                                     className={cn(
-                                                        "px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all border",
-                                                        isActive
-                                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20"
-                                                            : "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300"
+                                                        "px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all",
+                                                        active
+                                                            ? "bg-indigo-600 text-white border-indigo-600"
+                                                            : "bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300"
                                                     )}
                                                 >
                                                     {label}
@@ -549,41 +675,108 @@ const LocationFormSlideOver = ({
                                     </div>
                                 </div>
                             ))}
-
-                            <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] ml-1">Лучшее время для посещения</label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {BEST_TIMES.map(time => {
-                                        const isActive = (formData.best_for || []).includes(time.id)
-                                        return (
-                                            <button
-                                                key={time.id}
-                                                onClick={() => toggleBestTime(time.id)}
-                                                className={cn(
-                                                    "flex flex-col items-center gap-2 p-3 rounded-xl border transition-all",
-                                                    isActive
-                                                        ? "bg-indigo-600 text-white border-indigo-600"
-                                                        : "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300"
-                                                )}
-                                            >
-                                                <time.icon size={16} />
-                                                <span className="text-[8px] font-bold uppercase tracking-wider">{time.label}</span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
                         </div>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="sticky bottom-0 pt-6 pb-2 bg-gradient-to-t from-white dark:from-slate-900 to-transparent">
+                        {/* ── 7. AI Семантика (только для существующих) ── */}
+                        {!isNew && (
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                                <button
+                                    onClick={() => setShowAdvanced(v => !v)}
+                                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Zap size={14} className="text-indigo-500" />
+                                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">AI & Семантика</span>
+                                        {formData.ai_context && (
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold">
+                                                Indexed
+                                            </span>
+                                        )}
+                                    </div>
+                                    {showAdvanced ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                                </button>
+
+                                <AnimatePresence>
+                                    {showAdvanced && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
+                                        >
+                                            <div className="p-4 space-y-4">
+                                                {formData.ai_context && (
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">AI Context</p>
+                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                                                            {formData.ai_context}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {formData.ai_keywords?.length > 0 && (
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Ключевые слова</p>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {formData.ai_keywords.map((kw, i) => (
+                                                                <span key={i} className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-semibold">
+                                                                    {kw}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {/* KG data */}
+                                                {(formData.kg_dishes?.length > 0 || formData.kg_cuisines?.length > 0) && (
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Knowledge Graph</p>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {[...(formData.kg_cuisines || []), ...(formData.kg_dishes || [])].map((kw, i) => (
+                                                                <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-semibold">
+                                                                    {kw}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    onClick={handleReindex}
+                                                    disabled={reindexMutation.isPending}
+                                                    className="w-full py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold hover:bg-indigo-50 dark:hover:bg-indigo-500/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <Zap size={13} className={reindexMutation.isPending ? 'animate-pulse' : ''} />
+                                                    {reindexMutation.isPending ? 'Индексирую…' : 'Обновить AI-семантику'}
+                                                </button>
+                                                <p className="text-[9px] text-slate-400 text-center">
+                                                    Обновит вектор, AI-контекст и ключевые слова для поиска
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+
+                        {/* bottom padding */}
+                        <div className="h-4" />
+                    </div>
+                </div>
+
+                {/* ── Footer ── */}
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[11px] font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                        >
+                            Отмена
+                        </button>
                         <button
                             onClick={onSave}
-                            className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="flex-[2] py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
-                            <Building2 size={16} />
-                            {selectedLocation.id === 'NEW' ? 'Создать объект' : 'Сохранить изменения'}
+                            <Building2 size={14} />
+                            {isNew ? 'Создать объект' : 'Сохранить изменения'}
                         </button>
                     </div>
                 </div>

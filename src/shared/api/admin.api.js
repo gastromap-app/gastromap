@@ -86,12 +86,18 @@ export async function updateReviewStatus(reviewId, status, comment) {
 
 export async function getPendingLocations() {
     if (!supabase) return mockPendingLocations
-    const { data } = await supabase
-        .from('locations')
-        .select('id, title, category, city, created_at')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-    return data || []
+    // Check both locations table (direct entries) and user_submissions
+    const [locsRes, subsRes] = await Promise.all([
+        supabase.from('locations').select('id, title, category, city, created_at, status')
+            .in('status', ['pending', 'revision_requested'])
+            .order('created_at', { ascending: false }),
+        supabase.from('user_submissions').select('id, name, category, city, created_at, status, user_id')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+    ])
+    const locs = (locsRes.data || []).map(l => ({ ...l, source: 'location' }))
+    const subs = (subsRes.data || []).map(s => ({ ...s, title: s.name, source: 'submission' }))
+    return [...locs, ...subs]
 }
 
 // Mock data fallback

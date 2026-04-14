@@ -236,7 +236,7 @@ export function useAdminStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         }, 
-        staleTime: 60_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -258,7 +258,7 @@ export function useRecentActivity(limit = 10) {
             const { getRecentActivity } = await import('./admin.api')
             return getRecentActivity(limit)
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -293,7 +293,7 @@ export function usePendingReviews() {
             const { getPendingReviews } = await import('./admin.api')
             return getPendingReviews()
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -318,7 +318,7 @@ export function usePendingLocations() {
             const { getPendingLocations } = await import('./admin.api')
             return getPendingLocations()
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -360,7 +360,7 @@ export function useTopLocations(limit = 5) {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         },
-        staleTime: 60_000,
+        staleTime: 0, // admin: always fresh
         select: (data) => (data?.top_locations || [])
             .slice(0, limit)
             .map(loc => ({ ...loc, visit_count: null, review_count: null })),
@@ -374,7 +374,7 @@ export function useEngagementStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         },
-        staleTime: 30_000,
+        staleTime: 0, // admin: always fresh
         select: (data) => data?.engagement || {},
     })
 }
@@ -386,7 +386,7 @@ export function usePaymentStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         },
-        staleTime: 60_000,
+        staleTime: 0, // admin: always fresh
         select: (data) => data?.payments || {},
     })
 }

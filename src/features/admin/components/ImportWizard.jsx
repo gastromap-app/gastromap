@@ -66,28 +66,44 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
         setIsImporting(true)
         setImportProgress(0)
 
-        // Process items
+        // Process items and write to Supabase
+        const { supabase } = await import('@/shared/api/client')
+        const processed = []
+
         for (let i = 0; i < previewData.length; i++) {
             const item = previewData[i]
-            let enrichedItem = { ...item }
-
-            if (enrichmentEnabled) {
-                // Simulate GastroAI / Google Maps Enrichment
-                await new Promise(resolve => setTimeout(resolve, 500))
-                enrichedItem = {
-                    ...enrichedItem,
-                    rating: item.rating || (4.0 + Math.random()).toFixed(1),
-                    coordinates: item.coordinates || {
-                        lat: 50.0614 + (Math.random() - 0.5) * 0.05,
-                        lng: 19.9366 + (Math.random() - 0.5) * 0.05
-                    },
-                    image: item.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000'
-                }
+            let enrichedItem = {
+                title: item.title || item.name || 'Untitled',
+                category: item.category || 'restaurant',
+                city: item.city || '',
+                country: item.country || '',
+                address: item.address || '',
+                description: item.description || '',
+                price_level: item.price_level || item.price_range || '$$',
+                rating: parseFloat(item.rating) || 4.0,
+                status: 'pending',
+                photos: item.photos ? (Array.isArray(item.photos) ? item.photos : [item.photos]) : [],
+                ...(item.lat && item.lng ? { lat: parseFloat(item.lat), lng: parseFloat(item.lng) } : {}),
             }
-
-            addLocation(enrichedItem)
-            setImportProgress(Math.round(((i + 1) / previewData.length) * 100))
+            processed.push(enrichedItem)
+            setImportProgress(Math.round(((i + 1) / previewData.length) * 70))
         }
+
+        // Batch insert to Supabase
+        if (supabase && processed.length > 0) {
+            try {
+                const BATCH = 20
+                for (let b = 0; b < processed.length; b += BATCH) {
+                    await supabase.from('locations').insert(processed.slice(b, b + BATCH))
+                    setImportProgress(70 + Math.round(((b + BATCH) / processed.length) * 30))
+                }
+            } catch (err) {
+                console.error('[ImportWizard] Supabase insert error:', err)
+            }
+        }
+
+        // Also add to local store for immediate UI update
+        processed.forEach(item => addLocation(item))
 
         setIsImporting(false)
         setStep(3)

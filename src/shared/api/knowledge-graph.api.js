@@ -767,6 +767,54 @@ export async function matchLocationWithKG(location) {
  * Synchronizes the entire Knowledge Graph with existing locations.
  * Updates ai_keywords and enriches ai_context for matching locations.
  */
+/**
+ * Sync KG data for a SINGLE location.
+ * Called automatically after saving a location card.
+ * Matches cuisines/dishes/ingredients from text fields and writes to kg_* columns.
+ */
+export async function syncKGForLocation(locationId) {
+    if (!supabase) return null
+
+    const { data: loc, error: fetchErr } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('id', locationId)
+        .single()
+
+    if (fetchErr || !loc) return null
+
+    const kgMatches = await matchLocationWithKG(loc)
+
+    // Merge KG names into ai_keywords (additive — never remove existing ones)
+    const newKeywords = Array.from(new Set([
+        ...(loc.ai_keywords || []),
+        ...kgMatches.cuisines,
+        ...kgMatches.dishes,
+        ...kgMatches.ingredients,
+    ]))
+
+    // Build update payload — merge new matches with existing, keep unique
+    const updatePayload = {
+        kg_cuisines:    Array.from(new Set([...(loc.kg_cuisines    || []), ...kgMatches.cuisines])),
+        kg_dishes:      Array.from(new Set([...(loc.kg_dishes      || []), ...kgMatches.dishes])),
+        kg_ingredients: Array.from(new Set([...(loc.kg_ingredients || []), ...kgMatches.ingredients])),
+        ai_keywords:    newKeywords,
+        kg_enriched_at: new Date().toISOString(),
+    }
+
+    const { error: upErr } = await supabase
+        .from('locations')
+        .update(updatePayload)
+        .eq('id', locationId)
+
+    if (upErr) {
+        console.error('[KG] syncKGForLocation failed:', upErr.message)
+        return null
+    }
+
+    return { cuisines: kgMatches.cuisines, dishes: kgMatches.dishes, ingredients: kgMatches.ingredients }
+}
+
 export async function syncKGToLocations(onProgress) {
     if (!supabase) return { success: true, count: 0 }
 
@@ -780,8 +828,8 @@ export async function syncKGToLocations(onProgress) {
     for (let i = 0; i < locations.length; i++) {
         const loc = locations[i]
         const kgMatches = await matchLocationWithKG(loc)
-        
-        // Merge KG entities into ai_keywords
+
+        // Merge KG names into ai_keywords (additive)
         const newKeywords = Array.from(new Set([
             ...(loc.ai_keywords || []),
             ...kgMatches.cuisines,
@@ -789,11 +837,25 @@ export async function syncKGToLocations(onProgress) {
             ...kgMatches.ingredients
         ]))
 
-        // Only update if something changed
-        if (newKeywords.length !== (loc.ai_keywords?.length || 0)) {
+        // Also write to kg_* columns (additive merge)
+        const updatePayload = {
+            kg_cuisines:    Array.from(new Set([...(loc.kg_cuisines    || []), ...kgMatches.cuisines])),
+            kg_dishes:      Array.from(new Set([...(loc.kg_dishes      || []), ...kgMatches.dishes])),
+            kg_ingredients: Array.from(new Set([...(loc.kg_ingredients || []), ...kgMatches.ingredients])),
+            ai_keywords:    newKeywords,
+            kg_enriched_at: new Date().toISOString(),
+        }
+
+        const hasChanges =
+            updatePayload.kg_cuisines.length    !== (loc.kg_cuisines    || []).length ||
+            updatePayload.kg_dishes.length      !== (loc.kg_dishes      || []).length ||
+            updatePayload.kg_ingredients.length !== (loc.kg_ingredients || []).length ||
+            newKeywords.length                  !== (loc.ai_keywords    || []).length
+
+        if (hasChanges) {
             const { error: upError } = await supabase
                 .from('locations')
-                .update({ ai_keywords: newKeywords })
+                .update(updatePayload)
                 .eq('id', loc.id)
             
             if (!upError) updatedCount++

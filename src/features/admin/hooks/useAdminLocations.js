@@ -84,6 +84,7 @@ export const useAdminLocations = () => {
             description: '',
             insider_tip: '',
             must_try: '',
+            what_to_try: [],
             price_level: '$$',
             website: '',
             phone: '',
@@ -92,13 +93,29 @@ export const useAdminLocations = () => {
             social_instagram: '',
             social_facebook: '',
             image: '',
+            photos: [],
             images: [],
             lat: 50.0647,
             lng: 19.9450,
+            rating: null,
             tags: [],
             vibe: [],
+            features: [],
             special_labels: [],
+            best_for: [],
+            dietary: [],
             cuisine: '',
+            has_wifi: false,
+            has_outdoor_seating: false,
+            reservations_required: false,
+            michelin_stars: 0,
+            michelin_bib: false,
+            // KG fields
+            kg_cuisines: [],
+            kg_dishes: [],
+            kg_ingredients: [],
+            kg_allergens: [],
+            kg_enriched_at: null,
             status: 'pending'
         }
         setSelectedLocation(emptyLocation)
@@ -117,6 +134,20 @@ export const useAdminLocations = () => {
         } else {
             prepared.must_try = loc.what_to_try || ''
         }
+
+        // Ensure KG fields are present (they come from normalise now)
+        prepared.kg_cuisines    = loc.kg_cuisines    ?? []
+        prepared.kg_dishes      = loc.kg_dishes      ?? []
+        prepared.kg_ingredients = loc.kg_ingredients ?? []
+        prepared.kg_allergens   = loc.kg_allergens   ?? []
+        prepared.kg_enriched_at = loc.kg_enriched_at ?? null
+
+        // Ensure other optional fields
+        prepared.vibe           = loc.vibe           ?? []
+        prepared.features       = loc.features       ?? []
+        prepared.dietary        = loc.dietary        ?? []
+        prepared.michelin_stars = loc.michelin_stars ?? 0
+        prepared.michelin_bib   = loc.michelin_bib   ?? false
         
         // Map canonical fields to UI field names for editing
         if (loc.cuisine_types?.length) {
@@ -289,10 +320,11 @@ export const useAdminLocations = () => {
             delete submissionData.price_level
         }
         
+        // vibe is a separate column — keep it as-is, also merge into tags for search
         if (submissionData.vibe?.length) {
             const existingTags = submissionData.tags || []
             submissionData.tags = [...new Set([...existingTags, ...submissionData.vibe])]
-            delete submissionData.vibe
+            // DO NOT delete vibe — it's a separate DB column
         }
         
         if (typeof submissionData.must_try === 'string') {

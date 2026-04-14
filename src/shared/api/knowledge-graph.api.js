@@ -434,7 +434,7 @@ export async function updateCuisine(id, updates) {
     }
     const { data, error } = await supabase
         .from('cuisines')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
@@ -793,10 +793,7 @@ export async function syncKGToLocations(onProgress) {
         if (newKeywords.length !== (loc.ai_keywords?.length || 0)) {
             const { error: upError } = await supabase
                 .from('locations')
-                .update({ 
-                    ai_keywords: newKeywords, 
-                    updated_at: new Date().toISOString() 
-                })
+                .update({ ai_keywords: newKeywords })
                 .eq('id', loc.id)
             
             if (!upError) updatedCount++

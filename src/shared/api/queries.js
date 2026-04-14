@@ -162,7 +162,7 @@ export function useDeleteLocationMutation() {
 export function useAIQueryMutation() {
     return useMutation({
         mutationFn: async ({ message, context }) => {
-            const { analyzeQuery } = await import('./ai.api')
+            const { analyzeQuery } = await import('./ai/analysis')
             return analyzeQuery(message, context)
         },
     })
@@ -171,7 +171,7 @@ export function useAIQueryMutation() {
 export function useExtractLocationMutation() {
     return useMutation({
         mutationFn: async (query) => {
-            const { extractLocationData } = await import('./ai.api')
+            const { extractLocationData } = await import('./ai/location')
             return extractLocationData(query)
         },
     })

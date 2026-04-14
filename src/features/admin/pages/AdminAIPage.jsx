@@ -121,14 +121,14 @@ const FREE_MODELS = [
     },
     // ── LARGE CONTEXT TIER ──────────────────────────────────────────────────
     {
-        id: 'qwen/qwen3.6-plus:free',
-        name: 'Qwen3.6 Plus',
-        provider: 'Alibaba',
-        context: '1M',
-        languages: '100+ incl. RU / PL / UA',
-        badge: '1M Context',
-        badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
-        description: 'Massive 1M context. Hybrid thinking + vision + tool use.',
+        id: 'arcee-ai/trinity-large-preview:free',
+        name: 'Trinity Large',
+        provider: 'Arcee AI',
+        context: '131K',
+        languages: 'EN / multilingual',
+        badge: '✅ Stable',
+        badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+        description: 'Arcee Trinity Large — stable and reliable for structured tasks.',
         toolUse: true,
     },
     {

@@ -3,35 +3,66 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const SecurityPrivacyPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
+    const { logout, requestPasswordReset, user } = useAuthStore()
+    const [toastMsg, setToastMsg] = useState('')
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
+    const showToast = (msg) => {
+        setToastMsg(msg)
+        setTimeout(() => setToastMsg(''), 3000)
+    }
+
+    const handleChangePassword = async () => {
+        if (!user?.email) return
+        await requestPasswordReset(user.email)
+        showToast('Password reset link sent to ' + user.email)
+    }
+
+    const handleLogout = async () => {
+        await logout()
+        navigate('/login')
+    }
+
     const securityItems = [
-        { icon: Lock, label: "Change Password", description: "Last changed 3 months ago" },
-        { icon: Smartphone, label: "Two-Factor Authentication", description: "Currently disabled", toggle: true },
-        { icon: Eye, label: "Login Activity", description: "Manage your active sessions" },
+        { icon: Lock, label: "Change Password", description: "Send reset link to your email", action: handleChangePassword },
+        { icon: Smartphone, label: "Two-Factor Authentication", description: "Currently disabled", toggle: true, action: () => showToast('2FA coming soon') },
+        { icon: Eye, label: "Login Activity", description: "Manage your active sessions", action: () => showToast('Session management coming soon') },
     ]
 
     const privacyItems = [
-        { icon: Shield, label: "Profile Visibility", value: "Public" },
-        { icon: UserX, label: "Request Data Deletion", description: "Permanent deletion of your account" },
+        { icon: Shield, label: "Profile Visibility", value: "Public", action: () => showToast('Visibility settings coming soon') },
+        { icon: UserX, label: "Request Data Deletion", description: "Permanent deletion of your account", action: () => navigate('/privacy/delete-request') },
     ]
 
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
+            {/* Toast */}
+            {toastMsg && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-2xl text-sm font-bold shadow-xl"
+                >
+                    {toastMsg}
+                </motion.div>
+            )}
+
             {/* Header */}
             <div className="pt-24 px-6 mb-8 flex items-center gap-4">
                 <button
                     onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
                 >
                     <ArrowLeft size={20} />
                 </button>
@@ -46,7 +77,8 @@ const SecurityPrivacyPage = () => {
                         {securityItems.map((item, idx) => (
                             <button
                                 key={idx}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== securityItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                onClick={item.action}
+                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== securityItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
@@ -76,7 +108,8 @@ const SecurityPrivacyPage = () => {
                         {privacyItems.map((item, idx) => (
                             <button
                                 key={idx}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== privacyItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                onClick={item.action}
+                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== privacyItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
@@ -96,22 +129,19 @@ const SecurityPrivacyPage = () => {
                     </div>
                 </div>
 
-                {/* Connected Devices */}
-                <div className={`p-6 rounded-[32px] border ${cardBg}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                        <Smartphone size={18} className="text-green-500" />
-                        <h4 className={`text-sm font-black ${textStyle}`}>Current Device</h4>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <p className={`text-[13px] font-bold ${textStyle}`}>iPhone 15 Pro</p>
-                            <p className={`text-[11px] ${subTextStyle}`}>Krakow, Poland • Active now</p>
+                {/* Sign Out */}
+                <button
+                    onClick={handleLogout}
+                    className={`w-full flex items-center justify-between p-5 rounded-[32px] border transition-colors ${isDark ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10 text-red-400' : 'bg-red-50 border-red-100 hover:bg-red-100 text-red-600'}`}
+                >
+                    <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-xl ${isDark ? 'bg-red-500/10' : 'bg-red-100'}`}>
+                            <LogOut size={20} />
                         </div>
-                        <div className="px-3 py-1 bg-green-500/10 text-green-500 text-[10px] font-black rounded-full border border-green-500/20">
-                            THIS DEVICE
-                        </div>
+                        <span className="text-[15px] font-bold">Sign Out</span>
                     </div>
-                </div>
+                    <ChevronRight size={18} className="opacity-30" />
+                </button>
             </div>
         </div>
     )

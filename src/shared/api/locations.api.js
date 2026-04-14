@@ -35,15 +35,12 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // ── Dual-schema support ──────────────────────────────────────────────────
-    // Legacy schema (001_locations.sql): image, rating, price_level, cuisine (string)
-    // New schema (post-refactor):        image_url, google_rating, price_range, cuisine_types (array)
-    const image      = row.image_url    ?? row.image    ?? ''
-    const rating     = Number(row.google_rating ?? row.rating ?? 0)
-    const priceLevel = row.price_range  ?? row.price_level ?? '$$'
-    const cuisineRaw = row.cuisine_types ?? (row.cuisine ? [row.cuisine] : [])
+    // Schema: title, rating, price_level, cuisine (string), image, photos (array)
+    const image      = row.image ?? ''
+    const rating     = Number(row.rating ?? 0)
+    const priceLevel = row.price_level ?? '$$'
+    const cuisineRaw = row.cuisine ?? ''
 
-    // Status normalisation: legacy uses 'active', new schema uses 'approved'
     const status = row.status ?? 'active'
 
     return {
@@ -63,17 +60,17 @@ function normalise(row) {
         category: row.category ?? 'other',
         type: row.category ?? 'other',
 
-        cuisine: Array.isArray(cuisineRaw) ? (cuisineRaw[0] ?? '') : (cuisineRaw ?? ''),
-        cuisine_types: Array.isArray(cuisineRaw) ? cuisineRaw : [cuisineRaw].filter(Boolean),
+        cuisine: cuisineRaw,
+        cuisine_types: cuisineRaw ? [cuisineRaw] : [],
 
         image,
         image_url: image,
-        photos: row.google_photos ?? row.photos ?? [],
-        images: row.google_photos ?? row.photos ?? [],
+        photos: row.photos ?? [],
+        images: row.photos ?? [],
 
         rating,
         google_rating: rating,
-        google_user_ratings_total: row.google_user_ratings_total ?? 0,
+        google_user_ratings_total: 0,
 
         price_level: priceLevel,
         priceLevel,
@@ -139,7 +136,7 @@ export async function getLocations(filters = {}) {
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('google_rating', { ascending: false })
+        .order('rating', { ascending: false })
         .range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
@@ -166,7 +163,7 @@ export async function getLocations(filters = {}) {
     const { data, error, count } = await q
 
     if (error) {
-        console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
+        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocations(filters)
     }
 
@@ -193,7 +190,7 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data, error } = await q.single()
 
     if (error) {
-        console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
+        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocation(id)
     }
 

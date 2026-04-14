@@ -11,7 +11,6 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
-import { useLocations } from '@/shared/api/queries'
 import { useAdminStats, useRecentActivity } from '@/shared/api/queries'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
@@ -79,18 +78,18 @@ const AdminDashboardPage = () => {
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
     const { user } = useAuthStore()
 
-    const { data: locations = [], isLoading: loadingLocations } = useLocations()
-    const { data: adminStats } = useAdminStats()
+    const { data: adminStats, isLoading: loadingStats } = useAdminStats()
     const { data: recentActivities = [] } = useRecentActivity(10)
 
-    const totalUsers = adminStats?.users?.total ?? '—'
-    const totalSupporters = adminStats?.users?.supporters ?? '—'
-    const pageViews = adminStats?.engagement?.total_visits ?? '—'
+    const totalLocations = adminStats?.locations?.total ?? (loadingStats ? '...' : '—')
+    const totalUsers = adminStats?.users?.total ?? (loadingStats ? '...' : '—')
+    const totalReviews = adminStats?.engagement?.total_reviews ?? (loadingStats ? '...' : '—')
+    const pageViews = adminStats?.engagement?.total_visits ?? (loadingStats ? '...' : '—')
 
     const stats = [
-        { title: 'Locations', value: loadingLocations ? '...' : (locations.length || '—'), icon: MapPin, color: 'bg-orange-500' },
+        { title: 'Locations', value: totalLocations, icon: MapPin, color: 'bg-orange-500' },
         { title: 'Users', value: totalUsers, icon: Users, color: 'bg-blue-500' },
-        { title: 'Supporters', value: totalSupporters, icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: 'Reviews', value: totalReviews, icon: MessageSquare, color: 'bg-emerald-500' },
         { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-indigo-500' },
     ]
 

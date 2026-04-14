@@ -306,6 +306,90 @@ const LocationFormSlideOver = ({
                             </p>
                         </div>
 
+                        {/* ── 3. Локация и Контакты ── */}
+                        <div className="space-y-5">
+                            <SectionHeader title="Локация и Контакты" icon={MapPin} iconColor="text-rose-500" />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Город" required>
+                                    <input
+                                        type="text"
+                                        value={formData.city || ''}
+                                        onChange={e => set('city', e.target.value)}
+                                        className={input}
+                                        placeholder="Krakow"
+                                    />
+                                </Field>
+                                <Field label="Страна">
+                                    <input
+                                        type="text"
+                                        value={formData.country || ''}
+                                        onChange={e => set('country', e.target.value)}
+                                        className={input}
+                                        placeholder="Poland"
+                                    />
+                                </Field>
+                            </div>
+
+                            <Field label="Адрес">
+                                <input
+                                    type="text"
+                                    value={formData.address || ''}
+                                    onChange={e => set('address', e.target.value)}
+                                    className={input}
+                                    placeholder="ul. Szeroka 2"
+                                />
+                            </Field>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Широта (lat)">
+                                    <input
+                                        type="number" step="any"
+                                        value={formData.lat || ''}
+                                        onChange={e => set('lat', parseFloat(e.target.value) || null)}
+                                        className={input}
+                                        placeholder="50.0647"
+                                    />
+                                </Field>
+                                <Field label="Долгота (lng)">
+                                    <input
+                                        type="number" step="any"
+                                        value={formData.lng || ''}
+                                        onChange={e => set('lng', parseFloat(e.target.value) || null)}
+                                        className={input}
+                                        placeholder="19.9450"
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Сайт">
+                                    <div className="relative">
+                                        <Globe size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="url"
+                                            value={formData.website || ''}
+                                            onChange={e => set('website', e.target.value)}
+                                            className={cn(input, "pl-8")}
+                                            placeholder="https://..."
+                                        />
+                                    </div>
+                                </Field>
+                                <Field label="Телефон">
+                                    <div className="relative">
+                                        <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="tel"
+                                            value={formData.phone || ''}
+                                            onChange={e => set('phone', e.target.value)}
+                                            className={cn(input, "pl-8")}
+                                            placeholder="+48 12 …"
+                                        />
+                                    </div>
+                                </Field>
+                            </div>
+                        </div>
+
                         {/* ── 1. Основное ── */}
                         <div className="space-y-5">
                             <SectionHeader title="Основная информация" icon={Building2} />
@@ -463,90 +547,6 @@ const LocationFormSlideOver = ({
                                     />
                                 </div>
                             </Field>
-                        </div>
-
-                        {/* ── 3. Локация и Контакты ── */}
-                        <div className="space-y-5">
-                            <SectionHeader title="Локация и Контакты" icon={MapPin} iconColor="text-rose-500" />
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field label="Город" required>
-                                    <input
-                                        type="text"
-                                        value={formData.city || ''}
-                                        onChange={e => set('city', e.target.value)}
-                                        className={input}
-                                        placeholder="Krakow"
-                                    />
-                                </Field>
-                                <Field label="Страна">
-                                    <input
-                                        type="text"
-                                        value={formData.country || ''}
-                                        onChange={e => set('country', e.target.value)}
-                                        className={input}
-                                        placeholder="Poland"
-                                    />
-                                </Field>
-                            </div>
-
-                            <Field label="Адрес">
-                                <input
-                                    type="text"
-                                    value={formData.address || ''}
-                                    onChange={e => set('address', e.target.value)}
-                                    className={input}
-                                    placeholder="ul. Szeroka 2"
-                                />
-                            </Field>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field label="Широта (lat)">
-                                    <input
-                                        type="number" step="any"
-                                        value={formData.lat || ''}
-                                        onChange={e => set('lat', parseFloat(e.target.value) || null)}
-                                        className={input}
-                                        placeholder="50.0647"
-                                    />
-                                </Field>
-                                <Field label="Долгота (lng)">
-                                    <input
-                                        type="number" step="any"
-                                        value={formData.lng || ''}
-                                        onChange={e => set('lng', parseFloat(e.target.value) || null)}
-                                        className={input}
-                                        placeholder="19.9450"
-                                    />
-                                </Field>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field label="Сайт">
-                                    <div className="relative">
-                                        <Globe size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="url"
-                                            value={formData.website || ''}
-                                            onChange={e => set('website', e.target.value)}
-                                            className={cn(input, "pl-8")}
-                                            placeholder="https://..."
-                                        />
-                                    </div>
-                                </Field>
-                                <Field label="Телефон">
-                                    <div className="relative">
-                                        <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="tel"
-                                            value={formData.phone || ''}
-                                            onChange={e => set('phone', e.target.value)}
-                                            className={cn(input, "pl-8")}
-                                            placeholder="+48 12 …"
-                                        />
-                                    </div>
-                                </Field>
-                            </div>
                         </div>
 
                         {/* ── 4. Фото ── */}

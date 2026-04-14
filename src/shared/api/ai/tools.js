@@ -171,6 +171,11 @@ export async function executeTool(name, args, locations = []) {
             // AI context for deeper understanding
             ai_context: l.ai_context ?? null,
             ai_keywords: l.ai_keywords?.slice(0, 10) ?? [],
+            // KG enrichment — structured culinary data
+            kg_cuisines:    l.kg_cuisines    ?? [],
+            kg_dishes:      l.kg_dishes      ?? [],
+            kg_ingredients: l.kg_ingredients ?? [],
+            kg_allergens:   l.kg_allergens   ?? [],
             // Practical info
             opening_hours: l.opening_hours ?? null,
             amenities: l.amenities ?? [],
@@ -229,6 +234,11 @@ export async function executeTool(name, args, locations = []) {
             michelin_bib: loc.michelin_bib ?? false,
             ai_context: loc.ai_context ?? null,
             ai_keywords: loc.ai_keywords ?? [],
+            // KG enrichment — full structured culinary data
+            kg_cuisines:    loc.kg_cuisines    ?? [],
+            kg_dishes:      loc.kg_dishes      ?? [],
+            kg_ingredients: loc.kg_ingredients ?? [],
+            kg_allergens:   loc.kg_allergens   ?? [],
         }
     }
 

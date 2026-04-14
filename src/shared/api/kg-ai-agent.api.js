@@ -638,12 +638,17 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     KGDebug.info(`Model cascade (${cascade.length} models):`, cascade)
     const errors = []
 
+    // Track consecutive 429s — if all models rate-limited, wait for window reset
+    let consecutive429 = 0
+    const MAX_CONSECUTIVE_429 = 3
+    const RATE_LIMIT_RESET_MS = 62_000 // OpenRouter resets every 60s, +2s buffer
+
     for (let _mi = 0; _mi < cascade.length; _mi++) {
         const model = cascade[_mi]
         onModelAttempt?.(model)
         KGDebug.model(model, _mi + 1, cascade.length)
         const _modelStart = performance.now()
-        // Small delay between model attempts to avoid rate limits
+        // Small inter-model delay to avoid hitting rate limit on burst
         if (_mi > 0) await new Promise(r => setTimeout(r, 1500))
 
         try {
@@ -674,13 +679,29 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             clearTimeout(timeoutId)
 
             if (resp.status === 429 || resp.status === 503) {
-                KGDebug.modelFail(model, `rate-limited (${resp.status})`)
+                consecutive429++
+                KGDebug.modelFail(model, `rate-limited (${resp.status}) [${consecutive429} consecutive]`)
                 errors.push(`${model}: rate-limited (${resp.status})`)
-                // Exponential backoff: 2s → 4s → 8s per model attempt
-                const delay = Math.min(2000 * Math.pow(2, _mi), 10000)
-                await new Promise(r => setTimeout(r, delay))
+
+                // If enough consecutive 429s — wait for full window reset, then retry from start
+                if (consecutive429 >= MAX_CONSECUTIVE_429) {
+                    KGDebug.stepWarn('RATELIMIT',
+                        `${consecutive429} models rate-limited — waiting ${RATE_LIMIT_RESET_MS / 1000}s for window reset...`)
+                    onModelAttempt?.('__rate_limit_wait__')
+                    await new Promise(r => setTimeout(r, RATE_LIMIT_RESET_MS))
+                    consecutive429 = 0
+                    _mi = -1 // restart cascade (loop will _mi++ to 0)
+                    errors.length = 0 // clear errors for fresh attempt
+                    KGDebug.step('RETRY', 'Retrying after rate limit reset')
+                    continue
+                }
+
+                // Short back-off before next model
+                await new Promise(r => setTimeout(r, 2_000))
                 continue
             }
+            // Successful response — reset consecutive counter
+            consecutive429 = 0
             if (!resp.ok) {
                 const body = await resp.text().catch(() => '')
                 errors.push(`${model}: HTTP ${resp.status} — ${body.slice(0, 80)}`)

@@ -362,6 +362,18 @@ export async function updateLocation(id, updates, enableTranslation = null) {
             console.error('[locations.api] Failed to save translations:', error)
         }
     }
+
+    // Auto-sync KG fields in background (non-blocking)
+    // Triggered when cuisine/tags/description changed — adds matched KG data to kg_* columns
+    const kgTriggerFields = ['title', 'cuisine', 'description', 'tags', 'vibe', 'what_to_try']
+    const shouldSyncKG = kgTriggerFields.some(f => updates[f] !== undefined)
+    if (shouldSyncKG) {
+        import('./knowledge-graph.api').then(({ syncKGForLocation }) => {
+            syncKGForLocation(updated.id).catch(e =>
+                console.warn('[locations.api] Background KG sync failed:', e.message)
+            )
+        })
+    }
     
     return normalise(updated)
 }

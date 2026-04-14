@@ -115,6 +115,19 @@ function normalise(row) {
         ai_enrichment_error: row.ai_enrichment_error ?? null,
         ai_enrichment_last_attempt: row.ai_enrichment_last_attempt ?? null,
 
+        // Knowledge Graph fields
+        kg_cuisines:   row.kg_cuisines   ?? [],
+        kg_dishes:     row.kg_dishes     ?? [],
+        kg_ingredients: row.kg_ingredients ?? [],
+        kg_allergens:  row.kg_allergens  ?? [],
+        kg_enriched_at: row.kg_enriched_at ?? null,
+
+        // Social / Google
+        social_instagram: row.social_instagram ?? '',
+        social_facebook:  row.social_facebook  ?? '',
+        google_place_id:  row.google_place_id  ?? null,
+        google_maps_url:  row.google_maps_url  ?? null,
+
         status,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',
@@ -487,11 +500,47 @@ function _toRow(d) {
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
-    
+
     // AI Enrichment status
     if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
     if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
+
+    // ── Fields with canonical column names in Supabase ───────────────────────
+    // vibe — separate column (was incorrectly merged into tags)
+    if (d.vibe !== undefined) row.vibe = d.vibe
+
+    // features — canonical column name (not amenities)
+    if (d.features !== undefined) row.features = d.features
+    else if (d.amenities !== undefined) row.features = d.amenities
+
+    // Boolean fields — use canonical column names
+    if (d.has_wifi !== undefined) row.has_wifi = d.has_wifi
+    if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
+    if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
+
+    // Michelin
+    if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
+    if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
+
+    // what_to_try — canonical array column
+    const whatToTryArr = d.what_to_try ?? d.must_try
+    if (whatToTryArr !== undefined) {
+        row.what_to_try = Array.isArray(whatToTryArr)
+            ? whatToTryArr
+            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
+    }
+
+    // dietary — canonical column name
+    if (d.dietary !== undefined) row.dietary = d.dietary
+    else if (d.dietary_options !== undefined) row.dietary = d.dietary_options
+
+    // ── KG fields — Knowledge Graph enrichment ───────────────────────────────
+    if (d.kg_cuisines !== undefined)   row.kg_cuisines = d.kg_cuisines
+    if (d.kg_dishes !== undefined)     row.kg_dishes = d.kg_dishes
+    if (d.kg_ingredients !== undefined) row.kg_ingredients = d.kg_ingredients
+    if (d.kg_allergens !== undefined)  row.kg_allergens = d.kg_allergens
+    if (d.kg_enriched_at !== undefined) row.kg_enriched_at = d.kg_enriched_at
 
     return row
 }

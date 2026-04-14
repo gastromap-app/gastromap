@@ -11,7 +11,7 @@
  * - ru: Russian
  */
 
-// import { analyzeQuery } from './ai.api'
+// analyzeQuery now imported dynamically from ./ai/analysis below
 import { supabase } from './client'
 import { config } from '@/shared/config/env'
 // import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
@@ -58,7 +58,7 @@ Text to translate:
             setTimeout(() => reject(new Error('Translation request timeout')), 30000)
         )
 
-        const { analyzeQuery } = await import('./ai.api')
+        const { analyzeQuery } = await import('./ai/analysis')
         const response = await Promise.race([
             analyzeQuery(prompt, {
                 systemPrompt: 'You are a professional translator. Translate accurately while preserving meaning and tone.',

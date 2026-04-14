@@ -13,7 +13,7 @@ import {
     useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
     useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
-    useKnowledgeStats, useSyncKGToLocationsMutation,
+    useKnowledgeStats, useSyncKGToLocationsMutation, useBulkSyncKGMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 import { 
@@ -688,6 +688,7 @@ const AdminKnowledgeGraphPage = () => {
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
     const syncKG           = useSyncKGToLocationsMutation()
+    const bulkSyncKG       = useBulkSyncKGMutation()
 
     const handleMerge = async (group, keepId) => {
         if (!keepId) {
@@ -908,6 +909,23 @@ const AdminKnowledgeGraphPage = () => {
                     >
                         <Info size={15} />
                         <span className="hidden sm:inline">How it works</span>
+                    </button>
+
+                    <button
+                        onClick={async () => {
+                            try {
+                                const result = await bulkSyncKG.mutateAsync(50)
+                                showToast(`KG applied to ${result.count} locations ✓`)
+                            } catch { showToast('KG apply failed', 'error') }
+                        }}
+                        disabled={bulkSyncKG.isPending}
+                        className="h-10 px-4 flex items-center gap-2 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-sm font-medium transition-colors"
+                        title="Apply KG data (dishes, ingredients, allergens) to all location cards"
+                    >
+                        {bulkSyncKG.isPending
+                            ? <><RefreshCw size={15} className="animate-spin" /><span className="hidden sm:inline">Applying...</span></>
+                            : <><span>🔗</span><span className="hidden sm:inline">Apply KG to Locations</span></>
+                        }
                     </button>
 
                     <button

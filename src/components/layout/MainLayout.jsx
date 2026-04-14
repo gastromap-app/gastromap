@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { useTheme } from '@/hooks/useTheme'
+import { OnboardingGate } from '@/features/auth/components/OnboardingGate'
 
 export function MainLayout() {
     const { theme } = useTheme()
@@ -17,31 +18,28 @@ export function MainLayout() {
 
     return (
         <AuroraBackground theme={theme}>
-            <div className="flex flex-col min-h-screen text-foreground relative">
-                <UniversalHeader />
-                {/* No AnimatePresence wrapper here — each page owns its entry animation
-                    via PageTransition. The old mode="wait" pattern broke because
-                    <Outlet /> switches to the new component immediately on route change,
-                    causing the new page to animate inside the *exiting* motion.div,
-                    then re-mount blank in the entering one. */}
-                <main className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? 'pb-0' : 'pb-24'} md:pb-0`}>
-                    <Outlet />
-                </main>
-                <BottomNav />
+            <OnboardingGate>
+                <div className="flex flex-col min-h-screen text-foreground relative">
+                    <UniversalHeader />
+                    <main className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? 'pb-0' : 'pb-24'} md:pb-0`}>
+                        <Outlet />
+                    </main>
+                    <BottomNav />
 
-                {/* AI Floating Action Button (Desktop Only) */}
-                {!isChatOpen && (
-                    <Button
-                        size="lg"
-                        className="fixed bottom-8 right-8 z-40 rounded-full w-14 h-14 shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300 hidden md:flex"
-                        onClick={() => setIsChatOpen(true)}
-                    >
-                        <Sparkles className="h-6 w-6 text-white" />
-                    </Button>
-                )}
+                    {/* AI Floating Action Button (Desktop Only) */}
+                    {!isChatOpen && (
+                        <Button
+                            size="lg"
+                            className="fixed bottom-8 right-8 z-40 rounded-full w-14 h-14 shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300 hidden md:flex"
+                            onClick={() => setIsChatOpen(true)}
+                        >
+                            <Sparkles className="h-6 w-6 text-white" />
+                        </Button>
+                    )}
 
-                <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-            </div>
+                    <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+                </div>
+            </OnboardingGate>
         </AuroraBackground>
     )
 }

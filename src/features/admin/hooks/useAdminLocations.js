@@ -392,7 +392,33 @@ export const useAdminLocations = () => {
         if (!url) return
         setFormData(prev => {
             if (!prev) return prev
-            return {
+        
+    // ── Export ─────────────────────────────────────────────────────────────
+    const [isExporting, setIsExporting] = useState(false)
+
+    const handleExport = async () => {
+        setIsExporting(true)
+        try {
+            const { supabase } = await import('@/shared/api/client')
+            const { data } = await supabase.from('locations')
+                .select('id,title,category,city,country,address,description,rating,price_level,status,created_at')
+                .order('created_at', { ascending: false })
+            const json = JSON.stringify(data || [], null, 2)
+            const blob = new Blob([json], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `gastromap-locations-${new Date().toISOString().split('T')[0]}.json`
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('[Export] error:', err)
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
+    return {
                 ...prev,
                 images: [...(prev.images || []), url],
                 image_url: prev.image_url || url

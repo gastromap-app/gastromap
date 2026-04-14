@@ -57,7 +57,7 @@ const AdminUsersPage = () => {
 
     const stats = [
         { label: 'Total Users', val: loadingProfiles ? '...' : profiles.length.toString(), icon: Users, bg: 'bg-blue-50 dark:bg-blue-500/10', color: 'text-blue-600' },
-                { label: 'Moderators', val: profiles.filter(u => u.role === 'moderator').length.toString(), icon: Star, bg: 'bg-indigo-50 dark:bg-indigo-500/10', color: 'text-indigo-600 dark:text-indigo-400' }
+        { label: 'Moderators', val: profiles.filter(u => u.role === 'moderator').length.toString(), icon: Star, bg: 'bg-indigo-50 dark:bg-indigo-500/10', color: 'text-indigo-600 dark:text-indigo-400' },
         { label: 'Active', val: profiles.filter(u => u.status === 'active').length.toString(), icon: Zap, bg: 'bg-green-50 dark:bg-green-500/10', color: 'text-green-600' },
     ]
 

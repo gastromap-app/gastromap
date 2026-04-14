@@ -8,8 +8,11 @@ import { config } from '@/shared/config/env'
  *
  * Стратегия источника данных:
  *   1. Supabase (locations таблица) — если VITE_SUPABASE_URL настроен
- *   2. OpenStreetMap Overpass API — fallback если Supabase недоступен
- *   3. MOCK_LOCATIONS — последний резерв
+ *      - Если БД вернула данные → используем их
+ *      - Если БД вернула 0 результатов (пустой город) → возвращаем [] без fallback
+ *      - Если БД недоступна (сетевая ошибка, 5xx) → fallback на OSM
+ *   2. OpenStreetMap Overpass API — только при ОШИБКЕ Supabase, не при пустом результате
+ *   3. MOCK_LOCATIONS — последний резерв при ошибке OSM
  *
  * React Query кэширует: staleTime 1h, gcTime 24h.
  * Результат синхронизируется в Zustand store (filteredLocations обновится автоматически).
@@ -23,27 +26,41 @@ export function useLocationsQuery(city, country) {
         queryFn: async () => {
             // ── Путь 1: Supabase ─────────────────────────────────────────
             if (USE_SUPABASE) {
+                let supabaseReached = false
                 try {
                     const { getLocations } = await import('@/shared/api/locations.api')
                     const result = await getLocations({
                         city,
                         country,
                         limit: 200,
-                        // БД использует статус 'active' (не 'approved')
                         status: 'active',
                     })
+                    // БД ответила — запрос дошёл до Supabase
+                    supabaseReached = true
                     const places = result?.data ?? []
+
                     if (places.length > 0) {
                         console.log('[useLocationsQuery] ✅ Supabase:', places.length, 'locations for', city, country)
                         return places
                     }
-                    console.warn('[useLocationsQuery] Supabase returned 0 results — falling back to OSM')
+
+                    // Supabase доступен, но данных нет — это пустой город, НЕ ошибка.
+                    // Не падаем на OSM: там данные не совпадают с нашей схемой.
+                    console.log('[useLocationsQuery] ℹ️ Supabase: no locations for', city, country, '— city is empty in DB')
+                    return []
                 } catch (err) {
-                    console.warn('[useLocationsQuery] Supabase error, falling back to OSM:', err.message)
+                    if (supabaseReached) {
+                        // БД ответила, но с ошибкой в данных — не fallback, просто пусто
+                        console.error('[useLocationsQuery] Supabase data error:', err.message)
+                        return []
+                    }
+                    // Supabase вообще не ответил (сеть, 5xx, timeout) → пробуем OSM
+                    console.warn('[useLocationsQuery] Supabase unreachable, falling back to OSM:', err.message)
                 }
             }
 
             // ── Путь 2: OpenStreetMap (Overpass) ─────────────────────────
+            // Только если Supabase не настроен или недоступен (не при пустом результате!)
             try {
                 const { geocodeCity } = await import('@/services/nominatimApi')
                 const { fetchPlacesByBoundingBox } = await import('@/services/overpassApi')

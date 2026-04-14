@@ -6,6 +6,7 @@ import {
     MessageSquare, Utensils, BarChart3, Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import {
     useCategoryStats, useTopLocations,
     useEngagementStats, usePaymentStats, useAdminStats,
@@ -131,29 +132,25 @@ const AdminStatsPage = () => {
         <div className="space-y-6 lg:space-y-8 pb-10 font-sans">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white">Аналитика</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs lg:text-sm mt-0.5">
-                        Данные из Supabase в реальном времени.
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    {[7, 30, 90].map(d => (
-                        <button key={d}
-                            onClick={() => setPeriod(d)}
-                            className={cn(
-                                'px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all',
-                                period === d
-                                    ? 'bg-indigo-500 text-white shadow-sm'
-                                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-500'
-                            )}
-                        >
-                            {d}д
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Аналитика"
+                subtitle="Данные из Supabase в реальном времени."
+                actions={
+                    <div className="flex gap-1.5">
+                        {[7, 30, 90].map(d => (
+                            <button key={d} onClick={() => setPeriod(d)}
+                                className={cn(
+                                    'h-9 px-3 rounded-[12px] text-[10px] font-bold uppercase tracking-widest transition-all',
+                                    period === d
+                                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                                        : 'bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:border-slate-300'
+                                )}
+                            >{d}д</button>
+                        ))}
+                    </div>
+                }
+            />
 
             {/* Main Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">

@@ -151,8 +151,8 @@ export async function getLocations(filters = {}) {
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', city)
     if (country) q = q.ilike('country', country)
-    if (minRating != null) q = q.gte('google_rating', minRating)
-    if (priceLevel?.length) q = q.in('price_range', priceLevel)
+    if (minRating != null) q = q.gte('rating', minRating)
+    if (priceLevel?.length) q = q.in('price_level', priceLevel)
     if (vibe?.length) q = q.overlaps('tags', vibe) // vibe maps to tags if not separate column
 
     // Search by title or city if query exists
@@ -424,24 +424,24 @@ function _toRow(d) {
     if (d.category !== undefined) row.category = d.category
     else if (d.type !== undefined) row.category = d.type
 
-    if (d.cuisine !== undefined)     row.cuisine_types = Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine].filter(Boolean)
-    if (d.cuisine_types !== undefined) row.cuisine_types = d.cuisine_types
+    if (d.cuisine !== undefined)     row.cuisine = Array.isArray(d.cuisine) ? d.cuisine[0] ?? '' : (d.cuisine ?? '')
+    if (d.cuisine_types !== undefined) row.cuisine = Array.isArray(d.cuisine_types) ? d.cuisine_types[0] ?? '' : (d.cuisine_types ?? '')
 
     // Images
-    if (d.image_url !== undefined) row.image_url = d.image_url
-    else if (d.image !== undefined) row.image_url = d.image
+    if (d.image_url !== undefined) row.image = d.image_url
+    else if (d.image !== undefined) row.image = d.image
 
-    if (d.google_photos !== undefined) row.google_photos = d.google_photos
-    else if (d.photos !== undefined) row.google_photos = d.photos
-    else if (d.images !== undefined) row.google_photos = d.images
+    if (d.google_photos !== undefined) row.photos = d.google_photos
+    else if (d.photos !== undefined) row.photos = d.photos
+    else if (d.images !== undefined) row.photos = d.images
 
-    if (d.rating !== undefined)         row.google_rating = Number(d.rating)
-    if (d.google_rating !== undefined)  row.google_rating = Number(d.google_rating)
+    if (d.rating !== undefined)         row.rating = Number(d.rating)
+    if (d.google_rating !== undefined)  row.rating = Number(d.google_rating)
 
     // Price
-    if (d.price_range !== undefined)  row.price_range = d.price_range
-    else if (d.price_level !== undefined) row.price_range = d.price_level
-    else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
+    if (d.price_range !== undefined)  row.price_level = d.price_range
+    else if (d.price_level !== undefined) row.price_level = d.price_level
+    else if (d.priceLevel !== undefined) row.price_level = d.priceLevel
 
     // Hours
     if (d.opening_hours !== undefined) row.opening_hours = d.opening_hours

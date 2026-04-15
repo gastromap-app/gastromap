@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png', 'offline.html'],
       manifest: {
         name: 'GastroMap — Smart AI Dining Guide',
         short_name: 'GastroMap',
@@ -45,7 +45,7 @@ export default defineConfig({
         // Precache: только JS/CSS/HTML бандлы (без картинок — они тяжёлые и меняются)
         // iOS Safari лимит: 50MB. Chrome: без лимита, но зачем занимать?
         // Целевой размер кэша: < 10MB
-        globPatterns: ['**/*.{js,css,html}'],
+        globPatterns: ['**/*.{js,css,html}', 'offline.html'],
         navigateFallback: null,           // SPA fallback через index.html
         navigateFallbackAllowlist: [/^(?!\/api\/).*/],
         offlineFallback: 'offline.html', // показываем offline.html когда нет сети

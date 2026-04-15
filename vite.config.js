@@ -46,9 +46,7 @@ export default defineConfig({
         // iOS Safari лимит: 50MB. Chrome: без лимита, но зачем занимать?
         // Целевой размер кэша: < 10MB
         globPatterns: ['**/*.{js,css,html}', 'offline.html'],
-        navigateFallback: null,           // SPA fallback через index.html
-        navigateFallbackAllowlist: [/^(?!\/api\/).*/],
-        offlineFallback: 'offline.html', // показываем offline.html когда нет сети
+        navigateFallback: 'index.html',
         // Файлы > 3MB не кэшируем (защита от больших чанков)
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Автоматически чистим кэш от старых версий при обновлении SW

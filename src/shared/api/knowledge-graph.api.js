@@ -296,11 +296,11 @@ export async function getCuisineById(id) {
 
 /**
  * Internal helper — saves a KG item via the server-side proxy.
- * Uses /api/kg/save which has SUPABASE_SERVICE_ROLE_KEY and bypasses RLS.
+ * Uses Supabase Edge Function (primary) or /api/kg/save (fallback).
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    console.log(`[proxy] 🛰️ POST /api/kg/save | type: ${type} | item: "${data.name}"`)
+    console.log(`[proxy] 🛰️ POST kg-save | type: ${type} | item: "${data.name}"`)
 
     // ── 1. Proactive JWT Retrieval with Timeout ──────────────────────────────
     // If it hangs at getSession, it might be due to auth-refresh locking.
@@ -341,7 +341,7 @@ async function saveViaProxy(type, data) {
         // We still TRY the fetch, maybe it's local dev without auth
     }
 
-    console.log('[saveViaProxy] 🌐 Sending POST to /api/kg/save with JWT (len:', jwt.length, ')')
+    console.log('[saveViaProxy] 🌐 Sending POST to kg-save Edge Function with JWT (len:', jwt.length, ')')
 
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
@@ -352,7 +352,7 @@ async function saveViaProxy(type, data) {
 
     let res
     try {
-        res = await fetch('/api/kg/save', {
+        res = await fetch(config.kg?.saveUrl || '/api/kg/save', {
             method: 'POST',
             signal: controller.signal,
             headers: {
@@ -385,7 +385,7 @@ async function saveViaProxy(type, data) {
     } catch (parseErr) {
         const raw = await res.text().catch(() => '')
         console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
-        throw new ApiError(`/api/kg/save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
+        throw new ApiError(`kg-save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
     }
 
     console.log(`[proxy] Response body`, result)
@@ -434,7 +434,7 @@ export async function updateCuisine(id, updates) {
     }
     const { data, error } = await supabase
         .from('cuisines')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
@@ -767,6 +767,54 @@ export async function matchLocationWithKG(location) {
  * Synchronizes the entire Knowledge Graph with existing locations.
  * Updates ai_keywords and enriches ai_context for matching locations.
  */
+/**
+ * Sync KG data for a SINGLE location.
+ * Called automatically after saving a location card.
+ * Matches cuisines/dishes/ingredients from text fields and writes to kg_* columns.
+ */
+export async function syncKGForLocation(locationId) {
+    if (!supabase) return null
+
+    const { data: loc, error: fetchErr } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('id', locationId)
+        .single()
+
+    if (fetchErr || !loc) return null
+
+    const kgMatches = await matchLocationWithKG(loc)
+
+    // Merge KG names into ai_keywords (additive — never remove existing ones)
+    const newKeywords = Array.from(new Set([
+        ...(loc.ai_keywords || []),
+        ...kgMatches.cuisines,
+        ...kgMatches.dishes,
+        ...kgMatches.ingredients,
+    ]))
+
+    // Build update payload — merge new matches with existing, keep unique
+    const updatePayload = {
+        kg_cuisines:    Array.from(new Set([...(loc.kg_cuisines    || []), ...kgMatches.cuisines])),
+        kg_dishes:      Array.from(new Set([...(loc.kg_dishes      || []), ...kgMatches.dishes])),
+        kg_ingredients: Array.from(new Set([...(loc.kg_ingredients || []), ...kgMatches.ingredients])),
+        ai_keywords:    newKeywords,
+        kg_enriched_at: new Date().toISOString(),
+    }
+
+    const { error: upErr } = await supabase
+        .from('locations')
+        .update(updatePayload)
+        .eq('id', locationId)
+
+    if (upErr) {
+        console.error('[KG] syncKGForLocation failed:', upErr.message)
+        return null
+    }
+
+    return { cuisines: kgMatches.cuisines, dishes: kgMatches.dishes, ingredients: kgMatches.ingredients }
+}
+
 export async function syncKGToLocations(onProgress) {
     if (!supabase) return { success: true, count: 0 }
 
@@ -780,8 +828,8 @@ export async function syncKGToLocations(onProgress) {
     for (let i = 0; i < locations.length; i++) {
         const loc = locations[i]
         const kgMatches = await matchLocationWithKG(loc)
-        
-        // Merge KG entities into ai_keywords
+
+        // Merge KG names into ai_keywords (additive)
         const newKeywords = Array.from(new Set([
             ...(loc.ai_keywords || []),
             ...kgMatches.cuisines,
@@ -789,14 +837,25 @@ export async function syncKGToLocations(onProgress) {
             ...kgMatches.ingredients
         ]))
 
-        // Only update if something changed
-        if (newKeywords.length !== (loc.ai_keywords?.length || 0)) {
+        // Also write to kg_* columns (additive merge)
+        const updatePayload = {
+            kg_cuisines:    Array.from(new Set([...(loc.kg_cuisines    || []), ...kgMatches.cuisines])),
+            kg_dishes:      Array.from(new Set([...(loc.kg_dishes      || []), ...kgMatches.dishes])),
+            kg_ingredients: Array.from(new Set([...(loc.kg_ingredients || []), ...kgMatches.ingredients])),
+            ai_keywords:    newKeywords,
+            kg_enriched_at: new Date().toISOString(),
+        }
+
+        const hasChanges =
+            updatePayload.kg_cuisines.length    !== (loc.kg_cuisines    || []).length ||
+            updatePayload.kg_dishes.length      !== (loc.kg_dishes      || []).length ||
+            updatePayload.kg_ingredients.length !== (loc.kg_ingredients || []).length ||
+            newKeywords.length                  !== (loc.ai_keywords    || []).length
+
+        if (hasChanges) {
             const { error: upError } = await supabase
                 .from('locations')
-                .update({ 
-                    ai_keywords: newKeywords, 
-                    updated_at: new Date().toISOString() 
-                })
+                .update(updatePayload)
                 .eq('id', loc.id)
             
             if (!upError) updatedCount++

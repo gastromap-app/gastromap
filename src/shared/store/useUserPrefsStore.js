@@ -1,34 +1,35 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { supabase } from '@/shared/api/client'
 
 /**
  * useUserPrefsStore — user preferences & personalisation.
- *
- * Separated from auth so preferences survive logout/re-login
- * and can be edited without touching auth state.
+ * Persists to localStorage (instant) + Supabase profiles.preferences (sync).
  */
 
 const DEFAULT_PREFS = {
-    // Cuisine & food
     favoriteCuisines: [],
     dietaryRestrictions: [],
-
-    // Atmosphere
-    atmospherePreference: [],   // ['cozy', 'modern', 'quiet', 'lively']
-    vibePreference: [],         // ['Romantic', 'Casual', 'Sophisticated', 'Energetic']
-
-    // Budget
+    atmospherePreference: [],
+    vibePreference: [],
     priceRange: ['$', '$$'],
+    features: [],
+    foodieDNA: '',
+    lastVisited: [],
+    frequentSearches: [],
+}
 
-    // Features
-    features: [],               // ['wifi', 'pet-friendly', 'outdoor-seating']
-
-    // Discovery
-    foodieDNA: '',              // free-form self-description for AI context
-
-    // History (non-auth, non-AI)
-    lastVisited: [],            // location IDs
-    frequentSearches: [],       // search query strings
+async function syncToSupabase(prefs) {
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) return
+        await supabase
+            .from('profiles')
+            .update({ preferences: { onboarding: prefs } })
+            .eq('id', session.user.id)
+    } catch {
+        // Silently fail — localStorage is always the source of truth
+    }
 }
 
 export const useUserPrefsStore = create(
@@ -36,12 +37,14 @@ export const useUserPrefsStore = create(
         (set, get) => ({
             prefs: DEFAULT_PREFS,
 
-            // ─── Actions ─────────────────────────────────────────────────
-
-            updatePrefs: (updates) =>
+            updatePrefs: async (updates) => {
                 set((state) => ({
                     prefs: { ...state.prefs, ...updates },
-                })),
+                }))
+                // Sync to Supabase in background
+                const updated = { ...get().prefs, ...updates }
+                syncToSupabase(updated)
+            },
 
             addVisited: (locationId) => {
                 const { lastVisited } = get().prefs

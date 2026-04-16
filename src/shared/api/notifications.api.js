@@ -341,25 +341,18 @@ export async function subscribeToPush() {
         let subscription = await registration.pushManager.getSubscription()
 
         if (!subscription) {
-            // Create new subscription
-            // In production, this would use VAPID keys from env
-            // For now, we'll store a placeholder
-            console.log('[Notifications] Creating new push subscription...')
-
-            // Mock subscription for development
-            subscription = {
-                endpoint: `mock-endpoint-${Date.now()}`,
-                keys: {
-                    p256dh: 'mock-p256dh-key',
-                    auth: 'mock-auth-key',
-                },
+            // Real Web Push subscription
+            // Requires VITE_VAPID_PUBLIC_KEY in env for server-sent push
+            const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
+            if (!vapidKey) {
+                console.warn('[Notifications] VITE_VAPID_PUBLIC_KEY not set — push subscription skipped')
+                return null
             }
-
-            // In production:
-            // subscription = await registration.pushManager.subscribe({
-            //     userVisibleOnly: true,
-            //     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-            // })
+            console.log('[Notifications] Creating Web Push subscription...')
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            })
         }
 
         // Store subscription in Supabase

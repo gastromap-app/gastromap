@@ -1,33 +1,30 @@
 /**
- * AI Module Index
+ * AI Module — barrel export
  *
- * This is the main entry point for the AI system.
- * It re-exports all functions from the modularized ai.api.js
+ * All AI functionality is now fully modularized:
+ *   constants.js  — OPENROUTER_URL, MODEL_CASCADE, TOOLS, DEFAULT_PROMPTS
+ *   openrouter.js — fetchOpenRouter()
+ *   prompts.js    — buildSystemPrompt()
+ *   intents.js    — detectIntent()
+ *   agents.js     — runAgentPass()
+ *   analysis.js   — analyzeQuery(), analyzeQueryStream()
+ *   search.js     — semanticSearch()
+ *   tools.js      — executeTool()
+ *   location.js   — generateLocationSemanticSummary(), extractLocationData()
+ *   enrichment.js — enrichLocation()
+ *   utils.js      — testAIConnection(), robustParseJSON()
  *
- * TODO: Gradually move functions from the main ai.api.js file to their respective modules:
- * - ai/constants.js  ✅ (constants, models, tools)
- * - ai/prompts.js    (system prompts, prompt building)
- * - ai/tools.js      (executeTool function)
- * - ai/openrouter.js (OpenRouter API requests)
- * - ai/intents.js    (intent detection)
- * - ai/agents.js     (agent passes)
- * - ai/analysis.js   (query analysis)
- * - ai/search.js     (semantic search)
- * - ai/location.js   (location-specific functions)
- * - ai/utils.js      (utility functions)
+ * Import path: '@/shared/api/ai' or via barrel '@/shared/api'
  */
 
-// Re-export constants
 export * from './constants'
-
-// Re-export all modularized functions
-export { semanticSearch } from './search'
-export { executeTool } from './tools'
-export { buildSystemPrompt } from './prompts'
-export { fetchOpenRouter } from './openrouter'
-export { detectIntent } from './intents'
-export { runAgentPass } from './agents'
-export { analyzeQuery, analyzeQueryStream } from './analysis'
+export { semanticSearch }                                   from './search'
+export { executeTool }                                      from './tools'
+export { buildSystemPrompt }                                from './prompts'
+export { fetchOpenRouter }                                  from './openrouter'
+export { detectIntent }                                     from './intents'
+export { runAgentPass }                                     from './agents'
+export { analyzeQuery, analyzeQueryStream }                 from './analysis'
 export { generateLocationSemanticSummary, extractLocationData } from './location'
-export { testAIConnection, robustParseJSON } from './utils'
-export { enrichLocation } from './enrichment'
+export { testAIConnection, robustParseJSON }                from './utils'
+export { enrichLocation }                                   from './enrichment'

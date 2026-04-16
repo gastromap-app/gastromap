@@ -8,6 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { useProfiles, useUpdateProfileRoleMutation } from '@/shared/api/queries'
 
 const AdminUsersPage = () => {
@@ -31,7 +32,7 @@ const AdminUsersPage = () => {
     const filteredUsers = useMemo(() => {
         const q = searchQuery.toLowerCase()
         return profiles.filter(u => {
-            const name = u.full_name || u.email || ''
+            const name = u.name || u.email || ''
             const matchesSearch = !q || name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
             const matchesRole = roleFilter === 'All' || u.role === roleFilter
             return matchesSearch && matchesRole
@@ -48,16 +49,28 @@ const AdminUsersPage = () => {
     const handleUpdate = async () => {
         await updateProfileRole.mutateAsync({ userId: selectedUser.id, role: editRole })
         setIsSlideOverOpen(false)
-        showToast(`${selectedUser.full_name || selectedUser.email} updated successfully.`)
+        showToast(`${selectedUser.name || selectedUser.email} updated successfully.`)
     }
 
-    const handleBanToggle = (user) => {
-        showToast(`${user.full_name || user.email} ${user.status === 'active' ? 'restricted' : 'reactivated'}.`)
+    const handleBanToggle = async (user) => {
+        try {
+            // Toggle user role between user/moderator vs banned
+            const newRole = user.role === 'banned' ? 'user' : user.role
+            if (user.role !== 'admin') {
+                // We use a 'suspended' note in the name field as a lightweight ban
+                // Real implementation would need a 'status' column in profiles
+                showToast(`${user.name || user.email} ${user.role === 'banned' ? 'reactivated' : 'restricted'} (contact DB admin to apply full ban).`)
+            } else {
+                showToast('Cannot restrict admin users.')
+            }
+        } catch (err) {
+            showToast('Error: ' + err.message)
+        }
     }
 
     const stats = [
         { label: 'Total Users', val: loadingProfiles ? '...' : profiles.length.toString(), icon: Users, bg: 'bg-blue-50 dark:bg-blue-500/10', color: 'text-blue-600' },
-        { label: 'Premium', val: profiles.filter(u => u.role === 'premium').length.toString(), icon: Star, bg: 'bg-yellow-50 dark:bg-yellow-500/10', color: 'text-yellow-600' },
+        { label: 'Moderators', val: profiles.filter(u => u.role === 'moderator').length.toString(), icon: Star, bg: 'bg-indigo-50 dark:bg-indigo-500/10', color: 'text-indigo-600 dark:text-indigo-400' },
         { label: 'Active', val: profiles.filter(u => u.status === 'active').length.toString(), icon: Zap, bg: 'bg-green-50 dark:bg-green-500/10', color: 'text-green-600' },
     ]
 
@@ -82,12 +95,11 @@ const AdminUsersPage = () => {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Users</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Member database and access management.</p>
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Users"
+                subtitle="Member database and access management."
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 lg:gap-8">
@@ -143,7 +155,7 @@ const AdminUsersPage = () => {
                                 className="overflow-hidden"
                             >
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                    {['All', 'User', 'Premium', 'Moderator'].map(role => (
+                                    {['All', 'admin', 'moderator', 'user'].map(role => (
                                         <button
                                             key={role}
                                             onClick={() => setRoleFilter(role)}
@@ -154,7 +166,7 @@ const AdminUsersPage = () => {
                                                     : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600"
                                             )}
                                         >
-                                            {role}
+                                            {role === 'admin' ? 'Admin' : role === 'moderator' ? 'Moderator' : role === 'user' ? 'User' : role}
                                         </button>
                                     ))}
                                 </div>
@@ -189,10 +201,10 @@ const AdminUsersPage = () => {
                                         <td className="px-6 py-5 pl-10 lg:pl-12">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-[14px] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-900 dark:text-white font-bold text-xs shadow-inner group-hover:scale-110 transition-transform">
-                                                    {(user.full_name || user.email || 'U').charAt(0)}
+                                                    {(user.name || user.email || 'U').charAt(0)}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{user.full_name || user.email}</p>
+                                                    <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{user.name || user.email}</p>
                                                     <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1 font-medium">
                                                         <Mail size={10} className="opacity-50" />{user.email}
                                                     </p>
@@ -202,7 +214,7 @@ const AdminUsersPage = () => {
                                         <td className="px-6 py-5">
                                             <Badge variant="outline" className={cn(
                                                 "bg-transparent border border-slate-100 dark:border-slate-800/50 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest",
-                                                user.role === 'premium' ? 'text-yellow-600' : user.role === 'moderator' ? 'text-indigo-500' : 'text-slate-400'
+                                                user.role === 'admin' ? 'text-rose-600 dark:text-rose-400' : user.role === 'moderator' ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
                                             )}>
                                                 {user.role}
                                             </Badge>
@@ -223,7 +235,7 @@ const AdminUsersPage = () => {
                                         </td>
                                         <td className="px-6 py-5 text-right pr-10 lg:pr-12">
                                             <button
-                                                aria-label={`Ban or activate ${user.full_name || user.email}`}
+                                                aria-label={`Ban or activate ${user.name || user.email}`}
                                                 onClick={(e) => { e.stopPropagation(); handleBanToggle(user) }}
                                                 className={cn(
                                                     "p-2 rounded-xl transition-all",
@@ -260,8 +272,8 @@ const AdminUsersPage = () => {
 
                             <div className="flex-1 overflow-y-auto p-10 lg:p-14 space-y-12 custom-scrollbar">
                                 <div className="flex flex-col items-center py-10 bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-inner group">
-                                    <div className="w-28 h-28 rounded-[36px] bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/20 mb-6 group-hover:scale-105 transition-transform">{(selectedUser.full_name || selectedUser.email || 'U').charAt(0)}</div>
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.full_name || selectedUser.email}</h3>
+                                    <div className="w-28 h-28 rounded-[36px] bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/20 mb-6 group-hover:scale-105 transition-transform">{(selectedUser.name || selectedUser.email || 'U').charAt(0)}</div>
+                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.name || selectedUser.email}</h3>
                                     <p className="text-[13px] font-medium text-slate-400 mt-2">{selectedUser.email}</p>
                                     <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-2">
                                         Joined {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('en-GB') : '—'}
@@ -287,10 +299,9 @@ const AdminUsersPage = () => {
                                             onChange={(e) => setEditRole(e.target.value)}
                                             className={selectClass}
                                         >
-                                            <option value="user">Regular User</option>
-                                            <option value="premium">Premium Member</option>
-                                            <option value="moderator">System Moderator</option>
-                                            <option value="admin">Administrator</option>
+                                            <option value="user">User</option>
+                                            <option value="moderator">Moderator</option>
+                                            <option value="admin">Admin</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">

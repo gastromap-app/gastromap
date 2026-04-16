@@ -7,6 +7,7 @@ import {
     HelpCircle, Mail, Shield, Globe, UserX, PlusCircle, CheckCircle2, Clock, Sparkles, Users, ShieldCheck
 } from 'lucide-react'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useUserVisits, useUserFavorites, useUserReviews, useUserRank } from '@/shared/api/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -70,17 +71,26 @@ const ProfilePage = () => {
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
+    // Real data from Supabase
+    const { data: visits = [] }    = useUserVisits(user?.id)
+    const { data: favorites = [] } = useUserFavorites(user?.id)
+    const { data: reviews = [] }   = useUserReviews(user?.id)
+    const { data: rankData }       = useUserRank(user?.id)
+
     const stats = [
-        { label: t('profile.level'), val: 'Expert', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
-        { label: t('profile.visited'), val: '12', icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
-        { label: t('profile.reviews'), val: '8', icon: Utensils, color: 'text-green-500 bg-green-500/10' },
-        { label: t('profile.reward'), val: 'Coffee', icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10' },
+        { label: t('profile.level'), val: rankData?.points > 100 ? 'Expert' : rankData?.points > 20 ? 'Regular' : 'Newbie', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
+        { label: t('profile.visited'), val: visits.length.toString(), icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
+        { label: t('profile.reviews'), val: reviews.length.toString(), icon: Utensils, color: 'text-green-500 bg-green-500/10' },
+        { label: t('profile.saved'), val: favorites.length.toString(), icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10' },
     ]
 
-    const contributions = [
-        { id: 1, name: 'The Artisan Bakery', status: 'Approved', points: '+50 XP', date: '2 days ago' },
-        { id: 2, name: 'Mucha Macha', status: 'Pending', points: 'In Review', date: 'Just now' },
-    ]
+    const contributions = reviews.slice(0, 3).map(r => ({
+        id: r.id,
+        name: r.locations?.title || 'Location',
+        status: r.status === 'published' ? 'Published' : 'Pending',
+        points: r.status === 'published' ? '+5 XP' : 'In Review',
+        date: new Date(r.created_at).toLocaleDateString(),
+    }))
 
     const menuItems = [
         {

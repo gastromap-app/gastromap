@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, X } from 'lucide-react'
@@ -8,7 +8,29 @@ function ReloadPrompt() {
         offlineReady: [offlineReady, setOfflineReady],
         needRefresh: [needRefresh, setNeedRefresh],
         updateServiceWorker,
-    } = useRegisterSW()
+    } = useRegisterSW({
+        // Автоматически проверять обновления каждый час
+        onRegisteredSW(swUrl, r) {
+            if (r) {
+                setInterval(() => {
+                    r.update()
+                }, 60 * 60 * 1000) // 1 час
+            }
+        },
+    })
+
+    // Авто-обновление: если есть новая версия — применить немедленно
+    // skipWaiting в workbox уже активирован, поэтому достаточно reload
+    useEffect(() => {
+        if (needRefresh) {
+            // Небольшая задержка чтобы пользователь увидел баннер
+            // и мог отложить если заполняет форму
+            const timer = setTimeout(() => {
+                updateServiceWorker(true)
+            }, 5000) // авто-reload через 5 сек если не отклонил
+            return () => clearTimeout(timer)
+        }
+    }, [needRefresh, updateServiceWorker])
 
     const close = () => {
         setOfflineReady(false)
@@ -33,7 +55,7 @@ function ReloadPrompt() {
                                 {offlineReady ? 'Ready to work offline' : 'Update available!'}
                             </span>
                             <span className="text-[11px] opacity-70 font-bold uppercase tracking-widest mt-0.5">
-                                {offlineReady ? 'GastroMap works without internet' : 'Reload for new features'}
+                                {offlineReady ? 'GastroMap works without internet' : 'Updating in 5 sec...'}
                             </span>
                         </div>
                     </div>
@@ -44,7 +66,7 @@ function ReloadPrompt() {
                                 onClick={() => updateServiceWorker(true)}
                                 className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl text-xs font-black shadow-[0_4px_15px_rgba(37,99,235,0.4)] active:scale-95 transition-all hover:brightness-110"
                             >
-                                Reload
+                                Now
                             </button>
                         )}
                         <button

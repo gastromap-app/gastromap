@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePaymentStats } from '@/shared/api/queries'
 
 const AdminSubscriptionsPage = () => {
@@ -43,32 +44,31 @@ const AdminSubscriptionsPage = () => {
     return (
         <div className="space-y-6 lg:space-y-10 pb-12 font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Donations</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Monitor donations and community support.</p>
-                </div>
-                <button
-                    onClick={() => {
-                        const csv = ['User,Plan,Date,Amount,Status', ...allTransactions.map(t =>
-                            `"${t.user}","${t.plan}","${t.date}","${t.amount}","${t.status}"`
-                        )].join('\n')
-                        const blob = new Blob([csv], { type: 'text/csv' })
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'donations-report.csv'
-                        a.click()
-                        URL.revokeObjectURL(url)
-                    }}
-                    className="flex items-center justify-center gap-2.5 px-8 py-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-[0.97] transition-all"
-                >
-                    <Download size={16} />Export CSV
-                </button>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Donations"
+                subtitle="Monitor donations and community support."
+                actions={
+                    <button
+                        onClick={() => {
+                            const csv = ['User,Plan,Date,Amount,Status', ...allTransactions.map(t =>
+                                `"${t.user}","${t.plan}","${t.date}","${t.amount}","${t.status}"`
+                            )].join('\n')
+                            const blob = new Blob([csv], { type: 'text/csv' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url; a.download = 'donations-report.csv'; a.click()
+                            URL.revokeObjectURL(url)
+                        }}
+                        className={adminBtnSecondary}
+                    >
+                        <Download size={13} /> Export CSV
+                    </button>
+                }
+            />
 
             {/* Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8">
+            <div className="grid grid-cols-3 gap-3 lg:gap-8">
                 {plans.map((plan, i) => (
                     <motion.div
                         key={i}
@@ -76,23 +76,23 @@ const AdminSubscriptionsPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         className={cn(
-                            "bg-white dark:bg-slate-900/50 p-6 lg:p-10 rounded-[32px] lg:rounded-[44px] border relative overflow-hidden group hover:shadow-2xl transition-all h-full flex flex-col",
+                            "bg-white dark:bg-slate-900/50 p-3 lg:p-10 rounded-[20px] lg:rounded-[44px] border relative overflow-hidden group hover:shadow-2xl transition-all h-full flex flex-col",
                             plan.popular ? 'border-indigo-500/20 ring-1 ring-indigo-500/10' : 'border-slate-100 dark:border-slate-800/50'
                         )}
                     >
                         {plan.popular && (
-                            <div className="absolute top-6 right-6 px-3 py-1 bg-indigo-600 text-[8px] font-bold text-white uppercase tracking-widest rounded-lg shadow-lg">Popular</div>
+                            <div className="absolute top-2 right-2 lg:top-6 lg:right-6 px-2 py-0.5 lg:px-3 lg:py-1 bg-indigo-600 text-[7px] lg:text-[8px] font-bold text-white uppercase tracking-widest rounded-lg shadow-lg">Popular</div>
                         )}
-                        <div className={cn("w-12 h-12 lg:w-16 lg:h-16 rounded-[20px] lg:rounded-[24px] flex items-center justify-center text-white mb-8 shadow-xl", plan.color)}>
+                        <div className={cn("w-8 h-8 lg:w-16 lg:h-16 rounded-[12px] lg:rounded-[24px] flex items-center justify-center text-white mb-8 shadow-xl", plan.color)}>
                             <plan.icon size={22} className="lg:w-8 lg:h-8" />
                         </div>
-                        <h3 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2 leading-none">{plan.name}</h3>
-                        <div className="flex items-baseline gap-1.5 mb-10">
-                            <span className="text-2xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">{plan.price}</span>
+                        <h3 className="text-[11px] lg:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-none truncate">{plan.name}</h3>
+                        <div className="flex items-baseline gap-1 mb-3">
+                            <span className="text-base lg:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">{plan.price}</span>
                             <span className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">/ {plan.period}</span>
                         </div>
 
-                        <div className="mt-auto pt-8 border-t border-slate-50 dark:border-slate-800/50 flex items-center justify-between">
+                        <div className="mt-auto pt-2 lg:pt-8 border-t border-slate-50 dark:border-slate-800/50 flex items-center justify-between">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Users</span>
                             <span className="text-sm lg:text-lg font-bold text-slate-900 dark:text-white">{plan.users}</span>
                         </div>

@@ -51,6 +51,8 @@ export function useLocations(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
+        staleTime: 0,          // always refetch — admin needs fresh data
+        refetchOnWindowFocus: true,
     })
 }
 
@@ -162,7 +164,7 @@ export function useDeleteLocationMutation() {
 export function useAIQueryMutation() {
     return useMutation({
         mutationFn: async ({ message, context }) => {
-            const { analyzeQuery } = await import('./ai.api')
+            const { analyzeQuery } = await import('./ai/analysis')
             return analyzeQuery(message, context)
         },
     })
@@ -171,7 +173,7 @@ export function useAIQueryMutation() {
 export function useExtractLocationMutation() {
     return useMutation({
         mutationFn: async (query) => {
-            const { extractLocationData } = await import('./ai.api')
+            const { extractLocationData } = await import('./ai/location')
             return extractLocationData(query)
         },
     })
@@ -182,6 +184,45 @@ export function useExtractLocationMutation() {
 /**
  * Admin: Trigger deep semantic indexing for a single location.
  */
+// ─── KG Sync mutations ────────────────────────────────────────────────────────
+
+/**
+ * Sync one location with Knowledge Graph.
+ * Writes kg_cuisines, kg_dishes, kg_ingredients, kg_allergens.
+ */
+export function useSyncLocationKGMutation() {
+    return useMutation({
+        mutationFn: async (locationId) => {
+            const { syncLocationWithKnowledgeGraph } = await import('./ai-assistant.service')
+            return syncLocationWithKnowledgeGraph(locationId)
+        },
+    })
+}
+
+/**
+ * Full enrichment: semantic + KG for one location.
+ */
+export function useEnrichLocationFullMutation() {
+    return useMutation({
+        mutationFn: async (locationId) => {
+            const { enrichLocationFull } = await import('./ai-assistant.service')
+            return enrichLocationFull(locationId)
+        },
+    })
+}
+
+/**
+ * Bulk KG sync for all locations.
+ */
+export function useBulkSyncKGMutation() {
+    return useMutation({
+        mutationFn: async (limit = 50) => {
+            const { bulkSyncKG } = await import('./ai-assistant.service')
+            return bulkSyncKG(limit)
+        },
+    })
+}
+
 export function useReindexLocationSemanticMutation() {
     const qc = useQueryClient()
     return useMutation({
@@ -236,7 +277,7 @@ export function useAdminStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         }, 
-        staleTime: 60_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -258,7 +299,7 @@ export function useRecentActivity(limit = 10) {
             const { getRecentActivity } = await import('./admin.api')
             return getRecentActivity(limit)
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -293,7 +334,7 @@ export function usePendingReviews() {
             const { getPendingReviews } = await import('./admin.api')
             return getPendingReviews()
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -318,7 +359,7 @@ export function usePendingLocations() {
             const { getPendingLocations } = await import('./admin.api')
             return getPendingLocations()
         }, 
-        staleTime: 30_000 
+        staleTime: 0, // admin: always fresh
     })
 }
 
@@ -343,49 +384,50 @@ export function useUpdateLocationStatusMutation() {
 
 export function useCategoryStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key as useAdminStats()
+        queryKey: ['category-stats'],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getCategoryStats } = await import('./admin.api')
+            return getCategoryStats()
         },
-        staleTime: 60_000,
-        select: (data) => data?.locations || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function useTopLocations(limit = 5) {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped, no extra request
+        queryKey: ['top-locations', limit],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getTopLocations } = await import('./admin.api')
+            return getTopLocations(limit)
         },
-        staleTime: 60_000,
-        select: (data) => (data?.top_locations || []).slice(0, limit),
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function useEngagementStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryKey: ['detailed-engagement'],
         queryFn: async () => {
-            const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const { getDetailedEngagement } = await import('./admin.api')
+            return getDetailedEngagement()
         },
-        staleTime: 30_000,
-        select: (data) => data?.engagement || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
 export function usePaymentStats() {
     return useQuery({
-        queryKey: ['admin-stats'],          // ← same key — deduped
+        queryKey: ['payment-stats'],
         queryFn: async () => {
             const { getAdminStats } = await import('./admin.api')
-            return getAdminStats()
+            const stats = await getAdminStats()
+            return stats?.payments || {}
         },
-        staleTime: 60_000,
-        select: (data) => data?.payments || {},
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }
 
@@ -823,5 +865,43 @@ export function useCulinaryContextMutation() {
             const { getIngredientCulinaryContext } = await import('./openfoodfacts.api')
             return getIngredientCulinaryContext(searchTerm)
         },
+    })
+}
+
+// ─── Stats page — Timeline & Growth ────────────────────────────────────────
+
+export function useCityStats() {
+    return useQuery({
+        queryKey: ['city-stats'],
+        queryFn: async () => {
+            const { getCityStats } = await import('./admin.api')
+            return getCityStats()
+        },
+        staleTime: 0,
+        refetchOnMount: true,
+    })
+}
+
+export function useReviewsTimeline(days = 30) {
+    return useQuery({
+        queryKey: ['reviews-timeline', days],
+        queryFn: async () => {
+            const { getReviewsTimeline } = await import('./admin.api')
+            return getReviewsTimeline(days)
+        },
+        staleTime: 0,
+        refetchOnMount: true,
+    })
+}
+
+export function useUserGrowth(days = 30) {
+    return useQuery({
+        queryKey: ['user-growth', days],
+        queryFn: async () => {
+            const { getUserGrowth } = await import('./admin.api')
+            return getUserGrowth(days)
+        },
+        staleTime: 0,
+        refetchOnMount: true,
     })
 }

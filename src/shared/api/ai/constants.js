@@ -15,15 +15,22 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * Ordered by reliability and availability - models less likely to be rate-limited first.
  * The system tries these in order until one succeeds.
  */
+// ──────────────────────────────────────────────────────────────────────────────
+// IMPORTANT: This is the TAIL FALLBACK only.
+// The PRIMARY model is always read from AdminAIPage → useAppConfigStore.aiPrimaryModel
+// (set in Admin → AI Agents tab). This list is used only when all configured models fail.
+// Updated 2026-04-14 — verified working against OpenRouter /v1/models
+// ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',
-    'google/gemma-4-31b-it:free',
-    'qwen/qwen3.6-plus:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'nvidia/nemotron-nano-12b-v2-vl:free',
-    'liquid/lfm-2.5-1.2b-instruct:free',
-    'stepfun/step-3.5-flash:free',
-    'nvidia/nemotron-nano-9b-v2:free',
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
+    'arcee-ai/trinity-large-preview:free',    // ✅ stable fallback
+    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast fallback
+    'liquid/lfm-2.5-1.2b-thinking:free',      // ✅ thinking variant
+    'meta-llama/llama-3.3-70b-instruct:free', // sometimes 429
+    'google/gemma-4-31b-it:free',             // sometimes 429
+    'google/gemma-3-27b-it:free',             // sometimes 429
+    'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
 ]
 
 /**
@@ -130,7 +137,21 @@ CORE RULES:
 - Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
 - When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
 
-When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.`
+When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.
+
+IMPORTANT FIELD NOTES (when reading tool results):
+- 'cuisine' — the restaurant's cuisine type (single string)
+- 'what_to_try' — dishes to recommend (use these when asked about food)
+- 'insider_tip' — exclusive expert insight (always share if available)
+- 'tags' and 'vibe' — atmosphere descriptors (use for mood-based recommendations)
+- 'ai_context' — deep culinary context (reference if user wants details)
+- 'kg_cuisines' — verified cuisine types from Knowledge Graph
+- 'kg_dishes' — verified signature dishes from Knowledge Graph (prefer these over guessing)
+- 'kg_ingredients' — key ingredients used in this restaurant
+- 'kg_allergens' — allergen flags (gluten, dairy, nuts, etc.) — critical for dietary questions
+- 'special_labels' — accolades like "Michelin Bib", "Signature Cuisine" (highlight these)
+
+When a user asks in Russian, respond in Russian. In Polish — in Polish. Match their language always.`
 
 /**
  * Default system prompt for GastroAssistant (background helper)

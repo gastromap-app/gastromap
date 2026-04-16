@@ -6,7 +6,14 @@ import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const LoginPage = () => {
     const navigate = useNavigate()
-    const { login, isLoading, error, clearError } = useAuthStore()
+    const { login, isLoading, error, clearError, isAuthenticated, user } = useAuthStore()
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
+        }
+    }, [isAuthenticated, user, navigate])
     const [showPassword, setShowPassword] = useState(false)
 
     // Form variants

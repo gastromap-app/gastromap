@@ -84,6 +84,7 @@ export const useAdminLocations = () => {
             description: '',
             insider_tip: '',
             must_try: '',
+            what_to_try: [],
             price_level: '$$',
             website: '',
             phone: '',
@@ -92,13 +93,29 @@ export const useAdminLocations = () => {
             social_instagram: '',
             social_facebook: '',
             image: '',
+            photos: [],
             images: [],
             lat: 50.0647,
             lng: 19.9450,
+            rating: null,
             tags: [],
             vibe: [],
+            features: [],
             special_labels: [],
+            best_for: [],
+            dietary: [],
             cuisine: '',
+            has_wifi: false,
+            has_outdoor_seating: false,
+            reservations_required: false,
+            michelin_stars: 0,
+            michelin_bib: false,
+            // KG fields
+            kg_cuisines: [],
+            kg_dishes: [],
+            kg_ingredients: [],
+            kg_allergens: [],
+            kg_enriched_at: null,
             status: 'pending'
         }
         setSelectedLocation(emptyLocation)
@@ -117,6 +134,20 @@ export const useAdminLocations = () => {
         } else {
             prepared.must_try = loc.what_to_try || ''
         }
+
+        // Ensure KG fields are present (they come from normalise now)
+        prepared.kg_cuisines    = loc.kg_cuisines    ?? []
+        prepared.kg_dishes      = loc.kg_dishes      ?? []
+        prepared.kg_ingredients = loc.kg_ingredients ?? []
+        prepared.kg_allergens   = loc.kg_allergens   ?? []
+        prepared.kg_enriched_at = loc.kg_enriched_at ?? null
+
+        // Ensure other optional fields
+        prepared.vibe           = loc.vibe           ?? []
+        prepared.features       = loc.features       ?? []
+        prepared.dietary        = loc.dietary        ?? []
+        prepared.michelin_stars = loc.michelin_stars ?? 0
+        prepared.michelin_bib   = loc.michelin_bib   ?? false
         
         // Map canonical fields to UI field names for editing
         if (loc.cuisine_types?.length) {
@@ -141,17 +172,48 @@ export const useAdminLocations = () => {
         setIsSlideOverOpen(true)
     }
 
-    const handleAIMagic = async () => {
-        if (!aiSearchQuery.trim()) return
+    const handleAIMagic = async (externalQuery) => {
+        // Accept query from card component or fall back to internal state
+        const query = (typeof externalQuery === 'string' ? externalQuery : aiSearchQuery).trim()
+        if (!query) return
 
         try {
-            const data = await extractMutation.mutateAsync(aiSearchQuery)
+            const data = await extractMutation.mutateAsync(query)
             if (data) {
+                const source = data._source === 'google_places' ? '✅ Google Places' : '⚠️ AI (fallback)'
+                console.log(`[GastroAssistant] Data source: ${source}`, data)
+
                 setFormData(prev => ({
                     ...prev,
-                    ...data,
-                    must_try: Array.isArray(data.must_try) ? data.must_try.join(', ') : (data.must_try || prev.must_try || ''),
-                    ...(data.what_to_try ? { must_try: data.what_to_try.join(', ') } : {})
+                    // Core fields — prefer Google Places data
+                    title:         data.title         ?? prev.title,
+                    category:      data.category      ?? prev.category,
+                    city:          data.city           ?? prev.city,
+                    country:       data.country        ?? prev.country,
+                    address:       data.address        ?? prev.address,
+                    lat:           data.lat            ?? prev.lat,
+                    lng:           data.lng            ?? prev.lng,
+                    // Contact
+                    phone:         data.phone          ?? prev.phone,
+                    website:       data.website        ?? prev.website,
+                    // Content
+                    description:   data.description    ?? prev.description,
+                    insider_tip:   data.insider_tip    ?? prev.insider_tip,
+                    cuisine:       data.cuisine        ?? prev.cuisine,
+                    price_level:   data.price_level    ?? prev.price_level,
+                    opening_hours: data.opening_hours  ?? prev.opening_hours,
+                    // Arrays — merge or replace
+                    tags:          data.tags?.length       ? data.tags       : prev.tags,
+                    amenities:     data.amenities?.length  ? data.amenities  : prev.amenities,
+                    dietary:       data.dietary?.length    ? data.dietary    : prev.dietary,
+                    best_for:      data.best_for?.length   ? data.best_for   : prev.best_for,
+                    // what_to_try from either field name
+                    what_to_try:   data.what_to_try?.length ? data.what_to_try
+                                   : data.must_try?.length  ? (typeof data.must_try === 'string' ? data.must_try.split(',').map(s=>s.trim()) : data.must_try)
+                                   : prev.what_to_try,
+                    // Meta
+                    _data_source: source,
+                    _candidates:  data._candidates ?? null,
                 }))
                 setAiSearchQuery('')
             }
@@ -258,10 +320,11 @@ export const useAdminLocations = () => {
             delete submissionData.price_level
         }
         
+        // vibe is a separate column — keep it as-is, also merge into tags for search
         if (submissionData.vibe?.length) {
             const existingTags = submissionData.tags || []
             submissionData.tags = [...new Set([...existingTags, ...submissionData.vibe])]
-            delete submissionData.vibe
+            // DO NOT delete vibe — it's a separate DB column
         }
         
         if (typeof submissionData.must_try === 'string') {
@@ -329,7 +392,33 @@ export const useAdminLocations = () => {
         if (!url) return
         setFormData(prev => {
             if (!prev) return prev
-            return {
+        
+    // ── Export ─────────────────────────────────────────────────────────────
+    const [isExporting, setIsExporting] = useState(false)
+
+    const handleExport = async () => {
+        setIsExporting(true)
+        try {
+            const { supabase } = await import('@/shared/api/client')
+            const { data } = await supabase.from('locations')
+                .select('id,title,category,city,country,address,description,rating,price_level,status,created_at')
+                .order('created_at', { ascending: false })
+            const json = JSON.stringify(data || [], null, 2)
+            const blob = new Blob([json], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `gastromap-locations-${new Date().toISOString().split('T')[0]}.json`
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('[Export] error:', err)
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
+    return {
                 ...prev,
                 images: [...(prev.images || []), url],
                 image_url: prev.image_url || url

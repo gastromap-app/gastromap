@@ -5,6 +5,7 @@ import {
     MapPin, User, Calendar, MessageSquare, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {
@@ -18,10 +19,10 @@ export default function AdminModerationPage() {
         ...pendingReviews.map(r => ({
             ...r,
             queueType: 'review',
-            name: r.location_name || 'Unknown Location',
+            name: r.locations?.title || r.location_name || 'Unknown Location',
             type: 'Review',
-            city: r.location_city || '\u2014',
-            author: r.user_name || r.user_email || 'Anonymous',
+            city: r.locations?.city || r.location_city || '\u2014',
+            author: r.profiles?.name || r.profiles?.full_name || r.user_name || r.user_email || 'Anonymous',
             date: r.created_at,
             insiderTip: r.review_text?.substring(0, 100) || '\u2014',
             mustTry: `Rating: ${r.rating}/5`,
@@ -31,7 +32,7 @@ export default function AdminModerationPage() {
         ...pendingLocations.map(l => ({
             ...l,
             queueType: 'location',
-            name: l.name,
+            name: l.title || l.name || 'Unknown',
             type: l.category || 'Location',
             city: l.city || '\u2014',
             author: l.created_by || 'System',
@@ -69,7 +70,7 @@ export default function AdminModerationPage() {
             } else {
                 await updateLocationStatus.mutateAsync({
                     id: item.id,
-                    status: 'active'
+                    status: 'approved'
                 })
             }
             setSelectedItem(null)
@@ -130,17 +131,12 @@ export default function AdminModerationPage() {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Модерация</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">Одобряйте новые заведения и управляйте контентом.</p>
-                </div>
-                {queue.length > 0 && (
-                    <span className="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl text-sm font-semibold border border-amber-100 dark:border-amber-500/20">
-                        {queue.length} в очереди
-                    </span>
-                )}
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Модерация"
+                subtitle="Одобряйте новые заведения и управляйте контентом."
+                badge={queue.length > 0 ? { label: `${queue.length} в очереди`, color: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20' } : undefined}
+            />
 
             {/* Search */}
             <div className="flex gap-3">

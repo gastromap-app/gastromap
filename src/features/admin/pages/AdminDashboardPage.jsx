@@ -11,9 +11,9 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
-import { useLocations } from '@/shared/api/queries'
 import { useAdminStats, useRecentActivity } from '@/shared/api/queries'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -79,18 +79,18 @@ const AdminDashboardPage = () => {
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
     const { user } = useAuthStore()
 
-    const { data: locations = [], isLoading: loadingLocations } = useLocations()
-    const { data: adminStats } = useAdminStats()
+    const { data: adminStats, isLoading: loadingStats } = useAdminStats()
     const { data: recentActivities = [] } = useRecentActivity(10)
 
-    const totalUsers = adminStats?.users?.total ?? '—'
-    const totalSupporters = adminStats?.users?.supporters ?? '—'
-    const pageViews = adminStats?.engagement?.total_visits ?? '—'
+    const totalLocations = adminStats?.locations?.total ?? (loadingStats ? '...' : '—')
+    const totalUsers = adminStats?.users?.total ?? (loadingStats ? '...' : '—')
+    const totalReviews = adminStats?.engagement?.total_reviews ?? (loadingStats ? '...' : '—')
+    const pageViews = adminStats?.engagement?.total_visits ?? (loadingStats ? '...' : '—')
 
     const stats = [
-        { title: 'Locations', value: loadingLocations ? '...' : (locations.length || '—'), icon: MapPin, color: 'bg-orange-500' },
+        { title: 'Locations', value: totalLocations, icon: MapPin, color: 'bg-orange-500' },
         { title: 'Users', value: totalUsers, icon: Users, color: 'bg-blue-500' },
-        { title: 'Supporters', value: totalSupporters, icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: 'Reviews', value: totalReviews, icon: MessageSquare, color: 'bg-emerald-500' },
         { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-indigo-500' },
     ]
 
@@ -98,36 +98,16 @@ const AdminDashboardPage = () => {
         <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Панель управления</h1>
-                    <div className="flex items-center gap-2 mt-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <p className="text-slate-500 dark:text-slate-400 font-medium text-xs lg:text-sm">Все системы работают в штатном режиме.</p>
-                    </div>
-                </div>
-
-                <div className="flex gap-2 shrink-0">
-                    <button
-                        onClick={() => navigate('/admin/locations?import=true')}
-                        className="h-10 px-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-semibold text-sm shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        <Upload size={15} /> Импорт
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/locations?export=true')}
-                        className="h-10 px-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-semibold text-sm shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        <Download size={15} /> Экспорт
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/locations?create=true')}
-                        className="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-semibold text-sm shadow-sm shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        <Plus size={15} /> Создать
-                    </button>
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Панель управления"
+                subtitle={<span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />Все системы работают в штатном режиме</span>}
+                actions={<>
+                    <button onClick={() => navigate('/admin/locations?import=true')} className={adminBtnSecondary}><Upload size={13}/> Импорт</button>
+                    <button onClick={() => navigate('/admin/locations?export=true')} className={adminBtnSecondary}><Download size={13}/> Экспорт</button>
+                    <button onClick={() => navigate('/admin/locations?create=true')} className={adminBtnPrimary}><Plus size={13}/> Создать</button>
+                </>}
+            />
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">

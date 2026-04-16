@@ -37,6 +37,7 @@ const MarqueeTitle = ({ title, theme }) => {
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const navigate = useNavigate()
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
     const { user } = useAuthStore()
     const addFav = useAddFavoriteMutation()
@@ -58,7 +59,10 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     if (!loc) return null
 
     return (
-        <div className={`flex-shrink-0 w-[220px] rounded-[28px] overflow-hidden transition-all active:scale-95 group shadow-xl ${isDark ? 'bg-[#1a1c24] border border-white/5' : 'bg-white'}`}>
+        <div
+            onClick={() => navigate(`/location/${loc.id}`)}
+            className={`flex-shrink-0 w-[220px] rounded-[28px] overflow-hidden transition-all active:scale-95 group shadow-xl cursor-pointer ${isDark ? 'bg-[#1a1c24] border border-white/5' : 'bg-white'}`}
+        >
             {/* Image Area */}
             <div className="relative h-[180px] overflow-hidden">
                 <img

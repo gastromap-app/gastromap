@@ -184,7 +184,7 @@ const DashboardPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* MOBILE VIEW (Horizontal Sliders) */}
-            <div className="md:hidden space-y-8 px-[2.5vw] pt-24 pb-12">
+            <div className="md:hidden space-y-8 px-[2.5vw] pb-12" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
                 {/* Search Bar Section */}
                 <div className="space-y-4 mb-4">

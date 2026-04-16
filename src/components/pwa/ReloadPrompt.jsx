@@ -1,35 +1,45 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, X } from 'lucide-react'
 
 function ReloadPrompt() {
+    const swRegRef = useRef(null)
+
     const {
         offlineReady: [offlineReady, setOfflineReady],
         needRefresh: [needRefresh, setNeedRefresh],
         updateServiceWorker,
     } = useRegisterSW({
-        // Автоматически проверять обновления каждый час
-        onRegisteredSW(swUrl, r) {
-            if (r) {
-                setInterval(() => {
-                    r.update()
-                }, 60 * 60 * 1000) // 1 час
-            }
+        onRegisteredSW(_swUrl, r) {
+            if (!r) return
+            swRegRef.current = r
+
+            // Фоновая проверка раз в час (пока приложение открыто)
+            setInterval(() => r.update(), 60 * 60 * 1000)
         },
     })
 
-    // Авто-обновление: если есть новая версия — применить немедленно
-    // skipWaiting в workbox уже активирован, поэтому достаточно reload
+    // Ключевой фикс для iOS PWA:
+    // При открытии PWA с home screen iOS восстанавливает страницу из памяти
+    // (resume), а не перезагружает её — SW не успевает проверить обновления.
+    // visibilitychange срабатывает при каждом выходе приложения на передний план.
     useEffect(() => {
-        if (needRefresh) {
-            // Небольшая задержка чтобы пользователь увидел баннер
-            // и мог отложить если заполняет форму
-            const timer = setTimeout(() => {
-                updateServiceWorker(true)
-            }, 5000) // авто-reload через 5 сек если не отклонил
-            return () => clearTimeout(timer)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && swRegRef.current) {
+                swRegRef.current.update()
+            }
         }
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }, [])
+
+    // Авто-обновление: применить новую версию через 3 сек после появления баннера.
+    // skipWaiting + clientsClaim в workbox гарантируют мгновенное переключение SW.
+    useEffect(() => {
+        if (!needRefresh) return
+        const timer = setTimeout(() => updateServiceWorker(true), 3000)
+        return () => clearTimeout(timer)
     }, [needRefresh, updateServiceWorker])
 
     const close = () => {
@@ -55,7 +65,7 @@ function ReloadPrompt() {
                                 {offlineReady ? 'Ready to work offline' : 'Update available!'}
                             </span>
                             <span className="text-[11px] opacity-70 font-bold uppercase tracking-widest mt-0.5">
-                                {offlineReady ? 'GastroMap works without internet' : 'Updating in 5 sec...'}
+                                {offlineReady ? 'GastroMap works without internet' : 'Updating in 3 sec...'}
                             </span>
                         </div>
                     </div>

@@ -31,95 +31,108 @@ if (USE_SUPABASE) {
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
 function normalise(row) {
     if (!row) return null;
-    
+
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
-    
+
+    // Schema: title, rating, price_level, cuisine (string), image, photos (array)
+    const image      = row.image ?? ''
+    const rating     = Number(row.rating ?? 0)
+    const priceLevel = row.price_level ?? '$$'
+    const cuisineRaw = row.cuisine ?? ''
+
+    // Normalise legacy 'active' → 'approved' for UI consistency
+    const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
+
     return {
         id: row.id,
-        // Canonical name is title
         title: row.title ?? '',
-        // UI-legacy fallback (can be phased out)
         name: row.title ?? '',
 
-        // Textual
         description: row.description ?? '',
         address: row.address ?? '',
         city: row.city ?? '',
         country: row.country ?? '',
 
-        // Coordinates (flat as well as nested for different UI components)
         coordinates: { lat, lng },
         lat,
         lng,
 
-        // Canonical category
         category: row.category ?? 'other',
-        // UI-legacy fallback
         type: row.category ?? 'other',
-        
-        cuisine: row.cuisine_types?.[0] ?? '', // Taking first from array
-        cuisine_types: row.cuisine_types ?? [],
 
-        // Media
-        image: row.image_url ?? '',
-        image_url: row.image_url ?? '',
-        photos: row.google_photos ?? [],
-        images: row.google_photos ?? [],
+        cuisine: cuisineRaw,
+        cuisine_types: cuisineRaw ? [cuisineRaw] : [],
 
-        // Core stats
-        rating: Number(row.google_rating ?? 0),
-        google_rating: Number(row.google_rating ?? 0),
-        google_user_ratings_total: row.google_user_ratings_total ?? 0,
-        
-        price_level: row.price_range ?? '$$',
-        priceLevel: row.price_range ?? '$$', 
-        price_range: row.price_range ?? '$$',
+        image,
+        image_url: image,
+        photos: row.photos ?? [],
+        images: row.photos ?? [],
 
-        // Operational
+        rating,
+        google_rating: rating,
+        google_user_ratings_total: 0,
+
+        price_level: priceLevel,
+        priceLevel,
+        price_range: priceLevel,
+
         opening_hours: row.opening_hours ?? '',
         openingHours: row.opening_hours ?? '',
         booking_url: row.booking_url ?? '',
         website: row.website ?? '',
         phone: row.phone ?? '',
 
-        // Arrays
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
-        vibe: row.vibe ?? [], // Note: vibe is not in schema directly, might be part of tags or tags in code is vibe?
-        features: row.amenities ?? [],
-        amenities: row.amenities ?? [],
+        vibe: row.vibe ?? [],
+        features: row.amenities ?? row.features ?? [],
+        amenities: row.amenities ?? row.features ?? [],
         best_for: row.best_for ?? [],
-        dietary: row.dietary_options ?? [],
-        dietary_options: row.dietary_options ?? [],
+        dietary: row.dietary_options ?? row.dietary ?? [],
+        dietary_options: row.dietary_options ?? row.dietary ?? [],
 
-        // Booleans
-        has_wifi: !!row.wifi_quality && row.wifi_quality !== 'none',
-        has_outdoor_seating: row.outdoor_seating ?? false,
-        reservations_required: row.reservation_required ?? false,
+        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : (row.has_wifi ?? false),
+        has_outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
+        reservations_required: row.reservation_required ?? row.reservations_required ?? false,
 
-        // Expert notes
+        michelin_stars: row.michelin_stars ?? 0,
+        michelin_bib: row.michelin_bib ?? false,
+
         insider_tip: row.insider_tip ?? '',
-        what_to_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
-        must_try: typeof row.must_try === 'string' ? row.must_try.split(',').map(s => s.trim()).filter(Boolean) : (row.must_try ?? []),
+        what_to_try: typeof row.must_try === 'string'
+            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            : (row.must_try ?? row.what_to_try ?? []),
+        must_try: typeof row.must_try === 'string'
+            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            : (row.must_try ?? row.what_to_try ?? []),
 
-        // AI Metadata
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
         embedding: row.embedding ?? null,
-        
-        // Enrichment Status
+
         ai_enrichment_status: row.ai_enrichment_status ?? 'pending',
         ai_enrichment_error: row.ai_enrichment_error ?? null,
         ai_enrichment_last_attempt: row.ai_enrichment_last_attempt ?? null,
 
-        // Meta
-        status: row.status ?? 'pending',
+        // Knowledge Graph fields
+        kg_cuisines:   row.kg_cuisines   ?? [],
+        kg_dishes:     row.kg_dishes     ?? [],
+        kg_ingredients: row.kg_ingredients ?? [],
+        kg_allergens:  row.kg_allergens  ?? [],
+        kg_enriched_at: row.kg_enriched_at ?? null,
+
+        // Social / Google
+        social_instagram: row.social_instagram ?? '',
+        social_facebook:  row.social_facebook  ?? '',
+        google_place_id:  row.google_place_id  ?? null,
+        google_maps_url:  row.google_maps_url  ?? null,
+
+        status,
         createdAt: row.created_at ?? '',
         updatedAt: row.updated_at ?? '',
     }
 }
-
 
 // ─── Read ──────────────────────────────────────────────────────────────────
 
@@ -137,12 +150,12 @@ export async function getLocations(filters = {}) {
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('google_rating', { ascending: false })
+        .order('rating', { ascending: false })
         .range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
     if (!bypassStatus) {
-        q = q.eq('status', status ?? 'approved')
+        q = q.eq('status', status ?? 'active')
     } else if (status) {
         // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)
@@ -152,8 +165,8 @@ export async function getLocations(filters = {}) {
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', city)
     if (country) q = q.ilike('country', country)
-    if (minRating != null) q = q.gte('google_rating', minRating)
-    if (priceLevel?.length) q = q.in('price_range', priceLevel)
+    if (minRating != null) q = q.gte('rating', minRating)
+    if (priceLevel?.length) q = q.in('price_level', priceLevel)
     if (vibe?.length) q = q.overlaps('tags', vibe) // vibe maps to tags if not separate column
 
     // Search by title or city if query exists
@@ -164,7 +177,7 @@ export async function getLocations(filters = {}) {
     const { data, error, count } = await q
 
     if (error) {
-        console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
+        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocations(filters)
     }
 
@@ -191,7 +204,7 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data, error } = await q.single()
 
     if (error) {
-        console.warn('[locations.api] Supabase query failed, using mocks:', error.message)
+        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocation(id)
     }
 
@@ -349,6 +362,18 @@ export async function updateLocation(id, updates, enableTranslation = null) {
             console.error('[locations.api] Failed to save translations:', error)
         }
     }
+
+    // Auto-sync KG fields in background (non-blocking)
+    // Triggered when cuisine/tags/description changed — adds matched KG data to kg_* columns
+    const kgTriggerFields = ['title', 'cuisine', 'description', 'tags', 'vibe', 'what_to_try']
+    const shouldSyncKG = kgTriggerFields.some(f => updates[f] !== undefined)
+    if (shouldSyncKG) {
+        import('./knowledge-graph.api').then(({ syncKGForLocation }) => {
+            syncKGForLocation(updated.id).catch(e =>
+                console.warn('[locations.api] Background KG sync failed:', e.message)
+            )
+        })
+    }
     
     return normalise(updated)
 }
@@ -425,24 +450,24 @@ function _toRow(d) {
     if (d.category !== undefined) row.category = d.category
     else if (d.type !== undefined) row.category = d.type
 
-    if (d.cuisine !== undefined)     row.cuisine_types = Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine].filter(Boolean)
-    if (d.cuisine_types !== undefined) row.cuisine_types = d.cuisine_types
+    if (d.cuisine !== undefined)     row.cuisine = Array.isArray(d.cuisine) ? d.cuisine[0] ?? '' : (d.cuisine ?? '')
+    if (d.cuisine_types !== undefined) row.cuisine = Array.isArray(d.cuisine_types) ? d.cuisine_types[0] ?? '' : (d.cuisine_types ?? '')
 
     // Images
-    if (d.image_url !== undefined) row.image_url = d.image_url
-    else if (d.image !== undefined) row.image_url = d.image
+    if (d.image_url !== undefined) row.image = d.image_url
+    else if (d.image !== undefined) row.image = d.image
 
-    if (d.google_photos !== undefined) row.google_photos = d.google_photos
-    else if (d.photos !== undefined) row.google_photos = d.photos
-    else if (d.images !== undefined) row.google_photos = d.images
+    if (d.google_photos !== undefined) row.photos = d.google_photos
+    else if (d.photos !== undefined) row.photos = d.photos
+    else if (d.images !== undefined) row.photos = d.images
 
-    if (d.rating !== undefined)         row.google_rating = Number(d.rating)
-    if (d.google_rating !== undefined)  row.google_rating = Number(d.google_rating)
+    if (d.rating !== undefined)         row.rating = Number(d.rating)
+    if (d.google_rating !== undefined)  row.rating = Number(d.google_rating)
 
     // Price
-    if (d.price_range !== undefined)  row.price_range = d.price_range
-    else if (d.price_level !== undefined) row.price_range = d.price_level
-    else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
+    if (d.price_range !== undefined)  row.price_level = d.price_range
+    else if (d.price_level !== undefined) row.price_level = d.price_level
+    else if (d.priceLevel !== undefined) row.price_level = d.priceLevel
 
     // Hours
     if (d.opening_hours !== undefined) row.opening_hours = d.opening_hours
@@ -487,11 +512,47 @@ function _toRow(d) {
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
-    
+
     // AI Enrichment status
     if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
     if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
+
+    // ── Fields with canonical column names in Supabase ───────────────────────
+    // vibe — separate column (was incorrectly merged into tags)
+    if (d.vibe !== undefined) row.vibe = d.vibe
+
+    // features — canonical column name (not amenities)
+    if (d.features !== undefined) row.features = d.features
+    else if (d.amenities !== undefined) row.features = d.amenities
+
+    // Boolean fields — use canonical column names
+    if (d.has_wifi !== undefined) row.has_wifi = d.has_wifi
+    if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
+    if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
+
+    // Michelin
+    if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
+    if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
+
+    // what_to_try — canonical array column
+    const whatToTryArr = d.what_to_try ?? d.must_try
+    if (whatToTryArr !== undefined) {
+        row.what_to_try = Array.isArray(whatToTryArr)
+            ? whatToTryArr
+            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
+    }
+
+    // dietary — canonical column name
+    if (d.dietary !== undefined) row.dietary = d.dietary
+    else if (d.dietary_options !== undefined) row.dietary = d.dietary_options
+
+    // ── KG fields — Knowledge Graph enrichment ───────────────────────────────
+    if (d.kg_cuisines !== undefined)   row.kg_cuisines = d.kg_cuisines
+    if (d.kg_dishes !== undefined)     row.kg_dishes = d.kg_dishes
+    if (d.kg_ingredients !== undefined) row.kg_ingredients = d.kg_ingredients
+    if (d.kg_allergens !== undefined)  row.kg_allergens = d.kg_allergens
+    if (d.kg_enriched_at !== undefined) row.kg_enriched_at = d.kg_enriched_at
 
     return row
 }

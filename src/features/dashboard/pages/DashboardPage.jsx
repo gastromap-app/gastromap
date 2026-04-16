@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
@@ -36,7 +37,22 @@ const MarqueeTitle = ({ title, theme }) => {
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
+    const { user } = useAuthStore()
+    const addFav = useAddFavoriteMutation()
+    const removeFav = useRemoveFavoriteMutation()
+    const { data: dbFavs = [] } = useUserFavorites(user?.id)
+    const dbFavIds = dbFavs.map(f => f.location_id)
+    const isFavorite = (id) => dbFavIds.includes(id) || isLocalFav(id)
+    const toggleFavorite = async (id) => {
+        localToggle(id)  // instant UI
+        if (!user?.id) return
+        if (dbFavIds.includes(id)) {
+            await removeFav.mutateAsync({ userId: user.id, locationId: id })
+        } else {
+            await addFav.mutateAsync({ userId: user.id, locationId: id })
+        }
+    }
     const saved = isFavorite(loc?.id)
 
     if (!loc) return null

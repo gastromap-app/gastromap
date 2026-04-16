@@ -13,10 +13,18 @@ const BASE_URL = 'https://api.spoonacular.com'
 /**
  * Common request wrapper for Spoonacular
  */
+// Tracks if Spoonacular quota is known-exhausted this session
+let _spoonacularExhausted = false
+
 async function fetchSpoonacular(endpoint, params = {}) {
     const apiKey = config.culinary.spoonacularKey
     if (!apiKey) {
-        throw new Error('Spoonacular API key not configured')
+        throw new ApiError('Spoonacular API key not configured', 0, 'SPOONACULAR_NO_KEY')
+    }
+
+    // Skip immediately if quota known-exhausted (avoid wasting requests)
+    if (_spoonacularExhausted) {
+        throw new ApiError('Spoonacular daily quota exhausted (cached)', 402, 'SPOONACULAR_QUOTA')
     }
 
     const url = new URL(`${BASE_URL}${endpoint}`)
@@ -28,19 +36,45 @@ async function fetchSpoonacular(endpoint, params = {}) {
         }
     })
 
-    const response = await fetch(url.toString())
+    let response
+    try {
+        response = await fetch(url.toString())
+    } catch (networkErr) {
+        throw new ApiError(`Spoonacular network error: ${networkErr.message}`, 0, 'SPOONACULAR_NETWORK')
+    }
     
     if (!response.ok) {
         let errorData = {}
         try { errorData = await response.json() } catch (e) {}
+        
+        // Mark quota as exhausted for this session to prevent repeated failed calls
+        if (response.status === 402 || response.status === 429) {
+            _spoonacularExhausted = true
+            console.warn('[Spoonacular] Quota exhausted — disabling for this session')
+        }
+        
         throw new ApiError(
             errorData.message || `Spoonacular API error: ${response.status}`,
             response.status,
-            'EXTERNAL_API_ERROR'
+            'SPOONACULAR_ERROR'
         )
     }
 
     return response.json()
+}
+
+/**
+ * Reset the exhausted flag (e.g. at midnight / manual reset)
+ */
+export function resetSpoonacularQuota() {
+    _spoonacularExhausted = false
+}
+
+/**
+ * Check if Spoonacular is currently available
+ */
+export function isSpoonacularAvailable() {
+    return Boolean(config.culinary.spoonacularKey) && !_spoonacularExhausted
 }
 
 /**

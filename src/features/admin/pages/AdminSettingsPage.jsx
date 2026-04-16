@@ -6,6 +6,7 @@ import {
     CheckCircle2, Info, Image as ImageIcon, Upload
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
@@ -141,18 +142,16 @@ const AdminSettingsPage = () => {
             </AnimatePresence>
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">Settings</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">GastroMap configuration &amp; system controls.</p>
-                </div>
-                <button
-                    onClick={handleSave}
-                    className="h-10 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2"
-                >
-                    <Save size={15} /> Save Changes
-                </button>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Настройки"
+                subtitle="Управление приложением, брендингом и статусом."
+                actions={
+                    <button onClick={handleSave} className={adminBtnPrimary}>
+                        <Save size={13} /> Save Changes
+                    </button>
+                }
+            />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* General Settings */}

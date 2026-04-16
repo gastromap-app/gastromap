@@ -62,7 +62,7 @@ export async function runAgentPass(messages, locations = []) {
         if (toolCall.function.name === 'search_locations' && Array.isArray(result)) {
             let activeLocations = locations
             if (!activeLocations?.length) {
-                const { useLocationsStore } = await import('@/features/public/hooks/useLocationsStore')
+                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
                 activeLocations = useLocationsStore.getState().locations
             }
 
@@ -74,7 +74,7 @@ export async function runAgentPass(messages, locations = []) {
         if (toolCall.function.name === 'get_location_details' && result?.id) {
             let activeLocations = locations
             if (!activeLocations?.length) {
-                const { useLocationsStore } = await import('@/features/public/hooks/useLocationsStore')
+                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
                 activeLocations = useLocationsStore.getState().locations
             }
             const loc = activeLocations.find(l => l.id === result.id)

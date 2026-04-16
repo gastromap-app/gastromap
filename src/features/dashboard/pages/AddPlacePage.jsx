@@ -504,22 +504,19 @@ export default function AddPlacePage() {
                             transition={{ duration: 0.2 }}
                             className="p-6 md:p-8 space-y-5"
                         >
-                            {/* Place name — with Nominatim autocomplete */}
-                            {/* Google Places Autocomplete — fills all fields automatically */}
-                            <div className="space-y-1.5">
-                                <label className={labelCls}>Place name <span className="text-red-400">*</span></label>
-                                <PlacesAutocomplete
-                                    onPlaceSelected={onGooglePlaceSelected}
-                                    value={form.name}
-                                    onChange={(val) => setField('name')(val)}
-                                    placeholder="e.g. Café Mokka, Krakow — start typing…"
-                                />
-                                {form._source === 'google_places' && (
-                                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium px-1 flex items-center gap-1">
-                                        ✓ Data from Google Places — check and confirm below
-                                    </p>
-                                )}
-                            </div>
+                            {/* Place name — Nominatim autocomplete */}
+                            <AutocompleteInput
+                                label="Place name"
+                                required
+                                value={form.name}
+                                onChange={onPlaceInput}
+                                onSelect={onPlaceSelect}
+                                suggestions={placeSuggestions}
+                                loading={placeLoading}
+                                icon={Search}
+                                placeholder="e.g. Café Mokka, Krakow — start typing…"
+                                minLength={2}
+                            />
 
                             <p className="text-xs text-slate-400 -mt-2">
                                 💡 Selecting from the list will auto-fill Country, City and Address

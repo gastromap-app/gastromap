@@ -155,7 +155,7 @@ export async function getLocations(filters = {}) {
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
     if (!bypassStatus) {
-        q = q.eq('status', status ?? 'active')
+        q = q.eq('status', status ?? 'approved')
     } else if (status) {
         // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)

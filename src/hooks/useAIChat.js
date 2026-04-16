@@ -6,7 +6,6 @@ import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
-import { config } from '@/shared/config/env'
 
 /**
  * useAIChat — GastroGuide conversation logic with OpenRouter API streaming.
@@ -75,7 +74,7 @@ export function useAIChat() {
                     rating: r.rating,
                     text: r.review_text?.slice(0, 100) // Keep it concise for prompt
                 }))
-            } catch (err) {
+            } catch {
                 console.warn('[useAIChat] Failed to fetch user reviews for context')
             }
         }

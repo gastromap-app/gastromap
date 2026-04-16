@@ -398,7 +398,6 @@ export default function AddPlacePage() {
     const [step2Error, setStep2Error] = useState('')
 
     const step1Valid = form.name.trim() && form.country && form.city.trim() && form.address.trim()
-    const step2Valid = form.must_try.trim() && form.insider_tip.trim()
 
     function handleStep1Next() {
         if (step1Valid) setStep(1)

@@ -140,7 +140,7 @@ export function robustParseJSON(text) {
 
             try {
                 return JSON.parse(surgicallyCleaned)
-            } catch (secondError) {
+            } catch {
                 // Final fallback: Basic field extraction using regex for key fields
                 try {
                     const result = {}
@@ -160,13 +160,13 @@ export function robustParseJSON(text) {
                                     .replace(/\\n/g, '\n')
                                     .replace(/\\"/g, '"')
                                     .replace(/\\\\/g, '\\')
-                            } catch (e) {
+                            } catch {
                                 result[field] = match[1]
                             }
                         }
                     }
                     if (Object.keys(result).length > 0) return result
-                } catch (e) {}
+                } catch { /* ignore */ }
 
                 throw initialError // Return the most descriptive error if recovery fails
             }

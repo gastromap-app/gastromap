@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle2, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const ResetPasswordPage = () => {
-    const navigate = useNavigate()
     const { setNewPassword, isLoading, error, clearError } = useAuthStore()
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)

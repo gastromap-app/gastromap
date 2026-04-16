@@ -50,10 +50,10 @@ export function OfflineIndicator() {
                     animate={{ y: 0,    opacity: 1 }}
                     exit={{   y: -44,  opacity: 0 }}
                     transition={springTransition}
-                    style={{ willChange: 'transform, opacity' }}
+                    style={{ willChange: 'transform, opacity', paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)', paddingBottom: '0.5rem' }}
                     className={[
                         'fixed top-0 left-0 right-0 z-[9999]',
-                        'flex items-center justify-center gap-2 py-2',
+                        'flex items-center justify-center gap-2',
                         'text-xs font-black uppercase tracking-widest',
                         isOnline ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white',
                     ].join(' ')}

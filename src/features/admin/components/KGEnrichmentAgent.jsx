@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { Sparkles, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, AlertTriangle, Activity } from 'lucide-react'
-import { config } from '@/shared/config/env'
 import { callEnrichmentAI } from '@/shared/api/kg-ai-agent.api'
 
 /**
@@ -34,8 +33,6 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
         setDone(false)
         setProgress(toEnrich.map(c => ({ id: c.id, name: c.name, status: 'pending', fields: [] })))
 
-        let enrichedCount = 0
-
         for (let i = 0; i < toEnrich.length; i++) {
             const cuisine = toEnrich[i]
 
@@ -53,7 +50,6 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
                 
                 if (updates && Object.keys(updates).length > 0) {
                     await onEnriched(cuisine.id, updates)
-                    enrichedCount++
                     setProgress(prev => prev.map((p, idx) =>
                         idx === i ? { ...p, status: 'done', fields: Object.keys(updates) } : p
                     ))
@@ -144,7 +140,7 @@ export default function KGEnrichmentAgent({ cuisines = [], onEnriched }) {
                     {/* Active Progress */}
                     {progress.length > 0 && (
                         <div className="space-y-2">
-                            {progress.map((p, i) => (
+                            {progress.map((p) => (
                                 <div 
                                     key={p.id} 
                                     className={`flex items-center gap-3 py-2 px-4 border transition-all duration-300 ${

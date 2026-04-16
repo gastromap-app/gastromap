@@ -101,7 +101,7 @@ async function applyMigration() {
 
                 if (error) {
                     // Try direct execution
-                    const { error: directError } = await supabase
+                    await supabase
                         .from('_migration_temp')
                         .select('*')
                         .limit(0)
@@ -117,7 +117,7 @@ async function applyMigration() {
                 } else {
                     successCount++
                 }
-            } catch (err) {
+            } catch {
                 errorCount++
             }
         }

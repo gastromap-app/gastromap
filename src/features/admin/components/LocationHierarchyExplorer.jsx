@@ -31,7 +31,7 @@ const DEFAULT_CITY_IMG = 'https://images.unsplash.com/photo-1477959858617-67f85c
 const LocationHierarchyExplorer = ({ className }) => {
     const [level, setLevel] = useState('countries')
     const [history, setHistory] = useState([])
-    const [timeOfDay, setTimeOfDay] = useState('day')
+    const [, setTimeOfDay] = useState('day')
     const [selectedLocation, setSelectedLocation] = useState(null)
 
     useEffect(() => {

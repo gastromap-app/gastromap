@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Shield, Eye, Lock, Database } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'

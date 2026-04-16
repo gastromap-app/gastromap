@@ -903,11 +903,11 @@ const AdminKnowledgeGraphPage = () => {
                             <Info size={13} />
                         </button>
                         <button
-                            onClick={() => bulkSync.mutate()}
-                            disabled={bulkSync.isPending}
+                            onClick={() => bulkSyncKG.mutate()}
+                            disabled={bulkSyncKG.isPending}
                             className={adminBtnSecondary}
                         >
-                            {bulkSync.isPending
+                            {bulkSyncKG.isPending
                                 ? <span className="animate-spin inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full" />
                                 : <RefreshCw size={13} />}
                             Bulk Sync

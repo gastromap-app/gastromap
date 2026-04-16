@@ -3,62 +3,72 @@ import { MOCK_USER_PERSONA } from '../mocks/userPersona';
 
 /**
  * GastroIntelligence Service
- * The "Jarvis" core of the application.
+ * Local fallback engine — used when no OpenRouter API key is configured.
  */
 class GastroIntelligence {
     constructor() {
         this.user = MOCK_USER_PERSONA;
-        this.locations = MOCK_LOCATIONS;
     }
 
     /**
-     * Process a user message and return an intelligent response
-     * In a real app, this would call an LLM with RAG (Retrieval-Augmented Generation)
+     * Process a user message and return an intelligent response.
+     * Supports English and Russian input via keyword matching.
+     *
+     * @param {string} text - User query
+     * @param {Array} [locations] - Live locations from store (falls back to MOCK_LOCATIONS)
      */
-    async analyzeQuery(text) {
+    async analyzeQuery(text, locations) {
         const query = text.toLowerCase();
-        
-        // 1. Context Analysis: Does the user want a recommendation?
-        const isLookingForFood = query.includes('eat') || query.includes('cafe') || query.includes('where') || query.includes('recommend');
-        
-        // 2. Personalization: Use user context for ranking
-        let filtered = this.locations;
+        const pool = (locations?.length > 0) ? locations : MOCK_LOCATIONS;
 
-        if (isLookingForFood) {
-            // Rank locations based on user preferences (Simulating AI)
-            filtered = this.locations.map(loc => {
+        // Multilingual food/recommendation intent detection (EN + RU)
+        const isRecommendation =
+            /\b(eat|cafe|where|recommend|dinner|lunch|breakfast|restaurant|bar|coffee|cozy|romantic|best|find|хочу|поесть|кафе|где|советуй|рекомендуй|ужин|обед|завтрак|ресторан|кофе|найди|лучший|хорош|уютн|романтич)\b/.test(query);
+
+        let filtered = pool;
+
+        if (isRecommendation && pool.length > 0) {
+            filtered = pool.map(loc => {
                 let score = 0;
-                
-                // Match by tags and preferences
-                loc.tags.forEach(tag => {
-                    if (this.user.preferences.favoriteCuisines.includes(tag)) score += 2;
-                });
+                const tags = Array.isArray(loc.tags) ? loc.tags : [];
+                const vibes = Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : []);
+                const features = Array.isArray(loc.features) ? loc.features : [];
 
-                // Match by vibe
-                if (this.user.preferences.vibePreference.includes(loc.vibe)) score += 1;
-
-                // Match by features
-                loc.features.forEach(f => {
-                    if (this.user.preferences.features.includes(f)) score += 1;
+                tags.forEach(tag => {
+                    if (this.user.preferences.favoriteCuisines.some(c => c.toLowerCase() === tag.toLowerCase())) score += 2;
                 });
+                vibes.forEach(v => {
+                    if (this.user.preferences.vibePreference.some(p => p.toLowerCase() === v.toLowerCase())) score += 1;
+                });
+                features.forEach(f => {
+                    if (this.user.preferences.features.some(p => p.toLowerCase() === f.toLowerCase())) score += 1;
+                });
+                if ((loc.rating ?? 0) >= 4.5) score += 1;
 
                 return { ...loc, matchScore: score };
             }).sort((a, b) => b.matchScore - a.matchScore);
         }
 
-        // 3. Generate response
         const topMatch = filtered[0];
 
-        if (topMatch && topMatch.matchScore > 0) {
+        if (topMatch && (topMatch.matchScore ?? 0) > 0) {
+            const topThree = filtered.slice(0, 3);
             return {
-                content: `Based on your love for ${this.user.preferences.favoriteCuisines[0]} and ${this.user.preferences.vibePreference[0]} vibes, I highly recommend ${topMatch.title}. It has a rating of ${topMatch.rating} and features ${topMatch.features.join(', ')}.`,
-                matches: filtered.slice(0, 3)
+                content: `Based on your taste profile, I recommend **${topMatch.title}** — rated ${topMatch.rating}★${topMatch.features?.length ? `, featuring ${topMatch.features.slice(0, 2).join(' & ')}` : ''}.${topThree.length > 1 ? ` Also check out ${topThree.slice(1).map(l => l.title).join(' and ')}.` : ''}`,
+                matches: topThree,
+            };
+        }
+
+        if (isRecommendation && topMatch) {
+            return {
+                content: `Here's a top pick: **${topMatch.title}**${topMatch.category ? ` (${topMatch.category})` : ''} — rated ${topMatch.rating ?? '?'}★. ${topMatch.description ?? ''}`,
+                matches: filtered.slice(0, 3),
             };
         }
 
         return {
-            content: "I'm still learning your tastes, but Krakow has some great spots! Tell me more about what you're craving right now.",
-            matches: []
+            content: "I'm your GastroGuide! Ask me where to eat, what to try, or for recommendations based on your mood — I'll find the best spot for you.",
+            matches: [],
         };
     }
 }

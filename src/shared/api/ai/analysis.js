@@ -66,8 +66,15 @@ export async function analyzeQuery(message, context = {}) {
         }
     }
 
-    // Local fallback
-    const result = await gastroIntelligence.analyzeQuery(message)
+    // Local fallback — pass live locations from context or store
+    let fallbackLocations = context.locations
+    if (!fallbackLocations?.length) {
+        try {
+            const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+            fallbackLocations = useLocationsStore.getState().locations
+        } catch { fallbackLocations = [] }
+    }
+    const result = await gastroIntelligence.analyzeQuery(message, fallbackLocations)
     return { content: result.content, matches: result.matches ?? [], intent }
 }
 
@@ -122,8 +129,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
             return { content: text, matches: usedLocations, intent }
         } catch (err) {
-            if (err.status === 401) throw new ApiError('Invalid OpenRouter API key.', 401, 'AUTH_ERROR')
-            console.warn('[GastroAI] OpenRouter streaming error, falling back:', err.message)
+            console.warn('[GastroAI] OpenRouter streaming error, falling back to local engine:', err.message)
         }
     }
 

@@ -79,7 +79,8 @@ const AdminLocationsPage = () => {
         aiQueryMutation, culinaryContextMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleDelete, handleImproveText, handleSave,
-        addImageUrl, removeImage
+        addImageUrl, removeImage,
+        isExporting, handleExport
     } = hook
 
     const categories = [
@@ -144,7 +145,8 @@ const AdminLocationsPage = () => {
             <AdminLocationsHeader
                 onCreateNew={handleCreateNew}
                 onImport={() => setIsImportWizardOpen(true)}
-                onExport={() => {}}
+                onExport={handleExport}
+                isExporting={isExporting}
                 onBulkReindex={() => {
                     if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
                         bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {

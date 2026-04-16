@@ -1,31 +1,23 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { screen } from '@testing-library/react'
+import { renderWithProviders } from '@/test/helpers'
 import AdminStatsPage from '../pages/AdminStatsPage'
 
 describe('AdminStatsPage', () => {
-    it('renders analytics page and main stats', () => {
-        render(<AdminStatsPage />)
-
+    it('renders analytics page header', () => {
+        renderWithProviders(<AdminStatsPage />)
         expect(screen.getByText(/Аналитика/i)).toBeInTheDocument()
-        expect(screen.getByText(/Юзеры/i)).toBeInTheDocument()
-        expect(screen.getByText(/Конверсия/i)).toBeInTheDocument()
     })
 
-    it('renders city popularity chart', () => {
-        render(<AdminStatsPage />)
-        expect(screen.getByText(/Популярность по городам/i)).toBeInTheDocument()
-        expect(screen.getByText(/Краков/i)).toBeInTheDocument()
+    it('renders period selector buttons', () => {
+        renderWithProviders(<AdminStatsPage />)
+        expect(screen.getByRole('button', { name: /7д/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /30д/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /90д/i })).toBeInTheDocument()
     })
 
-    it('renders AI Impact block', () => {
-        render(<AdminStatsPage />)
-        expect(screen.getByText(/AI Impact/i)).toBeInTheDocument()
-        expect(screen.getByText(/CTR AI REC/i)).toBeInTheDocument()
-    })
-
-    it('renders recent subscriptions table', () => {
-        render(<AdminStatsPage />)
-        expect(screen.getByText(/Последние подписки/i)).toBeInTheDocument()
-        expect(screen.getByText(/Алексей Иванов/i)).toBeInTheDocument()
+    it('renders top locations section', () => {
+        renderWithProviders(<AdminStatsPage />)
+        expect(screen.getByText(/Топ локаций/i)).toBeInTheDocument()
     })
 })

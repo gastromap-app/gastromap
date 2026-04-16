@@ -16,7 +16,15 @@ vi.mock('@/features/auth/components/OnboardingGate', () => ({
 
 describe('Auth Features Integration', () => {
     beforeEach(() => {
-        useAuthStore.getState().logout()
+        useAuthStore.setState({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+            // No-op initAuth so App mount doesn't flip isLoading back to true
+            initAuth: () => {},
+        })
     })
 
     it('renders login form after lazy load', async () => {
@@ -38,7 +46,8 @@ describe('Auth Features Integration', () => {
 
         fireEvent.change(emailInput, { target: { value: 'user@example.com' } })
         fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'password' } })
-        fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+        const signInBtn = await screen.findByRole('button', { name: /sign in/i }, { timeout: 4000 })
+        fireEvent.click(signInBtn)
 
         // signIn has 400ms delay + lazy DashboardPage chunk load
         expect(
@@ -55,7 +64,8 @@ describe('Auth Features Integration', () => {
 
         fireEvent.change(emailInput, { target: { value: 'admin@gastromap.com' } })
         fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'adminpass' } })
-        fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+        const signInBtn = await screen.findByRole('button', { name: /sign in/i }, { timeout: 4000 })
+        fireEvent.click(signInBtn)
 
         expect(
             await screen.findByText(/Панель управления/i, {}, { timeout: 8000 })

@@ -90,7 +90,7 @@ export async function signUp(email, password, name) {
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
+        options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) throw new ApiError(error.message, 400, 'AUTH_ERROR')
 
@@ -165,7 +165,7 @@ export async function resendVerification(email) {
     const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) throw new ApiError(error.message, 400, 'RESEND_ERROR')
     return { success: true, message: 'Verification email sent' }

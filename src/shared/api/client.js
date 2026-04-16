@@ -20,7 +20,7 @@ export const supabase = config.supabase.isConfigured
             storageKey: 'sb-gastromap-auth',
             autoRefreshToken: true,
             persistSession: true,
-            detectSessionInUrl: false,
+            detectSessionInUrl: true,
             // Override the Web Locks API lock so concurrent requests
             // (e.g. getCuisines + getDishes + getIngredients firing at the
             // same time) don't steal each other's token-refresh lock.

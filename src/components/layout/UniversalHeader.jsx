@@ -54,7 +54,7 @@ export function UniversalHeader() {
                 }}
             />
 
-            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] py-4">
+            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-4 md:py-4">
                 <AnimatePresence mode="wait">
                     {!isAIGuide ? (
                         <motion.div

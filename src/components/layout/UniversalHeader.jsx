@@ -41,7 +41,10 @@ export function UniversalHeader() {
         : 'bg-transparent'
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-[100] transition-none">
+        <header
+            className="fixed top-0 left-0 right-0 z-[100] transition-none"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
             {/* Background Layer with Smooth Mask */}
             <div
                 className={`absolute inset-0 w-full h-full transition-all duration-700 pointer-events-none ${headerBgClass}`}

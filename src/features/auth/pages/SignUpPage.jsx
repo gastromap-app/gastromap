@@ -38,6 +38,7 @@ const SignUpPage = () => {
         const result = await register(email, password, name)
         if (result.success) {
             if (result.emailConfirmation) {
+                sessionStorage.setItem('pending_verification_email', email)
                 setEmailSent(true)
                 return
             }

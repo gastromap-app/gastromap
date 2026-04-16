@@ -21,7 +21,10 @@ export function MainLayout() {
             <OnboardingGate>
                 <div className="flex flex-col min-h-screen text-foreground relative">
                     <UniversalHeader />
-                    <main className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? 'pb-0' : 'pb-24'} md:pb-0`}>
+                    <main
+                        className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? '' : 'pb-24'} md:pb-0`}
+                        style={(!isAIGuide && !isExplore) ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : undefined}
+                    >
                         <Outlet />
                     </main>
                     <BottomNav />

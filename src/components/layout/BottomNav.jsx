@@ -40,9 +40,11 @@ export function BottomNav() {
                     }}
                     className={cn(
                         "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none",
-                        "bottom-6"
                     )}
-                    style={{ perspective: 1000 }}
+                    style={{
+                        perspective: 1000,
+                        bottom: 'calc(1rem + env(safe-area-inset-bottom))',
+                    }}
                 >
                     <motion.nav
                         initial={false}

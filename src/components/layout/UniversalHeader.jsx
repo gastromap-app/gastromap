@@ -41,7 +41,10 @@ export function UniversalHeader() {
         : 'bg-transparent'
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-[100] transition-none">
+        <header
+            className="fixed top-0 left-0 right-0 z-[100] transition-none"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
             {/* Background Layer with Smooth Mask */}
             <div
                 className={`absolute inset-0 w-full h-full transition-all duration-700 pointer-events-none ${headerBgClass}`}
@@ -51,7 +54,7 @@ export function UniversalHeader() {
                 }}
             />
 
-            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] py-4">
+            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-4 md:py-4">
                 <AnimatePresence mode="wait">
                     {!isAIGuide ? (
                         <motion.div

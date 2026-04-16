@@ -37,8 +37,8 @@ export function AnimatedInputBar({ input, onInputChange, onSubmit, isTyping }) {
                 damping: 15,
                 duration: 0.6
             }}
-            className="fixed left-0 right-0 bottom-6 z-[70] px-4 pointer-events-none"
-            style={{ perspective: 1000 }}
+            className="fixed left-0 right-0 z-[70] px-4 pointer-events-none"
+            style={{ perspective: 1000, bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
             <form
                 onSubmit={handleLocalSubmit}

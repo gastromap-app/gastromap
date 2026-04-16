@@ -34,6 +34,7 @@ export const OfflineBanner = () => {
                     style={{
                         background: 'linear-gradient(135deg, #1e293b, #0f172a)',
                         borderBottom: '1px solid rgba(249,115,22,0.3)',
+                        paddingTop: 'calc(env(safe-area-inset-top) + 0.625rem)',
                     }}
                 >
                     <WifiOff size={15} className="text-orange-400 flex-shrink-0" />

@@ -134,8 +134,6 @@ const LocationFormSlideOver = ({
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
 
-    if (!isOpen || !formData) return null
-
     // ─── helpers ──────────────────────────────────────────────────────────────
 
     const set = useCallback((field, val) =>
@@ -164,6 +162,8 @@ const LocationFormSlideOver = ({
             _source:       'google_places',
         }))
     }, [setFormData])
+
+    if (!isOpen || !formData) return null
 
     const handleAutoFill = async () => {
         if (!aiQuery.trim()) return

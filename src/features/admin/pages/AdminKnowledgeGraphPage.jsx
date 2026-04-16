@@ -8,12 +8,13 @@ import {
     CheckCircle2, AlertCircle, Carrot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import { useQueryClient } from '@tanstack/react-query'
 import {
     useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
     useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
-    useKnowledgeStats, useSyncKGToLocationsMutation,
+    useKnowledgeStats, useSyncKGToLocationsMutation, useBulkSyncKGMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 import { 
@@ -688,6 +689,7 @@ const AdminKnowledgeGraphPage = () => {
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
     const syncKG           = useSyncKGToLocationsMutation()
+    const bulkSyncKG       = useBulkSyncKGMutation()
 
     const handleMerge = async (group, keepId) => {
         if (!keepId) {
@@ -891,43 +893,31 @@ const AdminKnowledgeGraphPage = () => {
             </AnimatePresence>
 
             {/* ── Header ── */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                    <h1 className="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-none tracking-tight">
-                        Knowledge Graph
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1.5 text-xs lg:text-base">
-                        Culinary ontology — cuisines, dishes &amp; ingredients.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setIsInfoOpen(true)}
-                        className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
-                    >
-                        <Info size={15} />
-                        <span className="hidden sm:inline">How it works</span>
-                    </button>
-
-                    <button
-                        onClick={handleSyncLocations}
-                        disabled={syncKG.isPending}
-                        className="h-10 px-4 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600 text-sm font-medium transition-all disabled:opacity-50"
-                    >
-                        <RefreshCw size={15} className={syncKG.isPending ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">Sync Graph</span>
-                    </button>
-
-                    <button
-                        onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
-                        className="h-10 px-4 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-sm font-semibold transition-all shadow-sm"
-                    >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">Add {activeTab.slice(0, -1)}</span>
-                    </button>
-                </div>
-            </div>
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Knowledge Graph"
+                subtitle="Culinary ontology — cuisines, dishes & ingredients."
+                actions={
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setIsInfoOpen(true)} className={adminBtnSecondary} title="Info">
+                            <Info size={13} />
+                        </button>
+                        <button
+                            onClick={() => bulkSync.mutate()}
+                            disabled={bulkSync.isPending}
+                            className={adminBtnSecondary}
+                        >
+                            {bulkSync.isPending
+                                ? <span className="animate-spin inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full" />
+                                : <RefreshCw size={13} />}
+                            Bulk Sync
+                        </button>
+                        <button onClick={() => setIsCreateOpen(true)} className={adminBtnPrimary}>
+                            <Plus size={13} /> Add Entity
+                        </button>
+                    </div>
+                }
+            />
 
             {/* ── Stats ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">

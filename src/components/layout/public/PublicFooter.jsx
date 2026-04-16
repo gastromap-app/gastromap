@@ -31,7 +31,7 @@ const PublicFooter = () => (
                             Made with love for foodies.
                         </p>
                         <div className="flex gap-4 mt-8">
-                            {[Instagram, Twitter, Linkedin].map((Icon, i) => (
+                            {[[Instagram, 'https://instagram.com'], [Twitter, 'https://x.com'], [Linkedin, 'https://linkedin.com']].map(([Icon, url], i) => (
                                 <div key={i} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-blue-600 transition-colors cursor-pointer backdrop-blur-md border border-white/5">
                                     <Icon size={18} />
                                 </div>
@@ -50,7 +50,7 @@ const PublicFooter = () => (
                             {
                                 head: "Community", links: [
                                     { name: 'Leaderboard', path: '/dashboard/leaderboard' },
-                                    { name: 'Rules', path: '/rules' },
+                                    { name: 'Guidelines', path: '/help' },
                                     { name: 'Blog', path: '/blog' }
                                 ]
                             },
@@ -67,7 +67,7 @@ const PublicFooter = () => (
                                     { name: 'Help Center', path: '/help' },
                                     { name: 'Status', path: '/status' },
                                     { name: 'Community', path: '/community' },
-                                    { name: 'Discord', path: '#' }
+                                    { name: 'Contact', path: '/contact' }
                                 ]
                             },
                         ].map((col, i) => (

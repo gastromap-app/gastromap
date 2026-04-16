@@ -92,7 +92,7 @@ const ResetPasswordPage = () => {
 
             {/* Right Side - Form */}
             <div className="flex-1 relative flex items-center justify-center p-6 bg-gray-50/50">
-                <Link to="/auth/login" className="absolute top-8 left-8 lg:left-12 p-3 bg-white hover:bg-gray-100 rounded-full transition-colors group">
+                <Link to="/login" className="absolute top-8 left-8 lg:left-12 p-3 bg-white hover:bg-gray-100 rounded-full transition-colors group">
                     <ArrowLeft size={20} className="text-gray-900 group-hover:-translate-x-1 transition-transform" />
                 </Link>
 
@@ -115,7 +115,7 @@ const ResetPasswordPage = () => {
                                 Your password has been successfully reset. You can now sign in with your new password.
                             </p>
                             <Link
-                                to="/auth/login"
+                                to="/login"
                                 className="inline-flex items-center justify-center w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all"
                             >
                                 Sign in

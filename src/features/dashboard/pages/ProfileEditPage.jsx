@@ -9,7 +9,7 @@ import { useUserPreferences, useUpdatePreferencesMutation } from '@/shared/api/q
 
 const ProfileEditPage = () => {
     const { t } = useTranslation()
-    const { user: authUser, updateProfile } = useAuthStore()
+    const { user: authUser, updateUserProfile } = useAuthStore()
     const { data: preferences = {}, isLoading: loadingPrefs } = useUserPreferences(authUser?.id)
     const updatePrefs = useUpdatePreferencesMutation()
 
@@ -65,7 +65,7 @@ const ProfileEditPage = () => {
 
     const handleSave = async () => {
         // Existing local update
-        updateProfile(formData)
+        await updateUserProfile({ name: formData.name, avatar: formData.avatar })
         // Sync to Supabase
         if (authUser?.id) {
             await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })

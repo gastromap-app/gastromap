@@ -629,7 +629,6 @@ const LocationDetailsPage = () => {
                 </div>
 
                 {/* Hero Image Section */}
-                {/* Hero Image Section */}
                 <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
                     <LazyImage
                         src={location.image}
@@ -719,7 +718,7 @@ const LocationDetailsPage = () => {
                                     <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
                                     <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
                                 </div>
-                                <button disabled className="w-full h-18 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
+                                <button disabled className="w-full h-16 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/10 rounded-[48px]">
                                 <div className="bg-[#1a1c24]/95 backdrop-blur-xl border border-blue-500/30 px-8 py-5 rounded-[32px] shadow-2xl text-center">

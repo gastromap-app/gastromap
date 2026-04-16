@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, Mail, UserCircle, Save, Utensils, Sparkles, Heart } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'

@@ -160,7 +160,7 @@ export const AppRouter = () => {
                         <Route
                             path="/ai-guide"
                             element={
-                                <ErrorBoundary fallback={({ error, reset }) => <AIChatErrorFallback reset={reset} />}>
+                                <ErrorBoundary fallback={({ reset }) => <AIChatErrorFallback reset={reset} />}>
                                     <AIGuidePage />
                                 </ErrorBoundary>
                             }

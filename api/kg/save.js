@@ -254,7 +254,7 @@ function sanitize(type, data) {
         const {
             name, cuisine_id, description, ingredients,
             preparation_style, dietary_tags, flavor_notes, best_pairing,
-            serving_temp, course, cook_time_min, difficulty,
+            serving_temp, course,
             origin_city, alternative_names, spicy_level, is_signature,
             vegetarian, vegan, gluten_free,
         } = data

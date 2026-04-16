@@ -41,7 +41,7 @@ async function setupAdmin() {
     
     try {
         // Check if user already exists
-        const { data: existingUser, error: fetchError } = await supabase
+        const { data: existingUser } = await supabase
             .from('user_roles')
             .select(`
                 id,
@@ -71,7 +71,7 @@ async function setupAdmin() {
             if (signUpError.message.includes('User already registered')) {
                 console.log('⚠️  User already registered, assigning admin role...')
                 // Find existing user and assign admin role
-                const { data: userData, error: userError } = await supabase
+                const { error: userError } = await supabase
                     .from('user_roles')
                     .select('user_id')
                     .is('role', null)

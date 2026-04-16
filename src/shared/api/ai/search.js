@@ -6,7 +6,6 @@
  */
 
 import { supabase } from '@/shared/api/client'
-import { getActiveAIConfig } from '../ai-config.api'
 
 /**
  * Semantic search via pgvector in Supabase.

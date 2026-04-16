@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         let dot = 0
         const len = Math.min(queryVec.length, loc.embedding_vec.length)
         for (let i = 0; i < len; i++) dot += queryVec[i] * loc.embedding_vec[i]
-        const { embedding_vec, ...rest } = loc
+        const { embedding_vec: _embedding_vec, ...rest } = loc
         return { ...rest, similarity: Math.round(dot * 1000) / 1000 }
       })
       .filter(loc => loc && loc.similarity >= threshold)

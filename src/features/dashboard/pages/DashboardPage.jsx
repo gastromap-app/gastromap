@@ -318,11 +318,10 @@ const DashboardPage = () => {
 // --- DESKTOP VIEW COMPONENT ---
 const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
     const { t } = useTranslation()
-    const { toggleTheme } = useTheme()
     const navigate = useNavigate()
     const [greeting, setGreeting] = useState('')
     const [activeTab, setActiveTab] = useState('overview')
-    const [activeFilter, setActiveFilter] = useState('All')
+    const [activeFilter] = useState('All')
 
     useEffect(() => {
         const hour = new Date().getHours()

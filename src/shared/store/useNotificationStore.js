@@ -17,7 +17,7 @@ const DEFAULT_PREFERENCES = {
 
 export const useNotificationStore = create(
     persist(
-        (set, get) => ({
+        (set) => ({
             preferences: DEFAULT_PREFERENCES,
             permissionStatus: 'default', // 'default', 'granted', 'denied', 'unsupported'
             pushEnabled: false,

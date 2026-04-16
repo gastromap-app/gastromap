@@ -5,7 +5,7 @@ import {
     MapPin, User, Calendar, MessageSquare, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader from '../components/AdminPageHeader'
 import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {

@@ -3,7 +3,6 @@ import { screen, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/test/helpers'
 import App from '@/app/App'
 import { useAuthStore } from './hooks/useAuthStore'
-import { useUserPrefsStore } from './hooks/useUserPrefsStore'
 
 vi.mock('@/components/auth/SubscriptionGate', () => ({
     default: ({ children }) => children,

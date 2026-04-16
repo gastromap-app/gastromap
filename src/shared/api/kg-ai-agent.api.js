@@ -841,7 +841,7 @@ function matchCuisine(cuisineName, allCuisines) {
 export function resolveDishCuisineIds(dishes, allCuisines) {
     return dishes.map(dish => {
         const match = matchCuisine(dish.cuisine_name, allCuisines)
-        const { cuisine_name, ...rest } = dish
+        const { cuisine_name: _cuisine_name, ...rest } = dish
         return { ...rest, cuisine_id: match?.id ?? null }
     })
 }

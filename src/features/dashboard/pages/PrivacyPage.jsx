@@ -35,12 +35,6 @@ const PrivacyPage = () => {
         }
     ]
 
-    const dataPoints = [
-        { icon: Eye, label: "Usage Data", desc: "Browsing history and interactions." },
-        { icon: Lock, label: "Personal Info", desc: "Name, email, and bio." },
-        { icon: Database, label: "Geolocation", desc: "Only while using the app." },
-    ]
-
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
             {/* Header */}

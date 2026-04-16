@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import { useAdminStats, useRecentActivity } from '@/shared/api/queries'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -77,8 +76,6 @@ const EmptyRow = () => (
 const AdminDashboardPage = () => {
     const navigate = useNavigate()
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
-    const { user } = useAuthStore()
-
     const { data: adminStats, isLoading: loadingStats } = useAdminStats()
     const { data: recentActivities = [] } = useRecentActivity(10)
 

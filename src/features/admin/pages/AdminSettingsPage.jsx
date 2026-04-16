@@ -6,7 +6,7 @@ import {
     CheckCircle2, Info, Image as ImageIcon, Upload
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const SettingSection = ({ title, icon: Icon, children }) => (

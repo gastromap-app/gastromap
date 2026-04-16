@@ -8,7 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader from '../components/AdminPageHeader'
 import { useProfiles, useUpdateProfileRoleMutation } from '@/shared/api/queries'
 
 const AdminUsersPage = () => {
@@ -55,7 +55,6 @@ const AdminUsersPage = () => {
     const handleBanToggle = async (user) => {
         try {
             // Toggle user role between user/moderator vs banned
-            const newRole = user.role === 'banned' ? 'user' : user.role
             if (user.role !== 'admin') {
                 // We use a 'suspended' note in the name field as a lightweight ban
                 // Real implementation would need a 'status' column in profiles
@@ -74,7 +73,6 @@ const AdminUsersPage = () => {
         { label: 'Active', val: profiles.filter(u => u.status === 'active').length.toString(), icon: Zap, bg: 'bg-green-50 dark:bg-green-500/10', color: 'text-green-600' },
     ]
 
-    const inputClass = "w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 font-medium text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all"
     const selectClass = "w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 font-bold text-sm text-slate-900 dark:text-white appearance-none outline-none focus:border-indigo-500 transition-all cursor-pointer"
 
     return (

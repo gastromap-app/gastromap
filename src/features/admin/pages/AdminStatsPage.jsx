@@ -6,7 +6,7 @@ import {
     MessageSquare, Utensils, BarChart3, Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader from '../components/AdminPageHeader'
 import {
     useCategoryStats, useTopLocations,
     useEngagementStats, usePaymentStats, useAdminStats,
@@ -16,9 +16,6 @@ import {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const fmt = (n, fallback = '—') => (n == null ? fallback : Number(n).toLocaleString())
-const fmtMoney = (n, fallback = '—') =>
-    n == null ? fallback : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const Skeleton = ({ className }) => (
     <div className={cn('animate-pulse bg-slate-100 dark:bg-slate-800 rounded-xl', className)} />
@@ -89,7 +86,7 @@ const AdminStatsPage = () => {
     const { data: adminStats = {}, isLoading: loadingStats } = useAdminStats()
     const { data: topLocations = [], isLoading: loadingTop } = useTopLocations(8)
     const { data: engagement = {}, isLoading: loadingEng } = useEngagementStats()
-    const { data: payments = {}, isLoading: loadingPay } = usePaymentStats()
+    usePaymentStats()
     const { data: categoryStats = [], isLoading: loadingCats } = useCategoryStats()
     const { data: cityStats = [], isLoading: loadingCities } = useCityStats()
     const { data: reviewsTimeline = [], isLoading: loadingRev } = useReviewsTimeline(period)

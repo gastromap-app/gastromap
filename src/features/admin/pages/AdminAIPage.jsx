@@ -8,7 +8,7 @@ import {
     FileText, RotateCcw, Search, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { DEFAULT_PROMPTS, MODEL_CASCADE } from '@/shared/api/ai/constants'
@@ -318,7 +318,7 @@ const AdminAIPage = () => {
         }
     }, [apiKey, primaryModel, validationTrigger])
 
-    const validateKey = async (key) => {
+    const validateKey = async () => {
         setApiKeyStatus('validating')
         try {
             // Test with a quick 1-token query

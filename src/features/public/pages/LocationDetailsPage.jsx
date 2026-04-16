@@ -62,7 +62,7 @@ const LocationDetailsPage = () => {
             await addVisitMut.mutateAsync({ userId: user.id, locationId: id })
         }
     }
-    const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
+    const { label: openLabel, isOpen } = useOpenStatus(location?.openingHours)
 
     // Reviews — Supabase
     const { data: allReviews = [] } = useLocationReviews(location?.id)
@@ -405,7 +405,6 @@ const LocationDetailsPage = () => {
     }
 
     const renderReviews = () => {
-        const maxDist = Math.max(...Object.values(aggregate.distribution), 1)
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 {/* Aggregate score */}

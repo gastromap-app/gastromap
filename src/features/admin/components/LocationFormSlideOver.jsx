@@ -115,7 +115,6 @@ const LocationFormSlideOver = ({
     reindexMutation,
     isImproving,
     setIsImproving,
-    handleAIMagic,
 }) => {
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [newImageUrl, setNewImageUrl]  = useState('')

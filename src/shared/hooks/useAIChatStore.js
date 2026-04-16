@@ -18,7 +18,7 @@ import { config } from '@/shared/config/env'
 
 export const useAIChatStore = create(
     persist(
-        (set, _get) => ({
+        (set) => ({
             messages: [],          // ChatMessage[]
             isTyping: false,       // assistant is generating
             error: null,

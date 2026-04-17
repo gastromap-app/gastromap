@@ -598,7 +598,10 @@ const LocationDetailsPage = () => {
     )
 
     return (
-        <PageTransition className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pb-32 pt-20 md:pt-24`}>
+        <PageTransition
+            className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pt-20 md:pt-24`}
+            style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+        >
 
             <div className="relative">
                 {/* Action Bar Container - Now relative to content start */}

@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
+    const { t } = useTranslation()
     const isDark = theme === 'dark'
 
     // ── Local filter state ──────────────────────────────────────────────────
@@ -103,7 +105,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         {/* Header */}
                         <div className={`p-6 flex justify-between items-center border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
                             <div>
-                                <h2 className="text-[20px] font-bold">Filters</h2>
+                                <h2 className="text-[20px] font-bold">{t('filter.title')}</h2>
                                 {activeCount > 0 && (
                                     <p className="text-[11px] text-blue-500 font-bold mt-0.5">{activeCount} active</p>
                                 )}
@@ -115,7 +117,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-900'}`}
                                     >
                                         <RotateCcw size={12} />
-                                        Reset
+                                        {t('filter.reset')}
                                     </button>
                                 )}
                                 <button
@@ -244,7 +246,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 <div className="space-y-6">
                                     {[
                                         {
-                                            group: 'Cuisine & Menu',
+                                            group: t('filter.cuisine_menu'),
                                             items: ['Signature Cuisine', 'Vegan Menu', 'Delicious Desserts', 'All Day Breakfast', 'Fusion', 'Italian', 'French', 'Japanese', 'Chinese', 'Greek', 'Spanish', 'Mexican', 'Thai', 'Georgian', 'Polish', 'Israeli', 'American', 'Mediterranean', 'Indian', 'Vietnamese', 'Turkish'],
                                         },
                                         {
@@ -314,7 +316,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 onClick={handleApply}
                                 className="w-full h-16 bg-blue-600 text-white font-bold rounded-[20px] shadow-xl shadow-blue-500/30 active:scale-[0.98] hover:bg-blue-700 transition-all text-base"
                             >
-                                {activeCount > 0 ? `Apply ${activeCount} filter${activeCount !== 1 ? 's' : ''}` : 'Apply filters'}
+                                {activeCount > 0 ? t('filter.apply_count', { count: activeCount }) : t('filter.apply')}
                             </button>
                         </div>
                     </motion.div>

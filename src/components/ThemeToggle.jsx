@@ -36,7 +36,7 @@ const ThemeToggle = () => {
                         className="theme-controller btn btn-sm btn-block btn-ghost justify-start gap-2"
                         onClick={() => themeController.setTheme('auto')}
                     >
-                        <RefreshCw size={16} className="text-gray-400" />
+                        <RefreshCw size={16} className="text-gray-500 dark:text-gray-400" />
                         System
                     </button>
                 </li>

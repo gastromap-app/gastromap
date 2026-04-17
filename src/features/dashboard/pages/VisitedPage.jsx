@@ -50,7 +50,7 @@ function VisitedCard({ visit, index, onDelete }) {
                             <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {loc.title}
                             </h3>
-                            <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                            <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                                 {loc.category}
                             </p>
                         </div>
@@ -62,7 +62,7 @@ function VisitedCard({ visit, index, onDelete }) {
                     </div>
 
                     <div className="flex items-center gap-3 mt-2">
-                        <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
                             <Clock size={10} />
                             {new Date(visit.visited_at).toLocaleDateString()}
                         </span>
@@ -80,7 +80,7 @@ function VisitedCard({ visit, index, onDelete }) {
                 <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(visit.id) }}
                     className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
-                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400' : 'bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-500'
+                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400' : 'bg-gray-100 hover:bg-red-50 text-gray-500 dark:text-gray-400 hover:text-red-500'
                     }`}
                     aria-label="Delete visit"
                 >
@@ -132,7 +132,7 @@ function EmptyState({ isDark }) {
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('visited.empty_title')}
             </h2>
-            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                 {t('visited.empty_desc')}
             </p>
 
@@ -199,7 +199,7 @@ const VisitedPage = () => {
                     {t('visited.title')}
                 </h1>
                 {visits.length > 0 && (
-                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                         {t('visited.diary')}
                     </p>
                 )}

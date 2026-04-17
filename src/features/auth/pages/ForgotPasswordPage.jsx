@@ -48,7 +48,7 @@ const ForgotPasswordPage = () => {
                     <h1 className="text-5xl font-bold leading-tight mb-8">
                         Reset your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">password</span>
                     </h1>
-                    <p className="text-gray-400 text-lg">
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">
                         We'll send you a link to reset your password and get you back to discovering great places.
                     </p>
                 </div>
@@ -83,7 +83,7 @@ const ForgotPasswordPage = () => {
                                 We've sent a password reset link to:
                             </p>
                             <p className="font-semibold text-gray-900 mb-6">{submittedEmail}</p>
-                            <p className="text-sm text-gray-400 mb-8">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
                                 Didn't receive the email? Check your spam folder or try again.
                             </p>
                             <button
@@ -111,7 +111,7 @@ const ForgotPasswordPage = () => {
                                 <motion.div variants={itemVariants} className="space-y-2">
                                     <label htmlFor="email" className="text-sm font-bold text-gray-900 ml-1">Email</label>
                                     <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                         <input
                                             id="email"
                                             name="email"

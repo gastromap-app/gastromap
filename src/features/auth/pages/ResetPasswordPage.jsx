@@ -79,7 +79,7 @@ const ResetPasswordPage = () => {
                     <h1 className="text-5xl font-bold leading-tight mb-8">
                         Create a new <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">password</span>
                     </h1>
-                    <p className="text-gray-400 text-lg">
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">
                         Make sure your new password is secure and memorable.
                     </p>
                 </div>
@@ -138,7 +138,7 @@ const ResetPasswordPage = () => {
                                 <motion.div variants={itemVariants} className="space-y-2">
                                     <label htmlFor="password" className="text-sm font-bold text-gray-900 ml-1">New Password</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                         <input
                                             id="password"
                                             name="password"
@@ -152,7 +152,7 @@ const ResetPasswordPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-900 transition-colors"
                                         >
                                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
@@ -173,7 +173,7 @@ const ResetPasswordPage = () => {
                                 <motion.div variants={itemVariants} className="space-y-2">
                                     <label htmlFor="confirmPassword" className="text-sm font-bold text-gray-900 ml-1">Confirm Password</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                         <input
                                             id="confirmPassword"
                                             name="confirmPassword"
@@ -186,7 +186,7 @@ const ResetPasswordPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-900 transition-colors"
                                         >
                                             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>

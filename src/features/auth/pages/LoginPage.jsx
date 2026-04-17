@@ -77,7 +77,7 @@ const LoginPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold">AI-Powered Recommendations</h3>
-                                    <p className="text-sm text-gray-400">Personalized to your taste profile.</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Personalized to your taste profile.</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
@@ -86,7 +86,7 @@ const LoginPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold">Exclusive Access</h3>
-                                    <p className="text-sm text-gray-400">Book tables at top-tier venues.</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Book tables at top-tier venues.</p>
                                 </div>
                             </div>
                         </div>
@@ -130,7 +130,7 @@ const LoginPage = () => {
                         <motion.div variants={itemVariants} className="space-y-2">
                             <label htmlFor="email" className="text-sm font-bold text-gray-900 ml-1">Email</label>
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                 <input
                                     id="email"
                                     name="email"
@@ -146,7 +146,7 @@ const LoginPage = () => {
                         <motion.div variants={itemVariants} className="space-y-2">
                             <label htmlFor="password" className="text-sm font-bold text-gray-900 ml-1">Password</label>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                 <input
                                     id="password"
                                     name="password"
@@ -159,7 +159,7 @@ const LoginPage = () => {
                                     type="button"
                                     aria-label={showPassword ? 'Hide' : 'Reveal'}
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-900 transition-colors"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>

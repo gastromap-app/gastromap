@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Star, MapPin, Clock, Phone, Share2, Heart,
     MessageSquare, Navigation, ArrowLeft, ShieldCheck,
-    Calendar, Users, Lock, Sparkles, Lightbulb,
+    Calendar, Users, Sparkles, Lightbulb,
     UtensilsCrossed, Camera, User, ChevronRight, CheckCircle2,
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
@@ -100,7 +100,7 @@ const LocationDetailsPage = () => {
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <MapPin size={48} className="text-gray-300" />
             <h2 className="text-xl font-black text-gray-700 dark:text-gray-200">Location not found</h2>
-            <p className="text-sm text-gray-400">This place may have been removed or the link is incorrect.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">This place may have been removed or the link is incorrect.</p>
             <button
                 onClick={() => navigate('/explore')}
                 className="mt-2 px-6 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm"
@@ -133,7 +133,7 @@ const LocationDetailsPage = () => {
     }
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-white/[0.05] border-white/10" : "bg-white border-gray-100 shadow-sm"
 
     const fadeInUp = {
@@ -218,7 +218,7 @@ const LocationDetailsPage = () => {
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                     {location.tags?.map(tag => (
-                        <span key={tag} className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all cursor-default ${isDark ? 'bg-white/5 border-white/5 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+                        <span key={tag} className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all cursor-default ${isDark ? 'bg-white/5 border-white/5 text-gray-500 dark:text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
                             #{translate(tag).toUpperCase()}
                         </span>
                     ))}
@@ -456,7 +456,7 @@ const LocationDetailsPage = () => {
                         <div className="space-y-6">
                             <div className="flex justify-between items-center">
                                 <h4 className={`font-black ${textStyle}`}>Rate your experience</h4>
-                                <button onClick={() => setIsWritingReview(false)} className="text-gray-400"><X size={20} /></button>
+                                <button onClick={() => setIsWritingReview(false)} className="text-gray-500 dark:text-gray-400"><X size={20} /></button>
                             </div>
                             <div className="flex gap-2">
                                 {[1, 2, 3, 4, 5].map(s => (
@@ -478,7 +478,7 @@ const LocationDetailsPage = () => {
                             <button
                                 onClick={handleSubmitReview}
                                 disabled={!newReview.text.trim()}
-                                className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed'}`}
+                                className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Send size={18} /> Submit Review
                             </button>
@@ -511,7 +511,7 @@ const LocationDetailsPage = () => {
                                             <div className="flex items-center gap-2">
                                                 <p className={`font-black ${textStyle}`}>{rev.profiles?.name || rev.user_name || 'Anonymous'}</p>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mt-0.5">
                                                 {new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                             </p>
                                         </div>
@@ -600,7 +600,7 @@ const LocationDetailsPage = () => {
     return (
         <PageTransition
             className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pt-20 md:pt-24`}
-            style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+            style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
         >
 
             <div className="relative">
@@ -669,9 +669,9 @@ const LocationDetailsPage = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-[4vw] pt-4 relative z-30">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <div className="lg:col-span-2 space-y-6">
+            <div className="max-w-5xl mx-auto px-[4vw] pt-4 relative z-30">
+                <div className="grid grid-cols-1 gap-5">
+                    <div className="space-y-6">
                         {/* Tab Switcher */}
                         <div className="w-full relative group">
                             <div
@@ -682,7 +682,7 @@ const LocationDetailsPage = () => {
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`flex-shrink-0 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl px-10' : 'text-gray-500 hover:text-blue-500'}`}
+                                        className={`flex-shrink-0 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl' : 'text-gray-500 hover:text-blue-500'}`}
                                     >
                                         {tab}
                                     </button>
@@ -711,36 +711,6 @@ const LocationDetailsPage = () => {
                         {activeTab === 'Notes' && renderNotes()}
                     </div>
 
-                    {/* Reservation Panel (Placeholder) */}
-                    <div className="lg:col-span-1">
-                        <div className="sticky top-32">
-                            <div className={`p-10 rounded-[48px] border space-y-8 relative overflow-hidden blur-[2px] opacity-60 ${isDark ? 'bg-[#121212] border-white/5' : 'bg-white border-gray-100 shadow-sm'}`}>
-                                <h3 className={`text-2xl font-black ${textStyle}`}>Reservation</h3>
-                                <div className="space-y-3">
-                                    <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
-                                    <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
-                                </div>
-                                <button disabled className="w-full h-16 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/10 rounded-[48px]">
-                                <div className="bg-[#1a1c24]/95 backdrop-blur-xl border border-blue-500/30 px-8 py-5 rounded-[32px] shadow-2xl text-center">
-                                    <Lock size={24} className="text-blue-500 mx-auto mb-2" />
-                                    <p className="text-white font-black">In Development</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Fixed Action Bar Placeholder */}
-            <div className={`fixed bottom-0 left-0 right-0 p-6 md:hidden z-[100] backdrop-blur-2xl border-t ${isDark ? 'bg-black/80 border-white/5' : 'bg-white/90 border-gray-100'}`}>
-                <div className="flex gap-4 items-center opacity-40">
-                    <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase text-gray-500">Approximate</p>
-                        <p className={`text-2xl font-black ${textStyle}`}>$35</p>
-                    </div>
-                    <button disabled className="flex-[2] h-16 bg-gray-400/20 text-gray-500 font-black rounded-2xl">Coming Soon</button>
                 </div>
             </div>
         </PageTransition>

@@ -9,6 +9,7 @@ import {
     ArrowUpDown, X, SearchX, AlertCircle
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import FavoriteButton from '@/components/ui/FavoriteButton'
 import FilterModal from '@/features/dashboard/components/FilterModal'
 const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab'))
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
@@ -44,68 +45,102 @@ function OpenBadge({ openingHours }) {
 }
 
 // ─── Mobile location card ─────────────────────────────────────────────────
-const MobileCard = memo(function MobileCard({ item, isDark, textStyle, subTextStyle }) {
+const MobileCard = memo(function MobileCard({ item }) {
     const navigate = useNavigate()
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
     const { isFavorite, toggleFavorite } = useFavoritesStore()
     const saved = isFavorite(item.id)
+
+    const openMaps = (e) => {
+        e.stopPropagation()
+        const query = encodeURIComponent(`${item.title}, ${item.address || item.city || ''}`)
+        window.open(`https://maps.google.com/?q=${query}`, '_blank', 'noopener')
+    }
 
     return (
         <motion.div
             variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+            initial="hidden"
+            animate="visible"
             onClick={() => navigate(`/location/${item.id}`)}
-            className={`relative flex flex-col p-3 rounded-[32px] overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
+            className={`relative flex flex-col p-3 rounded-sheet overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
         >
-            <div className="relative h-48 w-full rounded-[24px] overflow-hidden mb-3">
+            {/* Image area */}
+            <div className="relative h-48 w-full rounded-card overflow-hidden mb-3">
                 <LazyImage
                     src={item.image}
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-                {/* Labels */}
+                {/* Special label */}
                 <div className="absolute top-3 left-3 flex gap-2">
                     {item.special_labels?.slice(0, 1).map(label => (
-                        <div key={label} className="bg-blue-600 text-white px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg">
+                        <div key={label} className="bg-blue-600 text-white px-2.5 py-1 rounded-pill text-[9px] font-black uppercase tracking-wider shadow-lg">
                             {label}
                         </div>
                     ))}
                 </div>
 
-                {/* Save button */}
-                <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
-                    aria-label={saved ? 'Remove from favorites' : 'Add to favorites'}
-                    className={`absolute top-3 right-3 w-10 h-10 rounded-xl backdrop-blur-md flex items-center justify-center border active:scale-90 transition-all ${
-                        saved ? 'bg-red-500 border-red-400 text-white' : 'bg-white/20 border-white/30 text-white'
-                    }`}
-                >
-                    <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
-                </button>
+                {/* Save button — 44×44 via FavoriteButton chip variant */}
+                <div className="absolute top-1.5 right-1.5">
+                    <FavoriteButton
+                        isFavorite={saved}
+                        onToggle={() => toggleFavorite(item.id)}
+                        variant="chip"
+                        size={18}
+                    />
+                </div>
 
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                    <div className="space-y-1">
-                        <span className="bg-white/20 backdrop-blur-md text-white px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border border-white/40">
+                {/* Bottom overlay: category pill + title + maps CTA */}
+                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end gap-2">
+                    <div className="flex-1 min-w-0 space-y-1">
+                        <span className="bg-white/20 backdrop-blur-md text-white px-2.5 py-0.5 rounded-pill text-[9px] font-black uppercase border border-white/40">
                             {item.category}
                         </span>
-                        <h4 className="text-xl font-black text-white leading-tight mt-1">{item.title}</h4>
+                        <h4 className="text-xl font-black text-white leading-tight truncate">{item.title}</h4>
                     </div>
-                    <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-xl shadow-blue-600/30">
+                    {/* Maps CTA — now wired to open Google Maps */}
+                    <button
+                        onClick={openMaps}
+                        aria-label={`Open ${item.title} in Maps`}
+                        className="w-11 h-11 flex-shrink-0 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-90 transition-transform"
+                    >
                         <Navigation size={18} />
-                    </div>
+                    </button>
                 </div>
             </div>
 
-            <div className="px-1 pb-1 space-y-2.5">
+            {/* Info row */}
+            <div className="px-1 pb-1 space-y-2">
+                {/* Rating + price */}
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                        <span className={`text-sm font-black ${textStyle}`}>{item.rating}</span>
-                        <span className={`text-[11px] ${subTextStyle}`}>({item.reviews ?? '—'})</span>
+                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.rating}</span>
+                        <span className={`text-[11px] ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>({item.reviews ?? '—'})</span>
                     </div>
                     <span className="text-blue-500 font-bold text-sm">{item.priceLevel}</span>
                 </div>
-                <OpenBadge openingHours={item.openingHours} />
+
+                {/* Cuisine + open status */}
+                <div className="flex items-center justify-between gap-2">
+                    {(item.cuisine || item.category) && (
+                        <p className={`text-[12px] font-semibold truncate ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>
+                            {[item.cuisine, item.category].filter(Boolean).join(' · ')}
+                        </p>
+                    )}
+                    <div className="flex-shrink-0">
+                        <OpenBadge openingHours={item.openingHours} />
+                    </div>
+                </div>
+
+                {/* Navigate to detail hint */}
+                <div className="flex justify-end">
+                    <ChevronRight size={16} className={`${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                </div>
             </div>
         </motion.div>
     )

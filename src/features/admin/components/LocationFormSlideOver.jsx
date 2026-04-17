@@ -7,58 +7,17 @@ import {
     RefreshCw, Zap, Info, ChevronUp, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+    CATEGORIES_FULL as CATEGORIES,
+    PRICE_LEVELS,
+    CUISINE_OPTIONS,
+    LABEL_GROUPS,
+    VISIT_TIMES,
+} from '@/shared/constants/taxonomy'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-    'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
-    'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining'
-]
-
-const PRICE_LEVELS = [
-    { value: '$',    label: '$ — бюджетно' },
-    { value: '$$',   label: '$$ — средне' },
-    { value: '$$$',  label: '$$$ — дорого' },
-    { value: '$$$$', label: '$$$$ — люкс' },
-]
-
-const CUISINE_OPTIONS = [
-    'Polish', 'Italian', 'Japanese', 'French', 'Mexican', 'Thai', 'Greek',
-    'Georgian', 'Ukrainian', 'Spanish', 'Indian', 'Vietnamese', 'American',
-    'Mediterranean', 'Israeli', 'Turkish', 'Chinese', 'Korean', 'Fusion',
-]
-
-const LABEL_GROUPS = {
-    "Кухня и Меню": [
-        "Авторская кухня", "Веганское меню", "Вкусные десерты", "Завтраки целый день",
-        "Местные продукты", "Меню завтраков", "Меню ланча", "Фьюжен",
-        "Итальянская", "Французская", "Японская", "Китайская", "Греческая",
-        "Испанская", "Мексиканская", "Тайская", "Грузинская", "Польская",
-        "Израильская", "Американская", "Средиземноморская", "Индийская", "Вьетнамская"
-    ].sort(),
-    "Бар и Напитки": [
-        "Авторские коктейли", "Винная карта", "Гостевые смены", "Дегустация вин",
-        "DJ сеты", "Крафтовое пиво", "Спешиалти кофе", "Широкий выбор джина"
-    ].sort(),
-    "Атмосфера": [
-        "Живописный вид", "Живая музыка", "Коворкинг", "Настольные игры",
-        "Романтическая атмосфера", "Скрытый вход (Speakeasy)",
-        "Счастливые часы", "Тихая атмосфера", "Уютно", "Оживлённая атмосфера"
-    ].sort(),
-    "Удобства и Сервис": [
-        "Балкончики", "Детская игровая зона", "Доставка", "Инклюзивность",
-        "Любимое у местных", "Парковка", "Pet friendly",
-        "Самовывоз", "Терраса во дворе", "Терраса на крыше", "WiFi"
-    ].sort(),
-    "Награды": ["Гид Мишлен", "Звезда Мишлен", "Кальян", "Поздний ужин"].sort(),
-}
-
-const VISIT_TIMES = [
-    { id: 'morning',    label: 'Утро',         emoji: '🌅' },
-    { id: 'day',        label: 'День',          emoji: '☀️' },
-    { id: 'evening',    label: 'Вечер',         emoji: '🌆' },
-    { id: 'late_night', label: 'Ночь',          emoji: '🌙' },
-]
+// Category/price/cuisine/label/visit taxonomies live in
+// src/shared/constants/taxonomy.js — single source of truth.
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 

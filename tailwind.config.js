@@ -25,6 +25,7 @@ export default {
                 // to keep cards/sheets/inputs/pills consistent across surfaces.
                 input: '16px',   // form inputs, small controls
                 card:  '28px',   // location cards, list items
+                image: '24px',   // inner image blocks within cards
                 sheet: '32px',   // modals, slide-overs
                 pill:  '9999px', // chips, pills, round buttons
             },

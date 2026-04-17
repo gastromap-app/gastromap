@@ -10,10 +10,10 @@ import { cn } from '@/lib/utils'
 import {
     CATEGORIES_FULL as CATEGORIES,
     PRICE_LEVELS,
-    CUISINE_OPTIONS,
     LABEL_GROUPS,
     VISIT_TIMES,
 } from '@/shared/constants/taxonomy'
+import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
 // Category/price/cuisine/label/visit taxonomies live in
@@ -79,6 +79,9 @@ const LocationFormSlideOver = ({
     const [newImageUrl, setNewImageUrl]  = useState('')
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
+
+    // Cuisine list driven by KG — falls back to taxonomy.js while loading
+    const { options: cuisineOptions, isLoading: cuisinesLoading } = useCuisineOptions()
 
     // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -370,9 +373,14 @@ const LocationFormSlideOver = ({
                                             value={formData.cuisine || ''}
                                             onChange={e => set('cuisine', e.target.value)}
                                             className={cn(input, "appearance-none pr-8")}
+                                            disabled={cuisinesLoading}
                                         >
                                             <option value="">— выбрать —</option>
-                                            {CUISINE_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                            {cuisineOptions.map(c => (
+                                                <option key={c.id} value={c.name}>
+                                                    {c.emoji} {c.name}
+                                                </option>
+                                            ))}
                                         </select>
                                         <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>

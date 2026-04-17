@@ -231,7 +231,6 @@ function EmptyState({ query, isDark }) {
 // ─── Page ─────────────────────────────────────────────────────────────────
 const LocationsPage = () => {
     const { country, city } = useParams()
-    const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
@@ -281,8 +280,6 @@ const LocationsPage = () => {
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-400' : 'text-gray-500'
-    const cardVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }
-
     const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
 
     return (

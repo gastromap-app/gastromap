@@ -14,7 +14,7 @@ import {
  * Replace with real Stripe Elements in production.
  */
 export function PaymentStub({ userId, userEmail, onPaymentComplete, onError }) {
-    const { t, i18n } = useTranslation()
+    const { i18n } = useTranslation()
     const [products, setProducts] = useState([])
     const [selectedProduct, setSelectedProduct] = useState(null)
     const [isProcessing, setIsProcessing] = useState(false)

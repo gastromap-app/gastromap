@@ -87,8 +87,9 @@ const ProfilePage = () => {
     const contributions = reviews.slice(0, 3).map(r => ({
         id: r.id,
         name: r.locations?.title || 'Location',
-        status: r.status === 'published' ? 'Published' : 'Pending',
-        points: r.status === 'published' ? '+5 XP' : 'In Review',
+        isApproved: r.status === 'published',
+        statusLabel: r.status === 'published' ? t('profile.published') : t('profile.pending'),
+        points: r.status === 'published' ? '+5 XP' : t('profile.in_review'),
         date: new Date(r.created_at).toLocaleDateString(),
     }))
 
@@ -217,21 +218,21 @@ const ProfilePage = () => {
                                 className={`flex items-center justify-between p-4 ${idx !== contributions.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                                         }`}>
-                                        {item.status === 'Approved' ? <CheckCircle2 size={18} /> : <Clock size={18} />}
+                                        {item.isApproved ? <CheckCircle2 size={18} /> : <Clock size={18} />}
                                     </div>
                                     <div>
                                         <h4 className={`text-sm font-bold ${textStyle}`}>{item.name}</h4>
-                                        <p className="text-xs text-slate-400 font-medium">{item.date}</p>
+                                        <p className={`text-xs font-medium ${subTextStyle}`}>{item.date}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${item.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${item.isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                                         }`}>
-                                        {item.status === 'Approved' ? t('profile.approved') : t('profile.pending')}
+                                        {item.statusLabel}
                                     </span>
-                                    {item.status === 'Approved' && (
+                                    {item.isApproved && (
                                         <p className="text-[10px] font-black text-blue-500 mt-1">{item.points}</p>
                                     )}
                                 </div>

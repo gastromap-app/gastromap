@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useEffect } from 'react'
 import {
     Plus, Search, Filter, MoreHorizontal, Edit, Trash2,
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
@@ -8,11 +7,10 @@ import {
     Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { cn } from '@/lib/utils'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
@@ -68,24 +66,18 @@ const AdminLocationsPage = () => {
     
     const {
         view, setView, searchQuery, setSearchQuery, statusFilter, setStatusFilter,
-        selectedLocation, setSelectedLocation, isSlideOverOpen, setIsSlideOverOpen,
+        selectedLocation, isSlideOverOpen, setIsSlideOverOpen,
         isImportWizardOpen, setIsImportWizardOpen, viewMode, setViewMode,
-        formData, setFormData, aiSearchQuery, setAiSearchQuery,
-        culinarySearchQuery, setCulinarySearchQuery, culinaryResults, setCulinaryResults,
+        formData, setFormData,
+        culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
-        locationsList, pendingLocations, loadingLocations, loadError, filteredLocations,
-        createLocMutation, updateLocMutation, deleteLocMutation, updateLocStatusMutation,
+        locationsList, pendingLocations, loadError, filteredLocations,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
-        aiQueryMutation, culinaryContextMutation,
+        aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
-        handleApprove, handleReject, handleDelete, handleImproveText, handleSave,
-        addImageUrl, removeImage
+        handleApprove, handleReject, handleDelete, handleSave,
+        isExporting, handleExport
     } = hook
-
-    const categories = [
-        'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
-        'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop'
-    ]
 
     const LABEL_GROUPS = {
         "Кухня и Меню": [
@@ -144,7 +136,8 @@ const AdminLocationsPage = () => {
             <AdminLocationsHeader
                 onCreateNew={handleCreateNew}
                 onImport={() => setIsImportWizardOpen(true)}
-                onExport={() => {}}
+                onExport={handleExport}
+                isExporting={isExporting}
                 onBulkReindex={() => {
                     if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
                         bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {

@@ -192,6 +192,7 @@ const SignUpPage = () => {
                                 />
                                 <button
                                     type="button"
+                                    aria-label={showPassword ? 'Hide' : 'Reveal'}
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
                                 >
@@ -201,10 +202,16 @@ const SignUpPage = () => {
                         </motion.div>
 
                         <motion.div variants={itemVariants} className="flex items-start gap-3 mt-4 text-sm">
-                            <input type="checkbox" required className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                            <span className="text-gray-500 leading-tight">
+                            <input
+                                id="signup-terms"
+                                type="checkbox"
+                                required
+                                aria-label="Agree to Terms of Service and Privacy Policy"
+                                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <label htmlFor="signup-terms" className="text-gray-500 leading-tight cursor-pointer">
                                 I agree to the <Link to="/terms" className="font-bold text-blue-600 hover:text-blue-700">Terms of Service</Link> and <Link to="/privacy" className="font-bold text-blue-600 hover:text-blue-700">Privacy Policy</Link>.
-                            </span>
+                            </label>
                         </motion.div>
 
                         <motion.button

@@ -15,7 +15,8 @@ describe('Public Features Integration', () => {
 
         // Hero headline is synchronous — LandingPage is not lazy loaded
         expect(screen.getByText(/Discover places/i)).toBeInTheDocument()
-        expect(screen.getByText(/Get Started/i)).toBeInTheDocument()
+        // "Get Started" appears in nav + hero CTA; assert at least one
+        expect(screen.getAllByText(/Get Started/i).length).toBeGreaterThan(0)
     })
 
     it('navigates from Landing to SignUp on Get Started click', async () => {
@@ -23,8 +24,8 @@ describe('Public Features Integration', () => {
             initialEntries: ['/'],
         })
 
-        // Click the CTA — navigates to /auth/signup
-        fireEvent.click(screen.getByText(/Get Started/i))
+        // Multiple "Get Started" exist (nav + hero); use first
+        fireEvent.click(screen.getAllByText(/Get Started/i)[0])
 
         // SignUpPage is lazy-loaded — wait for it to mount
         const heading = await screen.findByText(/Create account|Sign up|Регистрация/i, {}, { timeout: 5000 })

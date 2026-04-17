@@ -318,11 +318,10 @@ const DashboardPage = () => {
 // --- DESKTOP VIEW COMPONENT ---
 const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
     const { t } = useTranslation()
-    const { toggleTheme } = useTheme()
     const navigate = useNavigate()
     const [greeting, setGreeting] = useState('')
     const [activeTab, setActiveTab] = useState('overview')
-    const [activeFilter, setActiveFilter] = useState('All')
+    const [activeFilter] = useState('All')
 
     useEffect(() => {
         const hour = new Date().getHours()
@@ -381,16 +380,6 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                     </button>
                 </div>
 
-                {/* Recommendation Pills - Hidden for now
-                <div className="flex flex-wrap gap-3 overflow-x-auto pb-2 scrollbar-hide mt-[10px]">
-                    {['Lunch', 'Coffee', 'Fast', 'Dinner', 'Dessert', 'Date Night'].map((pill) => (
-                        <button key={pill} className={`px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap border transition-all ${theme === 'light' ? 'bg-white border-gray-100' : 'bg-white/5 border-white/10 hover:bg-white/10'
-                            } ${textStyle}`}>
-                            {pill}
-                        </button>
-                    ))}
-                </div>
-                */}
             </div>
 
             {/* 3. Control Bar: Tabs & Filters */}

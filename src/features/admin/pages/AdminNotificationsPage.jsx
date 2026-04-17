@@ -12,7 +12,7 @@ import {
     ToggleLeft, ToggleRight, AlertCircle, CheckCircle2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useNotificationStore } from '@/shared/store/useNotificationStore'
 import {
     NOTIFICATION_TYPES,

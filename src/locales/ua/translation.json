@@ -131,6 +131,8 @@
     "add_place": "Додати Місце",
     "no_contributions": "Немає внесків",
     "approved": "Схвалено",
+    "published": "Опубліковано",
+    "in_review": "На перевірці",
     "pending": "На розгляді",
     "taste_profile": "Профіль Смаку",
     "foodie_dna_label": "Foodie DNA",
@@ -248,5 +250,18 @@
     "search": "Пошук",
     "filter": "Фільтр",
     "all": "Все"
+  },
+  "filter": {
+    "title": "Фільтри",
+    "reset": "Скинути",
+    "cuisine_menu": "Кухня і меню",
+    "apply": "Застосувати фільтри",
+    "apply_count_one": "Застосувати {{count}} фільтр",
+    "apply_count_few": "Застосувати {{count}} фільтри",
+    "apply_count_many": "Застосувати {{count}} фільтрів",
+    "apply_count_other": "Застосувати {{count}} фільтрів"
+  },
+  "map": {
+    "you_are_here": "Ви тут"
   }
 }

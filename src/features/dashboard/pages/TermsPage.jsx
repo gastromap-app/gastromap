@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FileText, Globe, Clock } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'

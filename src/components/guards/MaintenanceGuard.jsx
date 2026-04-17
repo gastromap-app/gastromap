@@ -1,14 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Hammer, AlertTriangle, MessageCircle, ArrowLeft, LogOut } from 'lucide-react'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+// Note: we intentionally use window.location.href instead of useNavigate
+// so a full page reload clears all in-memory state after sign-out.
 
 export const MaintenanceGuard = ({ children }) => {
     const { appStatus, maintenanceMessage, downMessage } = useAppConfigStore()
     const { user, logout } = useAuthStore()
-    const navigate = useNavigate()
+    const [signingOut, setSigningOut] = useState(false)
 
     // Admins bypass maintenance mode
     if (user?.role === 'admin' || appStatus === 'active') {
@@ -16,6 +18,17 @@ export const MaintenanceGuard = ({ children }) => {
     }
 
     const isDown = appStatus === 'down'
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await logout()
+        } finally {
+            // Hard redirect — guarantees a clean app re-mount and avoids
+            // any React Router / auth-listener race conditions.
+            window.location.href = '/login'
+        }
+    }
 
     return (
         <div className="fixed inset-0 z-[9999] bg-[#FDFDFD] dark:bg-slate-950 flex items-center justify-center p-6 text-center">
@@ -48,10 +61,15 @@ export const MaintenanceGuard = ({ children }) => {
                     </button>
                     {user && (
                         <button
-                            onClick={async () => { await logout(); navigate('/login') }}
-                            className="w-full h-14 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95"
+                            onClick={handleSignOut}
+                            disabled={signingOut}
+                            className="w-full h-14 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            <LogOut size={18} /> Sign Out
+                            {signingOut
+                                ? <span className="w-4 h-4 rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
+                                : <LogOut size={18} />
+                            }
+                            {signingOut ? 'Signing out…' : 'Sign Out'}
                         </button>
                     )}
                 </div>

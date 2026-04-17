@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
@@ -8,15 +8,20 @@ import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 const PublicNavbar = () => {
     const { isAuthenticated, user, logout } = useAuthStore()
     const { appStatus } = useAppConfigStore()
-    const navigate = useNavigate()
+    const [signingOut, setSigningOut] = useState(false)
 
     // During maintenance/down, non-admin users can't reach Dashboard — show Sign Out instead
     const isMaintenance = appStatus !== 'active'
     const showSignOut = isAuthenticated && isMaintenance && user?.role !== 'admin'
 
     const handleSignOut = async () => {
-        await logout()
-        navigate('/login')
+        setSigningOut(true)
+        try {
+            await logout()
+        } finally {
+            // Hard redirect — clean re-mount, no auth-listener races
+            window.location.href = '/login'
+        }
     }
 
     return (
@@ -38,10 +43,15 @@ const PublicNavbar = () => {
                         {showSignOut ? (
                             <Button
                                 onClick={handleSignOut}
-                                className="rounded-[18px] md:rounded-full hover:scale-105 active:scale-95 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs md:text-sm font-bold px-4 md:px-6 h-9 md:h-10 flex items-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                                disabled={signingOut}
+                                className="rounded-[18px] md:rounded-full hover:scale-105 active:scale-95 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs md:text-sm font-bold px-4 md:px-6 h-9 md:h-10 flex items-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors disabled:opacity-60"
                                 variant="ghost"
                             >
-                                <LogOut size={14} /> Sign Out
+                                {signingOut
+                                    ? <span className="w-3 h-3 rounded-full border-2 border-red-400 border-t-transparent animate-spin" />
+                                    : <LogOut size={14} />
+                                }
+                                {signingOut ? 'Signing out…' : 'Sign Out'}
                             </Button>
                         ) : isAuthenticated ? (
                             <Link to={user?.role === 'admin' ? '/admin' : '/dashboard'}>

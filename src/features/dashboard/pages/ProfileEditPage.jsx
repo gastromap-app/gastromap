@@ -58,7 +58,7 @@ const ProfileEditPage = () => {
     }, [preferences, loadingPrefs])
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const inputBg = isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"
 

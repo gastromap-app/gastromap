@@ -76,7 +76,7 @@ export function AnimatedInputBar({ input, onInputChange, onSubmit, isTyping }) {
                             disabled={!input.trim() || isTyping}
                             className={`w-10 h-10 rounded-full transition-all shadow-lg active:scale-90 ${input.trim()
                                 ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-blue-500/40'
-                                : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600'
+                                : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 dark:text-zinc-600'
                                 }`}
                         >
                             <MoveUp className="h-5 w-5" />

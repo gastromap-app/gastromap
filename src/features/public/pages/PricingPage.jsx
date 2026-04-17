@@ -30,7 +30,7 @@ const PricingPage = () => {
                             variants={fadeInUp}
                             className="p-8 md:p-10 rounded-[40px] flex flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E]"
                         >
-                            <div className="text-xs font-semibold text-gray-400 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
+                            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
                             <div className="text-5xl font-bold tracking-tight mb-2 text-gray-900 dark:text-white">Free</div>
                             <p className="text-sm font-medium text-gray-500 dark:text-white/50 mb-10">Everything you need to discover great food.</p>
                             <ul className="space-y-5 mb-12 text-sm font-medium text-gray-700 dark:text-white/70 flex-1">
@@ -106,7 +106,7 @@ const PricingPage = () => {
                             >
                                 <tier.icon className="w-8 h-8 mx-auto mb-3 text-blue-500 group-hover:scale-110 transition-transform" />
                                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{tier.amount}</div>
-                                <div className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">{tier.label}</div>
+                                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">{tier.label}</div>
                                 <div className="text-xs text-gray-500 dark:text-white/50">{tier.desc}</div>
                             </motion.button>
                         ))}

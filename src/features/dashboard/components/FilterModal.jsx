@@ -64,7 +64,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }
 
     // ── Shared button styles ───────────────────────────────────────────────
-    const chipBase = `px-4 py-2 rounded-xl font-bold text-[11px] border transition-all cursor-pointer`
+    const chipBase = `px-4 py-2.5 min-h-11 flex items-center rounded-xl font-bold text-[11px] border transition-all cursor-pointer`
     const chipActive = `bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20`
     const chipInactive = isDark
         ? `bg-white/5 border-white/5 text-white/70 hover:bg-white/10`
@@ -114,7 +114,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 {activeCount > 0 && (
                                     <button
                                         onClick={handleReset}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-900'}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                     >
                                         <RotateCcw size={12} />
                                         {t('filter.reset')}
@@ -122,7 +122,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-900'}`}
+                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                 >
                                     <X size={24} />
                                 </button>
@@ -301,7 +301,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     onChange={e => setRadius(Number(e.target.value))}
                                     className="w-full h-2 bg-blue-600/10 rounded-full appearance-none cursor-pointer accent-blue-600"
                                 />
-                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
                                     <span>Nearby</span>
                                     <span>City-wide</span>
                                     <span>Regional</span>

@@ -306,7 +306,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
                                                 <span className="text-lg">{getCategoryConfig(loc.category).emoji}</span>
                                                 <div className="min-w-0">
                                                     <p className="text-xs font-bold text-gray-900 truncate">{loc.title}</p>
-                                                    <p className="text-[10px] text-gray-400">★ {loc.rating}</p>
+                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400">★ {loc.rating}</p>
                                                 </div>
                                             </Link>
                                         ))}

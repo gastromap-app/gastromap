@@ -26,7 +26,7 @@ const PublicFooter = () => (
                             <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-6 h-6 object-cover rounded-full" />
                             <span className="font-semibold text-sm">GastroMap</span>
                         </div>
-                        <p className="text-gray-400 text-sm max-w-xs leading-relaxed">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs leading-relaxed">
                             The world's most intelligent culinary guide. <br className="hidden sm:block" />
                             Made with love for foodies.
                         </p>
@@ -73,7 +73,7 @@ const PublicFooter = () => (
                         ].map((col, i) => (
                             <div key={i} className="min-w-[120px]">
                                 <h4 className="font-bold mb-4 md:mb-6 text-sm md:text-base">{col.head}</h4>
-                                <ul className="space-y-4 text-sm text-gray-400">
+                                <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
                                     {col.links.map(l => (
                                         <li key={l.name}>
                                             <Link to={l.path} className="hover:text-white cursor-pointer transition-colors">

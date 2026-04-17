@@ -30,7 +30,7 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
                     className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
                 >
                     <h3 className="text-2xl font-bold mb-2">{t('profile.feedback_title')}</h3>
-                    <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('profile.feedback_desc')}</p>
+                    <p className={`text-sm mb-6 ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>{t('profile.feedback_desc')}</p>
 
                     <textarea
                         className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
@@ -67,7 +67,7 @@ const ProfilePage = () => {
 
     // Styling
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 

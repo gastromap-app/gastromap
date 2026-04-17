@@ -70,12 +70,12 @@ const CitiesPage = () => {
     )
 
     const textStyle    = isDark ? 'text-white'   : 'text-gray-900'
-    const subTextStyle = isDark ? 'text-gray-400' : 'text-gray-500'
+    const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
 
     // ── Shared error / empty state ─────────────────────────────────────────
     const NoResults = () => (
         <div className="py-20 flex flex-col items-center gap-4 text-center">
-            <AlertCircle size={36} className="text-gray-400" />
+            <AlertCircle size={36} className="text-gray-500 dark:text-gray-400" />
             <p className={`text-xl font-bold ${textStyle}`}>
                 {searchQuery ? `No cities match "${searchQuery}"` : `No cities found for ${country}`}
             </p>
@@ -188,7 +188,7 @@ const CitiesPage = () => {
                         </div>
 
                         <nav className={`flex items-center px-4 py-2 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-gray-100'}`}>
-                            <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-blue-500 transition-colors">
+                            <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
                                 <Home size={12} /><span>Dashboard</span>
                             </Link>
                             <ChevronRight size={14} className="mx-2 text-gray-500/50" />

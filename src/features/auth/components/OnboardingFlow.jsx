@@ -252,11 +252,24 @@ export function OnboardingFlow({ onComplete }) {
         }
     }
 
+    // Save full selections and close. Guarantees favoriteCuisines.length > 0
+    // so OnboardingGate never shows again.
     const handleFinish = () => {
         updatePrefs({
-            favoriteCuisines: cuisines,
+            favoriteCuisines: cuisines.length > 0 ? cuisines : ['any'],
             vibePreference: vibes,
-            priceRange: budget,
+            priceRange: budget.length > 0 ? budget : ['$$'],
+        })
+        onComplete()
+    }
+
+    // Skip: save whatever was partially selected, mark cuisines as 'any'
+    // if the user never picked anything (the 'never show again' marker).
+    const handleSkip = () => {
+        updatePrefs({
+            favoriteCuisines: cuisines.length > 0 ? cuisines : ['any'],
+            vibePreference: vibes,
+            priceRange: budget.length > 0 ? budget : ['$$'],
         })
         onComplete()
     }
@@ -284,7 +297,7 @@ export function OnboardingFlow({ onComplete }) {
                     <span className="font-black text-white text-sm tracking-tight">GastroMap</span>
                 </div>
                 <button
-                    onClick={handleFinish}
+                    onClick={handleSkip}
                     className="text-xs font-bold text-white/30 hover:text-white/60 transition-colors"
                 >
                     {t('onboarding.skip')}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Star, MapPin, Clock, Phone, Share2, Heart,
     MessageSquare, Navigation, ArrowLeft, ShieldCheck,
-    Calendar, Users, Lock, Sparkles, Lightbulb,
+    Calendar, Users, Sparkles, Lightbulb,
     UtensilsCrossed, Camera, User, ChevronRight, CheckCircle2,
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
@@ -600,7 +600,7 @@ const LocationDetailsPage = () => {
     return (
         <PageTransition
             className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pt-20 md:pt-24`}
-            style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+            style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
         >
 
             <div className="relative">
@@ -669,9 +669,9 @@ const LocationDetailsPage = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-[4vw] pt-4 relative z-30">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <div className="lg:col-span-2 space-y-6">
+            <div className="max-w-5xl mx-auto px-[4vw] pt-4 relative z-30">
+                <div className="grid grid-cols-1 gap-5">
+                    <div className="space-y-6">
                         {/* Tab Switcher */}
                         <div className="w-full relative group">
                             <div
@@ -682,7 +682,7 @@ const LocationDetailsPage = () => {
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`flex-shrink-0 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl px-10' : 'text-gray-500 hover:text-blue-500'}`}
+                                        className={`flex-shrink-0 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl' : 'text-gray-500 hover:text-blue-500'}`}
                                     >
                                         {tab}
                                     </button>
@@ -711,36 +711,6 @@ const LocationDetailsPage = () => {
                         {activeTab === 'Notes' && renderNotes()}
                     </div>
 
-                    {/* Reservation Panel (Placeholder) */}
-                    <div className="lg:col-span-1">
-                        <div className="sticky top-32">
-                            <div className={`p-10 rounded-[48px] border space-y-8 relative overflow-hidden blur-[2px] opacity-60 ${isDark ? 'bg-[#121212] border-white/5' : 'bg-white border-gray-100 shadow-sm'}`}>
-                                <h3 className={`text-2xl font-black ${textStyle}`}>Reservation</h3>
-                                <div className="space-y-3">
-                                    <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
-                                    <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
-                                </div>
-                                <button disabled className="w-full h-16 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/10 rounded-[48px]">
-                                <div className="bg-[#1a1c24]/95 backdrop-blur-xl border border-blue-500/30 px-8 py-5 rounded-[32px] shadow-2xl text-center">
-                                    <Lock size={24} className="text-blue-500 mx-auto mb-2" />
-                                    <p className="text-white font-black">In Development</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Fixed Action Bar Placeholder */}
-            <div className={`fixed bottom-0 left-0 right-0 p-6 md:hidden z-[100] backdrop-blur-2xl border-t ${isDark ? 'bg-black/80 border-white/5' : 'bg-white/90 border-gray-100'}`}>
-                <div className="flex gap-4 items-center opacity-40">
-                    <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase text-gray-500">Approximate</p>
-                        <p className={`text-2xl font-black ${textStyle}`}>$35</p>
-                    </div>
-                    <button disabled className="flex-[2] h-16 bg-gray-400/20 text-gray-500 font-black rounded-2xl">Coming Soon</button>
                 </div>
             </div>
         </PageTransition>

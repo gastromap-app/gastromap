@@ -43,7 +43,7 @@ function SavedCard({ favorite, index, onRemove }) {
                         <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {loc.title}
                         </h3>
-                        <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                             {loc.cuisine} · {loc.category}
                         </p>
                     </div>
@@ -57,7 +57,7 @@ function SavedCard({ favorite, index, onRemove }) {
 
                 {/* Meta row */}
                 <div className="flex items-center gap-3 mt-2">
-                    <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                    <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
                         {loc.priceLevel}
                     </span>
                     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
@@ -103,7 +103,7 @@ function EmptyState({ isDark }) {
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('saved.empty_title')}
             </h2>
-            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                 {t('saved.empty_desc')}
             </p>
 
@@ -141,7 +141,7 @@ const SavedPage = () => {
                     {t('saved.title')}
                 </h1>
                 {!isLoading && favorites.length > 0 && (
-                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                         {t('saved.places_saved', { count: favorites.length })}
                     </p>
                 )}

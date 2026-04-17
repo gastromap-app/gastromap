@@ -72,7 +72,7 @@ export function BottomNav() {
                                             "flex flex-col items-center justify-center flex-1 h-full relative group",
                                             isActive
                                                 ? (isDark ? "text-white" : "text-blue-600")
-                                                : (isDark ? "text-gray-500 hover:text-white/70" : "text-gray-400 hover:text-gray-600")
+                                                : (isDark ? "text-gray-500 hover:text-white/70" : "text-gray-500 dark:text-gray-400 hover:text-gray-600")
                                         )}
                                     >
                                         <div className={cn(

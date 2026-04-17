@@ -100,7 +100,7 @@ const LocationDetailsPage = () => {
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <MapPin size={48} className="text-gray-300" />
             <h2 className="text-xl font-black text-gray-700 dark:text-gray-200">Location not found</h2>
-            <p className="text-sm text-gray-400">This place may have been removed or the link is incorrect.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">This place may have been removed or the link is incorrect.</p>
             <button
                 onClick={() => navigate('/explore')}
                 className="mt-2 px-6 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm"
@@ -133,7 +133,7 @@ const LocationDetailsPage = () => {
     }
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-white/[0.05] border-white/10" : "bg-white border-gray-100 shadow-sm"
 
     const fadeInUp = {
@@ -218,7 +218,7 @@ const LocationDetailsPage = () => {
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                     {location.tags?.map(tag => (
-                        <span key={tag} className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all cursor-default ${isDark ? 'bg-white/5 border-white/5 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+                        <span key={tag} className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all cursor-default ${isDark ? 'bg-white/5 border-white/5 text-gray-500 dark:text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
                             #{translate(tag).toUpperCase()}
                         </span>
                     ))}
@@ -456,7 +456,7 @@ const LocationDetailsPage = () => {
                         <div className="space-y-6">
                             <div className="flex justify-between items-center">
                                 <h4 className={`font-black ${textStyle}`}>Rate your experience</h4>
-                                <button onClick={() => setIsWritingReview(false)} className="text-gray-400"><X size={20} /></button>
+                                <button onClick={() => setIsWritingReview(false)} className="text-gray-500 dark:text-gray-400"><X size={20} /></button>
                             </div>
                             <div className="flex gap-2">
                                 {[1, 2, 3, 4, 5].map(s => (
@@ -478,7 +478,7 @@ const LocationDetailsPage = () => {
                             <button
                                 onClick={handleSubmitReview}
                                 disabled={!newReview.text.trim()}
-                                className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed'}`}
+                                className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Send size={18} /> Submit Review
                             </button>
@@ -511,7 +511,7 @@ const LocationDetailsPage = () => {
                                             <div className="flex items-center gap-2">
                                                 <p className={`font-black ${textStyle}`}>{rev.profiles?.name || rev.user_name || 'Anonymous'}</p>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mt-0.5">
                                                 {new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                             </p>
                                         </div>

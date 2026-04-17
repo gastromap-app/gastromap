@@ -6,7 +6,7 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
-import { MapPin, Star, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
+import { MapPin, Star, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles, Utensils, Coffee, Wine, X, Map, LayoutList } from 'lucide-react'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTheme } from '@/hooks/useTheme'
 const MapTab = React.lazy(() => import('../components/MapTab'))
@@ -134,6 +134,104 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     )
 }
 
+
+// ─── MAP CATEGORY CONFIG ─────────────────────────────────────────────────────
+const MAP_CATEGORIES = [
+    { name: 'All',         icon: MapPin,    emoji: '📍' },
+    { name: 'Cafe',        icon: Coffee,    emoji: '☕' },
+    { name: 'Restaurant',  icon: Utensils,  emoji: '🍽️' },
+    { name: 'Bar',         icon: Wine,      emoji: '🍸' },
+    { name: 'Fine Dining', icon: Star,      emoji: '🎩' },
+]
+
+// ─── SHARED DISCOVERY MAP PANEL ──────────────────────────────────────────────
+// Used in both mobile tab and desktop map tab. Renders search + category chips
+// + full-height map. All filters write directly to useLocationsStore so
+// MapTab picks them up automatically.
+const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }) => {
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+    const { t } = useTranslation()
+    const { activeCategory, setCategory, filteredLocations } = useLocationsStore()
+
+    const [mapSearch, setMapSearch] = useState('')
+    const debouncedMapSearch = useDebounce(mapSearch, 300)
+
+    useEffect(() => {
+        const { setSearchQuery } = useLocationsStore.getState()
+        setSearchQuery(debouncedMapSearch)
+    }, [debouncedMapSearch])
+
+    // Clear store search when panel unmounts
+    useEffect(() => {
+        return () => {
+            useLocationsStore.getState().setSearchQuery('')
+            useLocationsStore.getState().setCategory('All')
+        }
+    }, [])
+
+    return (
+        <div className="flex flex-col gap-3 w-full">
+            {/* Search + Filter row */}
+            <div className="flex gap-2">
+                <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border transition-all ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-100 shadow-md'}`}>
+                    <SearchIcon size={16} className="text-blue-500 mr-3 flex-shrink-0" />
+                    <input
+                        type="text"
+                        placeholder={t('dashboard.search_placeholder')}
+                        value={mapSearch}
+                        onChange={(e) => setMapSearch(e.target.value)}
+                        className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    />
+                    {mapSearch && (
+                        <button onClick={() => setMapSearch('')} className="ml-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+                <button
+                    onClick={() => setIsFilterOpen(true)}
+                    aria-label="Open filters"
+                    className={`w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center active:scale-95 transition-all border ${isDark ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-md border-transparent'}`}
+                >
+                    <SlidersHorizontal size={18} />
+                </button>
+            </div>
+
+            {/* Category chips */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {MAP_CATEGORIES.map((cat) => {
+                    const active = activeCategory === cat.name
+                    return (
+                        <button
+                            key={cat.name}
+                            onClick={() => setCategory(active && cat.name !== 'All' ? 'All' : cat.name)}
+                            className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 min-h-11 rounded-pill text-[12px] font-bold whitespace-nowrap transition-all border ${
+                                active
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                    : isDark
+                                        ? 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
+                                        : 'bg-white border-gray-100 text-gray-600 hover:border-blue-200 shadow-sm'
+                            }`}
+                        >
+                            <span>{cat.emoji}</span>
+                            {cat.name}
+                        </button>
+                    )
+                })}
+            </div>
+
+            {/* Count badge + map */}
+            <div className={`relative ${height} rounded-card overflow-hidden shadow-xl border ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                {/* Places counter */}
+                <div className={`absolute top-3 left-3 z-[500] px-3 py-1.5 rounded-pill text-[11px] font-black shadow-lg backdrop-blur-md border pointer-events-none ${isDark ? 'bg-black/60 border-white/20 text-white/80' : 'bg-white/90 border-white/60 text-gray-700'}`}>
+                    {filteredLocations.length} place{filteredLocations.length !== 1 ? 's' : ''}
+                </div>
+                <MapTab />
+            </div>
+        </div>
+    )
+}
 
 // --- MAIN PAGE ---
 const DashboardPage = () => {
@@ -328,6 +426,8 @@ const DashboardPage = () => {
                         }
                     </div>
                 </div>
+                </div>
+                )}
             </div>
 
             {/* Drill-Down Overlay — replaces full page on cities/locations level */}
@@ -363,7 +463,7 @@ const DashboardPage = () => {
 }
 
 // --- DESKTOP VIEW COMPONENT ---
-const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
+const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {}, isFilterOpen }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const [greeting, setGreeting] = useState(() => {

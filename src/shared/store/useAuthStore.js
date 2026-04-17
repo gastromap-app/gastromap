@@ -81,10 +81,28 @@ export const useAuthStore = create(
             },
 
             logout: async () => {
+                // 1. Tear down auth listener FIRST so the SIGNED_OUT event
+                //    from Supabase doesn't race with our manual state clear.
                 const { _unsubscribeAuth } = get()
                 if (_unsubscribeAuth) _unsubscribeAuth()
-                await signOut()
-                set({ user: null, token: null, isAuthenticated: false, error: null, _unsubscribeAuth: null })
+
+                // 2. Tell Supabase to invalidate the session. Wrap in try/catch
+                //    so a network failure or stale token never blocks sign-out.
+                try {
+                    await signOut()
+                } catch (err) {
+                    console.warn('[auth] signOut request failed (state cleared anyway):', err?.message)
+                }
+
+                // 3. Always clear local state — even if the network call failed.
+                set({
+                    user: null,
+                    token: null,
+                    isAuthenticated: false,
+                    isLoading: false,
+                    error: null,
+                    _unsubscribeAuth: null,
+                })
             },
 
             updateUserProfile: async (updates) => {

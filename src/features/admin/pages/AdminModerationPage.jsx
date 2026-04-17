@@ -156,8 +156,61 @@ export default function AdminModerationPage() {
                 </button>
             </div>
 
-            {/* Queue List */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+            {/* Queue List — mobile cards */}
+            <div className="md:hidden space-y-3">
+                <AnimatePresence>
+                    {filteredQueue.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-900/50 rounded-[24px] border border-slate-100 dark:border-slate-800/50">
+                            Очередь модерации пуста.
+                        </div>
+                    ) : (
+                        filteredQueue.map(item => (
+                            <motion.button
+                                key={`card-${item.id}`}
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                onClick={() => setSelectedItem(item)}
+                                className="w-full text-left bg-white dark:bg-slate-900/50 rounded-[20px] border border-slate-100 dark:border-slate-800/50 p-4 active:scale-[0.99] transition-transform"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                                        <MapPin size={20} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                                            {item.name}
+                                        </div>
+                                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                            {item.type} • {item.city}
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                            <span className="flex items-center gap-1 truncate"><User size={12} /> {item.author}</span>
+                                            <span className="flex items-center gap-1 shrink-0"><Calendar size={12} /> {new Date(item.date).toLocaleDateString('ru-RU')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                    <div className={cn(
+                                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold",
+                                        item.status === 'PENDING_MODERATION'
+                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                            : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                                    )}>
+                                        <AlertCircle size={12} />
+                                        {item.status === 'PENDING_MODERATION' ? 'На проверке' : 'Запрошена правка'}
+                                    </div>
+                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Проверить →</span>
+                                </div>
+                            </motion.button>
+                        ))
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Queue List — desktop table */}
+            <div className="hidden md:block bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

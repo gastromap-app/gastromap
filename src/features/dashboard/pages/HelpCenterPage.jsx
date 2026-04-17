@@ -10,7 +10,7 @@ const HelpCenterPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const inputBg = isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"
 
@@ -42,7 +42,7 @@ const HelpCenterPage = () => {
             <div className="px-5 space-y-8">
                 {/* Search Bar */}
                 <div className="relative">
-                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/20' : 'text-gray-400'}`} size={18} />
+                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/20' : 'text-gray-500 dark:text-gray-400'}`} size={18} />
                     <input
                         type="text"
                         value={searchQuery}

@@ -6,7 +6,8 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
 import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
-import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
+import { MapPin, Star, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
+import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTheme } from '@/hooks/useTheme'
 const MapTab = React.lazy(() => import('../components/MapTab'))
 import FilterModal from '../components/FilterModal'
@@ -123,13 +124,11 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 </div>
 
                 {/* Heart Button */}
-                <button
-                    className="flex-shrink-0 w-11 h-11 -m-2 flex items-center justify-center active:scale-90 transition-transform"
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(loc.id) }}
-                    aria-label={saved ? 'Remove from saved' : 'Save place'}
-                >
-                    <Heart size={20} className={saved ? 'text-red-500 fill-red-500' : 'text-gray-300 stroke-[2.2]'} />
-                </button>
+                <FavoriteButton
+                    isFavorite={saved}
+                    onToggle={() => toggleFavorite(loc.id)}
+                    size={20}
+                />
             </div>
         </div>
     )

@@ -6,18 +6,7 @@ import {
 } from 'lucide-react'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useTranslation } from 'react-i18next'
-
-// ─── Step data ────────────────────────────────────────────────────────────
-const CUISINES = [
-    { id: 'polish', label: 'Polish', icon: '🥟' },
-    { id: 'italian', label: 'Italian', icon: '🍝' },
-    { id: 'japanese', label: 'Japanese', icon: '🍣' },
-    { id: 'middle-eastern', label: 'Middle Eastern', icon: '🧆' },
-    { id: 'french', label: 'French', icon: '🥐' },
-    { id: 'mexican', label: 'Mexican', icon: '🌮' },
-    { id: 'indian', label: 'Indian', icon: '🍛' },
-    { id: 'coffee', label: 'Specialty Coffee', icon: '☕' },
-]
+import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
 const VIBES = [
     { id: 'Romantic', label: 'Romantic', icon: '🕯️', desc: 'Intimate, candlelit' },
@@ -86,6 +75,7 @@ function ProgressDots({ total, current }) {
 // ─── Step 1: Cuisines ─────────────────────────────────────────────────────
 function StepCuisines({ value, onChange }) {
     const { t } = useTranslation()
+    const { options: cuisines, isLoading } = useCuisineOptions()
     const toggle = (id) =>
         onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
 
@@ -101,12 +91,23 @@ function StepCuisines({ value, onChange }) {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-                {CUISINES.map((c) => (
-                    <Chip key={c.id} selected={value.includes(c.id)} onClick={() => toggle(c.id)}>
-                        <span className="text-base">{c.icon}</span>
-                        {c.label}
-                    </Chip>
-                ))}
+                {isLoading ? (
+                    // Skeleton chips while KG loads
+                    Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="h-10 rounded-2xl bg-white/10 animate-pulse"
+                            style={{ width: `${70 + (i % 3) * 20}px` }}
+                        />
+                    ))
+                ) : (
+                    cuisines.map((c) => (
+                        <Chip key={c.id} selected={value.includes(c.name)} onClick={() => toggle(c.name)}>
+                            <span className="text-base">{c.emoji}</span>
+                            {c.label}
+                        </Chip>
+                    ))
+                )}
             </div>
 
             <div>

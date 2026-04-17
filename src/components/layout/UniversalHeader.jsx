@@ -85,14 +85,14 @@ export function UniversalHeader() {
                                     </button>
                                 )}
                                 {isAdmin && (
-                                    <Link to="/admin" className={`p-2 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
+                                    <Link to="/admin" className={`p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                         <ShieldCheck size={18} className="text-blue-500" />
                                     </Link>
                                 )}
-                                <button onClick={toggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} className={`p-2 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
+                                <button onClick={toggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} className={`p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                     {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-600" />}
                                 </button>
-                                <Link to="/dashboard/add-place" className="flex items-center gap-2 px-3 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm shadow-md shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95 border border-indigo-500/50">
+                                <Link to="/dashboard/add-place" className="flex items-center gap-2 px-3 py-2.5 min-h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm shadow-md shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95 border border-indigo-500/50">
                                     <PlusCircle size={16} />
                                     <span className="hidden sm:inline">{t('profile.add_place')}</span>
                                 </Link>

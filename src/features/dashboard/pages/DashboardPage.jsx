@@ -116,7 +116,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
 
                 {/* Heart Button */}
                 <button
-                    className="flex-shrink-0 p-1 mb-0.5 active:scale-90 transition-transform"
+                    className="flex-shrink-0 w-11 h-11 -m-2 flex items-center justify-center active:scale-90 transition-transform"
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(loc.id) }}
                     aria-label={saved ? 'Remove from saved' : 'Save place'}
                 >
@@ -219,7 +219,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>
@@ -247,7 +247,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.recommended')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.perfect_spots')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>
@@ -275,7 +275,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.trending')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.hot_spots')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>

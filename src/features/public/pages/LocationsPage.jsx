@@ -169,7 +169,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                     </div>
                     <div className="flex gap-2">
                         <button onClick={(e) => e.stopPropagation()}
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/50' : 'bg-gray-50 hover:bg-gray-100 text-gray-400'}`}>
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/50' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:text-gray-400'}`}>
                             <Share2 size={16} />
                         </button>
                     </div>
@@ -193,7 +193,7 @@ function ErrorState({ isDark }) {
             <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Failed to load venues
             </h3>
-            <p className={`text-sm font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+            <p className={`text-sm font-medium ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                 Check your connection and try again.
             </p>
         </motion.div>
@@ -210,12 +210,12 @@ function EmptyState({ query, isDark }) {
             className="flex flex-col items-center py-20 text-center"
         >
             <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
-                <SearchX size={36} className={isDark ? 'text-white/30' : 'text-gray-400'} />
+                <SearchX size={36} className={isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'} />
             </div>
             <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 No results {query ? `for "${query}"` : ''}
             </h3>
-            <p className={`text-sm font-medium mb-6 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+            <p className={`text-sm font-medium mb-6 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                 Try a different keyword or remove some filters.
             </p>
             <button
@@ -279,7 +279,7 @@ const LocationsPage = () => {
     const dragControls = useDragControls()
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
-    const subTextStyle = isDark ? 'text-gray-400' : 'text-gray-500'
+    const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
     const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
 
     return (
@@ -311,7 +311,7 @@ const LocationsPage = () => {
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
                             />
                             {localSearch && (
-                                <button onClick={() => setLocalSearch('')} className="ml-2 text-gray-400 hover:text-gray-600">
+                                <button onClick={() => setLocalSearch('')} className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-600">
                                     <X size={16} />
                                 </button>
                             )}
@@ -473,7 +473,7 @@ const LocationsPage = () => {
                                 {localSearch && (
                                     <button
                                         onClick={() => setLocalSearch('')}
-                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-600"
                                     >
                                         <X size={20} />
                                     </button>
@@ -550,11 +550,11 @@ const LocationsPage = () => {
 
                         {/* Breadcrumb */}
                         <nav className={`hidden md:flex items-center px-5 py-2.5 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-gray-100'}`}>
-                            <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-blue-500 transition-colors">
+                            <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
                                 <Home size={12} /><span>Dashboard</span>
                             </Link>
                             <ChevronRight size={14} className="mx-2 text-gray-500/50" />
-                            <Link to={`/explore/${country}`} className="text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-blue-500 transition-colors capitalize">{country}</Link>
+                            <Link to={`/explore/${country}`} className="text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors capitalize">{country}</Link>
                             <ChevronRight size={14} className="mx-2 text-gray-500/50" />
                             <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-blue-600">
                                 <MapPin size={12} className="fill-blue-600/20" />

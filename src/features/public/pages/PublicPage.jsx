@@ -15,7 +15,7 @@ const PublicPage = ({ title, subtitle, content }) => {
                 >
                     {content || (
                         <div className="bg-gray-50 rounded-3xl p-12 text-center border border-gray-100">
-                            <p className="text-gray-400">Content for {title} is coming soon.</p>
+                            <p className="text-gray-500 dark:text-gray-400">Content for {title} is coming soon.</p>
                         </div>
                     )}
                 </motion.div>

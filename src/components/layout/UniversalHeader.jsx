@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
@@ -19,6 +19,8 @@ export function UniversalHeader() {
     const isDark = theme === 'dark'
 
     const [isScrolled, setIsScrolled] = useState(false)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const menuRef = useRef(null)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -27,6 +29,21 @@ export function UniversalHeader() {
         window.addEventListener('scroll', handleScroll)
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
+
+    useEffect(() => {
+        if (!isMenuOpen) return
+        const handleClickOutside = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setIsMenuOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        document.addEventListener('touchstart', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+            document.removeEventListener('touchstart', handleClickOutside)
+        }
+    }, [isMenuOpen])
 
     const glassStyle = isDark
         ? "bg-black/20 border-white/5 text-white hover:bg-white/10"
@@ -78,21 +95,72 @@ export function UniversalHeader() {
                                     <button
                                         onClick={installPWA}
                                         aria-label="Download GastroMap app"
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md transition-all border group bg-blue-600 border-blue-500/50 text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95`}
+                                        className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md transition-all border group bg-blue-600 border-blue-500/50 text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95`}
                                     >
                                         <Download size={16} className="group-hover:bounce" />
-                                        <span className="text-[10px] font-black uppercase tracking-tighter hidden sm:inline">Download</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tighter">Download</span>
                                     </button>
                                 )}
                                 {isAdmin && (
-                                    <Link to="/admin" className={`p-2 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
+                                    <Link to="/admin" aria-label="Admin panel" className={`hidden sm:flex p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                         <ShieldCheck size={18} className="text-blue-500" />
                                     </Link>
                                 )}
-                                <button onClick={toggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} className={`p-2 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
+                                <button onClick={toggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} className={`hidden sm:block p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                     {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-600" />}
                                 </button>
-                                <Link to="/dashboard/add-place" className="flex items-center gap-2 px-3 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm shadow-md shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95 border border-indigo-500/50">
+
+                                {/* Mobile overflow menu */}
+                                <div className="relative sm:hidden" ref={menuRef}>
+                                    <button
+                                        onClick={() => setIsMenuOpen(v => !v)}
+                                        aria-label="More options"
+                                        aria-expanded={isMenuOpen}
+                                        className={`w-11 h-11 flex items-center justify-center rounded-full backdrop-blur-md transition-all border ${glassStyle}`}
+                                    >
+                                        <MoreHorizontal size={18} />
+                                    </button>
+                                    <AnimatePresence>
+                                        {isMenuOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                                transition={{ duration: 0.15 }}
+                                                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden border backdrop-blur-xl shadow-xl ${isDark ? 'bg-black/80 border-white/10' : 'bg-white/90 border-gray-200'}`}
+                                            >
+                                                <button
+                                                    onClick={() => { toggleTheme(); setIsMenuOpen(false) }}
+                                                    className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 text-sm font-semibold ${isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100'}`}
+                                                >
+                                                    {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-600" />}
+                                                    {isDark ? 'Light mode' : 'Dark mode'}
+                                                </button>
+                                                {isAdmin && (
+                                                    <Link
+                                                        to="/admin"
+                                                        onClick={() => setIsMenuOpen(false)}
+                                                        className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 text-sm font-semibold ${isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100'}`}
+                                                    >
+                                                        <ShieldCheck size={18} className="text-blue-500" />
+                                                        Admin
+                                                    </Link>
+                                                )}
+                                                {isInstallable && (
+                                                    <button
+                                                        onClick={() => { installPWA(); setIsMenuOpen(false) }}
+                                                        className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 text-sm font-semibold ${isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100'}`}
+                                                    >
+                                                        <Download size={18} className="text-blue-500" />
+                                                        Install app
+                                                    </button>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                <Link to="/dashboard/add-place" aria-label={t('profile.add_place')} className="flex items-center gap-2 px-3 py-2.5 min-h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm shadow-md shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95 border border-indigo-500/50">
                                     <PlusCircle size={16} />
                                     <span className="hidden sm:inline">{t('profile.add_place')}</span>
                                 </Link>

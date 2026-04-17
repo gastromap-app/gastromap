@@ -91,7 +91,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                     <h4 className={`text-sm font-black leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {loc.title || 'Unknown Place'}
                     </h4>
-                    <p className="text-[11px] font-medium text-gray-400 mt-1 line-clamp-1">
+                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                         {loc.subtitle || 'Authentic flavors and vibes'}
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -107,7 +107,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
 
                         {/* Special Labels - Subtle small chips */}
                         {loc.special_labels?.slice(0, 2).map(label => (
-                            <span key={label} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-white/5 text-white/40' : 'bg-gray-100 text-gray-400'}`}>
+                            <span key={label} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-white/5 text-white/40' : 'bg-gray-100 text-gray-500 dark:text-gray-400'}`}>
                                 {translate(label)}
                             </span>
                         ))}
@@ -116,7 +116,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
 
                 {/* Heart Button */}
                 <button
-                    className="flex-shrink-0 p-1 mb-0.5 active:scale-90 transition-transform"
+                    className="flex-shrink-0 w-11 h-11 -m-2 flex items-center justify-center active:scale-90 transition-transform"
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(loc.id) }}
                     aria-label={saved ? 'Remove from saved' : 'Save place'}
                 >
@@ -219,7 +219,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>
@@ -247,7 +247,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.recommended')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.perfect_spots')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>
@@ -275,7 +275,7 @@ const DashboardPage = () => {
                             <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.trending')}</h3>
                             <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.hot_spots')}</p>
                         </div>
-                        <button onClick={() => navigate('/explore')} className="text-[10px] font-bold text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 active:scale-90 transition-transform">
+                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
                             {t('dashboard.view_all')}
                         </button>
                     </div>
@@ -339,7 +339,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
         : "bg-white/10 p-3 rounded-[32px] shadow-lg border border-white/5"
 
     const textStyle = theme === 'light' ? "text-gray-900" : "text-white"
-    const subTextStyle = theme === 'light' ? "text-gray-500" : "text-gray-400"
+    const subTextStyle = theme === 'light' ? "text-gray-500" : "text-gray-500 dark:text-gray-400"
 
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -478,7 +478,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                                         <p className={`text-sm ${subTextStyle}`}>{item.subtitle}</p>
                                         <div className="flex flex-wrap gap-1.5 pt-1">
                                             {item.special_labels?.slice(0, 3).map(label => (
-                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-400' : 'bg-white/10 text-white/50'}`}>
+                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-500 dark:text-gray-400' : 'bg-white/10 text-white/50'}`}>
                                                     {translate(label)}
                                                 </span>
                                             ))}
@@ -521,7 +521,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
                                         <p className={`text-sm ${subTextStyle}`}>{item.subtitle}</p>
                                         <div className="flex flex-wrap gap-1.5 pt-1">
                                             {item.special_labels?.slice(0, 3).map(label => (
-                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-400' : 'bg-white/10 text-white/50'}`}>
+                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-500 dark:text-gray-400' : 'bg-white/10 text-white/50'}`}>
                                                     {translate(label)}
                                                 </span>
                                             ))}

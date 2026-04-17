@@ -132,7 +132,7 @@ const AuthCallbackPage = () => {
                                 )}
                             </>
                         ) : (
-                            <p className="text-gray-400 text-sm mb-4">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                                 Please register again or contact support.
                             </p>
                         )}

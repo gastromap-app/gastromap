@@ -35,7 +35,7 @@ export function LanguageSelector({ isAdminMode = false, className = '', onLangua
     if (isAdminMode) {
         return (
             <div className={`flex items-center gap-2 ${className}`}>
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <span className="text-sm text-gray-600">Русский</span>
             </div>
         )
@@ -44,7 +44,7 @@ export function LanguageSelector({ isAdminMode = false, className = '', onLangua
     return (
         <div className={`relative ${className}`}>
             <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <select
                     value={language}
                     onChange={handleChange}

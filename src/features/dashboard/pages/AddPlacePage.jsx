@@ -76,6 +76,36 @@ const EMPTY_FORM = {
     must_try: '', insider_tip: '',
 }
 
+const DRAFT_STORAGE_KEY = 'gastromap.addplace.draft.v1'
+
+function loadDraft() {
+    try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        // Only restore drafts younger than 7 days
+        if (!parsed?.savedAt || Date.now() - parsed.savedAt > 7 * 24 * 60 * 60 * 1000) {
+            localStorage.removeItem(DRAFT_STORAGE_KEY)
+            return null
+        }
+        return parsed
+    } catch {
+        return null
+    }
+}
+
+function saveDraft(step, form) {
+    try {
+        // Skip saving obvious empty drafts
+        if (step === 0 && !form.name && !form.city && !form.address) return
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ step, form, savedAt: Date.now() }))
+    } catch { /* quota or privacy mode — silent */ }
+}
+
+function clearDraft() {
+    try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* */ }
+}
+
 // ─── Utilities ─────────────────────────────────────────────────────────────
 
 function getAiPhotoUrl(category) {
@@ -234,11 +264,20 @@ export default function AddPlacePage() {
     const navigate  = useNavigate()
 
     // ── Wizard state ──────────────────────────────────────────────────────
-    const [step, setStep] = useState(0)
+    // Hydrate from localStorage draft if present (<7 days old)
+    const initialDraft = typeof window !== 'undefined' ? loadDraft() : null
+    const [step, setStep] = useState(initialDraft?.step ?? 0)
     const [done, setDone] = useState(false)
+    const [draftRestored, setDraftRestored] = useState(Boolean(initialDraft))
 
     // ── Form data ─────────────────────────────────────────────────────────
-    const [form, setForm] = useState(EMPTY_FORM)
+    const [form, setForm] = useState(initialDraft?.form ?? EMPTY_FORM)
+
+    // Persist draft on every form/step change (debounced)
+    useEffect(() => {
+        const t = setTimeout(() => saveDraft(step, form), 400)
+        return () => clearTimeout(t)
+    }, [step, form])
     const setField = (field) => (val) =>
         setForm((f) => ({ ...f, [field]: typeof val === 'string' ? val : val?.target?.value ?? val }))
 
@@ -454,6 +493,8 @@ export default function AddPlacePage() {
     }
 
     function reset() {
+        clearDraft()
+        setDraftRestored(false)
         setForm(EMPTY_FORM)
         userPhotos.forEach((p) => URL.revokeObjectURL(p.preview))
         setUserPhotos([])
@@ -476,6 +517,27 @@ export default function AddPlacePage() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8 mt-14 md:mt-20 pb-20">
+            {/* ── Draft-restored banner ── */}
+            {draftRestored && (
+                <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-sm">
+                    <Sparkles size={16} className="text-indigo-500 shrink-0" />
+                    <span className="flex-1 text-indigo-700 dark:text-indigo-300 font-medium">
+                        Restored your unfinished draft.
+                    </span>
+                    <button
+                        onClick={() => {
+                            clearDraft()
+                            setForm(EMPTY_FORM)
+                            setStep(0)
+                            setDraftRestored(false)
+                        }}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline min-h-11 flex items-center px-2"
+                    >
+                        Start fresh
+                    </button>
+                </div>
+            )}
+
             {/* ── Sticky header ── */}
             <div className="flex items-center gap-4 mb-8">
                 <button

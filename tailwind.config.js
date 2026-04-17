@@ -20,7 +20,13 @@ export default {
             borderRadius: {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
-                sm: 'calc(var(--radius) - 4px)'
+                sm: 'calc(var(--radius) - 4px)',
+                // Semantic radius scale — prefer these over raw rounded-[Npx]
+                // to keep cards/sheets/inputs/pills consistent across surfaces.
+                input: '16px',   // form inputs, small controls
+                card:  '28px',   // location cards, list items
+                sheet: '32px',   // modals, slide-overs
+                pill:  '9999px', // chips, pills, round buttons
             },
             transitionDuration: {
                 '0': '0ms',

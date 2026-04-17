@@ -161,7 +161,7 @@ function AutocompleteInput({
         setOpen(suggestions.length > 0 && value.length >= minLength)
     }, [suggestions, value, minLength])
 
-    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
+    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-input focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
 
     return (
         <div ref={ref} className="relative">

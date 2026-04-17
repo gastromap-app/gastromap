@@ -141,7 +141,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         exit="hidden"
                         className={`relative w-full md:max-w-2xl overflow-hidden shadow-2xl border transition-colors duration-300
                             ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}
-                            rounded-t-[32px] md:rounded-[32px]`}
+                            rounded-t-sheet md:rounded-sheet`}
                         style={{ maxHeight: '90vh' }}
                     >
                         {/* Header */}

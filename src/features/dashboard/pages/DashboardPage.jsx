@@ -69,7 +69,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     return (
         <div
             onClick={() => navigate(`/location/${loc.id}`)}
-            className={`flex-shrink-0 w-[220px] rounded-[28px] overflow-hidden transition-all active:scale-95 group shadow-xl cursor-pointer ${isDark ? 'bg-[#1a1c24] border border-white/5' : 'bg-white'}`}
+            className={`flex-shrink-0 w-[220px] rounded-card overflow-hidden transition-all active:scale-95 group shadow-xl cursor-pointer ${isDark ? 'bg-[#1a1c24] border border-white/5' : 'bg-white'}`}
         >
             {/* Image Area */}
             <div className="relative h-[180px] overflow-hidden">

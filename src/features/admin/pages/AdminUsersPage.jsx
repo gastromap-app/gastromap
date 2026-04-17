@@ -173,7 +173,52 @@ const AdminUsersPage = () => {
                     </AnimatePresence>
                 </div>
 
-                <div className="overflow-x-auto custom-scrollbar font-black leading-none">
+                {/* Mobile cards */}
+                <div className="md:hidden p-4 space-y-3">
+                    {loadingProfiles ? (
+                        <div className="py-8 text-center text-slate-400 text-sm font-semibold">Loading users...</div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400 text-sm font-semibold">No users found.</div>
+                    ) : (
+                        filteredUsers.map(user => (
+                            <button
+                                key={`card-${user.id}`}
+                                onClick={() => openUser(user)}
+                                className="w-full text-left bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-slate-800"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-900 dark:text-white font-bold text-sm shadow-inner shrink-0">
+                                        {(user.name || user.email || 'U').charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.name || user.email}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                                            <Mail size={10} />{user.email}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant="outline" className={cn(
+                                                "bg-transparent border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                                                user.role === 'admin' ? 'text-rose-600 dark:text-rose-400' : user.role === 'moderator' ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+                                            )}>
+                                                {user.role}
+                                            </Badge>
+                                            <div className={cn(
+                                                "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                                                user.status === 'active' ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-500/10 text-red-500'
+                                            )}>
+                                                <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", user.status === 'active' ? 'bg-green-500' : 'bg-red-500')} />
+                                                {user.status}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-slate-400 shrink-0 mt-1" />
+                                </div>
+                            </button>
+                        ))
+                    )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto custom-scrollbar font-black leading-none">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-900/50">

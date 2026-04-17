@@ -131,6 +131,8 @@
     "add_place": "Dodaj Miejsce",
     "no_contributions": "Brak wkładu",
     "approved": "Zatwierdzone",
+    "published": "Opublikowane",
+    "in_review": "W trakcie sprawdzania",
     "pending": "Oczekujące",
     "taste_profile": "Profil Smaku",
     "foodie_dna_label": "Foodie DNA",
@@ -248,5 +250,18 @@
     "search": "Szukaj",
     "filter": "Filtr",
     "all": "Wszystko"
+  },
+  "filter": {
+    "title": "Filtry",
+    "reset": "Resetuj",
+    "cuisine_menu": "Kuchnia i menu",
+    "apply": "Zastosuj filtry",
+    "apply_count_one": "Zastosuj {{count}} filtr",
+    "apply_count_few": "Zastosuj {{count}} filtry",
+    "apply_count_many": "Zastosuj {{count}} filtrów",
+    "apply_count_other": "Zastosuj {{count}} filtrów"
+  },
+  "map": {
+    "you_are_here": "Jesteś tutaj"
   }
 }

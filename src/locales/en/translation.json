@@ -121,6 +121,8 @@
         "add_place": "Add Place",
         "no_contributions": "You haven't added any places yet.",
         "approved": "Approved",
+        "published": "Published",
+        "in_review": "In Review",
         "pending": "Pending",
         "taste_profile": "Taste Profile",
         "foodie_dna_label": "Foodie DNA & Preferences",
@@ -224,5 +226,16 @@
         "search": "Search",
         "filter": "Filter",
         "all": "All"
+    },
+    "filter": {
+        "title": "Filters",
+        "reset": "Reset",
+        "cuisine_menu": "Cuisine & Menu",
+        "apply": "Apply filters",
+        "apply_count_one": "Apply {{count}} filter",
+        "apply_count_other": "Apply {{count}} filters"
+    },
+    "map": {
+        "you_are_here": "You are here"
     }
 }

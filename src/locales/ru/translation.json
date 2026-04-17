@@ -131,6 +131,8 @@
     "add_place": "Добавить Место",
     "no_contributions": "Нет вкладов",
     "approved": "Одобрено",
+    "published": "Опубликовано",
+    "in_review": "На проверке",
     "pending": "На рассмотрении",
     "taste_profile": "Профиль Вкуса",
     "foodie_dna_label": "Foodie DNA",
@@ -248,5 +250,18 @@
     "search": "Поиск",
     "filter": "Фильтр",
     "all": "Все"
+  },
+  "filter": {
+    "title": "Фильтры",
+    "reset": "Сбросить",
+    "cuisine_menu": "Кухня и меню",
+    "apply": "Применить фильтры",
+    "apply_count_one": "Применить {{count}} фильтр",
+    "apply_count_few": "Применить {{count}} фильтра",
+    "apply_count_many": "Применить {{count}} фильтров",
+    "apply_count_other": "Применить {{count}} фильтров"
+  },
+  "map": {
+    "you_are_here": "Вы здесь"
   }
 }

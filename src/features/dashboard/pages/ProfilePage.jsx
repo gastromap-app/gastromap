@@ -87,8 +87,8 @@ const ProfilePage = () => {
     const contributions = reviews.slice(0, 3).map(r => ({
         id: r.id,
         name: r.locations?.title || 'Location',
-        status: r.status === 'published' ? 'Published' : 'Pending',
-        points: r.status === 'published' ? '+5 XP' : 'In Review',
+        status: r.status === 'published' ? t('profile.published') : t('profile.pending'),
+        points: r.status === 'published' ? '+5 XP' : t('profile.in_review'),
         date: new Date(r.created_at).toLocaleDateString(),
     }))
 

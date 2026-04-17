@@ -167,7 +167,9 @@
     "feedback_title": "Przekaż Opinię",
     "feedback_desc": "Pomóż nam ulepszyć GastroMap",
     "feedback_placeholder": "Podziel się swoimi przemyśleniami, sugestiami lub problemami…",
-    "feedback_send": "Wyślij"
+    "feedback_send": "Wyślij",
+    "saved": "Zapisane",
+    "signing_out": "Wylogowywanie…"
   },
   "notifications": {
     "title": "Powiadomienia",

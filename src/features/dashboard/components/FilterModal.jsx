@@ -64,7 +64,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }
 
     // ── Shared button styles ───────────────────────────────────────────────
-    const chipBase = `px-4 py-2 rounded-xl font-bold text-[11px] border transition-all cursor-pointer`
+    const chipBase = `px-4 py-2.5 min-h-11 flex items-center rounded-xl font-bold text-[11px] border transition-all cursor-pointer`
     const chipActive = `bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20`
     const chipInactive = isDark
         ? `bg-white/5 border-white/5 text-white/70 hover:bg-white/10`

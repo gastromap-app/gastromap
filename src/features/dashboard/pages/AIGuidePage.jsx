@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useGastroAI, ChatInterface } from '@/features/shared/components/GastroAIChat'
@@ -11,6 +11,7 @@ const AIGuidePage = () => {
     const { messages, isTyping, sendMessage } = useGastroAI()
     const [input, setInput] = useState('')
     const navigate = useNavigate()
+    const shouldReduceMotion = useReducedMotion()
 
     const handleSend = (e) => {
         e.preventDefault()
@@ -21,30 +22,20 @@ const AIGuidePage = () => {
 
     return (
         <div className="w-full h-[100dvh] flex flex-col relative">
-            {/* Aurora Animation when typing - Full Screen Premium Effect */}
+            {/* Aurora Animation when typing - single soft blob, respects prefers-reduced-motion */}
             {isTyping && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                    <div className="absolute bottom-[-10%] left-[-10%] w-[120%] h-[60%] bg-gradient-to-t from-indigo-500/20 via-indigo-500/10 to-transparent blur-[120px] animate-pulse" />
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.5, 0.3],
-                            x: [0, 50, 0],
-                            y: [0, -30, 0]
-                        }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-pink-500/20 rounded-full blur-[80px]"
-                    />
-                    <motion.div
-                        animate={{
-                            scale: [1.2, 1, 1.2],
-                            opacity: [0.2, 0.4, 0.2],
-                            x: [0, -40, 0],
-                            y: [0, 20, 0]
-                        }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-blue-500/20 rounded-full blur-[100px]"
-                    />
+                    <div className="absolute bottom-[-10%] left-[-10%] w-[120%] h-[50%] bg-gradient-to-t from-indigo-500/15 via-indigo-500/8 to-transparent blur-[60px]" />
+                    {!shouldReduceMotion && (
+                        <motion.div
+                            animate={{
+                                scale: [1, 1.15, 1],
+                                opacity: [0.25, 0.4, 0.25],
+                            }}
+                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[60px]"
+                        />
+                    )}
                 </div>
             )}
 

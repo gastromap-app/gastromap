@@ -146,7 +146,7 @@ export function RouteErrorFallback({ error, reset }) {
 /**
  * Lightweight fallback for the map widget — keeps the rest of the page intact.
  */
-export function MapErrorFallback({ error, reset }) {
+export function MapErrorFallback({ reset }) {
     return (
         <div className="w-full h-full min-h-[300px] flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800/50 rounded-2xl gap-4">
             <AlertTriangle className="text-slate-400" size={32} />

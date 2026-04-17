@@ -62,7 +62,7 @@ const LocationDetailsPage = () => {
             await addVisitMut.mutateAsync({ userId: user.id, locationId: id })
         }
     }
-    const { label: openLabel, color: openColor, isOpen } = useOpenStatus(location?.openingHours)
+    const { label: openLabel, isOpen } = useOpenStatus(location?.openingHours)
 
     // Reviews — Supabase
     const { data: allReviews = [] } = useLocationReviews(location?.id)
@@ -405,7 +405,6 @@ const LocationDetailsPage = () => {
     }
 
     const renderReviews = () => {
-        const maxDist = Math.max(...Object.values(aggregate.distribution), 1)
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 {/* Aggregate score */}
@@ -599,7 +598,10 @@ const LocationDetailsPage = () => {
     )
 
     return (
-        <PageTransition className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pb-32 pt-20 md:pt-24`}>
+        <PageTransition
+            className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pt-20 md:pt-24`}
+            style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+        >
 
             <div className="relative">
                 {/* Action Bar Container - Now relative to content start */}
@@ -628,7 +630,6 @@ const LocationDetailsPage = () => {
                     </div>
                 </div>
 
-                {/* Hero Image Section */}
                 {/* Hero Image Section */}
                 <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
                     <LazyImage
@@ -719,7 +720,7 @@ const LocationDetailsPage = () => {
                                     <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
                                     <div className="h-14 w-full bg-gray-400/10 rounded-2xl" />
                                 </div>
-                                <button disabled className="w-full h-18 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
+                                <button disabled className="w-full h-16 bg-gray-400/20 text-gray-400 font-black rounded-2xl cursor-not-allowed">Book Now</button>
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/10 rounded-[48px]">
                                 <div className="bg-[#1a1c24]/95 backdrop-blur-xl border border-blue-500/30 px-8 py-5 rounded-[32px] shadow-2xl text-center">

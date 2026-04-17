@@ -36,7 +36,7 @@ export const TRANSLATABLE_FIELDS = [
 /**
  * Translate text to target language with timeout protection
  */
-export async function translateText(text, targetLang, sourceLang = 'auto') {
+export async function translateText(text, targetLang, _sourceLang = 'auto') {
     if (!text || typeof text !== 'string') {
         return text
     }

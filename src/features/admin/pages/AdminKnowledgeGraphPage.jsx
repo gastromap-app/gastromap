@@ -14,7 +14,7 @@ import {
     useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
     useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
-    useKnowledgeStats, useSyncKGToLocationsMutation, useBulkSyncKGMutation,
+    useSyncKGToLocationsMutation, useBulkSyncKGMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 import { 
@@ -669,7 +669,7 @@ const AdminKnowledgeGraphPage = () => {
     const [showModal, setShowModal]   = useState(null)
     const [isInfoOpen, setIsInfoOpen] = useState(false)
     const [toast, setToast]           = useState(null)
-    const [syncStatus, setSyncStatus] = useState(null)
+    const [syncStatus] = useState(null)
     const [showMergeModal, setShowMergeModal] = useState(false)
     const [duplicateGroups, setDuplicateGroups] = useState([])
 
@@ -688,7 +688,7 @@ const AdminKnowledgeGraphPage = () => {
     const createIngredient = useCreateIngredientMutation()
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
-    const syncKG           = useSyncKGToLocationsMutation()
+    useSyncKGToLocationsMutation()
     const bulkSyncKG       = useBulkSyncKGMutation()
 
     const handleMerge = async (group, keepId) => {
@@ -745,19 +745,6 @@ const AdminKnowledgeGraphPage = () => {
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
         setTimeout(() => setToast(null), 3000)
-    }
-
-    const handleSyncLocations = async () => {
-        try {
-            await syncKG.mutateAsync((current, total) => {
-                setSyncStatus({ current, total, progress: Math.round((current / total) * 100) })
-            })
-            showToast('Knowledge Graph synced successfully')
-            setSyncStatus(null)
-        } catch {
-            showToast('Sync failed', 'error')
-            setSyncStatus(null)
-        }
     }
 
     const handleSaveCuisine = async (data) => {
@@ -820,7 +807,7 @@ const AdminKnowledgeGraphPage = () => {
     }, [updateCuisineMutation, queryClient])
 
     // ── After batch save: flush ALL caches so UI shows new data ────────────────
-    const handleBatchComplete = (savedCount, errors) => {
+    const handleBatchComplete = () => {
         // 1. Wipe localStorage L2 cache for all KG entities
         invalidateCacheGroup('cuisines')
         invalidateCacheGroup('dishes')

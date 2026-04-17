@@ -317,7 +317,7 @@ export async function getUnreadCount() {
 
         if (error) throw error
         return count || 0
-    } catch (err) {
+    } catch {
         return 0
     }
 }

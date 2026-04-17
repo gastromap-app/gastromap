@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader, { adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePaymentStats } from '@/shared/api/queries'
 
 const AdminSubscriptionsPage = () => {

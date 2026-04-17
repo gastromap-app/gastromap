@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import i18n, { changeLanguage, getCurrentLanguage } from '@/i18n/config'
+import { changeLanguage } from '@/i18n/config'
 
 /**
  * useI18n - Умный хук для управления переводами

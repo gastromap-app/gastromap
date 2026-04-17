@@ -45,7 +45,7 @@ async function fetchSpoonacular(endpoint, params = {}) {
     
     if (!response.ok) {
         let errorData = {}
-        try { errorData = await response.json() } catch (e) {}
+        try { errorData = await response.json() } catch { /* ignore */ }
         
         // Mark quota as exhausted for this session to prevent repeated failed calls
         if (response.status === 402 || response.status === 429) {

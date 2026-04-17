@@ -97,7 +97,7 @@ export function CityCardSkeleton({ desktop = false }) {
 
 // ─── Location details hero (matches hero section in LocationDetailsPage) ─────
 
-export function LocationDetailsSkeleton({ isDark }) {
+export function LocationDetailsSkeleton() {
     return (
         <div className="space-y-4">
             {/* Hero image */}

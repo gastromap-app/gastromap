@@ -166,7 +166,7 @@ export async function extractLocationData(query) {
  * - Generate insider_tip
  * - Suggest tags, best_for, what_to_try
  */
-async function enrichWithLLM(placesData, originalQuery) {
+async function enrichWithLLM(placesData) {
     try {
         const { getActiveAIConfig } = await import('../ai-config.api')
         const { apiKey } = getActiveAIConfig()
@@ -218,7 +218,6 @@ RULES: description and insider_tip MUST be in Russian. Other fields in English. 
  * Pure LLM extraction fallback (no Google Places available)
  */
 async function extractWithLLM(query) {
-    const { getActiveAIConfig } = await import('../ai-config.api')
     const { fetchOpenRouter } = await import('./openrouter')
     const { robustParseJSON } = await import('./utils')
 

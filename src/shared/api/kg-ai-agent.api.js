@@ -243,37 +243,37 @@ OUTPUT FORMAT (strict JSON):
 CUISINE SCHEMA (all fields map 1:1 to database columns):
 ═══════════════════════════════════════════════════════
 {
-  "name": "string — REQUIRED, e.g. \"Italian\" (not \"Italian Cuisine\")",
+  "name": "string — REQUIRED, e.g. 'Italian' (not 'Italian Cuisine')",
   "description": "string — REQUIRED, 2-3 sentences",
-  "region": "string — broad geographic region, e.g. \"Mediterranean\", \"East Asian\", \"Latin American\"",
-  "origin_country": "string — primary country, e.g. \"Italy\", \"Japan\"",
-  "aliases": ["array of alternative names, e.g. \"Italiana\""],
-  "flavor_profile": "string — dominant flavors, e.g. \"herbal, savory, umami, spicy\"",
+  "region": "string — broad geographic region, e.g. 'Mediterranean', 'East Asian', 'Latin American'",
+  "origin_country": "string — primary country, e.g. 'Italy', 'Japan'",
+  "aliases": ["array of alternative names, e.g. 'Italiana'"],
+  "flavor_profile": "string — dominant flavors, e.g. 'herbal, savory, umami, spicy'",
   "typical_dishes": ["array of dish names this cuisine is famous for"],
   "key_ingredients": ["array of most important/characteristic ingredients"],
   "spice_level": "one of: mild | medium | spicy | very_spicy",
-  "meal_structure": "string — e.g. \"3-course\", \"tapas\", \"mezze\", \"family-style\"",
-  "cooking_methods": ["array — e.g. \"grilling\", \"braising\", \"fermenting\", \"stir-frying\""],
-  "dietary_notes": "string — e.g. \"halal-friendly\", \"heavy dairy\", \"largely plant-based\""
+  "meal_structure": "string — e.g. '3-course', 'tapas', 'mezze', 'family-style'",
+  "cooking_methods": ["array — e.g. 'grilling', 'braising', 'fermenting', 'stir-frying'"],
+  "dietary_notes": "string — e.g. 'halal-friendly', 'heavy dairy', 'largely plant-based'"
 }
 
 ═══════════════════════════════════════════════════════
 DISH SCHEMA (all fields map 1:1 to database columns):
 ═══════════════════════════════════════════════════════
 {
-  "name": "string — REQUIRED, e.g. \"Spaghetti Carbonara\"",
+  "name": "string — REQUIRED, e.g. 'Spaghetti Carbonara'",
   "cuisine_name": "string — REQUIRED, parent cuisine name (must match cuisine name exactly)",
   "description": "string — REQUIRED, 1-2 sentences",
   "course": "one of: appetizer | main | dessert | side | drink | snack | bread",
-  "preparation_style": "string — e.g. \"pasta\", \"grilled\", \"soup\", \"fried\", \"baked\", \"raw\", \"steamed\"",
+  "preparation_style": "string — e.g. 'pasta', 'grilled', 'soup', 'fried', 'baked', 'raw', 'steamed'",
   "ingredients": ["array of main ingredient names"],
   "dietary_tags": ["array — any of: vegetarian | vegan | gluten-free | dairy-free | nut-free | halal | kosher"],
-  "flavor_notes": "string — e.g. \"creamy, rich, smoky, fresh\"",
-  "best_pairing": "string — e.g. \"white wine, crusty bread\"",
+  "flavor_notes": "string — e.g. 'creamy, rich, smoky, fresh'",
+  "best_pairing": "string — e.g. 'white wine, crusty bread'",
   "serving_temp": "one of: hot | warm | cold | room_temp",
   "difficulty": "one of: easy | medium | hard",
   "cook_time_min": "integer — estimated cooking time in minutes",
-  "origin_city": "string — city of origin if notable, e.g. \"Naples\", \"Bologna\"",
+  "origin_city": "string — city of origin if notable, e.g. 'Naples', 'Bologna'",
   "alternative_names": ["array of local/regional names"],
   "spicy_level": "integer 0-5 (0=not spicy, 5=extremely spicy)",
   "is_signature": "boolean — true if iconic/signature dish of its cuisine"
@@ -283,17 +283,17 @@ DISH SCHEMA (all fields map 1:1 to database columns):
 INGREDIENT SCHEMA (all fields map 1:1 to database columns):
 ═══════════════════════════════════════════════════════
 {
-  "name": "string — REQUIRED, e.g. \"Truffle Oil\"",
+  "name": "string — REQUIRED, e.g. 'Truffle Oil'",
   "category": "one of: vegetable | fruit | meat | fish | seafood | dairy | grain | spice | herb | nut | legume | oil | sauce | other",
   "description": "string — REQUIRED, 1-2 sentences about this ingredient",
-  "flavor_profile": "string — e.g. \"earthy, pungent, sweet, neutral\"",
+  "flavor_profile": "string — e.g. 'earthy, pungent, sweet, neutral'",
   "common_pairings": ["array of ingredients that pair well with this one"],
   "dietary_info": ["array — any of: vegan | vegetarian | gluten-free | dairy-free | nut-free | halal | kosher"],
   "season": ["array — any of: spring | summer | fall | winter | year-round"],
-  "origin_region": "string — geographic origin, e.g. \"Southeast Asia\", \"Mediterranean\"",
-  "health_notes": "string — e.g. \"high in omega-3\", \"antioxidant-rich\", \"high protein\"",
+  "origin_region": "string — geographic origin, e.g. 'Southeast Asia', 'Mediterranean'",
+  "health_notes": "string — e.g. 'high in omega-3', 'antioxidant-rich', 'high protein'",
   "substitutes": ["array of ingredient names that can substitute this one"],
-  "storage_tip": "string — e.g. \"refrigerate up to 1 week\", \"store in cool dry place\"",
+  "storage_tip": "string — e.g. 'refrigerate up to 1 week', 'store in cool dry place'",
   "is_allergen": "boolean — true if this is a common allergen (nuts, dairy, gluten, shellfish, etc.)",
   "is_vegan": "boolean",
   "is_vegetarian": "boolean"
@@ -841,7 +841,7 @@ function matchCuisine(cuisineName, allCuisines) {
 export function resolveDishCuisineIds(dishes, allCuisines) {
     return dishes.map(dish => {
         const match = matchCuisine(dish.cuisine_name, allCuisines)
-        const { cuisine_name, ...rest } = dish
+        const { cuisine_name: _cuisine_name, ...rest } = dish
         return { ...rest, cuisine_id: match?.id ?? null }
     })
 }

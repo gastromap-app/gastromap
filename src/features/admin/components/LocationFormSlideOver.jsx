@@ -111,30 +111,15 @@ const LocationFormSlideOver = ({
     setFormData,
     onSave,
     // AI props
-    extractMutation,
     aiQueryMutation,
     reindexMutation,
     isImproving,
     setIsImproving,
-    handleAIMagic,
-    // unused but accepted to avoid prop warnings
-    spoonacularMutation,
-    culinarySearchQuery,
-    setCulinarySearchQuery,
-    culinaryResults,
-    handleCulinarySearch,
-    addCulinaryItem,
-    aiSearchQuery: _aiSearchQuery,
-    setAiSearchQuery: _setAiSearchQuery,
 }) => {
-    const [aiQuery, setAiQuery]         = useState('')
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [newImageUrl, setNewImageUrl]  = useState('')
-    const [aiStatus, setAiStatus]       = useState(null) // null | 'loading' | 'done' | 'error'
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
-
-    if (!isOpen || !formData) return null
 
     // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -165,19 +150,7 @@ const LocationFormSlideOver = ({
         }))
     }, [setFormData])
 
-    const handleAutoFill = async () => {
-        if (!aiQuery.trim()) return
-        setAiStatus('loading')
-        try {
-            await handleAIMagic(aiQuery)
-            setAiStatus('done')
-            setAiQuery('')
-            setTimeout(() => setAiStatus(null), 3000)
-        } catch {
-            setAiStatus('error')
-            setTimeout(() => setAiStatus(null), 4000)
-        }
-    }
+    if (!isOpen || !formData) return null
 
     const handleImproveDesc = async () => {
         const text = formData.description

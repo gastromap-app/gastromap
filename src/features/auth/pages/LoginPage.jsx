@@ -157,6 +157,7 @@ const LoginPage = () => {
                                 />
                                 <button
                                     type="button"
+                                    aria-label={showPassword ? 'Hide' : 'Reveal'}
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
                                 >
@@ -167,7 +168,12 @@ const LoginPage = () => {
 
                         <motion.div variants={itemVariants} className="flex justify-between items-center text-sm">
                             <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" name="remember" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                <input
+                                    type="checkbox"
+                                    name="remember"
+                                    aria-label="Remember me"
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
                                 <span className="text-gray-500 group-hover:text-gray-700 transition-colors">Remember me</span>
                             </label>
                             <Link to="/auth/forgot-password" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</Link>

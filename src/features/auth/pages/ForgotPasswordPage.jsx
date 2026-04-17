@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail, CheckCircle2, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const ForgotPasswordPage = () => {
-    const navigate = useNavigate()
     const { requestPasswordReset, isLoading, error, clearError } = useAuthStore()
     const [emailSent, setEmailSent] = useState(false)
     const [submittedEmail, setSubmittedEmail] = useState('')

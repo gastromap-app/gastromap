@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Shield, Eye, Lock, Database } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
@@ -34,12 +33,6 @@ const PrivacyPage = () => {
             title: "Your Rights (GDPR)",
             content: "If you are in the European Economic Area, you have certain rights under the GDPR, including the right to access, rectify, or delete your personal data. You can exercise these rights through your profile settings or by contacting our data protection officer."
         }
-    ]
-
-    const dataPoints = [
-        { icon: Eye, label: "Usage Data", desc: "Browsing history and interactions." },
-        { icon: Lock, label: "Personal Info", desc: "Name, email, and bio." },
-        { icon: Database, label: "Geolocation", desc: "Only while using the app." },
     ]
 
     return (

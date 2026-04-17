@@ -6,6 +6,7 @@ import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import { Link } from 'react-router-dom'
 import { Star } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '../../public/hooks/useLocationsStore'
 
 // ─── Fix Leaflet default icon paths ──────────────────────────────────────
@@ -180,6 +181,7 @@ function PopupCard({ loc }) {
 
 // ─── Main component ───────────────────────────────────────────────────────
 const MapTab = ({ activeFilter = 'All' }) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const { filteredLocations: storeFiltered } = useLocationsStore()
     const [userPos, setUserPos] = React.useState(null)
@@ -286,7 +288,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
                 {userPos && (
                     <Marker position={userPos} icon={userIcon}>
                         <Popup closeButton={false}>
-                            <div className="px-2 py-1 text-xs font-bold text-center text-gray-700">📍 You are here</div>
+                            <div className="px-2 py-1 text-xs font-bold text-center text-gray-700">📍 {t('map.you_are_here')}</div>
                         </Popup>
                     </Marker>
                 )}

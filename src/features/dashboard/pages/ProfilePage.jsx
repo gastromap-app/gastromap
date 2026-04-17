@@ -50,8 +50,13 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 
 const ProfilePage = () => {
     const { t, i18n } = useTranslation()
-    const { user: authUser } = useAuthStore()
+    const { user: authUser, logout } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
+
+    const handleSignOut = async () => {
+        await logout()
+        navigate('/login')
+    }
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
@@ -369,7 +374,10 @@ const ProfilePage = () => {
 
             {/* Sign Out Action */}
             <div className="px-5 mt-8">
-                <button className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}>
+                <button
+                    onClick={handleSignOut}
+                    className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}
+                >
                     <LogOut size={18} />
                     {t('profile.sign_out')}
                 </button>

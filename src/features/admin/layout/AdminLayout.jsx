@@ -56,9 +56,9 @@ export default function AdminLayout() {
         }
     })
 
-    const handleLogout = () => {
-        logout()
-        navigate('/')
+    const handleLogout = async () => {
+        await logout()
+        navigate('/login')
     }
 
     const userInitials = user?.name

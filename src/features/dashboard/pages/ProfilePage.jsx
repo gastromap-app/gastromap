@@ -52,14 +52,21 @@ const ProfilePage = () => {
     const { t, i18n } = useTranslation()
     const { user: authUser, logout } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
-
-    const handleSignOut = async () => {
-        await logout()
-        navigate('/login')
-    }
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
+
+    const [signingOut, setSigningOut] = useState(false)
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await logout()
+        } finally {
+            // Hard redirect — clears all in-memory state, no auth-listener races
+            window.location.href = '/login'
+        }
+    }
 
     // State for Feedback
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
@@ -376,10 +383,14 @@ const ProfilePage = () => {
             <div className="px-5 mt-8">
                 <button
                     onClick={handleSignOut}
-                    className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}
+                    disabled={signingOut}
+                    className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}
                 >
-                    <LogOut size={18} />
-                    {t('profile.sign_out')}
+                    {signingOut
+                        ? <span className="w-4 h-4 rounded-full border-2 border-red-400 border-t-transparent animate-spin" />
+                        : <LogOut size={18} />
+                    }
+                    {signingOut ? t('profile.signing_out') || 'Signing out…' : t('profile.sign_out')}
                 </button>
 
                 <div className="text-center mt-6">

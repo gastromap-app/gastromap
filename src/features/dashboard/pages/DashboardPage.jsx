@@ -209,6 +209,31 @@ const DashboardPage = () => {
             {/* MOBILE VIEW (Horizontal Sliders) */}
             <div className="md:hidden space-y-8 px-[2.5vw] pb-12" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
+                {/* Search Bar */}
+                <div className="space-y-4 mb-4">
+                    <h2 className={`text-xl font-black tracking-tight leading-tight ${textStyle}`}>
+                        {t('dashboard.tagline')}
+                    </h2>
+                    <div className="flex gap-2">
+                        <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${isDark ? 'bg-white/5 border-white/10 shadow-none' : 'bg-white border-gray-100 shadow-xl shadow-blue-500/5'}`}>
+                            <SearchIcon size={18} className="text-blue-500 mr-3" />
+                            <input
+                                type="text"
+                                placeholder={t('dashboard.search_placeholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                            />
+                        </div>
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            aria-label="Open filters"
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-transparent'}`}
+                        >
+                            <SlidersHorizontal size={18} />
+                        </button>
+                    </div>
+                </div>
 
                 {/* 1. Explore by Country */}
                 <div className="space-y-4">

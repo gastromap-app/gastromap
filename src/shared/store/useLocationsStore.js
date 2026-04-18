@@ -200,9 +200,12 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, activeBestTime }),
         })),
 
-    // FIX BUG-4: Radius setter (was missing)
+    // FIX BUG-4: Radius setter — also re-apply filters to trigger UI update
     setRadius: (radius) =>
-        set(state => ({ radius })),
+        set(state => ({
+            radius,
+            filteredLocations: applyAllFilters(state.locations, { ...state, radius }),
+        })),
 
     setSortBy: (sortBy) =>
         set(state => ({

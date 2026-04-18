@@ -60,6 +60,7 @@ import LocationStats from '../components/LocationStats'
 import AdminLocationsHeader from '../components/AdminLocationsHeader'
 import ListViewSection from '../components/ListViewSection'
 import ModerationQueueView from '../components/ModerationQueueView'
+import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
     const hook = useAdminLocations()

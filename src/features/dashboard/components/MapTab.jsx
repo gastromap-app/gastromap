@@ -7,7 +7,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { Link } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useLocationsStore } from '../../public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 // ─── Fix Leaflet default icon paths ──────────────────────────────────────
 import icon from 'leaflet/dist/images/marker-icon.png'

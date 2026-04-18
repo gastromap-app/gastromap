@@ -8,7 +8,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-import MapTab from '../components/MapTab'
+const MapTab = React.lazy(() => import('../components/MapTab'))
 import FilterModal from '../components/FilterModal'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
@@ -463,7 +463,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
 
             {activeTab === 'map' ? (
                 <div className="h-[600px] rounded-[32px] overflow-hidden shadow-2xl mt-[20px]">
-                    <MapTab activeFilter={activeFilter} />
+                    <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" /></div>}><MapTab activeFilter={activeFilter} /></React.Suspense>
                 </div>
             ) : (
                 <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} className="space-y-10 mt-[20px]">

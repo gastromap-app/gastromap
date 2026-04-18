@@ -62,14 +62,23 @@ const ProfileEditPage = () => {
     const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
     const inputBg = isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"
 
+    const [saveError, setSaveError] = React.useState('')
+    const [saveLoading, setSaveLoading] = React.useState(false)
+
     const handleSave = async () => {
-        // Existing local update
-        await updateUserProfile({ name: formData.name, avatar: formData.avatar })
-        // Sync to Supabase
-        if (authUser?.id) {
-            await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })
+        setSaveError('')
+        setSaveLoading(true)
+        try {
+            await updateUserProfile({ name: formData.name, avatar: formData.avatar })
+            if (authUser?.id) {
+                await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })
+            }
+            navigate('/profile')
+        } catch (err) {
+            setSaveError(err.message || 'Failed to save profile. Try again.')
+        } finally {
+            setSaveLoading(false)
         }
-        navigate('/profile')
     }
 
 

@@ -641,27 +641,31 @@ export async function searchCuisinesSemantic(query, limit = 5) {
         ).slice(0, limit)
     }
 
-    // Try semantic search via RPC function
-    // Generate embedding for the query
-    const embedding = await generateEmbedding(query)
-    
-    const { data, error } = await supabase.rpc('search_cuisines_by_embedding', {
-        query_embedding: embedding,
-        match_threshold: 0.7,
-        match_count: limit
-    })
+    // NOTE: search_cuisines_by_embedding RPC is not deployed — using text search directly.
+    // When pgvector RPC is ready, set SKIP_VECTOR_SEARCH = false below.
+    const SKIP_VECTOR_SEARCH = true
 
-    if (error) {
-        // Fallback to basic text search
-        const { data: textData } = await supabase
-            .from('cuisines')
-            .select('*')
-            .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-            .limit(limit)
-        return textData || []
+    if (!SKIP_VECTOR_SEARCH) {
+        try {
+            const embedding = await generateEmbedding(query)
+            const { data, error } = await supabase.rpc('search_cuisines_by_embedding', {
+                query_embedding: embedding,
+                match_threshold: 0.7,
+                match_count: limit
+            })
+            if (!error && data?.length) return data
+        } catch (_embErr) {
+            // embedding or RPC failed — fall through to text search
+        }
     }
 
-    return data || []
+    // Text search fallback
+    const { data: textData } = await supabase
+        .from('cuisines')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(limit)
+    return textData || []
 }
 
 /**

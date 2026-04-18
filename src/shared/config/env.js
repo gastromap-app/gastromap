@@ -86,3 +86,20 @@ export const config = {
         unsplashQuality: '?q=80&w=800&auto=format&fit=crop',
     },
 }
+
+// ─── DEV-only: warn when critical env vars are missing ──────────────────────
+if (import.meta.env.DEV) {
+    const required = [
+        ['VITE_SUPABASE_URL',       config.supabase.url],
+        ['VITE_SUPABASE_ANON_KEY',  config.supabase.anonKey],
+        ['VITE_OPENROUTER_API_KEY', config.ai.openRouterKey],
+    ]
+    const missing = required.filter(([, val]) => !val)
+    if (missing.length) {
+        console.warn(
+            '[GastroMap Config] Missing env vars:',
+            missing.map(([k]) => k).join(', '),
+            '\n→ Copy .env.example to .env.local and fill in values'
+        )
+    }
+}

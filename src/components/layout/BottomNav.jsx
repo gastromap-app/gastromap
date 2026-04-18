@@ -68,6 +68,8 @@ export function BottomNav() {
                                     <Link
                                         key={item.path}
                                         to={item.path}
+                                        aria-label={item.label}
+                                        aria-current={isActive ? 'page' : undefined}
                                         className={cn(
                                             "flex flex-col items-center justify-center flex-1 h-full relative group",
                                             isActive

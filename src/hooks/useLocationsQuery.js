@@ -29,11 +29,12 @@ export function useLocationsQuery(city, country) {
                 let supabaseReached = false
                 try {
                     const { getLocations } = await import('@/shared/api/locations.api')
+                    // EXPL-2 FIX: no city/country on /explore root → fetch all active locations
                     const result = await getLocations({
-                        city,
-                        country,
+                        ...(city ? { city } : {}),
+                        ...(country ? { country } : {}),
                         limit: 200,
-                        status: 'active', // DB stores 'active'; normalise() converts to 'approved' for UI
+                        status: 'active',
                     })
                     // БД ответила — запрос дошёл до Supabase
                     supabaseReached = true
@@ -81,7 +82,8 @@ export function useLocationsQuery(city, country) {
         },
         staleTime: 60 * 60 * 1000,
         gcTime: 24 * 60 * 60 * 1000,
-        enabled: !!(city && country),
+        // EXPL-2 FIX: enable even without city/country to load all locations on /explore root
+        enabled: true,
         retry: 1,
     })
 

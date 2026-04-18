@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
@@ -219,7 +219,7 @@ const DashboardPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* MOBILE VIEW (Horizontal Sliders) */}
-            <div className="md:hidden space-y-8 px-[2.5vw] pb-12" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+            <div className="md:hidden space-y-8 px-[2.5vw] pb-28" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
 
                 {/* Search Bar */}
                 <div className="space-y-4 mb-4">
@@ -366,7 +366,7 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
     }
 
     return (
-        <div className="pb-20">
+        <div className="pb-20 md:pb-8">
 
             {/* 2. Hero: Greeting, Search */}
             <div className="mt-[40px]">

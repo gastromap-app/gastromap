@@ -15,7 +15,8 @@ const AIGuidePage = () => {
 
     const handleSend = (e) => {
         e.preventDefault()
-        if (!input.trim()) return
+        // AI-3 FIX: prevent spam while AI is responding
+        if (!input.trim() || isTyping) return
         sendMessage(input)
         setInput('')
     }

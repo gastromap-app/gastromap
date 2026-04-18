@@ -276,10 +276,10 @@ export const useLocationsStore = create((set, get) => ({
                     isInitialized: true, // mark global store as fully loaded
                 }))
             } else {
-                set({ isLoading: false })
+                set({ isLoading: false, isInitialized: true })
             }
         } catch {
-            set({ isLoading: false })
+            set({ isLoading: false, isInitialized: true })
         }
     },
 }))

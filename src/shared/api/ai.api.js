@@ -328,16 +328,28 @@ async function fetchOpenRouter(messages, { stream = false, withTools = true, mod
         body.tool_choice = 'auto'
     }
 
-    const res = await fetch(OPENROUTER_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://gastromap.app',
-            'X-Title': 'GastroMap',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    })
+    // AbortController: 30s timeout protects against hung requests
+    const abortCtrl = new AbortController()
+    const abortTimer = setTimeout(() => abortCtrl.abort(), 30_000)
+    let res
+    try {
+        res = await fetch(OPENROUTER_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://gastromap.app',
+                'X-Title': 'GastroMap',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+            signal: abortCtrl.signal,
+        })
+    } catch (err) {
+        if (err.name === 'AbortError') throw new Error('AI request timed out (30s) — please try again')
+        throw err
+    } finally {
+        clearTimeout(abortTimer)
+    }
 
     // Rate limited — try next model in cascade
     if (res.status === 429) {

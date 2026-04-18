@@ -167,7 +167,7 @@ export async function getLocations(filters = {}) {
     if (country) q = q.ilike('country', country)
     if (minRating != null) q = q.gte('rating', minRating)
     if (priceLevel?.length) q = q.in('price_level', priceLevel)
-    if (vibe?.length) q = q.overlaps('tags', vibe) // vibe maps to tags if not separate column
+    if (vibe?.length) q = q.overlaps('vibe', vibe)
 
     // Search by title or city if query exists
     if (query) {

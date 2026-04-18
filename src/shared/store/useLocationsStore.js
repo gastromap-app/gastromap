@@ -68,7 +68,14 @@ function applyAllFilters(locations, filters) {
     }
 
     if (activeVibes?.length) {
-        result = result.filter(loc => activeVibes.includes(loc.vibe))
+        result = result.filter(loc => {
+            const labels = [
+                ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
+                ...(Array.isArray(loc.features) ? loc.features : []),
+                ...(Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : [])),
+            ]
+            return activeVibes.some(v => labels.includes(v))
+        })
     }
 
     // ─── Sort ────────────────────────────────────────────────────────────

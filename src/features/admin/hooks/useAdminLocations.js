@@ -384,7 +384,10 @@ export const useAdminLocations = () => {
                     setIsSlideOverOpen(false)
                     setFormData(null)
                     setSelectedLocation(null)
-                } 
+                },
+                onError: (err) => {
+                    alert('Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'))
+                }
             })
         } else {
             updateLocMutation.mutate({ 
@@ -395,7 +398,10 @@ export const useAdminLocations = () => {
                     setIsSlideOverOpen(false)
                     setFormData(null)
                     setSelectedLocation(null)
-                } 
+                },
+                onError: (err) => {
+                    alert('Ошибка сохранения: ' + (err?.message || 'Попробуйте ещё раз'))
+                }
             })
         }
     }

@@ -12,6 +12,8 @@ function VisitedCard({ visit, index, onDelete }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const loc = visit.locations
+    // VISIT-1 FIX: Null Pointer — location deleted from DB (LEFT JOIN returns null)
+    if (!loc) return null
 
     return (
         <motion.div
@@ -64,7 +66,7 @@ function VisitedCard({ visit, index, onDelete }) {
                     <div className="flex items-center gap-3 mt-2">
                         <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
                             <Clock size={10} />
-                            {new Date(visit.visited_at).toLocaleDateString()}
+                            {visit.visited_at ? new Date(visit.visited_at).toLocaleDateString() : '—'}
                         </span>
                         {visit.review_text && (
                             <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg line-clamp-1 ${

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
-import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { OnboardingFlow } from './OnboardingFlow'
 
 /**

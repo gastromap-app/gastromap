@@ -33,9 +33,12 @@ const LocationListItem = ({
                         <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
                         <div className="flex items-center gap-2 mt-1">
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black shrink-0">{loc.category}</p>
-                            {loc.cuisine_types && loc.cuisine_types.length > 0 && (
+                            {/* WRONG FIELD FIX: cuisine_types → kg_cuisines (DB field name) */}
+                            {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
                                 <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] h-4 px-1.5 font-black border-none uppercase tracking-widest shrink-0">
-                                    {Array.isArray(loc.cuisine_types) ? loc.cuisine_types.join(', ') : loc.cuisine_types}
+                                    {loc.kg_cuisines?.length > 0
+                                        ? loc.kg_cuisines.slice(0,2).join(', ')
+                                        : loc.cuisine}
                                 </Badge>
                             )}
                         </div>

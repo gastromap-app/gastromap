@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES } from '@/shared/config/filterOptions'
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const { t } = useTranslation()

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
@@ -16,6 +16,22 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const [selectedPriceLevels, setSelectedPriceLevels] = useState([]) // e.g. ['$', '$$']
     const [selectedFeatures, setSelectedFeatures] = useState([])
     const [radius, setRadius] = useState(10)
+
+    // ── Dynamic cuisines from KG data ─────────────────────────────────────────
+    // Automatically reflects any new cuisine added via KG enrichment
+    const locations = useLocationsStore(s => s.locations)
+    const dynamicCuisines = useMemo(() => {
+        const cuisineSet = new Set()
+        locations.forEach(loc => {
+            // KG cuisines (primary source — auto-updated)
+            if (Array.isArray(loc.kg_cuisines)) {
+                loc.kg_cuisines.forEach(c => c && cuisineSet.add(c))
+            }
+            // Fallback: cuisine string field  
+            if (loc.cuisine) cuisineSet.add(loc.cuisine)
+        })
+        return [...cuisineSet].sort()
+    }, [locations])
 
     const activeCount = [
         selectedCategory !== 'all',
@@ -245,32 +261,15 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div className="space-y-6 text-left">
                                 <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Special Features & Labels</label>
                                 <div className="space-y-6">
-                                    {[
-                                        {
-                                            group: t('filter.cuisine_menu'),
-                                            items: ['Signature Cuisine', 'Vegan Menu', 'Delicious Desserts', 'All Day Breakfast', 'Fusion', 'Italian', 'French', 'Japanese', 'Chinese', 'Greek', 'Spanish', 'Mexican', 'Thai', 'Georgian', 'Polish', 'Israeli', 'American', 'Mediterranean', 'Indian', 'Vietnamese', 'Turkish'],
-                                        },
-                                        {
-                                            group: 'Bar & Drinks',
-                                            items: ['Signature Cocktails', 'Wine List', 'Guest Shifts', 'Wine Tasting', 'DJ Sets', 'Craft Beer', 'Cupping', 'Mixology', 'Specialty Coffee', 'Wide Gin Selection'],
-                                        },
-                                        {
-                                            group: 'Atmosphere',
-                                            items: ['Scenic View', 'Live Music', 'Coworking', 'Board Games', 'Lively', 'Romantic', 'Speakeasy', 'Happy Hours', 'Themed Interior', 'Quiet Atmosphere', 'Cozy'],
-                                        },
-                                        {
-                                            group: 'Amenities & Service',
-                                            items: ['Balconies', 'Kids Area', 'High Chairs', 'Delivery', 'Inclusive', 'Local Favorite', 'Parking', 'Pet friendly', 'Takeaway', 'Courtyard Terrace', 'Rooftop Terrace', 'WiFi'],
-                                        },
-                                        {
-                                            group: 'Awards & Special',
-                                            items: ['Michelin Guide', 'Michelin Star', 'Hookah', 'Late Dinner'],
-                                        },
-                                    ].map(cat => (
+                                    {LABEL_GROUPS.map((cat, idx) => {
+                                        // First group (Cuisine & Menu) uses dynamic KG data
+                                        const items = idx === 0 ? dynamicCuisines : [...cat.items].sort()
+                                        if (items.length === 0) return null
+                                        return (
                                         <div key={cat.group} className="space-y-3">
                                             <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{cat.group}</h4>
                                             <div className="flex flex-wrap gap-2">
-                                                {cat.items.sort().map(chip => {
+                                                {items.map(chip => {
                                                     const isActive = selectedFeatures.includes(chip)
                                                     return (
                                                         <button
@@ -284,7 +283,8 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                 })}
                                             </div>
                                         </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
 

@@ -236,6 +236,8 @@ const LocationsPage = () => {
         activeCategory,
         searchQuery: storeQuery,
         sortBy,
+        minRating,
+        activePriceLevels,
         setCategory,
         setSearchQuery: storeSetSearch,
         setSortBy,

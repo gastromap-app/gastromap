@@ -33,7 +33,7 @@ export function useLocationsQuery(city, country) {
                         city,
                         country,
                         limit: 200,
-                        status: 'approved',
+                        status: 'active', // DB stores 'active'; normalise() converts to 'approved' for UI
                     })
                     // БД ответила — запрос дошёл до Supabase
                     supabaseReached = true

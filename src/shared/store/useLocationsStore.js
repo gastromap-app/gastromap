@@ -155,6 +155,7 @@ const INITIAL_LOCATIONS = isDev ? MOCK_LOCATIONS : []
 
 export const useLocationsStore = create((set, get) => ({
     locations: INITIAL_LOCATIONS,
+    isInitialized: false, // true after first successful full fetch (no city/country filter)
     filteredLocations: INITIAL_LOCATIONS,
     isLoading: false,
 
@@ -269,6 +270,7 @@ export const useLocationsStore = create((set, get) => ({
                     locations: data,
                     filteredLocations: applyAllFilters(data, state),
                     isLoading: false,
+                    isInitialized: true, // mark global store as fully loaded
                 }))
             } else {
                 set({ isLoading: false })

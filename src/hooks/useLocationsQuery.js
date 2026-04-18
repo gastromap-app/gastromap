@@ -89,9 +89,15 @@ export function useLocationsQuery(city, country) {
 
     useEffect(() => {
         if (query.data) {
-            setLocations(query.data)
+            // REGRESSION FIX: only update global store when fetching ALL locations (no city/country filter)
+            // City-scoped queries (city + country) must NOT overwrite the global store —
+            // this caused the dashboard to show only city-filtered data after navigating back.
+            // DrillDownExplorer filters from the global store client-side instead.
+            if (!city && !country) {
+                setLocations(query.data)
+            }
         }
-    }, [query.data, setLocations])
+    }, [query.data, city, country, setLocations])
 
     return query
 }

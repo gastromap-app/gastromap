@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 
 export default function AdminLayout() {

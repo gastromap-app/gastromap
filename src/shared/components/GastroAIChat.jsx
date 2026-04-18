@@ -199,7 +199,7 @@ export function ChatInterface({
                             <div
                                 key={delay}
                                 className={`w-2 h-2 rounded-full animate-bounce ${
-                                    transparent ? 'bg-white/80' : 'bg-gray-400'
+                                    transparent ? (isDark ? 'bg-white/80' : 'bg-gray-500') : 'bg-gray-400'
                                 }`}
                                 style={{ animationDelay: `${delay}ms` }}
                             />

@@ -42,7 +42,7 @@ const AIGuidePage = () => {
             {/* Back button — visible on mobile where BottomNav is hidden on this page */}
             <button
                 onClick={() => navigate(-1)}
-                className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/30 backdrop-blur-md text-white text-[13px] font-bold border border-white/10 active:scale-95 transition-transform"
+                className="md:hidden absolute left-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/30 backdrop-blur-md text-white text-[13px] font-bold border border-white/10 active:scale-95 transition-transform" style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}
             >
                 <ArrowLeft size={16} />
                 {t('common.back')}
@@ -56,7 +56,7 @@ const AIGuidePage = () => {
                     onSendMessage={sendMessage}
                     className="[&_form]:hidden md:[&_form]:block"
                     transparent={true}
-                    contentClassName="pt-40 md:pt-48" // Sufficient padding to avoid overlap with two-level header
+                    contentClassName="pt-[calc(env(safe-area-inset-top)+6rem)] md:pt-48"
                 />
             </div>
 

@@ -4,7 +4,7 @@ import {
     MapPin, ChefHat, Wallet, ArrowRight, Check, Sparkles,
     Coffee, UtensilsCrossed, Wine, Fish, Leaf, Flame
 } from 'lucide-react'
-import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
+import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useTranslation } from 'react-i18next'
 
 // ─── Step data ────────────────────────────────────────────────────────────

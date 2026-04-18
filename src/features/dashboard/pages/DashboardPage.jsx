@@ -17,7 +17,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
-import { DrillDownExplorer } from '../components/DrillDownExplorer'
+import { DrillDownExplorer, CountryCards } from '../components/DrillDownExplorer'
 
 // --- MOBILE COMPONENTS ---
 // Proper seamless marquee: two copies of the text side-by-side, animate x from 0 to -50%
@@ -145,6 +145,17 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+
+    // Drill-down navigation state
+    const [drillLevel, setDrillLevel] = useState('home') // 'home' | 'cities' | 'locations'
+    const [drillCountry, setDrillCountry] = useState(null)
+    const [drillCity, setDrillCity] = useState(null)
+
+    const handleSelectCountry = (country) => {
+        setDrillCountry(country)
+        setDrillCity(null)
+        setDrillLevel('cities')
+    }
     const debouncedSearch = useDebounce(searchQuery, 300)
 
     // Pull-to-refresh
@@ -199,13 +210,16 @@ const DashboardPage = () => {
             <div className="md:hidden space-y-8 px-[2.5vw] pb-12" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
 
-                {/* 1. Explore by Country — drill-down navigation */}
-                <DrillDownExplorer
-                    countries={countries}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    setIsFilterOpen={setIsFilterOpen}
-                />
+                {/* 1. Explore by Country */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
+                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
+                        </div>
+                    </div>
+                    <CountryCards countries={countries} onSelectCountry={handleSelectCountry} />
+                </div>
 
                                 {/* 2. Recommended for you */}
                 <div className="space-y-4">
@@ -263,6 +277,20 @@ const DashboardPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Drill-Down Overlay — replaces full page on cities/locations level */}
+            <DrillDownExplorer
+                countries={countries}
+                level={drillLevel}
+                setLevel={setDrillLevel}
+                selectedCountry={drillCountry}
+                setSelectedCountry={setDrillCountry}
+                selectedCity={drillCity}
+                setSelectedCity={setDrillCity}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                setIsFilterOpen={setIsFilterOpen}
+            />
 
             {/* DESKTOP VIEW (Original Design - Fully Restored) */}
             <div className="hidden md:flex flex-col px-[10px] pt-24 pb-6">

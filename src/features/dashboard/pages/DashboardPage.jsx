@@ -15,6 +15,9 @@ import { translate } from '@/utils/translation'
 import { DashboardCardSkeleton } from '@/components/ui/Skeleton'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
+import { DrillDownExplorer } from '../components/DrillDownExplorer'
 
 // --- MOBILE COMPONENTS ---
 // Proper seamless marquee: two copies of the text side-by-side, animate x from 0 to -50%
@@ -144,6 +147,15 @@ const DashboardPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const debouncedSearch = useDebounce(searchQuery, 300)
 
+    // Pull-to-refresh
+    const handleRefresh = async () => {
+        const { initialize } = useLocationsStore.getState()
+        // Force refetch by resetting isLoading guard
+        useLocationsStore.setState({ isLoading: false })
+        await initialize()
+    }
+    const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
+
     // Apply search to store when debounced value changes
     useEffect(() => {
         const { setSearchQuery: storeSetSearch } = useLocationsStore.getState()
@@ -186,61 +198,16 @@ const DashboardPage = () => {
             {/* MOBILE VIEW (Horizontal Sliders) */}
             <div className="md:hidden space-y-8 px-[2.5vw] pb-12" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
-                {/* Search Bar Section */}
-                <div className="space-y-4 mb-4">
-                    <h2 className={`text-xl font-black tracking-tight leading-tight ${textStyle}`}>
-                        {t('dashboard.tagline')}
-                    </h2>
-                    <div className="flex gap-2">
-                        <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${isDark ? 'bg-white/5 border-white/10 shadow-none' : 'bg-white border-gray-100 shadow-xl shadow-blue-500/5'}`}>
-                            <SearchIcon size={18} className="text-blue-500 mr-3" />
-                            <input
-                                type="text"
-                                placeholder={t('dashboard.search_placeholder')}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            />
-                        </div>
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            aria-label="Open filters"
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-transparent'}`}
-                        >
-                            <SlidersHorizontal size={18} />
-                        </button>
-                    </div>
-                </div>
 
-                {/* 1. Explore by Country */}
-                <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                        <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
-                        </div>
-                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
-                            {t('dashboard.view_all')}
-                        </button>
-                    </div>
+                {/* 1. Explore by Country — drill-down navigation */}
+                <DrillDownExplorer
+                    countries={countries}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    setIsFilterOpen={setIsFilterOpen}
+                />
 
-                    <div className="flex gap-[12px] overflow-x-auto pb-4 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory transition-all">
-                        {countries.map((country) => (
-                            <button key={country.slug} onClick={() => navigate(`/explore/${country.slug}`)} aria-label={`Explore ${country.name}`} className="relative flex-shrink-0 w-[240px] h-[160px] rounded-[24px] overflow-hidden shadow-2xl snap-center group text-left">
-                                <img src={country.image} crossOrigin="anonymous" alt={country.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                                <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">
-                                    {country.newCount} New
-                                </div>
-                                <div className="absolute bottom-4 left-5">
-                                    <h4 className="text-xl font-black text-white leading-none">{country.name}</h4>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 2. Recommended for you */}
+                                {/* 2. Recommended for you */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-end">
                         <div className="">

@@ -1,7 +1,6 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import LocationsPage from '@/features/public/pages/LocationsPage'
-import MapPage from './MapPage'
 import CitiesPage from './CitiesPage'
 
 const ExploreWrapper = () => {

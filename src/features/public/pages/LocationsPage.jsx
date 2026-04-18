@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import FilterModal from '@/features/dashboard/components/FilterModal'
-import MapTab from '@/features/dashboard/components/MapTab'
+const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab'))
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'

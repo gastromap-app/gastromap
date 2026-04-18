@@ -50,8 +50,12 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const dbFavIds = dbFavs.map(f => f.location_id)
     const isFavorite = (id) => dbFavIds.includes(id) || isLocalFav(id)
     const toggleFavorite = async (id) => {
-        localToggle(id)  // instant UI
-        if (!user?.id) return
+        // DASH-5 FIX: show login prompt instead of silent fail for unauthenticated users
+        if (!user?.id) {
+            navigate('/login?next=/dashboard')
+            return
+        }
+        localToggle(id)  // instant UI (optimistic update)
         if (dbFavIds.includes(id)) {
             await removeFav.mutateAsync({ userId: user.id, locationId: id })
         } else {

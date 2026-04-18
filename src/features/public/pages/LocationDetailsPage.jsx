@@ -10,15 +10,15 @@ import {
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
-import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 
 const LocationDetailsPage = () => {

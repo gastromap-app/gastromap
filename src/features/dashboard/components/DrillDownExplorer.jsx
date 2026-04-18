@@ -6,7 +6,8 @@ import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const COUNTRY_CITIES = {
+// COUNTRY_CITIES used as FALLBACK only when no DB data is available
+const COUNTRY_CITIES_FALLBACK = {
     poland:      ['Kraków', 'Warsaw', 'Wrocław', 'Gdańsk', 'Poznań'],
     france:      ['Paris', 'Lyon', 'Bordeaux', 'Marseille', 'Nice'],
     italy:       ['Rome', 'Milan', 'Florence', 'Venice', 'Naples'],
@@ -61,7 +62,31 @@ export function DrillDownExplorer({
     const isDark = theme === 'dark'
     const navigate = useNavigate()
     const { t } = useTranslation()
-    const { locations } = useLocationsStore()
+    const { locations, isInitialized } = useLocationsStore()
+
+    // DYNAMIC cities: derive from real DB data, fall back to static list
+    const dynamicCitiesByCountry = useMemo(() => {
+        if (!locations?.length) return {}
+        const map = {}
+        locations.forEach(loc => {
+            if (!loc.city || !loc.country) return
+            const country = loc.country.toLowerCase()
+            if (!map[country]) map[country] = new Set()
+            map[country].add(loc.city)
+        })
+        // Convert Sets to sorted arrays
+        return Object.fromEntries(
+            Object.entries(map).map(([k, v]) => [k, [...v].sort()])
+        )
+    }, [locations])
+
+    // For a given country slug, return DB cities or fallback
+    const getCitiesForCountry = (countrySlug) => {
+        const slug = countrySlug?.toLowerCase()
+        const dbCities = dynamicCitiesByCountry[slug]
+        if (dbCities?.length) return dbCities
+        return COUNTRY_CITIES_FALLBACK[slug] ?? []
+    }
 
     const [direction, setDirection] = useState(1)
 
@@ -82,7 +107,7 @@ export function DrillDownExplorer({
         if (!selectedCity) return []
         const q = searchQuery.toLowerCase()
         return locations.filter(l => {
-            const cityMatch = (l.city || l.address || '').toLowerCase().includes(selectedCity.toLowerCase())
+            const cityMatch = (l.city || l.city_name || '').toLowerCase().includes(selectedCity.toLowerCase())
             const searchMatch = !q || l.title?.toLowerCase().includes(q) || l.category?.toLowerCase().includes(q)
             return cityMatch && searchMatch
         })
@@ -200,7 +225,7 @@ export function DrillDownExplorer({
 
                             {/* City grid */}
                             <div className="p-4 grid grid-cols-2 gap-3 pb-32">
-                                {(COUNTRY_CITIES[selectedCountry?.slug] || []).map((city, i) => (
+                                {(getCitiesForCountry(selectedCountry?.slug) || []).map((city, i) => (
                                     <motion.button
                                         key={city}
                                         initial={{ opacity: 0, y: 16 }}

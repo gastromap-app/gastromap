@@ -240,8 +240,16 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
             return
         }
         if (session?.user) {
-            const profile = await _fetchProfile(session.user.id)
-            onSession({ user: _mapUser(session.user, profile), token: session.access_token })
+            try {
+                // RACE CONDITION FIX: async in onAuthStateChange needs try/catch
+                // to prevent unhandled promise rejection on network errors
+                const profile = await _fetchProfile(session.user.id)
+                onSession({ user: _mapUser(session.user, profile), token: session.access_token })
+            } catch (err) {
+                console.warn('[auth] Failed to fetch profile on auth state change:', err.message)
+                // Still call onSession with minimal user data to avoid login loop
+                onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            }
         }
     })
 

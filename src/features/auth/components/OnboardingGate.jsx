@@ -23,16 +23,22 @@ export function OnboardingGate({ children }) {
 
     // Reset stale prefs when the user identity changes (logout / account switch)
     const prevUserIdRef = React.useRef(null)
+    // Guard: once triggered in this session, don't show again even if deps re-fire
+    const hasTriggeredRef = React.useRef(false)
+
     useEffect(() => {
         const currentId = user?.id ?? null
         if (prevUserIdRef.current !== null && prevUserIdRef.current !== currentId) {
+            // User switched — reset both prefs and the session guard
             resetPrefs()
+            hasTriggeredRef.current = false
         }
         prevUserIdRef.current = currentId
     }, [user?.id, resetPrefs])
 
     useEffect(() => {
-        if (isAuthenticated && prefs.favoriteCuisines.length === 0) {
+        if (isAuthenticated && prefs.favoriteCuisines.length === 0 && !hasTriggeredRef.current) {
+            hasTriggeredRef.current = true
             // Small delay so the app layout renders first
             const t = setTimeout(() => setShowOnboarding(true), 600)
             return () => clearTimeout(t)

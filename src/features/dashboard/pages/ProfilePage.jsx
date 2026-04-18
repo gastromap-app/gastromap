@@ -6,7 +6,7 @@ import {
     Settings, LogOut, User, Lock, MessageSquare, FileText,
     HelpCircle, Mail, Shield, Globe, UserX, PlusCircle, CheckCircle2, Clock, Sparkles, Users, ShieldCheck
 } from 'lucide-react'
-import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useUserVisits, useUserFavorites, useUserReviews, useUserRank } from '@/shared/api/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next'
 
 // Simple Feedback Modal Component nested for convenience
 const FeedbackModal = ({ isOpen, onClose, theme }) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const isDark = theme === 'dark'
     if (!isOpen || typeof document === 'undefined') return null
 
@@ -49,7 +49,7 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 }
 
 const ProfilePage = () => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const { user: authUser } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
     const { theme } = useTheme()
@@ -90,7 +90,7 @@ const ProfilePage = () => {
         isApproved: r.status === 'published',
         statusLabel: r.status === 'published' ? t('profile.published') : t('profile.pending'),
         points: r.status === 'published' ? '+5 XP' : t('profile.in_review'),
-        date: new Date(r.created_at).toLocaleDateString(),
+        date: r.created_at ? new Date(r.created_at).toLocaleDateString() : '—',
     }))
 
     const menuItems = [
@@ -99,7 +99,7 @@ const ProfilePage = () => {
             items: [
                 ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: 'Admin Panel', link: "/admin", highlight: true }] : []),
                 { icon: User, label: t('profile.personal_info'), link: "/profile/edit" },
-                { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: "English" },
+                { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: i18n.language?.toUpperCase() ?? "EN" },
                 { icon: Lock, label: t('profile.security'), link: "/profile/security" },
             ]
         },

@@ -291,13 +291,13 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Map + Search + Filters only ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 pt-16">
+            <div className="md:hidden fixed inset-0 z-0">
                 <div className="w-full h-full [&>div]:h-full [&>div]:w-full [&>div]:rounded-none [&>div]:border-none">
                     <MapTab activeFilter={activeCategory} />
                 </div>
 
                 {/* Floating search + filter bar */}
-                <div className="absolute top-20 left-4 right-4 z-40">
+                <div className="absolute left-4 right-4 z-40" style={{ top: 'calc(env(safe-area-inset-top) + 5rem)' }}>
                     <div className="flex gap-2">
                         <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border backdrop-blur-xl shadow-lg ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/90 border-gray-200 shadow-xl'}`}>
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />

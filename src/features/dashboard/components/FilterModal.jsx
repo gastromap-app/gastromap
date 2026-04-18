@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
@@ -17,6 +17,26 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const [selectedFeatures, setSelectedFeatures] = useState([])
     const [radius, setRadius] = useState(0)
     const [selectedBestTime, setSelectedBestTime] = useState(null)
+    const [geoError, setGeoError] = useState(null)
+    const [geoGranted, setGeoGranted] = useState(false)
+
+    // Request geolocation when radius filter is activated
+    const handleRadiusChange = useCallback((newRadius) => {
+        if (newRadius > 0 && !geoGranted) {
+            if (!navigator.geolocation) {
+                setGeoError('Geolocation not supported by this browser')
+                return
+            }
+            navigator.geolocation.getCurrentPosition(
+                () => { setGeoGranted(true); setGeoError(null); setRadius(newRadius) },
+                () => { setGeoError('Location access denied — enable it to use radius filter'); setRadius(0) },
+                { timeout: 5000 }
+            )
+        } else {
+            setRadius(newRadius)
+            if (newRadius === 0) setGeoError(null)
+        }
+    }, [geoGranted])
 
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
     // Automatically reflects any new cuisine added via KG enrichment
@@ -304,7 +324,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     min={1}
                                     max={50}
                                     value={radius}
-                                    onChange={e => setRadius(Number(e.target.value))}
+                                    onChange={e => handleRadiusChange(Number(e.target.value))}
                                     className="w-full h-2 bg-blue-600/10 rounded-full appearance-none cursor-pointer accent-blue-600"
                                 />
                                 <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -312,6 +332,9 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     <span>City-wide</span>
                                     <span>Regional</span>
                                 </div>
+                                {geoError && (
+                                    <p className="text-xs text-amber-500 mt-1">⚠️ {geoError}</p>
+                                )}
                             </div>
 
                         </div>

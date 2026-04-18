@@ -5,8 +5,8 @@ import ReloadPrompt from '@/components/pwa/ReloadPrompt'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator'
 import { OnboardingGate } from '@/features/auth/components/OnboardingGate'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const App = ({ includeRouter = true }) => {
     const initialize = useLocationsStore(s => s.initialize)

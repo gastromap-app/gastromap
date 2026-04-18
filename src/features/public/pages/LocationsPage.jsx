@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, memo } from 'react'
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
-    Coffee, Wine, Store, Navigation, List, ChevronUp,
+    Coffee, Wine, Store, Navigation, List,
     ArrowUpDown, X, SearchX, AlertCircle
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
@@ -274,9 +274,7 @@ const LocationsPage = () => {
 
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [sheetMode, setSheetMode] = useState('full')
     const [sortOpen, setSortOpen] = useState(false)
-    const dragControls = useDragControls()
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
@@ -292,152 +290,39 @@ const LocationsPage = () => {
         <div data-lenis-prevent className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
-            {/* ── MOBILE: Map layer ─────────────────────────────────────── */}
+            {/* ── MOBILE: Map + Search + Filters only ─────────────── */}
             <div className="md:hidden fixed inset-0 z-0 pt-16">
                 <div className="w-full h-full [&>div]:h-full [&>div]:w-full [&>div]:rounded-none [&>div]:border-none">
                     <MapTab activeFilter={activeCategory} />
                 </div>
 
-                {/* Floating search */}
-                <div className="absolute top-24 left-[4vw] right-[4vw] z-40">
+                {/* Floating search + filter bar */}
+                <div className="absolute top-20 left-4 right-4 z-40">
                     <div className="flex gap-2">
-                        <div className={`flex-1 relative flex items-center h-14 px-5 rounded-2xl transition-all border backdrop-blur-xl ${isDark ? 'bg-[#0a0a0a]/70 border-white/10' : 'bg-white/85 border-gray-100 shadow-xl'}`}>
-                            <Search size={18} className="text-blue-500 mr-3 flex-shrink-0" />
+                        <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border backdrop-blur-xl shadow-lg ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/90 border-gray-200 shadow-xl'}`}>
+                            <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
                             <input
                                 type="text"
-                                placeholder={`Find in ${city}...`}
+                                placeholder={`Search in ${city}...`}
                                 value={localSearch}
                                 onChange={(e) => setLocalSearch(e.target.value)}
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
                             />
                             {localSearch && (
-                                <button onClick={() => setLocalSearch('')} className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-600">
-                                    <X size={16} />
+                                <button onClick={() => setLocalSearch('')} className="ml-2 text-gray-400 hover:text-gray-600">
+                                    <X size={15} />
                                 </button>
                             )}
                         </div>
                         <button
                             onClick={() => setIsFilterOpen(true)}
-                            className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all active:scale-95 border backdrop-blur-xl ${isDark ? 'bg-blue-600/20 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg border-transparent'}`}
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center border backdrop-blur-xl shadow-lg active:scale-95 transition-all ${isDark ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-blue-600 text-white border-transparent shadow-blue-200'}`}
                         >
-                            <SlidersHorizontal size={20} />
+                            <SlidersHorizontal size={18} />
                         </button>
                     </div>
                 </div>
             </div>
-
-            {/* ── MOBILE: Bottom sheet ──────────────────────────────────── */}
-            <motion.div
-                className="md:hidden fixed inset-x-0 bottom-0 z-[60] overflow-visible"
-                initial={{ y: '100%' }}
-                animate={{ y: sheetMode === 'mini' ? '84%' : '88px' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-                drag="y"
-                dragControls={dragControls}
-                dragListener={false}
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={{ top: 0, bottom: 0.2 }}
-                onDragEnd={(_, info) => {
-                    if (info.offset.y < -50) setSheetMode('full')
-                    if (info.offset.y > 50) setSheetMode('mini')
-                }}
-            >
-                <div className={`flex flex-col h-[100dvh] rounded-t-[48px] pb-32 border-t backdrop-blur-3xl shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)] ${isDark ? 'bg-[#1a1c24]/95 border-white/10' : 'bg-white/98 border-gray-200'}`}>
-                    {/* Drag handle */}
-                    <div
-                        onPointerDown={(e) => dragControls.start(e)}
-                        className="flex flex-col items-center pt-0 pb-2 px-[4vw] cursor-grab active:cursor-grabbing touch-none"
-                    >
-                        <div className="w-12 h-1.5 bg-gray-400/30 rounded-full my-4" />
-                        <div
-                            className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                            onClick={(e) => { e.stopPropagation(); setSheetMode(sheetMode === 'full' ? 'mini' : 'full') }}
-                        >
-                            <ChevronUp size={14} className={`text-blue-500 transition-transform duration-500 ${sheetMode === 'full' ? 'rotate-180' : ''}`} />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                                {sheetMode === 'full' ? 'View Map' : 'View List'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Sheet content */}
-                    <motion.div
-                        ref={scrollContainerRef}
-                        className="flex-1 overflow-y-auto pt-2 pb-32 px-[4vw] scrollbar-hide overscroll-contain touch-pan-y"
-                        animate={{ opacity: sheetMode === 'full' ? 1 : 0, filter: sheetMode === 'full' ? 'blur(0px)' : 'blur(10px)' }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <div className="space-y-1 mb-2.5">
-                            <h2 className={`text-3xl font-black ${textStyle}`}>Discover {city}</h2>
-                            <p className={`text-sm font-medium ${subTextStyle}`}>
-                                {filteredLocations.length} place{filteredLocations.length !== 1 ? 's' : ''} found
-                            </p>
-                        </div>
-
-                        {/* Category chips */}
-                        <div className="flex gap-2.5 overflow-x-auto pb-4 -mx-[4vw] px-[4vw] scrollbar-hide">
-                            <button
-                                onClick={() => setIsFilterOpen(true)}
-                                className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl border ${isDark ? 'bg-blue-600/20 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg border-transparent'}`}
-                            >
-                                <SlidersHorizontal size={20} />
-                            </button>
-                            {CATEGORIES.filter(c => c.name !== 'All').map((cat) => (
-                                <button
-                                    key={cat.name}
-                                    onClick={() => setCategory(cat.name === activeCategory ? 'All' : cat.name)}
-                                    className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[13px] font-black whitespace-nowrap transition-all border ${
-                                        activeCategory === cat.name
-                                            ? 'bg-blue-600 border-blue-600 text-white shadow-xl'
-                                            : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-100 border-gray-100 text-gray-500'
-                                    }`}
-                                >
-                                    <cat.icon size={14} />
-                                    {cat.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Cards */}
-                        {isLoading ? (
-                            <div className="space-y-5">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <LocationCardMobileSkeleton key={i} isDark={isDark} />
-                                ))}
-                            </div>
-                        ) : isError ? (
-                            <ErrorState isDark={isDark} />
-                        ) : filteredLocations.length === 0 ? (
-                            <EmptyState query={localSearch} isDark={isDark} />
-                        ) : (
-                            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                                {virtualizer.getVirtualItems().map((virtualRow) => (
-                                    <div
-                                        key={virtualRow.key}
-                                        data-index={virtualRow.index}
-                                        ref={virtualizer.measureElement}
-                                        style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            transform: `translateY(${virtualRow.start}px)`,
-                                            paddingBottom: '20px',
-                                        }}
-                                    >
-                                        <MobileCard
-                                            item={filteredLocations[virtualRow.index]}
-                                            isDark={isDark}
-                                            textStyle={textStyle}
-                                            subTextStyle={subTextStyle}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-                </div>
-            </motion.div>
 
             {/* ── DESKTOP VIEW ──────────────────────────────────────────── */}
             {/* Wraps in absolute+overflow-y-auto so the grid scrolls within the

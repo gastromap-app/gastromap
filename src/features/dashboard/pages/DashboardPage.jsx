@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { DrillDownExplorer, CountryCards } from '../components/DrillDownExplorer'
+import { SmartSearchBar } from '../components/SmartSearchBar'
 
 // --- MOBILE COMPONENTS ---
 // Proper seamless marquee: two copies of the text side-by-side, animate x from 0 to -50%
@@ -214,25 +215,12 @@ const DashboardPage = () => {
                     <h2 className={`text-xl font-black tracking-tight leading-tight ${textStyle}`}>
                         {t('dashboard.tagline')}
                     </h2>
-                    <div className="flex gap-2">
-                        <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${isDark ? 'bg-white/5 border-white/10 shadow-none' : 'bg-white border-gray-100 shadow-xl shadow-blue-500/5'}`}>
-                            <SearchIcon size={18} className="text-blue-500 mr-3" />
-                            <input
-                                type="text"
-                                placeholder={t('dashboard.search_placeholder')}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            />
-                        </div>
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            aria-label="Open filters"
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-transparent'}`}
-                        >
-                            <SlidersHorizontal size={18} />
-                        </button>
-                    </div>
+                    <SmartSearchBar
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFilter={() => setIsFilterOpen(true)}
+                        placeholder={t('dashboard.search_placeholder')}
+                    />
                 </div>
 
                 {/* 1. Explore by Country */}

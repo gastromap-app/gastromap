@@ -134,7 +134,7 @@ const SavedPage = () => {
     }
 
     return (
-        <div className="w-full max-w-2xl mx-auto px-4 pb-32 pt-24 min-h-[100dvh] relative z-10">
+        <div className="w-full max-w-2xl mx-auto px-4 pb-32 min-h-[100dvh] relative z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
             {/* Header */}
             <div className="mb-6">
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>

@@ -400,7 +400,7 @@ export function useCategoryStats() {
             const { getCategoryStats } = await import('./admin.api')
             return getCategoryStats()
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -412,7 +412,7 @@ export function useTopLocations(limit = 5) {
             const { getTopLocations } = await import('./admin.api')
             return getTopLocations(limit)
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -424,7 +424,7 @@ export function useEngagementStats() {
             const { getDetailedEngagement } = await import('./admin.api')
             return getDetailedEngagement()
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -437,7 +437,7 @@ export function usePaymentStats() {
             const stats = await getAdminStats()
             return stats?.payments || {}
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -888,7 +888,7 @@ export function useCityStats() {
             const { getCityStats } = await import('./admin.api')
             return getCityStats()
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -900,7 +900,7 @@ export function useReviewsTimeline(days = 30) {
             const { getReviewsTimeline } = await import('./admin.api')
             return getReviewsTimeline(days)
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }
@@ -912,7 +912,7 @@ export function useUserGrowth(days = 30) {
             const { getUserGrowth } = await import('./admin.api')
             return getUserGrowth(days)
         },
-        staleTime: 0,
+        staleTime: 30_000, // 30s cache
         refetchOnMount: true,
     })
 }

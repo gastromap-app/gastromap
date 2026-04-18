@@ -139,7 +139,7 @@ export function DrillDownExplorer({
             {/* ── TOP BAR: Breadcrumbs + Search + Filter ── */}
             <div
                 className={`flex-shrink-0 px-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-gray-100'}`}
-                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4.5rem)' }}
             >
                 {/* Breadcrumbs */}
                 <div className="flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">

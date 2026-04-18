@@ -2,7 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Hammer, AlertTriangle, MessageCircle, ArrowLeft } from 'lucide-react'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { Link } from 'react-router-dom'
 
 export const MaintenanceGuard = ({ children }) => {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 import { Navigation as NavIcon } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
@@ -241,30 +241,36 @@ const MapTab = ({ activeFilter = 'All' }) => {
     })
 
     return (
-        <div className="w-full h-[600px] rounded-[32px] overflow-hidden shadow-xl border border-white/20 relative z-0">
+        <div className="w-full h-full md:h-[600px] rounded-none md:rounded-[32px] overflow-hidden md:shadow-xl md:border md:border-white/20 relative z-0">
             {/* Locate Me */}
+            {/* Locate Me — bottom-right, above nav bar */}
             <button
                 onClick={handleLocateMe}
                 aria-label="Locate me"
                 className={`
-                    absolute top-4 right-4 z-[500] p-2.5 rounded-full shadow-lg
+                    absolute z-[500] p-3 rounded-full shadow-lg
                     backdrop-blur-md border transition-all active:scale-95
+                    right-4
                     ${theme === 'dark'
                         ? 'bg-black/60 border-white/20 text-white hover:bg-black/80'
                         : 'bg-white/95 border-white/60 text-blue-600 hover:bg-white'}
                 `}
+                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
             >
                 <NavIcon size={20} className={userPos ? (theme === 'dark' ? 'fill-white/80' : 'fill-blue-600') : ''} />
             </button>
 
             {/* Location count */}
-            <div className={`
-                absolute bottom-12 left-4 z-[500]
-                px-3 py-1.5 rounded-full text-xs font-black shadow-lg backdrop-blur-md border
-                ${theme === 'dark'
-                    ? 'bg-black/60 border-white/20 text-white/70'
-                    : 'bg-white/90 border-white/60 text-gray-700'}
-            `}>
+            <div
+                className={`
+                    absolute left-4 z-[500]
+                    px-3 py-1.5 rounded-full text-xs font-black shadow-lg backdrop-blur-md border
+                    ${theme === 'dark'
+                        ? 'bg-black/60 border-white/20 text-white/70'
+                        : 'bg-white/90 border-white/60 text-gray-700'}
+                `}
+                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
+            >
                 {displayLocations.length} place{displayLocations.length !== 1 ? 's' : ''}
             </div>
 
@@ -275,7 +281,6 @@ const MapTab = ({ activeFilter = 'All' }) => {
                 zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
             >
-                <ZoomControl position="bottomright" />
                 <TileLayer
                     attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                     url={theme === 'dark' ? darkTiles : lightTiles}

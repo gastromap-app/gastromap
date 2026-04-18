@@ -268,7 +268,19 @@ export function DrillDownExplorer({
 
                             {/* Location list */}
                             <div className="p-4 space-y-3 pb-32">
-                                {cityLocations.length === 0 ? (
+                                {!isInitialized ? (
+                                    <div className="space-y-3 px-1">
+                                        {[1,2,3].map(n => (
+                                            <div key={n} className={`w-full flex items-center gap-3 p-3 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-gray-100'} animate-pulse`}>
+                                                <div className={`w-16 h-16 rounded-xl flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                                <div className="flex-1 space-y-2">
+                                                    <div className={`h-3 rounded-full w-3/4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                                    <div className={`h-2 rounded-full w-1/2 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : cityLocations.length === 0 ? (
                                     <div className={`text-center py-16 ${subStyle}`}>
                                         <div className="text-4xl mb-4">🍽</div>
                                         <p className="text-sm font-bold">No places in {selectedCity} yet</p>

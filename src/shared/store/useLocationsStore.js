@@ -3,20 +3,22 @@ import { MOCK_LOCATIONS } from '@/mocks/locations'
 
 /**
  * useLocationsStore — client-side filter state for the locations list.
- * 
+ *
  * Canonical location: @/shared/store/useLocationsStore
  * This store manages UI filter state only (active filters, search query).
  * The actual data fetching is done by React Query hooks in @/shared/api/queries.js.
- * 
+ *
  * For components that need the full filtered dataset without React Query
  * (e.g. map markers, quick counts), the store also caches filteredLocations.
- * 
+ *
  * @typedef {Object} LocationFiltersState
  * @property {string}   activeCategory
  * @property {string}   searchQuery
  * @property {string[]} activePriceLevels   - e.g. ['$', '$$']
  * @property {number|null} minRating        - 0–5
  * @property {string[]} activeVibes         - e.g. ['Romantic', 'Casual']
+ * @property {string|null} activeBestTime   - 'morning'|'lunch'|'evening'|null
+ * @property {number} radius                - km radius (0 = disabled)
  * @property {'rating'|'price_asc'|'price_desc'|'name'} sortBy
  */
 
@@ -26,11 +28,20 @@ const DEFAULT_FILTERS = {
     activePriceLevels: [],
     minRating: null,
     activeVibes: [],
+    activeBestTime: null,
+    radius: 0,
     sortBy: 'rating',
 }
 
 /** Compare price levels for sort: $ < $$ < $$$ */
 const PRICE_ORDER = { '$': 1, '$$': 2, '$$$': 3 }
+
+// Best-time label groups for matching against location data
+const BEST_TIME_LABELS = {
+    morning: ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee'],
+    lunch:   ['Lunch', 'Business lunch', 'Midday'],
+    evening: ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining'],
+}
 
 function applyAllFilters(locations, filters) {
     const {
@@ -39,34 +50,46 @@ function applyAllFilters(locations, filters) {
         activePriceLevels,
         minRating,
         activeVibes,
+        activeBestTime,
         sortBy,
     } = filters
 
     let result = [...locations]
 
+    // ─── Category ────────────────────────────────────────────────────────────
     if (activeCategory && activeCategory !== 'All') {
         result = result.filter(loc => loc.category === activeCategory)
     }
 
+    // ─── Search ───────────────────────────────────────────────────────────────
+    // FIX: safe null-checks + correct field names (cuisine_types → kg_cuisines/cuisine)
     if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        result = result.filter(
-            loc =>
-                loc.title.toLowerCase().includes(q) ||
-                loc.description.toLowerCase().includes(q) ||
-                loc.cuisine_types?.some(c => c.toLowerCase().includes(q)) ||
-                loc.tags?.some(tag => tag.toLowerCase().includes(q))
+        result = result.filter(loc =>
+            (loc.title?.toLowerCase().includes(q)) ||
+            (loc.description?.toLowerCase().includes(q)) ||
+            (loc.kg_cuisines?.some(c => c?.toLowerCase().includes(q))) ||
+            (loc.cuisine?.toLowerCase().includes(q)) ||
+            (loc.tags?.some(tag => tag?.toLowerCase().includes(q))) ||
+            (loc.kg_dishes?.some(d => d?.toLowerCase().includes(q)))
         )
     }
 
+    // ─── Price ───────────────────────────────────────────────────────────────
     if (activePriceLevels?.length) {
-        result = result.filter(loc => activePriceLevels.includes(loc.price_range))
+        result = result.filter(loc =>
+            activePriceLevels.includes(loc.price_range) ||
+            activePriceLevels.includes(loc.price_level) ||
+            activePriceLevels.includes(loc.priceLevel)
+        )
     }
 
+    // ─── Rating ──────────────────────────────────────────────────────────────
     if (minRating != null) {
-        result = result.filter(loc => loc.rating >= minRating)
+        result = result.filter(loc => (loc.rating ?? 0) >= minRating)
     }
 
+    // ─── Vibes / Labels ──────────────────────────────────────────────────────
     if (activeVibes?.length) {
         result = result.filter(loc => {
             const labels = [
@@ -74,33 +97,50 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.features) ? loc.features : []),
                 ...(Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : [])),
                 ...(Array.isArray(loc.best_for) ? loc.best_for : []),
-                // KG-enriched data — auto-updated when new cuisines/dishes are added
                 ...(Array.isArray(loc.kg_cuisines) ? loc.kg_cuisines : []),
                 ...(Array.isArray(loc.kg_dishes) ? loc.kg_dishes : []),
-                // Fallback: cuisine string
                 ...(loc.cuisine ? [loc.cuisine] : []),
             ]
             return activeVibes.some(v => labels.includes(v))
         })
     }
 
-    // ─── Sort ────────────────────────────────────────────────────────────
+    // ─── Best Time ───────────────────────────────────────────────────────────
+    // FIX: now actually applied (was UI-only before)
+    if (activeBestTime) {
+        const timeLabels = BEST_TIME_LABELS[activeBestTime] ?? []
+        result = result.filter(loc => {
+            const labels = [
+                loc.category ?? '',
+                ...(Array.isArray(loc.best_for) ? loc.best_for : []),
+                ...(Array.isArray(loc.features) ? loc.features : []),
+                ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
+            ]
+            return timeLabels.some(tl =>
+                labels.some(l => l?.toLowerCase().includes(tl.toLowerCase()))
+            )
+        })
+    }
+
+    // ─── Sort ────────────────────────────────────────────────────────────────
     switch (sortBy) {
         case 'rating':
-            result.sort((a, b) => b.rating - a.rating)
+            result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
             break
         case 'price_asc':
             result.sort(
-                (a, b) => (PRICE_ORDER[a.price_range] ?? 0) - (PRICE_ORDER[b.price_range] ?? 0)
+                (a, b) => (PRICE_ORDER[a.price_range ?? a.price_level] ?? 0) -
+                           (PRICE_ORDER[b.price_range ?? b.price_level] ?? 0)
             )
             break
         case 'price_desc':
             result.sort(
-                (a, b) => (PRICE_ORDER[b.price_range] ?? 0) - (PRICE_ORDER[a.price_range] ?? 0)
+                (a, b) => (PRICE_ORDER[b.price_range ?? b.price_level] ?? 0) -
+                           (PRICE_ORDER[a.price_range ?? a.price_level] ?? 0)
             )
             break
         case 'name':
-            result.sort((a, b) => a.title.localeCompare(b.title))
+            result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
             break
         default:
             break
@@ -109,9 +149,13 @@ function applyAllFilters(locations, filters) {
     return result
 }
 
+// FIX ARCH-2: Do NOT seed with mocks in production — causes stale data flash
+const isDev = import.meta.env.DEV
+const INITIAL_LOCATIONS = isDev ? MOCK_LOCATIONS : []
+
 export const useLocationsStore = create((set, get) => ({
-    locations: MOCK_LOCATIONS,
-    filteredLocations: MOCK_LOCATIONS,
+    locations: INITIAL_LOCATIONS,
+    filteredLocations: INITIAL_LOCATIONS,
     isLoading: false,
 
     ...DEFAULT_FILTERS,
@@ -148,6 +192,17 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, activeVibes }),
         })),
 
+    // FIX BUG-6: Best Time setter (was missing)
+    setBestTime: (activeBestTime) =>
+        set(state => ({
+            activeBestTime,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeBestTime }),
+        })),
+
+    // FIX BUG-4: Radius setter (was missing)
+    setRadius: (radius) =>
+        set(state => ({ radius })),
+
     setSortBy: (sortBy) =>
         set(state => ({
             sortBy,
@@ -171,7 +226,7 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: state.locations,
         })),
 
-    // ─── Data mutations (used by Admin) ──────────────────────────────────
+    // ─── Data mutations ──────────────────────────────────────────────────
 
     setLocations: (locations) =>
         set((state) => ({
@@ -202,7 +257,7 @@ export const useLocationsStore = create((set, get) => ({
             return { locations, filteredLocations: applyAllFilters(locations, state) }
         }),
 
-    /** Load all locations from Supabase (or mocks) and populate the store. */
+    /** Load all locations from Supabase and populate the store. */
     initialize: async () => {
         if (get().isLoading) return
         set({ isLoading: true })

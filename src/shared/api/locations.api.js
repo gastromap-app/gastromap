@@ -66,8 +66,8 @@ function normalise(row) {
 
         image,
         image_url: image,
-        photos: row.photos ?? [],
-        images: row.photos ?? [],
+        photos: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
+        images: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
 
         rating,
         google_rating: rating,

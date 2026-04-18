@@ -74,6 +74,11 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.features) ? loc.features : []),
                 ...(Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : [])),
                 ...(Array.isArray(loc.best_for) ? loc.best_for : []),
+                // KG-enriched data — auto-updated when new cuisines/dishes are added
+                ...(Array.isArray(loc.kg_cuisines) ? loc.kg_cuisines : []),
+                ...(Array.isArray(loc.kg_dishes) ? loc.kg_dishes : []),
+                // Fallback: cuisine string
+                ...(loc.cuisine ? [loc.cuisine] : []),
             ]
             return activeVibes.some(v => labels.includes(v))
         })

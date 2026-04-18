@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
 import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shared/api/queries'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 

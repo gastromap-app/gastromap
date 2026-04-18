@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from 'react'
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -257,12 +257,26 @@ const LocationsPage = () => {
         return () => resetFilters()
     }, [])
 
-    // Fetch real venue data from OpenStreetMap; syncs to Zustand store automatically
-    const { isPending: isLoading, isError } = useLocationsQuery(city, country)
+    // Fetch city-scoped locations; data used directly (NOT synced to global store)
+    const { isPending: isLoading, isError, data: cityData } = useLocationsQuery(city, country)
+
+    // REGRESSION FIX: use query data directly for city pages, not global store
+    // The global store holds ALL locations — filtering here by city avoids store pollution
+    const localFilteredLocations = useMemo(() => {
+        const source = cityData ?? []
+        const q = localSearch.toLowerCase()
+        return source.filter(loc => {
+            const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
+            const catMatch = activeCategory === 'All' || loc.category === activeCategory
+            const ratingMatch = !minRating || (loc.rating ?? 0) >= minRating
+            const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
+            return searchMatch && catMatch && ratingMatch && priceMatch
+        })
+    }, [cityData, localSearch, activeCategory, minRating, activePriceLevels])
 
     const scrollContainerRef = useRef(null)
     const virtualizer = useVirtualizer({
-        count: isLoading ? 0 : filteredLocations.length,
+        count: isLoading ? 0 : localFilteredLocations.length,
         getScrollElement: () => scrollContainerRef.current,
         estimateSize: () => 342,
         overscan: 3,
@@ -461,7 +475,7 @@ const LocationsPage = () => {
                             </div>
                         ) : isError ? (
                             <ErrorState isDark={isDark} />
-                        ) : filteredLocations.length === 0 ? (
+                        ) : localFilteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
                             <motion.div

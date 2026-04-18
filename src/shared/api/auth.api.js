@@ -235,10 +235,18 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
     if (!USE_SUPABASE || !supabase) return () => {}
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        // Token expired — force sign out to prevent silent 401 errors
+        if (event === 'TOKEN_REFRESHED' && session?.user) {
+            // Token refreshed silently — update stored token without re-fetching profile
+            onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            return
+        }
+
         if (event === 'SIGNED_OUT' || !session) {
             onSignOut()
             return
         }
+
         if (session?.user) {
             try {
                 // RACE CONDITION FIX: async in onAuthStateChange needs try/catch

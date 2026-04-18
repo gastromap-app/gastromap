@@ -297,9 +297,10 @@ const DashboardPage = () => {
     // REGRESSION FIX: use isInitialized flag instead of locations.length
     // locations.length > 0 doesn't mean global data is loaded — it could be city-scoped
     // isInitialized is only set to true after a FULL fetch (no city/country filter)
+    // Also reinitialize when store is empty despite isInitialized=true (e.g. after tab switch)
     useEffect(() => {
-        const { initialize, isInitialized, isLoading } = useLocationsStore.getState()
-        if (!isInitialized && !isLoading) {
+        const { initialize, isInitialized, isLoading, locations } = useLocationsStore.getState()
+        if (!isLoading && (!isInitialized || locations.length === 0)) {
             initialize()
         }
     }, [])

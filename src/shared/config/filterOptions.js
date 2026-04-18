@@ -51,8 +51,12 @@ export const BEST_TIMES = [
 // Каждая группа содержит:
 //   group    — EN ключ группы (для FilterModal)
 //   groupRu  — RU название (для AdminLocationsPage)
-//   items    — EN значения (хранятся в БД, используются в фильтрах)
-//   itemsRu  — RU перевод тех же значений (для Admin UI)
+//   items    — EN значения для Admin UI (статические fallback-значения)
+//   itemsRu  — RU перевод для Admin UI
+//
+// ⚠️  CUISINE GROUP (idx=0): В FilterModal кухни берутся ДИНАМИЧЕСКИ из kg_cuisines
+//     (useLocationsStore → dynamicCuisines). items здесь — только для Admin UI чекбоксов.
+// ⚠️  ОСТАЛЬНЫЕ ГРУППЫ: items используются напрямую в FilterModal (статичные).
 //
 // ВАЖНО: items и itemsRu должны совпадать по индексу!
 // В БД хранятся EN значения (items). RU только для отображения в Admin.
@@ -61,6 +65,7 @@ export const LABEL_GROUPS = [
     {
         group:   'Cuisine & Menu',
         groupRu: 'Кухня и Меню',
+        // Admin UI checkboxes — static list (filter uses live kg_cuisines instead)
         items: [
             'Signature Cuisine', 'Vegan Menu', 'Delicious Desserts', 'All Day Breakfast',
             'Local Products', 'Imported Products', 'Lunch Menu', 'Breakfast Menu', 'Fusion',
@@ -68,7 +73,6 @@ export const LABEL_GROUPS = [
             'Mexican', 'Thai', 'Georgian', 'Polish', 'Israeli', 'American',
             'Mediterranean', 'Indian', 'Vietnamese', 'Turkish',
         ],
-        // RU translations (same order as items — admin UI only)
         itemsRu: [
             'Авторская кухня', 'Веганское меню', 'Вкусные десерты', 'Завтраки целый день',
             'Местные продукты', 'Импортные продукты', 'Меню ланча', 'Меню завтраков', 'Фьюжен',

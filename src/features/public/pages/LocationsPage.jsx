@@ -303,7 +303,7 @@ const LocationsPage = () => {
             {/* ── MOBILE: Map + Search + Filters only ─────────────── */}
             <div className="md:hidden fixed inset-0 z-0">
                 <div className="w-full h-full [&>div]:h-full [&>div]:w-full [&>div]:rounded-none [&>div]:border-none">
-                    <MapTab activeFilter={activeCategory} />
+                    <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}><MapTab activeFilter={activeCategory} /></React.Suspense>
                 </div>
 
                 {/* Floating search + filter bar */}
@@ -466,7 +466,7 @@ const LocationsPage = () => {
                     {/* Content */}
                     <div className="mt-8 min-h-[400px]">
                         {activeTab === 'map' ? (
-                            <MapTab activeFilter={activeCategory} />
+                            <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}><MapTab activeFilter={activeCategory} /></React.Suspense>
                         ) : isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {Array.from({ length: 8 }).map((_, i) => (

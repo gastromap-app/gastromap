@@ -239,12 +239,16 @@ const ProfileEditPage = () => {
                 </div>
 
                 {/* Save Button */}
+                {saveError && (
+                    <p className="text-sm text-red-500 font-medium text-center mb-2">{saveError}</p>
+                )}
                 <button
                     onClick={handleSave}
-                    className="w-full py-4 rounded-[24px] bg-blue-600 text-white font-black flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-[0.98] transition-all"
+                    disabled={saveLoading}
+                    className="w-full py-4 rounded-[24px] bg-blue-600 text-white font-black flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <Save size={18} />
-                    {t('profile_edit.save')}
+                    {saveLoading ? 'Saving…' : t('profile_edit.save')}
                 </button>
             </div>
             )}

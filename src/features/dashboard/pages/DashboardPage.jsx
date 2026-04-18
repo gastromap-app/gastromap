@@ -185,16 +185,41 @@ const DashboardPage = () => {
         storeSetSearch(debouncedSearch)
     }, [debouncedSearch])
 
-    const countries = [
-        { name: 'Poland',      slug: 'poland',      image: 'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop', newCount: 9 },
-        { name: 'France',      slug: 'france',      image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop', newCount: 3 },
-        { name: 'Spain',       slug: 'spain',       image: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=2070&auto=format&fit=crop', newCount: 5 },
-        { name: 'Italy',       slug: 'italy',       image: 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?q=80&w=2048&auto=format&fit=crop', newCount: 7 },
-        { name: 'Germany',     slug: 'germany',     image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=2070&auto=format&fit=crop', newCount: 4 },
-        { name: 'Portugal',    slug: 'portugal',    image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=2070&auto=format&fit=crop', newCount: 2 },
-        { name: 'Netherlands', slug: 'netherlands', image: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?q=80&w=2070&auto=format&fit=crop', newCount: 3 },
-        { name: 'Czechia',     slug: 'czechia',     image: 'https://images.unsplash.com/photo-1541849546-216549ae216d?q=80&w=2070&auto=format&fit=crop', newCount: 6 },
-    ]
+    // DASH-3 FIX: countries are now derived from actual locations in the store
+    // Static image map as visual fallback — keeps cards looking good even without location photos
+    const COUNTRY_IMAGES = {
+        poland:      'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop',
+        france:      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop',
+        spain:       'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=2070&auto=format&fit=crop',
+        italy:       'https://images.unsplash.com/photo-1529543544282-ea669407fca3?q=80&w=2048&auto=format&fit=crop',
+        germany:     'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=2070&auto=format&fit=crop',
+        portugal:    'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=2070&auto=format&fit=crop',
+        netherlands: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?q=80&w=2070&auto=format&fit=crop',
+        czechia:     'https://images.unsplash.com/photo-1541849546-216549ae216d?q=80&w=2070&auto=format&fit=crop',
+    }
+    const countries = useMemo(() => {
+        // Build from real DB data — aggregate unique countries with real location counts
+        const countryMap = {}
+        locations.forEach(loc => {
+            const raw = loc.country ?? ''
+            if (!raw) return
+            const slug = raw.toLowerCase().replace(/\s+/g, '-')
+            const name = raw.charAt(0).toUpperCase() + raw.slice(1)
+            if (!countryMap[slug]) {
+                countryMap[slug] = { name, slug, count: 0 }
+            }
+            countryMap[slug].count++
+        })
+        const dynamic = Object.values(countryMap).sort((a, b) => b.count - a.count)
+        // Enrich with static images; fall back to first location photo if no static image
+        return dynamic.map(c => ({
+            ...c,
+            image: COUNTRY_IMAGES[c.slug]
+                ?? locations.find(l => l.country?.toLowerCase() === c.name.toLowerCase())?.photos?.[0]
+                ?? COUNTRY_IMAGES.poland, // ultimate fallback
+            newCount: c.count,
+        }))
+    }, [locations])
 
     // Top-rated places
     const recommended = useMemo(

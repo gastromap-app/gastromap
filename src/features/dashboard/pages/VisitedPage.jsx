@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock, Trash2 } from 'lucide-react'
 import { useUserVisitsWithLocations, useDeleteVisitMutation } from '@/shared/api/queries'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 

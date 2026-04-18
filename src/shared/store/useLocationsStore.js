@@ -54,7 +54,7 @@ function applyAllFilters(locations, filters) {
             loc =>
                 loc.title.toLowerCase().includes(q) ||
                 loc.description.toLowerCase().includes(q) ||
-                loc.cuisine_types?.toLowerCase().includes(q) ||
+                loc.cuisine_types?.some(c => c.toLowerCase().includes(q)) ||
                 loc.tags?.some(tag => tag.toLowerCase().includes(q))
         )
     }
@@ -73,6 +73,7 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
                 ...(Array.isArray(loc.features) ? loc.features : []),
                 ...(Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : [])),
+                ...(Array.isArray(loc.best_for) ? loc.best_for : []),
             ]
             return activeVibes.some(v => labels.includes(v))
         })

@@ -15,7 +15,9 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const [selectedRating, setSelectedRating] = useState(null)       // null | 4 | 4.5
     const [selectedPriceLevels, setSelectedPriceLevels] = useState([]) // e.g. ['$', '$$']
     const [selectedFeatures, setSelectedFeatures] = useState([])
-    const [radius, setRadius] = useState(10)
+    const [radius, setRadius] = useState(0)
+    const [selectedBestTime, setSelectedBestTime] = useState(null)
+    const [selectedBestTime, setSelectedBestTime] = useState(null)
 
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
     // Automatically reflects any new cuisine added via KG enrichment
@@ -53,13 +55,16 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }
 
     const handleApply = () => {
-        const { applyFilters } = useLocationsStore.getState()
+        const { applyFilters, setRadius } = useLocationsStore.getState()
         applyFilters({
             activeCategory: selectedCategory === 'all' ? 'All' : selectedCategory,
             minRating: selectedRating,
             activePriceLevels: selectedPriceLevels,
             activeVibes: selectedFeatures,
+            activeBestTime: selectedBestTime,
         })
+        // Radius stored separately (no re-filter needed — geo filter runs on server)
+        setRadius(radius)
         onClose()
     }
 
@@ -68,7 +73,8 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
         setSelectedRating(null)
         setSelectedPriceLevels([])
         setSelectedFeatures([])
-        setRadius(10)
+        setSelectedBestTime(null)
+        setRadius(0)
         useLocationsStore.getState().resetFilters()
         onClose()
     }

@@ -251,7 +251,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                         },
                                         {
                                             group: 'Bar & Drinks',
-                                            items: ['Signature Cocktails', 'Wine List', 'Guest Shifts', 'Wine Tasting', 'DJ Sets', 'Craft Beer', 'Mixology', 'Specialty Coffee', 'Wide Gin Selection'],
+                                            items: ['Signature Cocktails', 'Wine List', 'Guest Shifts', 'Wine Tasting', 'DJ Sets', 'Craft Beer', 'Cupping', 'Mixology', 'Specialty Coffee', 'Wide Gin Selection'],
                                         },
                                         {
                                             group: 'Atmosphere',

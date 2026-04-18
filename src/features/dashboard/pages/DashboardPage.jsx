@@ -136,7 +136,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user: authUser } = useAuthStore()
-    const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
+    const user = authUser ?? null
     const { locations } = useLocationsStore()
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -338,7 +338,10 @@ const DashboardPage = () => {
 const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const [greeting, setGreeting] = useState('')
+    const [greeting, setGreeting] = useState(() => {
+        const h = new Date().getHours()
+        return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+    })
     const [activeTab, setActiveTab] = useState('overview')
     const [activeFilter] = useState('All')
 

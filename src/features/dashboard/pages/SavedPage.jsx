@@ -12,6 +12,8 @@ function SavedCard({ favorite, index, onRemove }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const loc = favorite.locations
+    // SAVED-1 FIX: Null Pointer — location may have been deleted from DB (JOIN returns null)
+    if (!loc) return null
 
     return (
         <motion.div
@@ -140,6 +142,20 @@ const SavedPage = () => {
                 <h1 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {t('saved.title')}
                 </h1>
+                {isLoading && (
+                    <div className="space-y-3">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className={`flex gap-4 p-4 rounded-2xl animate-pulse ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                <div className={`w-20 h-20 rounded-xl flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                <div className="flex-1 space-y-2 py-1">
+                                    <div className={`h-4 rounded w-3/4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                    <div className={`h-3 rounded w-1/2 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                    <div className={`h-3 rounded w-1/4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 {!isLoading && favorites.length > 0 && (
                     <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
                         {t('saved.places_saved', { count: favorites.length })}

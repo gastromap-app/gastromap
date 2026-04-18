@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -19,7 +19,7 @@ import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
-import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation } from '@/shared/api/queries'
+import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -27,12 +27,29 @@ const LocationDetailsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    // Find location: store first (OSM data), then mock fallback, then null
+    // Find location: try store first (instant if already loaded), then Supabase query
     // Use String() coercion — URL params are always strings, DB ids may be numbers
     const storeLocations = useLocationsStore(s => s.locations)
-    const location = storeLocations.find(loc => String(loc.id) === id)
+    const storeIsLoading = useLocationsStore(s => s.isLoading)
+    const locationFromStore = storeLocations.find(loc => String(loc.id) === id)
         ?? MOCK_LOCATIONS.find(loc => String(loc.id) === id)
         ?? null
+
+    // BUG-5 FIX: if user lands directly on /location/:id, store may be empty.
+    // Fall back to a direct Supabase query for this specific location.
+    const { data: locationQuery, isLoading: queryLoading } = useLocationQuery(
+        !locationFromStore ? id : null   // only fetch if store doesn't have it
+    )
+
+    const location = locationFromStore ?? locationQuery ?? null
+    const isPageLoading = !locationFromStore && (storeIsLoading || queryLoading)
+
+    // Also trigger store.initialize() if store is empty and we have no location yet
+    useEffect(() => {
+        if (storeLocations.length === 0 && !storeIsLoading) {
+            useLocationsStore.getState().initialize()
+        }
+    }, [storeLocations.length, storeIsLoading])
 
     // Connect to real stores
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()

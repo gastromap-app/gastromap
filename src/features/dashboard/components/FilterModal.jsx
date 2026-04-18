@@ -17,7 +17,6 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const [selectedFeatures, setSelectedFeatures] = useState([])
     const [radius, setRadius] = useState(0)
     const [selectedBestTime, setSelectedBestTime] = useState(null)
-    const [selectedBestTime, setSelectedBestTime] = useState(null)
 
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
     // Automatically reflects any new cuisine added via KG enrichment

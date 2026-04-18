@@ -33,13 +33,13 @@ import { useAppConfigStore } from '@/store/useAppConfigStore'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // ─── Model cascade — tried in order on 429 ───────────────────────────────
-// ✅ Verified working free models (checked 2026-04-18)
-// Priority: largest/most capable first, fast models as final fallback
+// ✅ Updated 2026-04-18: llama-3.3-70b moved to #1 (most stable), trinity-large removed (EOL)
 const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',       // 120B — best quality, tool use ✅
-    'openai/gpt-oss-20b:free',        // 20B  — reliable, fast ✅
-    'z-ai/glm-4.5-air:free',          // multilingual, fast ✅
-    'nvidia/nemotron-nano-9b:free',   // lightweight fallback ✅
+    'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best quality (intermittent 503)
+    'openai/gpt-oss-20b:free',                // ✅ Reliable, fast
+    'z-ai/glm-4.5-air:free',                  // ✅ Multilingual
+    'nvidia/nemotron-nano-9b:free',            // ✅ Lightweight last resort
 ]
 
 /**

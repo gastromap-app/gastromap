@@ -73,14 +73,16 @@ export async function getPendingReviews() {
 
 export async function updateReviewStatus(reviewId, status, comment) {
     if (!supabase) return { error: 'No Supabase' }
+    // reviews table columns: id, user_id, location_id, rating, review_text, status, created_at, updated_at
+    // admin_comment column does NOT exist — only update status + updated_at
     const updates = { status, updated_at: new Date().toISOString() }
-    if (comment) updates.admin_comment = comment
     const { data, error } = await supabase
         .from('reviews')
         .update(updates)
         .eq('id', reviewId)
         .select()
         .single()
+    if (error) console.error('[admin.api] updateReviewStatus:', error.message)
     return { data, error }
 }
 
@@ -91,12 +93,12 @@ export async function getPendingLocations() {
         supabase.from('locations').select('id, title, category, city, created_at, status')
             .in('status', ['pending', 'revision_requested'])
             .order('created_at', { ascending: false }),
-        supabase.from('user_submissions').select('id, name, category, city, created_at, status, user_id')
+        supabase.from('user_submissions').select('id, title, category, city, submitted_at, status, user_id')
             .eq('status', 'pending')
-            .order('created_at', { ascending: false })
+            .order('submitted_at', { ascending: false })
     ])
     const locs = (locsRes.data || []).map(l => ({ ...l, source: 'location' }))
-    const subs = (subsRes.data || []).map(s => ({ ...s, title: s.name, source: 'submission' }))
+    const subs = (subsRes.data || []).map(s => ({ ...s, created_at: s.submitted_at, source: 'submission' }))
     return [...locs, ...subs]
 }
 

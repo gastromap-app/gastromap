@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuthStore } from '../../auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocations } from '@/shared/api/queries'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'

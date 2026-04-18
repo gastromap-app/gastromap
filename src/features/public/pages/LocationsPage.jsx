@@ -18,15 +18,11 @@ import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
 import { useLocationsQuery } from '@/hooks/useLocationsQuery'
+import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 
-// ─── Category config ──────────────────────────────────────────────────────
-const CATEGORIES = [
-    { name: 'All',        icon: Store },
-    { name: 'Cafe',       icon: Coffee },
-    { name: 'Restaurant', icon: Utensils },
-    { name: 'Bar',        icon: Wine },
-    { name: 'Fine Dining',icon: Star },
-]
+// ─── Category config from canonical filterOptions ─────────────────────────
+// EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
+const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
 const SORT_OPTIONS = [
     { value: 'rating',     label: 'Top Rated' },

@@ -159,6 +159,17 @@ const DashboardPage = () => {
     }
     const debouncedSearch = useDebounce(searchQuery, 300)
 
+    // ─── Load data on mount ──────────────────────────────────────────────────
+    // FIX: initialize() was only called on pull-to-refresh, not on first render.
+    // After removing MOCK_LOCATIONS from prod initial state (ARCH-2),
+    // the store starts empty — this useEffect fixes the first-load blank screen.
+    useEffect(() => {
+        const { initialize, locations, isLoading } = useLocationsStore.getState()
+        if (locations.length === 0 && !isLoading) {
+            initialize()
+        }
+    }, [])
+
     // Pull-to-refresh
     const handleRefresh = async () => {
         const { initialize } = useLocationsStore.getState()

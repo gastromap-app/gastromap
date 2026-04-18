@@ -187,19 +187,37 @@ const MapTab = ({ activeFilter = 'All' }) => {
     const [userPos, setUserPos] = React.useState(null)
     const [locateTrigger, setLocateTrigger] = React.useState(0)
     const [locating, setLocating] = React.useState(false)
+    const [geoState, setGeoState] = React.useState('idle') // 'idle'|'locating'|'success'|'denied'|'unavailable'
     const [zoom, setZoom] = React.useState(14)
     const [selectedId, setSelectedId] = React.useState(null)
 
+    // On mount: только проверяем статус разрешения (без запроса!)
+    // Если уже granted — тихо берём позицию без диалога
     useEffect(() => {
-        navigator.geolocation?.getCurrentPosition(
-            (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
-            () => {},
-            { enableHighAccuracy: true }
-        )
+        if (!navigator.geolocation) { setGeoState('unavailable'); return }
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+                if (result.state === 'granted') {
+                    // Уже разрешено — можно тихо взять позицию
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            setUserPos([pos.coords.latitude, pos.coords.longitude])
+                            setGeoState('success')
+                        },
+                        () => setGeoState('idle'),
+                        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+                    )
+                } else if (result.state === 'denied') {
+                    setGeoState('denied')
+                }
+                // 'prompt' — ничего не делаем, ждём кнопку
+            }).catch(() => {}) // Safari не поддерживает permissions API — ок
+        }
     }, [])
 
     const handleLocateMe = () => {
-        if (!navigator.geolocation) return
+        if (!navigator.geolocation) { setGeoState('unavailable'); return }
+        setGeoState('locating')
         setLocating(true)
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -207,9 +225,17 @@ const MapTab = ({ activeFilter = 'All' }) => {
                 setUserPos(coords)
                 setLocateTrigger((n) => n + 1)
                 setLocating(false)
+                setGeoState('success')
             },
-            () => { setLocating(false) },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            (err) => {
+                setLocating(false)
+                if (err.code === err.PERMISSION_DENIED) {
+                    setGeoState('denied')
+                } else {
+                    setGeoState('idle')
+                }
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
         )
     }
 
@@ -249,24 +275,47 @@ const MapTab = ({ activeFilter = 'All' }) => {
         <div className="w-full h-full md:h-[600px] rounded-none md:rounded-[32px] overflow-hidden md:shadow-xl md:border md:border-white/20 relative z-0">
             {/* Locate Me */}
             {/* Locate Me — bottom-right, above nav bar */}
+            {/* Locate Me button */}
             <button
                 onClick={handleLocateMe}
-                aria-label="Locate me"
+                aria-label={geoState === 'denied' ? 'Location access denied — tap to retry' : 'Locate me'}
+                disabled={geoState === 'locating'}
                 className={`
                     absolute z-[500] p-3 rounded-full shadow-lg
                     backdrop-blur-md border transition-all active:scale-95
-                    right-4
-                    ${theme === 'dark'
-                        ? 'bg-black/60 border-white/20 text-white hover:bg-black/80'
-                        : 'bg-white/95 border-white/60 text-blue-600 hover:bg-white'}
+                    right-4 disabled:opacity-60
+                    ${geoState === 'denied'
+                        ? 'bg-red-500/20 border-red-400/40 text-red-400'
+                        : geoState === 'success'
+                            ? (theme === 'dark' ? 'bg-blue-600/80 border-blue-400/40 text-white' : 'bg-blue-600 border-blue-400 text-white')
+                            : (theme === 'dark'
+                                ? 'bg-black/60 border-white/20 text-white hover:bg-black/80'
+                                : 'bg-white/95 border-white/60 text-blue-600 hover:bg-white')}
                 `}
                 style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
             >
-                <NavIcon
-                    size={20}
-                    className={`transition-all ${locating ? 'animate-pulse text-blue-400' : userPos ? (theme === 'dark' ? 'fill-white/80' : 'fill-blue-600') : ''}`}
-                />
+                {geoState === 'locating' ? (
+                    <div className="w-5 h-5 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
+                ) : geoState === 'denied' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                ) : (
+                    <NavIcon
+                        size={20}
+                        className={`transition-all ${geoState === 'success' ? 'fill-white' : ''}`}
+                    />
+                )}
             </button>
+            {/* Denied tooltip */}
+            {geoState === 'denied' && (
+                <div
+                    className="absolute z-[499] right-16 bg-red-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-2 rounded-xl shadow-lg pointer-events-none"
+                    style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 18px)', maxWidth: '180px' }}
+                >
+                    Location blocked. Allow in browser settings.
+                </div>
+            )}
 
             {/* Location count */}
             <div

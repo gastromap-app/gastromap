@@ -136,7 +136,7 @@ export function ChatInterface({
                                         : 'bg-white border border-black/5 text-gray-800 rounded-bl-none'
                                 }`}
                             >
-                                {msg.content}
+                                {msg.content ?? ''}
                             </div>
 
                             {/* Location recommendation cards */}

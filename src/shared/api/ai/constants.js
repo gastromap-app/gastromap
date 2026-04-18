@@ -22,15 +22,16 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
-    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
-    'arcee-ai/trinity-large-preview:free',    // ✅ stable fallback
-    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast fallback
-    'liquid/lfm-2.5-1.2b-thinking:free',      // ✅ thinking variant
-    'meta-llama/llama-3.3-70b-instruct:free', // sometimes 429
-    'google/gemma-4-31b-it:free',             // sometimes 429
-    'google/gemma-3-27b-it:free',             // sometimes 429
+    // Updated 2026-04-18: removed trinity-large (EOL), gpt-oss-120b demoted (503s)
+    'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling ✅
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality (intermittent 503)
+    'openai/gpt-oss-20b:free',                // ✅ Faster, reliable fallback
+    'z-ai/glm-4.5-air:free',                  // ✅ Multilingual, fast
+    'google/gemma-4-31b-it:free',             // ✅ Vision + multilingual
+    'google/gemma-3-27b-it:free',             // ✅ Stable fallback
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG (when available)
     'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
+    'nvidia/nemotron-nano-9b:free',           // ✅ Lightweight last resort
 ]
 
 /**

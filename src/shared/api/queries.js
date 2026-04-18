@@ -51,8 +51,19 @@ export function useLocations(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
-        staleTime: 0,          // always refetch — admin needs fresh data
-        refetchOnWindowFocus: true,
+        // ARCH-5 FIX: 5min staleTime for user-facing (reduces mobile re-fetches)
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        // ARCH-1 FIX: sync TanStack Query results into Zustand store
+        // so MapTab and other store consumers stay in sync
+        select: (data) => {
+            if (data?.data?.length) {
+                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
+                    useLocationsStore.getState().setLocations(data.data)
+                })
+            }
+            return data
+        },
     })
 }
 

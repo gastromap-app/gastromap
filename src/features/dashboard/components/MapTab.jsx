@@ -141,7 +141,7 @@ const MapUpdater = ({ theme }) => {
 const LocationController = ({ userPos, trigger }) => {
     const map = useMap()
     useEffect(() => {
-        if (userPos && trigger) map.flyTo(userPos, 15, { duration: 1.5 })
+        if (userPos && trigger > 0) map.flyTo(userPos, 15, { duration: 1.5 })
     }, [map, userPos, trigger])
     return null
 }
@@ -186,6 +186,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
     const { filteredLocations: storeFiltered } = useLocationsStore()
     const [userPos, setUserPos] = React.useState(null)
     const [locateTrigger, setLocateTrigger] = React.useState(0)
+    const [locating, setLocating] = React.useState(false)
     const [zoom, setZoom] = React.useState(14)
     const [selectedId, setSelectedId] = React.useState(null)
 
@@ -198,14 +199,18 @@ const MapTab = ({ activeFilter = 'All' }) => {
     }, [])
 
     const handleLocateMe = () => {
-        if (userPos) {
-            setLocateTrigger((n) => n + 1)
-        } else {
-            navigator.geolocation?.getCurrentPosition((pos) => {
-                setUserPos([pos.coords.latitude, pos.coords.longitude])
+        if (!navigator.geolocation) return
+        setLocating(true)
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const coords = [pos.coords.latitude, pos.coords.longitude]
+                setUserPos(coords)
                 setLocateTrigger((n) => n + 1)
-            })
-        }
+                setLocating(false)
+            },
+            () => { setLocating(false) },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        )
     }
 
     const displayLocations = activeFilter === 'All'
@@ -257,7 +262,10 @@ const MapTab = ({ activeFilter = 'All' }) => {
                 `}
                 style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
             >
-                <NavIcon size={20} className={userPos ? (theme === 'dark' ? 'fill-white/80' : 'fill-blue-600') : ''} />
+                <NavIcon
+                    size={20}
+                    className={`transition-all ${locating ? 'animate-pulse text-blue-400' : userPos ? (theme === 'dark' ? 'fill-white/80' : 'fill-blue-600') : ''}`}
+                />
             </button>
 
             {/* Location count */}

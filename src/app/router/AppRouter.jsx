@@ -105,9 +105,17 @@ const PageLoader = () => (
     </div>
 )
 
+// ─── ScrollToTop: сбрасываем скролл при каждом переходе ────────────────────
+function ScrollToTop() {
+    const { pathname } = useLocation()
+    useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }) }, [pathname])
+    return null
+}
+
 export const AppRouter = () => {
     return (
         <Suspense fallback={<PageLoader />}>
+            <ScrollToTop />
             <AuthRedirect />
             <Routes>
                 {/* Standalone Pages */}

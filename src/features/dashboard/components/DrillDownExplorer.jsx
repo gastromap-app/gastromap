@@ -133,13 +133,14 @@ export function DrillDownExplorer({
             className="fixed inset-0 z-20 flex flex-col"
             style={{
                 background: isDark ? '#0a0a0f' : '#f9f9fb',
-                paddingTop: 'calc(env(safe-area-inset-top) + 0px)',
+                // Outer container accounts for safe-area only — do NOT repeat it in children
+                paddingTop: 'env(safe-area-inset-top)',
             }}
         >
             {/* ── TOP BAR: Breadcrumbs + Search + Filter ── */}
             <div
                 className={`flex-shrink-0 px-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-gray-100'}`}
-                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4.5rem)' }}
+                style={{ paddingTop: '4.5rem' /* clears UniversalHeader (~64px) + 8px breathing room */ }}
             >
                 {/* Breadcrumbs */}
                 <div className="flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">

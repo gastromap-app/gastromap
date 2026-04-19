@@ -280,6 +280,7 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [mobileView, setMobileView] = useState('feed') // 'feed' | 'map'
 
     // Drill-down navigation state
     const [drillLevel, setDrillLevel] = useState('home') // 'home' | 'cities' | 'locations'

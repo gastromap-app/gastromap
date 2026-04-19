@@ -535,6 +535,13 @@ const DashboardPage = () => {
                         setIsFilterOpen={setIsFilterOpen}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
+                        drillLevel={drillLevel}
+                        setDrillLevel={setDrillLevel}
+                        drillCountry={drillCountry}
+                        setDrillCountry={setDrillCountry}
+                        drillCity={drillCity}
+                        setDrillCity={setDrillCity}
+                        handleSelectCountry={handleSelectCountry}
                     />
                 </div>
             </div>
@@ -547,6 +554,8 @@ const DashboardPage = () => {
 const DesktopDashboard = ({
     locations, recommended, trending, authUser, countries, theme,
     setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
+    drillLevel, setDrillLevel, drillCountry, setDrillCountry,
+    drillCity, setDrillCity, handleSelectCountry,
 }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -569,6 +578,22 @@ const DesktopDashboard = ({
 
     return (
         <div className="pb-20 max-w-6xl mx-auto w-full">
+
+            {/* Drill-down overlay (Country → Cities → Locations) */}
+            {drillLevel !== 'home' && activeTab === 'overview' && (
+                <DrillDownExplorer
+                    countries={countries}
+                    level={drillLevel}
+                    setLevel={setDrillLevel}
+                    selectedCountry={drillCountry}
+                    setSelectedCountry={setDrillCountry}
+                    selectedCity={drillCity}
+                    setSelectedCity={setDrillCity}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    setIsFilterOpen={setIsFilterOpen}
+                />
+            )}
 
             {/* Hero */}
             <div className="mt-10 mb-8">
@@ -638,7 +663,7 @@ const DesktopDashboard = ({
             {/* Content */}
             {activeTab === 'map' ? (
                 <MapDiscoveryPanel height="h-[calc(100vh-300px)]" setIsFilterOpen={setIsFilterOpen} />
-            ) : (
+            ) : drillLevel !== 'home' ? null : (
                 <motion.div
                     initial="hidden"
                     animate="visible"
@@ -656,7 +681,7 @@ const DesktopDashboard = ({
                             {countries.map((country) => (
                                 <button
                                     key={country.slug}
-                                    onClick={() => navigate(`/explore/${country.slug}`)}
+                                    onClick={() => handleSelectCountry(country)}
                                     aria-label={`Explore ${country.name}`}
                                     className="relative h-[180px] rounded-card overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform duration-200 text-left"
                                 >

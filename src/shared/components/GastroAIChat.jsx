@@ -111,9 +111,6 @@ export function ChatInterface({
                 className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 relative ${transparent ? 'pb-32' : ''} ${contentClassName}`}
                 ref={scrollRef}
             >
-                {isTyping && transparent && (
-                    <div className="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-indigo-400/30 via-pink-300/10 to-transparent blur-3xl animate-pulse pointer-events-none z-0" />
-                )}
 
                 {messages.map((msg) => {
                     const isUser = msg.role === 'user'

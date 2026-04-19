@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
 import { useNavigate, Link } from 'react-router-dom'
-import AuroraBackground from '@/components/ui/aurora-background'
-import { MapPin, Star, Heart, Clock, ChevronRight, Moon, Sun, Search as SearchIcon, SlidersHorizontal, ShieldCheck, Sunrise, Sunset, Sparkles } from 'lucide-react'
+import {
+    MapPin, Star, ChevronRight, Search as SearchIcon,
+    SlidersHorizontal, Sunrise, Sun, Sunset, Sparkles,
+    Utensils, Coffee, Wine, X, Map, LayoutList, Heart
+} from 'lucide-react'
+import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTheme } from '@/hooks/useTheme'
 const MapTab = React.lazy(() => import('../components/MapTab'))
 import FilterModal from '../components/FilterModal'
@@ -20,23 +24,16 @@ import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { DrillDownExplorer, CountryCards } from '../components/DrillDownExplorer'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 
-// --- MOBILE COMPONENTS ---
-// Proper seamless marquee: two copies of the text side-by-side, animate x from 0 to -50%
-const MarqueeTitle = ({ title, theme }) => {
-    if (!title) return null
-    return (
-        <div className="overflow-hidden whitespace-nowrap relative">
-            <motion.div
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-                className={`inline-flex text-base font-black leading-tight ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}
-            >
-                <span className="pr-12">{title}</span>
-                <span className="pr-12">{title}</span>
-            </motion.div>
-        </div>
-    )
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function getGreeting(t) {
+    const h = new Date().getHours()
+    if (h < 12) return t('dashboard.greeting_morning')
+    if (h < 18) return t('dashboard.greeting_afternoon')
+    return t('dashboard.greeting_evening')
 }
+
+// ─── LOCATION CARD MOBILE ────────────────────────────────────────────────────
 
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { theme } = useTheme()
@@ -49,7 +46,8 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { data: dbFavs = [] } = useUserFavorites(user?.id)
     const dbFavIds = dbFavs.map(f => f.location_id)
     const isFavorite = (id) => dbFavIds.includes(id) || isLocalFav(id)
-    const toggleFavorite = async (id) => {
+    const toggleFavorite = async (e, id) => {
+        e.stopPropagation()
         // DASH-5 FIX: show login prompt instead of silent fail for unauthenticated users
         if (!user?.id) {
             navigate('/login?next=/dashboard')
@@ -62,81 +60,214 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
             await addFav.mutateAsync({ userId: user.id, locationId: id })
         }
     }
-    const saved = isFavorite(loc?.id)
 
+    const saved = isFavorite(loc?.id)
     if (!loc) return null
 
     return (
         <div
             onClick={() => navigate(`/location/${loc.id}`)}
-            className={`flex-shrink-0 w-[220px] rounded-[28px] overflow-hidden transition-all active:scale-95 group shadow-xl cursor-pointer ${isDark ? 'bg-[#1a1c24] border border-white/5' : 'bg-white'}`}
+            className={`flex-shrink-0 w-[240px] rounded-card overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-200 ${
+                isDark
+                    ? 'bg-[#1c1c1e] border border-white/8'
+                    : 'bg-white border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.08)]'
+            }`}
         >
-            {/* Image Area */}
+            {/* Image */}
             <div className="relative h-[180px] overflow-hidden">
                 <img
                     src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop'}
                     alt={loc.title || 'Location'}
                     crossOrigin="anonymous"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover"
                 />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
-                {/* Rating Badge */}
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-2xl flex items-center gap-1 shadow-md">
-                    <Star size={12} className="text-blue-600 fill-blue-600" />
-                    <span className="text-[11px] font-black text-gray-900">{loc.rating || '4.5'}</span>
+                {/* Rating pill */}
+                <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
+                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-[11px] font-bold text-white">{loc.rating || '4.5'}</span>
                 </div>
 
+                {/* Trending badge */}
                 {type === 'trending' && (
-                    <div className="absolute top-3 left-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg border border-white/20">
-                        Top Choice
+                    <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
+                        Trending
                     </div>
                 )}
+
+                {/* Favorite button */}
+                <button
+                    onClick={(e) => toggleFavorite(e, loc.id)}
+                    className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90"
+                >
+                    <Heart
+                        size={14}
+                        className={saved ? 'text-red-400 fill-red-400' : 'text-white'}
+                    />
+                </button>
             </div>
 
-            {/* Content Area */}
-            <div className="p-4 relative flex justify-between items-end">
-                <div className="flex-1 overflow-hidden">
-                    <h4 className={`text-sm font-black leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {loc.title || 'Unknown Place'}
-                    </h4>
-                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                        {loc.subtitle || 'Authentic flavors and vibes'}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                        {/* Best Time Indicator - SVG Icons */}
-                        {loc.best_time && loc.best_time.length > 0 && (
-                            <div className="flex items-center gap-1 mr-1" title="Best time to visit">
-                                {loc.best_time.includes('morning') && <Sunrise size={12} className="text-orange-400" />}
-                                {loc.best_time.includes('day') && <Sun size={12} className="text-yellow-500" />}
-                                {loc.best_time.includes('evening') && <Sunset size={12} className="text-orange-500" />}
-                                {loc.best_time.includes('late_night') && <Sparkles size={12} className="text-indigo-400" />}
-                            </div>
-                        )}
+            {/* Content */}
+            <div className="px-4 py-3.5">
+                <h4 className={`text-[14px] font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {loc.title || 'Unknown Place'}
+                </h4>
+                <p className="text-[12px] text-gray-500 mt-0.5 truncate">
+                    {loc.subtitle || 'Authentic flavors'}
+                </p>
 
-                        {/* Special Labels - Subtle small chips */}
-                        {loc.special_labels?.slice(0, 2).map(label => (
-                            <span key={label} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-white/5 text-white/40' : 'bg-gray-100 text-gray-500 dark:text-gray-400'}`}>
-                                {translate(label)}
-                            </span>
-                        ))}
-                    </div>
+                {/* Tags row */}
+                <div className="flex items-center gap-1.5 mt-2.5">
+                    {loc.best_time && loc.best_time.length > 0 && (
+                        <div className="flex items-center gap-0.5 mr-0.5">
+                            {loc.best_time.includes('morning') && <Sunrise size={11} className="text-orange-400" />}
+                            {loc.best_time.includes('day') && <Sun size={11} className="text-yellow-500" />}
+                            {loc.best_time.includes('evening') && <Sunset size={11} className="text-orange-500" />}
+                            {loc.best_time.includes('late_night') && <Sparkles size={11} className="text-indigo-400" />}
+                        </div>
+                    )}
+                    {loc.special_labels?.slice(0, 2).map(label => (
+                        <span
+                            key={label}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                            }`}
+                        >
+                            {translate(label)}
+                        </span>
+                    ))}
                 </div>
-
-                {/* Heart Button */}
-                <button
-                    className="flex-shrink-0 w-11 h-11 -m-2 flex items-center justify-center active:scale-90 transition-transform"
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(loc.id) }}
-                    aria-label={saved ? 'Remove from saved' : 'Save place'}
-                >
-                    <Heart size={20} className={saved ? 'text-red-500 fill-red-500' : 'text-gray-300 stroke-[2.2]'} />
-                </button>
             </div>
         </div>
     )
 }
 
+// ─── MAP CATEGORY CONFIG ──────────────────────────────────────────────────────
 
-// --- MAIN PAGE ---
+const MAP_CATEGORIES = [
+    { name: 'All',         icon: MapPin,   emoji: '📍' },
+    { name: 'Cafe',        icon: Coffee,   emoji: '☕' },
+    { name: 'Restaurant',  icon: Utensils, emoji: '🍽️' },
+    { name: 'Bar',         icon: Wine,     emoji: '🍸' },
+    { name: 'Fine Dining', icon: Star,     emoji: '🎩' },
+]
+
+// ─── MAP DISCOVERY PANEL ─────────────────────────────────────────────────────
+
+const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }) => {
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+    const { t } = useTranslation()
+    const { activeCategory, setCategory, filteredLocations } = useLocationsStore()
+    const [mapSearch, setMapSearch] = useState('')
+    const debouncedMapSearch = useDebounce(mapSearch, 300)
+
+    useEffect(() => {
+        useLocationsStore.getState().setSearchQuery(debouncedMapSearch)
+    }, [debouncedMapSearch])
+
+    useEffect(() => {
+        return () => {
+            useLocationsStore.getState().setSearchQuery('')
+            useLocationsStore.getState().setCategory('All')
+        }
+    }, [])
+
+    return (
+        <div className="flex flex-col gap-3 w-full">
+            {/* Search + filter */}
+            <div className="flex gap-2">
+                <div className={`flex-1 relative flex items-center h-12 px-4 rounded-input border transition-all ${
+                    isDark ? 'bg-white/6 border-white/10' : 'bg-white border-gray-200 shadow-sm'
+                }`}>
+                    <SearchIcon size={16} className="text-blue-500 mr-3 flex-shrink-0" />
+                    <input
+                        type="text"
+                        placeholder={t('dashboard.search_placeholder')}
+                        value={mapSearch}
+                        onChange={(e) => setMapSearch(e.target.value)}
+                        className={`bg-transparent flex-1 outline-none text-[14px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    />
+                    {mapSearch && (
+                        <button onClick={() => setMapSearch('')} className="ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+                <button
+                    onClick={() => setIsFilterOpen(true)}
+                    aria-label="Open filters"
+                    className={`w-12 h-12 flex-shrink-0 rounded-input flex items-center justify-center active:scale-95 transition-all ${
+                        isDark ? 'bg-blue-600/15 text-blue-400 border border-blue-500/20' : 'bg-blue-600 text-white shadow-sm'
+                    }`}
+                >
+                    <SlidersHorizontal size={18} />
+                </button>
+            </div>
+
+            {/* Category chips */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {MAP_CATEGORIES.map((cat) => {
+                    const active = activeCategory === cat.name
+                    return (
+                        <button
+                            key={cat.name}
+                            onClick={() => setCategory(active && cat.name !== 'All' ? 'All' : cat.name)}
+                            className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 min-h-11 rounded-pill text-[12px] font-semibold whitespace-nowrap transition-all ${
+                                active
+                                    ? 'bg-blue-600 text-white'
+                                    : isDark
+                                        ? 'bg-white/6 text-white/60 border border-white/10 hover:bg-white/10'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <span>{cat.emoji}</span>
+                            {cat.name}
+                        </button>
+                    )
+                })}
+            </div>
+
+            {/* Map */}
+            <div className={`relative ${height} rounded-card overflow-hidden ${isDark ? 'border border-white/6' : 'border border-gray-100 shadow-sm'}`}>
+                <div className={`absolute top-3 left-3 z-[500] px-3 py-1.5 rounded-pill text-[11px] font-semibold backdrop-blur-md pointer-events-none ${
+                    isDark ? 'bg-black/60 text-white/80 border border-white/15' : 'bg-white/90 text-gray-700 border border-gray-200/60'
+                }`}>
+                    {filteredLocations.length} place{filteredLocations.length !== 1 ? 's' : ''}
+                </div>
+                <MapTab />
+            </div>
+        </div>
+    )
+}
+
+// ─── SECTION HEADER ───────────────────────────────────────────────────────────
+
+const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => (
+    <div className="flex justify-between items-end">
+        <div>
+            <h3 className={`text-[18px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {title}
+            </h3>
+            {subtitle && (
+                <p className="text-[12px] text-gray-500 mt-0.5 font-medium">{subtitle}</p>
+            )}
+        </div>
+        {onSeeAll && (
+            <button
+                onClick={onSeeAll}
+                className="text-[13px] font-semibold text-blue-500 hover:text-blue-600 transition-colors min-h-11 flex items-center"
+            >
+                See all
+            </button>
+        )}
+    </div>
+)
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user: authUser } = useAuthStore()
@@ -145,11 +276,11 @@ const DashboardPage = () => {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    // Use the real loading state from the store (set by initialize() when fetching from Supabase)
     const isLoading = useLocationsStore(s => s.isLoading)
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [mobileView, setMobileView] = useState('feed') // 'feed' | 'map'
 
     // Drill-down navigation state
     const [drillLevel, setDrillLevel] = useState('home') // 'home' | 'cities' | 'locations'
@@ -167,9 +298,10 @@ const DashboardPage = () => {
     // REGRESSION FIX: use isInitialized flag instead of locations.length
     // locations.length > 0 doesn't mean global data is loaded — it could be city-scoped
     // isInitialized is only set to true after a FULL fetch (no city/country filter)
+    // Also reinitialize when store is empty despite isInitialized=true (e.g. after tab switch)
     useEffect(() => {
-        const { initialize, isInitialized, isLoading } = useLocationsStore.getState()
-        if (!isInitialized && !isLoading) {
+        const { initialize, isInitialized, isLoading, locations } = useLocationsStore.getState()
+        if (!isLoading && (!isInitialized || locations.length === 0)) {
             initialize()
         }
     }, [])
@@ -185,8 +317,7 @@ const DashboardPage = () => {
 
     // Apply search to store when debounced value changes
     useEffect(() => {
-        const { setSearchQuery: storeSetSearch } = useLocationsStore.getState()
-        storeSetSearch(debouncedSearch)
+        useLocationsStore.getState().setSearchQuery(debouncedSearch)
     }, [debouncedSearch])
 
     // DASH-3 FIX: countries are now derived from actual locations in the store
@@ -225,360 +356,403 @@ const DashboardPage = () => {
         }))
     }, [locations])
 
-    // Top-rated places
     const recommended = useMemo(
         () => [...locations].sort((a, b) => b.rating - a.rating).slice(0, 5),
         [locations]
     )
 
-    // "Trending" — most recently added, different from recommended top-5
     const trending = useMemo(() => {
         const topIds = new Set(recommended.map(l => l.id))
-        return [...locations]
-            .filter(l => !topIds.has(l.id))
-            .slice(-5)
-            .reverse()
+        return [...locations].filter(l => !topIds.has(l.id)).slice(-5).reverse()
     }, [locations, recommended])
 
-    const textStyle = theme === 'light' ? "text-gray-900" : "text-white"
+    const firstName = user?.name?.split(' ')[0] || 'there'
+    const greeting = getGreeting(t)
 
     return (
         <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
             <div data-testid="dashboard-page" className="contents">
-            <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
+                <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
-            {/* MOBILE VIEW (Horizontal Sliders) */}
-            <div className="md:hidden space-y-8 px-[2.5vw] pb-28" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
+                {/* ── MOBILE ── */}
+                <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
-                {/* Search Bar */}
-                <div className="space-y-4 mb-4">
-                    <h2 className={`text-xl font-black tracking-tight leading-tight ${textStyle}`}>
-                        {t('dashboard.tagline')}
-                    </h2>
-                    <SmartSearchBar
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFilter={() => setIsFilterOpen(true)}
-                        placeholder={t('dashboard.search_placeholder')}
+                    {/* Greeting */}
+                    <div className="px-5 mb-5">
+                        <p className="text-[13px] font-medium text-gray-500 mb-0.5">{greeting}</p>
+                        <h1 className={`text-[26px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {firstName} <span className="text-blue-600">✦</span>
+                        </h1>
+                    </div>
+
+                    {/* Search + filter */}
+                    <div className="px-5 mb-5 flex gap-2.5">
+                        <div className={`flex-1 relative flex items-center h-[46px] px-4 rounded-[14px] transition-all ${
+                            isDark
+                                ? 'bg-white/8 border border-white/10'
+                                : 'bg-gray-100/80'
+                        }`}>
+                            <SearchIcon size={16} className="text-gray-400 mr-3 flex-shrink-0" />
+                            <input
+                                type="text"
+                                placeholder={t('dashboard.search_placeholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={`bg-transparent flex-1 outline-none text-[14px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                            />
+                            {searchQuery && (
+                                <button onClick={() => setSearchQuery('')} className="ml-2 text-gray-400">
+                                    <X size={13} />
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            aria-label="Open filters"
+                            className={`w-[46px] h-[46px] flex-shrink-0 rounded-[14px] flex items-center justify-center active:scale-95 transition-all ${
+                                isDark ? 'bg-blue-600/15 text-blue-400' : 'bg-blue-600 text-white'
+                            }`}
+                        >
+                            <SlidersHorizontal size={17} />
+                        </button>
+                    </div>
+
+                    {/* Segmented control */}
+                    <div className="px-5 mb-6">
+                        <div className={`flex p-1 rounded-[14px] ${isDark ? 'bg-white/6' : 'bg-gray-100'}`}>
+                            {[
+                                { key: 'feed', label: t('dashboard.feed') || 'Feed', icon: LayoutList },
+                                { key: 'map',  label: t('nav.map')  || 'Map',  icon: Map },
+                            ].map(({ key, label, icon: Icon }) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setMobileView(key)}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
+                                        mobileView === key
+                                            ? isDark
+                                                ? 'bg-white/12 text-white shadow-sm'
+                                                : 'bg-white text-gray-900 shadow-sm'
+                                            : isDark
+                                                ? 'text-white/40'
+                                                : 'text-gray-500'
+                                    }`}
+                                >
+                                    <Icon size={14} />
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                        {mobileView === 'map' ? (
+                            <motion.div
+                                key="map"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="px-5 pb-8"
+                            >
+                                <MapDiscoveryPanel
+                                    height="h-[calc(100dvh-220px)]"
+                                    setIsFilterOpen={setIsFilterOpen}
+                                />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="feed"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-8 pb-14"
+                            >
+                                {/* Explore by Country */}
+                                <div className="space-y-4">
+                                    <div className="px-5">
+                                        <SectionHeader
+                                            title={t('dashboard.explore_countries')}
+                                            subtitle={t('dashboard.culinary_traditions')}
+                                            onSeeAll={() => navigate('/explore')}
+                                            isDark={isDark}
+                                        />
+                                    </div>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
+                                        {countries.map((country) => (
+                                            <button
+                                                key={country.slug}
+                                                onClick={() => navigate(`/explore/${country.slug}`)}
+                                                aria-label={`Explore ${country.name}`}
+                                                className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
+                                            >
+                                                <img
+                                                    src={country.image}
+                                                    crossOrigin="anonymous"
+                                                    alt={country.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                                <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                                    {country.newCount} New
+                                                </div>
+                                                <div className="absolute bottom-3.5 left-4">
+                                                    <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Recommended */}
+                                <div className="space-y-4">
+                                    <div className="px-5">
+                                        <SectionHeader
+                                            title={t('dashboard.recommended')}
+                                            subtitle={t('dashboard.perfect_spots')}
+                                            onSeeAll={() => navigate('/explore')}
+                                            isDark={isDark}
+                                        />
+                                    </div>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
+                                        {isLoading
+                                            ? Array.from({ length: 3 }).map((_, i) => (
+                                                <div key={i} className="snap-center flex-shrink-0">
+                                                    <DashboardCardSkeleton isDark={isDark} />
+                                                </div>
+                                            ))
+                                            : recommended.map((loc) => (
+                                                <div key={loc.id} className="snap-center">
+                                                    <LocationCardMobile loc={loc} type="recommended" />
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+
+                                {/* Trending */}
+                                <div className="space-y-4">
+                                    <div className="px-5">
+                                        <SectionHeader
+                                            title={t('dashboard.trending')}
+                                            subtitle={t('dashboard.hot_spots')}
+                                            onSeeAll={() => navigate('/explore')}
+                                            isDark={isDark}
+                                        />
+                                    </div>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
+                                        {isLoading
+                                            ? Array.from({ length: 3 }).map((_, i) => (
+                                                <div key={i} className="snap-center flex-shrink-0">
+                                                    <DashboardCardSkeleton isDark={isDark} />
+                                                </div>
+                                            ))
+                                            : trending.map((loc) => (
+                                                <div key={loc.id} className="snap-center">
+                                                    <LocationCardMobile loc={loc} type="trending" />
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* ── DESKTOP ── */}
+                <div className="hidden md:flex flex-col px-[10px] pt-24 pb-6">
+                    <DesktopDashboard
+                        locations={locations}
+                        recommended={recommended}
+                        trending={trending}
+                        authUser={user}
+                        countries={countries}
+                        theme={theme}
+                        setIsFilterOpen={setIsFilterOpen}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
                     />
                 </div>
-
-                {/* 1. Explore by Country */}
-                <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.culinary_traditions')}</p>
-                        </div>
-                    </div>
-                    <CountryCards countries={countries} onSelectCountry={handleSelectCountry} />
-                </div>
-
-                                {/* 2. Recommended for you */}
-                <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                        <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.recommended')}</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.perfect_spots')}</p>
-                        </div>
-                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
-                            {t('dashboard.view_all')}
-                        </button>
-                    </div>
-
-                    <div className="flex gap-[12px] overflow-x-auto pb-6 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory">
-                        {isLoading
-                            ? Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="snap-center flex-shrink-0">
-                                    <DashboardCardSkeleton isDark={isDark} />
-                                </div>
-                            ))
-                            : recommended.map((loc) => (
-                                <div key={loc.id} className="snap-center">
-                                    <LocationCardMobile loc={loc} type="recommended" />
-                                </div>
-                            ))
-                        }
-                    </div>
-                </div>
-
-                {/* 3. Trending in Krakow */}
-                <div className="space-y-4 pb-10">
-                    <div className="flex justify-between items-end">
-                        <div className="">
-                            <h3 className={`text-lg font-black ${textStyle}`}>{t('dashboard.trending')}</h3>
-                            <p className="text-[11px] text-gray-500 font-medium">{t('dashboard.hot_spots')}</p>
-                        </div>
-                        <button onClick={() => navigate('/explore')} className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-white/5 px-4 py-2.5 rounded-full border border-white/5 active:scale-90 transition-transform min-h-11 flex items-center">
-                            {t('dashboard.view_all')}
-                        </button>
-                    </div>
-
-                    <div className="flex gap-[12px] overflow-x-auto pb-6 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory">
-                        {isLoading
-                            ? Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="snap-center flex-shrink-0">
-                                    <DashboardCardSkeleton isDark={isDark} />
-                                </div>
-                            ))
-                            : trending.map((loc) => (
-                                <div key={loc.id} className="snap-center">
-                                    <LocationCardMobile loc={loc} type="trending" />
-                                </div>
-                            ))
-                        }
-                    </div>
-                </div>
-            </div>
-
-            {/* Drill-Down Overlay — replaces full page on cities/locations level */}
-            <DrillDownExplorer
-                countries={countries}
-                level={drillLevel}
-                setLevel={setDrillLevel}
-                selectedCountry={drillCountry}
-                setSelectedCountry={setDrillCountry}
-                selectedCity={drillCity}
-                setSelectedCity={setDrillCity}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                setIsFilterOpen={setIsFilterOpen}
-            />
-
-            {/* DESKTOP VIEW (Original Design - Fully Restored) */}
-            <div className="hidden md:flex flex-col px-[10px] pt-24 pb-6">
-                <DesktopDashboard
-                    locations={locations}
-                    recommended={recommended}
-                    authUser={user}
-                    countries={countries}
-                    theme={theme}
-                    setIsFilterOpen={setIsFilterOpen}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                />
-            </div>
             </div>
         </PageTransition>
     )
 }
 
-// --- DESKTOP VIEW COMPONENT ---
-const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, setIsFilterOpen, searchQuery = '', setSearchQuery = () => {} }) => {
+// ─── DESKTOP DASHBOARD ────────────────────────────────────────────────────────
+
+const DesktopDashboard = ({
+    locations, recommended, trending, authUser, countries, theme,
+    setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
+}) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const [greeting, setGreeting] = useState(() => {
-        const h = new Date().getHours()
-        return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
-    })
+    const isDark = theme === 'dark'
     const [activeTab, setActiveTab] = useState('overview')
-    const [activeFilter] = useState('All')
+    const greeting = getGreeting(t)
+    const firstName = authUser?.name?.split(' ')[0] || 'there'
 
-    useEffect(() => {
-        const hour = new Date().getHours()
-        if (hour < 12) setGreeting(t('dashboard.greeting_morning'))
-        else if (hour < 18) setGreeting(t('dashboard.greeting_afternoon'))
-        else setGreeting(t('dashboard.greeting_evening'))
-    }, [t])
+    const text = isDark ? 'text-white' : 'text-gray-900'
+    const sub  = 'text-gray-500'
 
-    const glassStyle = theme === 'light'
-        ? "bg-white/40 border-white/40 text-gray-900 shadow-sm hover:bg-white/60"
-        : "bg-black/30 border-white/10 text-white shadow-lg hover:bg-black/40"
-
-    const frameCardStyle = theme === 'light'
-        ? "bg-white p-3 rounded-[32px] shadow-sm border border-gray-100"
-        : "bg-white/10 p-3 rounded-[32px] shadow-lg border border-white/5"
-
-    const textStyle = theme === 'light' ? "text-gray-900" : "text-white"
-    const subTextStyle = theme === 'light' ? "text-gray-500" : "text-gray-500 dark:text-gray-400"
+    const cardClass = isDark
+        ? 'bg-[#1c1c1e] border border-white/8 rounded-sheet'
+        : 'bg-white border border-gray-100 rounded-sheet shadow-[0_2px_20px_rgba(0,0,0,0.06)]'
 
     const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
+        hidden:  { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
     }
 
     return (
-        <div className="pb-20 md:pb-8">
+        <div className="pb-20 max-w-6xl mx-auto w-full">
 
-            {/* 2. Hero: Greeting, Search */}
-            <div className="mt-[40px]">
-                <div className="space-y-2">
-                    <h1 className={`text-4xl md:text-5xl font-bold tracking-tight ${textStyle}`}>
-                        {greeting}, <span className="text-blue-600">{authUser.name.split(' ')[0]}</span>
-                    </h1>
-                    <p className={`text-lg ${subTextStyle}`}>{t('dashboard.tagline')}</p>
-                </div>
+            {/* Hero */}
+            <div className="mt-10 mb-8">
+                <p className={`text-[15px] font-medium ${sub} mb-1`}>{greeting}</p>
+                <h1 className={`text-[42px] font-bold tracking-tight leading-none mb-6 ${text}`}>
+                    {firstName} <span className="text-blue-600">✦</span>
+                </h1>
 
-                <div className="flex flex-col md:flex-row gap-4 items-center mt-[20px]">
-                    <div className="relative flex-1 group w-full">
-                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                            <SearchIcon className="h-5 w-5 text-blue-600" />
-                        </div>
+                {/* Search */}
+                <div className="flex gap-3">
+                    <div className={`relative flex-1 flex items-center h-[54px] px-5 rounded-[18px] transition-all ${
+                        isDark
+                            ? 'bg-white/8 border border-white/10 focus-within:border-white/20'
+                            : 'bg-gray-100 focus-within:bg-white focus-within:border-gray-300 border border-transparent'
+                    }`}>
+                        <SearchIcon size={18} className="text-gray-400 mr-3 flex-shrink-0" />
                         <input
                             type="text"
                             placeholder={t('dashboard.search_placeholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full h-16 pl-14 pr-6 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${theme === 'light' ? 'bg-white shadow-xl focus:border-blue-500' : 'bg-white/10 backdrop-blur-md text-white border-white/10 focus:border-blue-500'
-                                }`}
+                            className={`bg-transparent flex-1 outline-none text-[15px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
                         />
                     </div>
                     <button
                         onClick={() => navigate(searchQuery ? `/explore?q=${encodeURIComponent(searchQuery)}` : '/explore')}
-                        className="h-16 px-8 rounded-[24px] bg-blue-600 text-white font-bold text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all"
+                        className="h-[54px] px-7 rounded-[18px] bg-blue-600 text-white font-semibold text-[15px] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
                     >
                         {t('dashboard.search_btn')}
                     </button>
                 </div>
-
             </div>
 
-            {/* 3. Control Bar: Tabs & Filters */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mt-[20px]">
-                <div className="bg-blue-600 p-1.5 rounded-full flex shadow-lg relative">
+            {/* Tab bar + filter */}
+            <div className="flex items-center justify-between mb-6">
+                <div className={`flex items-center p-1 rounded-[12px] gap-0.5 ${isDark ? 'bg-white/6' : 'bg-gray-100'}`}>
                     {['overview', 'map'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`relative px-8 py-3 rounded-full text-base font-bold capitalize transition-all duration-300 z-10 ${activeTab === tab ? 'text-blue-600' : 'text-white hover:bg-white/10'
-                                }`}
+                            className={`relative px-6 py-2 rounded-[9px] text-[14px] font-semibold capitalize transition-all ${
+                                activeTab === tab
+                                    ? isDark
+                                        ? 'bg-white/12 text-white shadow-sm'
+                                        : 'bg-white text-gray-900 shadow-sm'
+                                    : isDark
+                                        ? 'text-white/40 hover:text-white/70'
+                                        : 'text-gray-500 hover:text-gray-700'
+                            }`}
                         >
-                            {activeTab === tab && (
-                                <motion.div layoutId="activeTab" className="absolute inset-0 bg-white rounded-full shadow-sm z-[-1]" />
-                            )}
-                            {tab}
+                            {tab === 'overview' ? 'Overview' : 'Map'}
                         </button>
                     ))}
                 </div>
 
-                <div className="flex items-center gap-4 ml-auto">
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        className={`p-2 rounded-xl active:scale-95 transition-transform ${glassStyle}`}
-                    >
-                        <SlidersHorizontal size={20} />
-                    </button>
-                </div>
+                <button
+                    onClick={() => setIsFilterOpen(true)}
+                    className={`flex items-center gap-2 px-4 h-9 rounded-[10px] text-[13px] font-semibold transition-all active:scale-95 ${
+                        isDark ? 'bg-white/8 text-white/70 hover:bg-white/12' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                    <SlidersHorizontal size={15} />
+                    Filters
+                </button>
             </div>
 
+            {/* Content */}
             {activeTab === 'map' ? (
-                <div className="h-[600px] rounded-[32px] overflow-hidden shadow-2xl mt-[20px]">
-                    <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" /></div>}><MapTab activeFilter={activeFilter} /></React.Suspense>
-                </div>
+                <MapDiscoveryPanel height="h-[calc(100vh-300px)]" setIsFilterOpen={setIsFilterOpen} />
             ) : (
-                <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} className="space-y-10 mt-[20px]">
-
-                    {/* 4. Explore by Country - Original Grid */}
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+                    className="space-y-12"
+                >
+                    {/* Countries */}
                     <motion.div variants={itemVariants} className="space-y-5">
-                        <div className="flex justify-between items-end px-1">
-                            <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.explore_countries')}</h3>
-                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.culinary_traditions')}</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <SectionHeader
+                            title={t('dashboard.explore_countries')}
+                            subtitle={t('dashboard.culinary_traditions')}
+                            isDark={isDark}
+                        />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             {countries.map((country) => (
-                                <motion.button key={country.slug} onClick={() => navigate(`/explore/${country.slug}`)} aria-label={`Explore ${country.name}`} whileHover={{ y: -8, scale: 1.02 }} className="relative h-56 rounded-[32px] overflow-hidden group cursor-pointer shadow-lg text-left w-full">
-                                    <img src={country.image} alt={country.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                    <div className="absolute bottom-6 left-6 text-white">
-                                        <h4 className="text-2xl font-bold mb-1">{country.name}</h4>
-                                        <div className="flex items-center gap-1.5 text-xs opacity-90">
-                                            <MapPin size={12} className="fill-white/20" />
+                                <button
+                                    key={country.slug}
+                                    onClick={() => navigate(`/explore/${country.slug}`)}
+                                    aria-label={`Explore ${country.name}`}
+                                    className="relative h-[180px] rounded-card overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform duration-200 text-left"
+                                >
+                                    <img src={country.image} alt={country.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                    <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-full">
+                                        {country.newCount} New
+                                    </div>
+                                    <div className="absolute bottom-4 left-4">
+                                        <h4 className="text-[18px] font-bold text-white mb-0.5">{country.name}</h4>
+                                        <div className="flex items-center gap-1 text-white/60 text-[11px]">
+                                            <MapPin size={10} />
                                             <span>Explore cities</span>
                                         </div>
                                     </div>
-                                    <div className="absolute bottom-6 right-6 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <ChevronRight className="text-white" size={20} />
-                                    </div>
-                                </motion.button>
+                                </button>
                             ))}
                         </div>
                     </motion.div>
 
-                    {/* 5. Recommended for you - Original Grid */}
+                    {/* Recommended */}
                     <motion.div variants={itemVariants} className="space-y-5">
-                        <div className="flex justify-between items-end px-1">
-                            <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.recommended')}</h3>
-                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.perfect_spots')}</p>
-                            </div>
-                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">{t('dashboard.view_all')}</button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <SectionHeader
+                            title={t('dashboard.recommended')}
+                            subtitle={t('dashboard.perfect_spots')}
+                            onSeeAll={() => navigate('/explore')}
+                            isDark={isDark}
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {recommended.map((item) => (
-                                <motion.div key={item.id} onClick={() => navigate(`/location/${item.id}`)} whileHover={{ y: -8 }} className={`${frameCardStyle} transition-all duration-300 group cursor-pointer`}>
-                                    <div className="relative h-56 mb-4 overflow-hidden rounded-2xl shadow-inner">
-                                        <img src={item.image} crossOrigin="anonymous" alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-1 shadow-md">
-                                            <Star size={14} className="text-yellow-500 fill-yellow-500" /> {item.rating}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5 px-1">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className={`text-lg font-bold ${textStyle}`}>{item.title}</h4>
-                                            {item.best_time && item.best_time.length > 0 && (
-                                                <div className="flex gap-1 text-sm pt-1 opacity-70">
-                                                    {item.best_time.includes('morning') && '🌅'}
-                                                    {item.best_time.includes('day') && '☀️'}
-                                                    {item.best_time.includes('evening') && '🌙'}
-                                                    {item.best_time.includes('late_night') && '✨'}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <p className={`text-sm ${subTextStyle}`}>{item.subtitle}</p>
-                                        <div className="flex flex-wrap gap-1.5 pt-1">
-                                            {item.special_labels?.slice(0, 3).map(label => (
-                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-500 dark:text-gray-400' : 'bg-white/10 text-white/50'}`}>
-                                                    {translate(label)}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                <DesktopCard
+                                    key={item.id}
+                                    item={item}
+                                    cardClass={cardClass}
+                                    isDark={isDark}
+                                    onClick={() => navigate(`/location/${item.id}`)}
+                                />
                             ))}
                         </div>
                     </motion.div>
-                    {/* 6. Trending in Krakow - Added for parity */}
+
+                    {/* Trending */}
                     <motion.div variants={itemVariants} className="space-y-5">
-                        <div className="flex justify-between items-end px-1">
-                            <div>
-                                <h3 className={`text-2xl font-bold ${textStyle}`}>{t('dashboard.trending')}</h3>
-                                <p className={`text-sm ${subTextStyle}`}>{t('dashboard.hot_spots')}</p>
-                            </div>
-                            <button onClick={() => navigate('/explore')} className="text-blue-500 font-medium text-sm hover:underline">{t('dashboard.view_all')}</button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {[...locations].reverse().slice(0, 3).map((item) => (
-                                <motion.div key={item.id} onClick={() => navigate(`/location/${item.id}`)} whileHover={{ y: -8 }} className={`${frameCardStyle} transition-all duration-300 group cursor-pointer`}>
-                                    <div className="relative h-56 mb-4 overflow-hidden rounded-2xl shadow-inner">
-                                        <img src={item.image} crossOrigin="anonymous" alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-1 shadow-md">
-                                            <Star size={14} className="text-yellow-500 fill-yellow-500" /> {item.rating}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5 px-1">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className={`text-lg font-bold ${textStyle}`}>{item.title}</h4>
-                                            {item.best_time && item.best_time.length > 0 && (
-                                                <div className="flex gap-1 text-sm pt-1 opacity-70">
-                                                    {item.best_time.includes('morning') && '🌅'}
-                                                    {item.best_time.includes('day') && '☀️'}
-                                                    {item.best_time.includes('evening') && '🌙'}
-                                                    {item.best_time.includes('late_night') && '✨'}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <p className={`text-sm ${subTextStyle}`}>{item.subtitle}</p>
-                                        <div className="flex flex-wrap gap-1.5 pt-1">
-                                            {item.special_labels?.slice(0, 3).map(label => (
-                                                <span key={label} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${theme === 'light' ? 'bg-gray-100 text-gray-500 dark:text-gray-400' : 'bg-white/10 text-white/50'}`}>
-                                                    {translate(label)}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </motion.div>
+                        <SectionHeader
+                            title={t('dashboard.trending')}
+                            subtitle={t('dashboard.hot_spots')}
+                            onSeeAll={() => navigate('/explore')}
+                            isDark={isDark}
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {trending.map((item) => (
+                                <DesktopCard
+                                    key={item.id}
+                                    item={item}
+                                    cardClass={cardClass}
+                                    isDark={isDark}
+                                    isTrending
+                                    onClick={() => navigate(`/location/${item.id}`)}
+                                />
                             ))}
                         </div>
                     </motion.div>
@@ -587,5 +761,62 @@ const DesktopDashboard = ({ locations, recommended, authUser, countries, theme, 
         </div>
     )
 }
+
+// ─── DESKTOP CARD ─────────────────────────────────────────────────────────────
+
+const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) => (
+    <div
+        onClick={onClick}
+        className={`${cardClass} overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200`}
+    >
+        <div className="relative h-[220px] overflow-hidden">
+            <img
+                src={item.image}
+                crossOrigin="anonymous"
+                alt={item.title}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+            <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
+                <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                <span className="text-[11px] font-bold text-white">{item.rating}</span>
+            </div>
+            {isTrending && (
+                <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Trending
+                </div>
+            )}
+            {item.best_time && item.best_time.length > 0 && (
+                <div className="absolute bottom-3 right-3 flex items-center gap-1 text-white/80">
+                    {item.best_time.includes('morning')   && <Sunrise size={13} className="text-orange-300" />}
+                    {item.best_time.includes('day')       && <Sun size={13} className="text-yellow-300" />}
+                    {item.best_time.includes('evening')   && <Sunset size={13} className="text-orange-400" />}
+                    {item.best_time.includes('late_night') && <Sparkles size={13} className="text-indigo-300" />}
+                </div>
+            )}
+        </div>
+
+        <div className="p-4">
+            <h4 className={`text-[15px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {item.title}
+            </h4>
+            <p className="text-[12px] text-gray-500 mt-0.5 truncate">{item.subtitle}</p>
+            {item.special_labels?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                    {item.special_labels.slice(0, 3).map(label => (
+                        <span
+                            key={label}
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                            }`}
+                        >
+                            {translate(label)}
+                        </span>
+                    ))}
+                </div>
+            )}
+        </div>
+    </div>
+)
 
 export default DashboardPage

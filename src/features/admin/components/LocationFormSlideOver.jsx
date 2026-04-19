@@ -7,58 +7,17 @@ import {
     RefreshCw, Zap, Info, ChevronUp, AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+    CATEGORIES_FULL as CATEGORIES,
+    PRICE_LEVELS,
+    LABEL_GROUPS,
+    VISIT_TIMES,
+} from '@/shared/constants/taxonomy'
+import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-    'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
-    'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining'
-]
-
-const PRICE_LEVELS = [
-    { value: '$',    label: '$ — бюджетно' },
-    { value: '$$',   label: '$$ — средне' },
-    { value: '$$$',  label: '$$$ — дорого' },
-    { value: '$$$$', label: '$$$$ — люкс' },
-]
-
-const CUISINE_OPTIONS = [
-    'Polish', 'Italian', 'Japanese', 'French', 'Mexican', 'Thai', 'Greek',
-    'Georgian', 'Ukrainian', 'Spanish', 'Indian', 'Vietnamese', 'American',
-    'Mediterranean', 'Israeli', 'Turkish', 'Chinese', 'Korean', 'Fusion',
-]
-
-const LABEL_GROUPS = {
-    "Кухня и Меню": [
-        "Авторская кухня", "Веганское меню", "Вкусные десерты", "Завтраки целый день",
-        "Местные продукты", "Меню завтраков", "Меню ланча", "Фьюжен",
-        "Итальянская", "Французская", "Японская", "Китайская", "Греческая",
-        "Испанская", "Мексиканская", "Тайская", "Грузинская", "Польская",
-        "Израильская", "Американская", "Средиземноморская", "Индийская", "Вьетнамская"
-    ].sort(),
-    "Бар и Напитки": [
-        "Авторские коктейли", "Винная карта", "Гостевые смены", "Дегустация вин",
-        "DJ сеты", "Крафтовое пиво", "Спешиалти кофе", "Широкий выбор джина"
-    ].sort(),
-    "Атмосфера": [
-        "Живописный вид", "Живая музыка", "Коворкинг", "Настольные игры",
-        "Романтическая атмосфера", "Скрытый вход (Speakeasy)",
-        "Счастливые часы", "Тихая атмосфера", "Уютно", "Оживлённая атмосфера"
-    ].sort(),
-    "Удобства и Сервис": [
-        "Балкончики", "Детская игровая зона", "Доставка", "Инклюзивность",
-        "Любимое у местных", "Парковка", "Pet friendly",
-        "Самовывоз", "Терраса во дворе", "Терраса на крыше", "WiFi"
-    ].sort(),
-    "Награды": ["Гид Мишлен", "Звезда Мишлен", "Кальян", "Поздний ужин"].sort(),
-}
-
-const VISIT_TIMES = [
-    { id: 'morning',    label: 'Утро',         emoji: '🌅' },
-    { id: 'day',        label: 'День',          emoji: '☀️' },
-    { id: 'evening',    label: 'Вечер',         emoji: '🌆' },
-    { id: 'late_night', label: 'Ночь',          emoji: '🌙' },
-]
+// Category/price/cuisine/label/visit taxonomies live in
+// src/shared/constants/taxonomy.js — single source of truth.
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
@@ -120,6 +79,9 @@ const LocationFormSlideOver = ({
     const [newImageUrl, setNewImageUrl]  = useState('')
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
+
+    // Cuisine list driven by KG — falls back to taxonomy.js while loading
+    const { options: cuisineOptions, isLoading: cuisinesLoading } = useCuisineOptions()
 
     // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -411,9 +373,14 @@ const LocationFormSlideOver = ({
                                             value={formData.cuisine || ''}
                                             onChange={e => set('cuisine', e.target.value)}
                                             className={cn(input, "appearance-none pr-8")}
+                                            disabled={cuisinesLoading}
                                         >
                                             <option value="">— выбрать —</option>
-                                            {CUISINE_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                            {cuisineOptions.map(c => (
+                                                <option key={c.id} value={c.name}>
+                                                    {c.emoji} {c.name}
+                                                </option>
+                                            ))}
                                         </select>
                                         <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     </div>

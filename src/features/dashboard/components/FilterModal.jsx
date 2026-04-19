@@ -5,10 +5,26 @@ import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES } from '@/shared/config/filterOptions'
+import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
+
+// Non-cuisine static labels that stay in the "Cuisine & Menu" group
+const CUISINE_MENU_LABELS = [
+    'Signature Cuisine', 'Vegan Menu', 'Delicious Desserts',
+    'All Day Breakfast', 'Fusion',
+]
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const { t } = useTranslation()
     const isDark = theme === 'dark'
+
+    // Cuisine list from KG (falls back to static taxonomy while loading)
+    const { options: cuisineOptions } = useCuisineOptions()
+
+    // Merge static labels + live KG cuisine names for the "Cuisine & Menu" group
+    const cuisineMenuItems = useMemo(() => [
+        ...CUISINE_MENU_LABELS,
+        ...cuisineOptions.map(c => c.name),
+    ], [cuisineOptions])
 
     // ── Local filter state ──────────────────────────────────────────────────
     const [selectedCategory, setSelectedCategory] = useState('all')
@@ -141,7 +157,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         exit="hidden"
                         className={`relative w-full md:max-w-2xl overflow-hidden shadow-2xl border transition-colors duration-300
                             ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}
-                            rounded-t-[32px] md:rounded-[32px]`}
+                            rounded-t-sheet md:rounded-sheet`}
                         style={{ maxHeight: '90vh' }}
                     >
                         {/* Header */}

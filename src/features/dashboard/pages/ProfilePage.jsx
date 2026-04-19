@@ -39,7 +39,7 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 
                     <div className="flex gap-3 mt-6">
                         <button onClick={onClose} className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{t('common.cancel')}</button>
-                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700">{t('profile.send')}</button>
+                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700">{t('profile.feedback_send')}</button>
                     </div>
                 </motion.div>
             </div>
@@ -50,11 +50,23 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 
 const ProfilePage = () => {
     const { t, i18n } = useTranslation()
-    const { user: authUser } = useAuthStore()
+    const { user: authUser, logout } = useAuthStore()
     const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
+
+    const [signingOut, setSigningOut] = useState(false)
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await logout()
+        } finally {
+            // Hard redirect — clears all in-memory state, no auth-listener races
+            window.location.href = '/login'
+        }
+    }
 
     // State for Feedback
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
@@ -78,10 +90,10 @@ const ProfilePage = () => {
     const { data: rankData }       = useUserRank(user?.id)
 
     const stats = [
-        { label: t('profile.level'), val: rankData?.points > 100 ? 'Expert' : rankData?.points > 20 ? 'Regular' : 'Newbie', icon: Star, color: 'text-yellow-500 bg-yellow-500/10' },
-        { label: t('profile.visited'), val: visits.length.toString(), icon: MapPin, color: 'text-blue-500 bg-blue-500/10' },
-        { label: t('profile.reviews'), val: reviews.length.toString(), icon: Utensils, color: 'text-green-500 bg-green-500/10' },
-        { label: t('profile.saved'), val: favorites.length.toString(), icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10' },
+        { label: t('profile.level'), val: rankData?.points > 100 ? 'Expert' : rankData?.points > 20 ? 'Regular' : 'Newbie', icon: Star, color: 'text-yellow-500 bg-yellow-500/10', link: null },
+        { label: t('profile.visited'), val: visits.length.toString(), icon: MapPin, color: 'text-blue-500 bg-blue-500/10', link: '/visited' },
+        { label: t('profile.reviews'), val: reviews.length.toString(), icon: Utensils, color: 'text-green-500 bg-green-500/10', link: '/dashboard/my-submissions' },
+        { label: t('profile.saved'), val: favorites.length.toString(), icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10', link: '/saved' },
     ]
 
     const contributions = reviews.slice(0, 3).map(r => ({
@@ -188,17 +200,28 @@ const ProfilePage = () => {
             {/* Compact Stats Grid */}
             <div className="px-5 mt-8">
                 <div className="grid grid-cols-2 gap-3">
-                    {stats.map((stat, i) => (
-                        <div key={i} className={`p-4 rounded-2xl border flex items-center gap-3 ${cardBg}`}>
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.color}`}>
-                                <stat.icon size={18} />
+                    {stats.map((stat, i) => {
+                        const inner = (
+                            <>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.color}`}>
+                                    <stat.icon size={18} />
+                                </div>
+                                <div className="flex flex-col items-start overflow-hidden">
+                                    <span className={`text-[10px] font-bold uppercase opacity-50 truncate w-full text-left ${textStyle}`}>{stat.label}</span>
+                                    <span className={`text-base font-black truncate w-full text-left ${textStyle}`}>{stat.val}</span>
+                                </div>
+                            </>
+                        )
+                        return stat.link ? (
+                            <button key={i} onClick={() => navigate(stat.link)} className={`p-4 rounded-2xl border flex items-center gap-3 transition-all active:scale-[0.97] ${itemHover} ${cardBg}`}>
+                                {inner}
+                            </button>
+                        ) : (
+                            <div key={i} className={`p-4 rounded-2xl border flex items-center gap-3 ${cardBg}`}>
+                                {inner}
                             </div>
-                            <div className="flex flex-col items-start overflow-hidden">
-                                <span className={`text-[10px] font-bold uppercase opacity-50 truncate w-full text-left ${textStyle}`}>{stat.label}</span>
-                                <span className={`text-base font-black truncate w-full text-left ${textStyle}`}>{stat.val}</span>
-                            </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 
@@ -312,7 +335,10 @@ const ProfilePage = () => {
                         <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
                             {t('profile.biosync_desc')}
                         </p>
-                        <button className="mt-4 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs relative z-10 hover:bg-blue-500/30 transition-colors">
+                        <button
+                            onClick={() => showToast('🧬 Bio-Sync AI is coming soon — you\'ll be first to know!')}
+                            className="mt-4 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs relative z-10 hover:bg-blue-500/30 transition-colors active:scale-95"
+                        >
                             {t('profile.biosync_btn')}
                         </button>
                     </div>
@@ -331,7 +357,10 @@ const ProfilePage = () => {
                         <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
                             {t('profile.dine_desc')}
                         </p>
-                        <button className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs relative z-10 hover:bg-indigo-500/30 transition-colors">
+                        <button
+                            onClick={() => showToast('🍽️ Dine With Me is in beta — invite coming soon!')}
+                            className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs relative z-10 hover:bg-indigo-500/30 transition-colors active:scale-95"
+                        >
                             {t('profile.dine_btn')}
                         </button>
                     </div>
@@ -369,9 +398,16 @@ const ProfilePage = () => {
 
             {/* Sign Out Action */}
             <div className="px-5 mt-8">
-                <button className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}>
-                    <LogOut size={18} />
-                    {t('profile.sign_out')}
+                <button
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className={`w-full p-4 rounded-[24px] border flex items-center justify-center gap-2 font-black text-red-500 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${isDark ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-red-50 border-red-100 hover:bg-red-100'}`}
+                >
+                    {signingOut
+                        ? <span className="w-4 h-4 rounded-full border-2 border-red-400 border-t-transparent animate-spin" />
+                        : <LogOut size={18} />
+                    }
+                    {signingOut ? t('profile.signing_out') || 'Signing out…' : t('profile.sign_out')}
                 </button>
 
                 <div className="text-center mt-6">

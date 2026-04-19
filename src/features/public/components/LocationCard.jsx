@@ -1,14 +1,14 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Star, Heart, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
+import { MapPin, Star, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Link } from 'react-router-dom'
 import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
-import { cn } from '@/lib/utils'
 import { translate } from '@/utils/translation'
 import LazyImage from '@/components/ui/LazyImage'
+import FavoriteButton from '@/components/ui/FavoriteButton'
 
 export default function LocationCard({ location }) {
     const navigate = useNavigate()
@@ -25,17 +25,12 @@ export default function LocationCard({ location }) {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-2 right-2 z-10">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full", isFav && "text-red-500 hover:text-red-600")}
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            toggleFavorite(location.id)
-                        }}
-                    >
-                        <Heart className={cn("h-5 w-5", isFav && "fill-current")} />
-                    </Button>
+                    <FavoriteButton
+                        isFavorite={isFav}
+                        onToggle={() => toggleFavorite(location.id)}
+                        variant="chip"
+                        size={20}
+                    />
                 </div>
                 <div className="absolute top-2 left-2 flex gap-1.5">
                     <Badge className="bg-background/80 text-foreground backdrop-blur-sm border-none">

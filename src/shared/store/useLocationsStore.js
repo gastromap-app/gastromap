@@ -264,12 +264,16 @@ export const useLocationsStore = create((set, get) => ({
 
     /** Load all locations from Supabase and populate the store. */
     initialize: async () => {
-        if (get().isLoading) return
+        if (get().isLoading) {
+            console.warn('[useLocationsStore] initialize skipped — isLoading=true (stuck?)')
+            return
+        }
         set({ isLoading: true })
         try {
             const { getLocations } = await import('@/shared/api/locations.api')
-            const { data } = await getLocations({ limit: 500 })
-            if (data?.length) {
+            const result = await getLocations({ limit: 500 })
+            const data = result?.data ?? result
+            if (Array.isArray(data) && data.length > 0) {
                 set((state) => ({
                     locations: data,
                     filteredLocations: applyAllFilters(data, state),

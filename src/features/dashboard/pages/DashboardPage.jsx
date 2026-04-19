@@ -4,7 +4,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import {
     MapPin, Star, ChevronRight, Search as SearchIcon,
     SlidersHorizontal, Sunrise, Sun, Sunset, Sparkles,
@@ -294,34 +294,36 @@ const DashboardPage = () => {
     const debouncedSearch = useDebounce(searchQuery, 300)
 
     // ─── Load data on mount ──────────────────────────────────────────────────
-    // REGRESSION FIX: use isInitialized flag instead of locations.length
-    // locations.length > 0 doesn't mean global data is loaded — it could be city-scoped
-    // isInitialized is only set to true after a FULL fetch (no city/country filter)
-    // Also reinitialize when store is empty despite isInitialized=true (e.g. after tab switch)
+    // Always ensure data is available when Dashboard mounts.
+    // The isLoading guard in initialize() prevents duplicate fetches,
+    // but we force-reset it if stuck (e.g. after navigation on mobile).
     useEffect(() => {
-        const { initialize, isInitialized, isLoading, locations } = useLocationsStore.getState()
-        if (!isLoading && (!isInitialized || locations.length === 0)) {
-            initialize()
+        const { initialize, isLoading, locations, isInitialized } = useLocationsStore.getState()
+        // If locations are loaded and not empty, nothing to do
+        if (isInitialized && locations.length > 0) return
+        // If isLoading is stuck true (race condition), force-reset it
+        if (isLoading) {
+            useLocationsStore.setState({ isLoading: false })
         }
+        initialize()
     }, [])
 
-    // FIX: Force reinitialize when returning to dashboard after tab switch
-    // if data was lost (e.g. page hid/unhid on mobile). Listens for visibility change.
+    // FIX: Re-check data availability when returning to this route.
+    // This catches the mobile tab-switch case where the component remounts.
+    const { pathname } = useLocation()
+    const isInitialMount = React.useRef(true)
     useEffect(() => {
-        const handleVisibility = () => {
-            if (document.visibilityState === 'visible') {
-                const { initialize, isInitialized, isLoading, locations } = useLocationsStore.getState()
-                // If store says initialized but we have no data, force re-fetch
-                if (isInitialized && !isLoading && locations.length === 0) {
-                    // Reset isLoading guard so initialize() actually runs
-                    useLocationsStore.setState({ isLoading: false })
-                    initialize()
-                }
-            }
+        // Skip the initial mount (handled above)
+        if (isInitialMount.current) {
+            isInitialMount.current = false
+            return
         }
-        document.addEventListener('visibilitychange', handleVisibility)
-        return () => document.removeEventListener('visibilitychange', handleVisibility)
-    }, [])
+        const { locations, isLoading } = useLocationsStore.getState()
+        if (locations.length === 0 && !isLoading) {
+            useLocationsStore.setState({ isLoading: false })
+            useLocationsStore.getState().initialize()
+        }
+    }, [pathname])
 
     // Pull-to-refresh
     const handleRefresh = async () => {

@@ -16,6 +16,8 @@ const App = ({ includeRouter = true }) => {
         // Restore Supabase session + subscribe to auth changes
         initAuth()
         // Load locations from Supabase (or mocks)
+        // Ensure isLoading is not stuck from a previous session/hot reload
+        useLocationsStore.setState({ isLoading: false })
         initialize()
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

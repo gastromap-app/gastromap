@@ -97,6 +97,7 @@ const AdminKnowledgeGraphPage = lazy(() => import('@/features/admin/pages/AdminK
 const AdminNotificationsPage = lazy(() => import('@/features/admin/pages/AdminNotificationsPage'))
 const AdminStatsPage = lazy(() => import('@/features/admin/pages/AdminStatsPage'))
 const AdminSettingsPage = lazy(() => import('@/features/admin/pages/AdminSettingsPage'))
+const AdminGeoCoversPage = lazy(() => import('@/features/admin/pages/AdminGeoCoversPage'))
 
 // ─── Fallback UI while a page chunk loads ──────────────────────────────────
 const PageLoader = () => (
@@ -192,6 +193,7 @@ export const AppRouter = () => {
                         <Route path="notifications" element={<AdminNotificationsPage />} />
                         <Route path="stats" element={<AdminStatsPage />} />
                         <Route path="settings" element={<AdminSettingsPage />} />
+                        <Route path="geo-covers" element={<AdminGeoCoversPage />} />
                     </Route>
                 </Route>
 

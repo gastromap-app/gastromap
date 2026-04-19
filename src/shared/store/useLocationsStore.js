@@ -259,9 +259,10 @@ export const useLocationsStore = create((set, get) => ({
 
     /** Load all locations from Supabase and populate the store. */
     initialize: async () => {
-        if (get().isInitialized || get().isLoading) {
-            return
-        }
+        // Skip only if: currently fetching OR already loaded with actual data
+        // Allow retry if initialized but empty (network fail / status mismatch)
+        if (get().isLoading) return
+        if (get().isInitialized && get().locations.length > 0) return
         set({ isLoading: true })
         try {
             const { getLocations } = await import('@/shared/api/locations.api')
@@ -286,9 +287,9 @@ export const useLocationsStore = create((set, get) => ({
         }
     },
 
-    /** Force re-fetch locations from Supabase (resets isLoading guard first). */
+    /** Force re-fetch locations from Supabase (pull-to-refresh, admin action). */
     reinitialize: async () => {
-        set({ isLoading: false })
+        set({ isLoading: false, isInitialized: false })
         await get().initialize()
     },
 }))

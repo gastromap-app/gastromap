@@ -21,32 +21,50 @@ import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/share
 async function generateEmbedding(text) {
     const appCfg = useAppConfigStore.getState()
     const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-    
+
     if (!apiKey) {
         throw new Error('OpenRouter API key not configured')
     }
 
-    const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://gastromap.app',
-            'X-Title': 'GastroMap',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            model: 'openai/text-embedding-3-small',
-            input: text,
-            dimensions: 768,
-        }),
-    })
+    // Try primary model, fallback to alternative
+    const models = [
+        'openai/text-embedding-3-small',
+        'nvidia/nemotron-embed-20250702:free',
+    ]
 
-    if (!response.ok) {
-        throw new Error(`Embedding API error: ${response.status}`)
+    for (const model of models) {
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://gastromap.app',
+                    'X-Title': 'GastroMap',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model,
+                    input: text,
+                    dimensions: 768,
+                }),
+            })
+
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({}))
+                console.warn(`[KG] Embedding model ${model} failed: ${response.status}`, errBody.message)
+                continue
+            }
+
+            const data = await response.json()
+            const embedding = data.data?.[0]?.embedding
+            if (embedding && embedding.length > 0) return embedding
+        } catch (err) {
+            console.warn(`[KG] Embedding fetch error for ${model}:`, err.message)
+            continue
+        }
     }
 
-    const data = await response.json()
-    return data.data?.[0]?.embedding || []
+    throw new Error('All embedding models failed')
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -333,7 +351,7 @@ async function saveViaProxy(type, data) {
                 jwt = parsed.access_token
                 console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
             }
-        } catch { /* ignore */ }
+        } catch (e) { /* ignore */ }
     }
 
     if (!jwt) {
@@ -382,7 +400,7 @@ async function saveViaProxy(type, data) {
     let result
     try {
         result = await res.json()
-    } catch {
+    } catch (parseErr) {
         const raw = await res.text().catch(() => '')
         console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
         throw new ApiError(`kg-save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
@@ -641,31 +659,65 @@ export async function searchCuisinesSemantic(query, limit = 5) {
         ).slice(0, limit)
     }
 
-    // NOTE: search_cuisines_by_embedding RPC is not deployed — using text search directly.
-    // When pgvector RPC is ready, set SKIP_VECTOR_SEARCH = false below.
-    const SKIP_VECTOR_SEARCH = true
-
-    if (!SKIP_VECTOR_SEARCH) {
-        try {
-            const embedding = await generateEmbedding(query)
-            const { data, error } = await supabase.rpc('search_cuisines_by_embedding', {
-                query_embedding: embedding,
-                match_threshold: 0.7,
-                match_count: limit
-            })
-            if (!error && data?.length) return data
-        } catch (_embErr) {
-            // embedding or RPC failed — fall through to text search
-        }
+    // Try semantic search via RPC function
+    let embedding
+    try {
+        embedding = await generateEmbedding(query)
+    } catch (err) {
+        console.warn('[KG] Embedding generation failed, falling back to text search:', err.message)
+        return textSearchCuisines(query, limit)
     }
 
-    // Text search fallback
-    const { data: textData } = await supabase
-        .from('cuisines')
-        .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(limit)
-    return textData || []
+    if (!embedding || embedding.length === 0) {
+        return textSearchCuisines(query, limit)
+    }
+
+    const { data, error } = await supabase.rpc('search_cuisines_by_embedding', {
+        query_embedding: embedding,
+        match_threshold: 0.5,
+        match_count: limit
+    })
+
+    if (error) {
+        console.warn('[KG] Semantic RPC search failed:', error.message, '— falling back to text search')
+        return textSearchCuisines(query, limit)
+    }
+
+    return data || []
+}
+
+/**
+ * Fallback text search for cuisines when semantic search is unavailable.
+ * Uses client-side filtering after fetching all cuisines (cached).
+ */
+async function textSearchCuisines(query, limit = 5) {
+    const q = query.toLowerCase()
+
+    // Use cached cuisines if available, otherwise fetch
+    let textData = getCachedData('cuisines')
+    if (!textData) {
+        const { data } = await supabase
+            .from('cuisines')
+            .select('*')
+            .order('name', { ascending: true })
+        textData = data || []
+    }
+
+    const filtered = textData.filter(c => {
+        const name = (c.name || '').toLowerCase()
+        const desc = (c.description || '').toLowerCase()
+        const aliases = (c.aliases || []).map(a => a.toLowerCase())
+        const dishes = (c.typical_dishes || []).map(d => d.toLowerCase())
+        const ingredients = (c.key_ingredients || []).map(i => i.toLowerCase())
+
+        return name.includes(q) ||
+            desc.includes(q) ||
+            aliases.some(a => a.includes(q)) ||
+            dishes.some(d => d.includes(q)) ||
+            ingredients.some(i => i.includes(q))
+    })
+
+    return filtered.slice(0, limit)
 }
 
 /**

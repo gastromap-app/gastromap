@@ -21,7 +21,7 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
         appCfg = useAppConfigStore.getState()
-    } catch {
+    } catch (e) {
         const { getActiveAIConfig } = await import('../ai-config.api')
         appCfg = getActiveAIConfig()
     }
@@ -51,20 +51,24 @@ ${userData.userExperience || 'No direct review history yet.'}
 - Recent Search Interests: ${userData.recentInterests?.join(', ') || 'General explorer'}
 ` : ''
 
-    // 2. Fetch knowledge graph context if query is provided
+    // 2. Fetch knowledge graph context if query is provided (non-blocking with timeout)
     let knowledgeContext = ''
     if (queryContext) {
         try {
             const { getAIContextForQuery } = await import('../knowledge-graph.api')
-            const kgContext = await getAIContextForQuery(queryContext)
+            // Timeout after 2s — don't block the chat on slow KG lookups
+            const kgContext = await Promise.race([
+                getAIContextForQuery(queryContext),
+                new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+            ])
             if (kgContext?.relevantCuisines?.length) {
                 const cuisines = kgContext.relevantCuisines.map(c =>
                     `${c.name}: typical dishes (${c.typical_dishes?.slice(0, 3).join(', ')})`
                 ).join('; ')
                 knowledgeContext = `\n\nCULINARY KNOWLEDGE:\n${cuisines}\n${kgContext.contextNote}`
             }
-        } catch {
-            // Silently continue without knowledge context
+        } catch (err) {
+            console.warn('[prompts] KG context failed, continuing without it:', err.message)
         }
     }
 

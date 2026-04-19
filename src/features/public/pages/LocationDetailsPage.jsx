@@ -113,6 +113,20 @@ const LocationDetailsPage = () => {
     const [isWritingReview, setIsWritingReview] = useState(false)
     const [newReview, setNewReview] = useState({ rating: 5, text: "" })
 
+    // Show skeleton while loading — avoids premature "not found" flash
+    if (isPageLoading) return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-3">
+            <div className="w-full max-w-lg px-6 space-y-4 animate-pulse">
+                <div className={`h-56 rounded-3xl ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                <div className={`h-6 rounded-full w-2/3 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                <div className={`h-4 rounded-full w-1/2 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />
+                <div className="flex gap-3">
+                    {[1,2,3].map(n => <div key={n} className={`h-14 flex-1 rounded-2xl ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />)}
+                </div>
+            </div>
+        </div>
+    )
+
     if (!location) return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <MapPin size={48} className="text-gray-300" />

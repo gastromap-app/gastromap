@@ -239,13 +239,18 @@ const MapTab = ({ activeFilter = 'All' }) => {
         )
     }
 
-    const displayLocations = activeFilter === 'All'
-        ? storeFiltered
-        : storeFiltered.filter((loc) => loc.category === activeFilter)
+    const displayLocations = useMemo(() => {
+        // Filter by category first
+        const byCategory = activeFilter === 'All'
+            ? storeFiltered
+            : storeFiltered.filter((loc) => loc.category === activeFilter)
+        // Strip locations with no real coordinates (DB normaliser defaults missing lat/lng to 0)
+        return byCategory.filter(l => l.coordinates?.lat && l.coordinates?.lng)
+    }, [storeFiltered, activeFilter])
 
     // Compute initial center from locations (fallback: central Europe)
     const initialCenter = useMemo(() => {
-        const valid = displayLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng)
+        const valid = displayLocations
         if (!valid.length) return [51.505, 19.0]
         return [
             valid.reduce((s, l) => s + l.coordinates.lat, 0) / valid.length,

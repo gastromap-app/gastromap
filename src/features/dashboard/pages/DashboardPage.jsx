@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
@@ -8,7 +8,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import {
     MapPin, Star, ChevronRight, Search as SearchIcon,
     SlidersHorizontal, Sunrise, Sun, Sunset, Sparkles,
-    Utensils, Coffee, Wine, X, Map, LayoutList, Heart
+    Utensils, Coffee, Wine, X, Heart
 } from 'lucide-react'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTheme } from '@/hooks/useTheme'
@@ -280,7 +280,6 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
-    const [mobileView, setMobileView] = useState('feed') // 'feed' | 'map'
 
     // Drill-down navigation state
     const [drillLevel, setDrillLevel] = useState('home') // 'home' | 'cities' | 'locations'
@@ -304,6 +303,24 @@ const DashboardPage = () => {
         if (!isLoading && (!isInitialized || locations.length === 0)) {
             initialize()
         }
+    }, [])
+
+    // FIX: Force reinitialize when returning to dashboard after tab switch
+    // if data was lost (e.g. page hid/unhid on mobile). Listens for visibility change.
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                const { initialize, isInitialized, isLoading, locations } = useLocationsStore.getState()
+                // If store says initialized but we have no data, force re-fetch
+                if (isInitialized && !isLoading && locations.length === 0) {
+                    // Reset isLoading guard so initialize() actually runs
+                    useLocationsStore.setState({ isLoading: false })
+                    initialize()
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibility)
+        return () => document.removeEventListener('visibilitychange', handleVisibility)
     }, [])
 
     // Pull-to-refresh
@@ -417,147 +434,90 @@ const DashboardPage = () => {
                         </button>
                     </div>
 
-                    {/* Segmented control */}
-                    <div className="px-5 mb-6">
-                        <div className={`flex p-1 rounded-[14px] ${isDark ? 'bg-white/6' : 'bg-gray-100'}`}>
-                            {[
-                                { key: 'feed', label: t('dashboard.feed') || 'Feed', icon: LayoutList },
-                                { key: 'map',  label: t('nav.map')  || 'Map',  icon: Map },
-                            ].map(({ key, label, icon: Icon }) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setMobileView(key)}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
-                                        mobileView === key
-                                            ? isDark
-                                                ? 'bg-white/12 text-white shadow-sm'
-                                                : 'bg-white text-gray-900 shadow-sm'
-                                            : isDark
-                                                ? 'text-white/40'
-                                                : 'text-gray-500'
-                                    }`}
-                                >
-                                    <Icon size={14} />
-                                    {label}
-                                </button>
-                            ))}
+                    {/* Feed content — map is available on separate MapPage */}
+                    <div className="space-y-8 pb-14 px-5">
+                        {/* Explore by Country */}
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title={t('dashboard.explore_countries')}
+                                subtitle={t('dashboard.culinary_traditions')}
+                                onSeeAll={() => navigate('/explore')}
+                                isDark={isDark}
+                            />
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                {countries.map((country) => (
+                                    <button
+                                        key={country.slug}
+                                        onClick={() => navigate(`/explore/${country.slug}`)}
+                                        aria-label={`Explore ${country.name}`}
+                                        className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
+                                    >
+                                        <img
+                                            src={country.image}
+                                            crossOrigin="anonymous"
+                                            alt={country.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                        <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                            {country.newCount} New
+                                        </div>
+                                        <div className="absolute bottom-3.5 left-4">
+                                            <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Recommended */}
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title={t('dashboard.recommended')}
+                                subtitle={t('dashboard.perfect_spots')}
+                                onSeeAll={() => navigate('/explore')}
+                                isDark={isDark}
+                            />
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                {isLoading
+                                    ? Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={i} className="snap-center flex-shrink-0">
+                                            <DashboardCardSkeleton isDark={isDark} />
+                                        </div>
+                                    ))
+                                    : recommended.map((loc) => (
+                                        <div key={loc.id} className="snap-center">
+                                            <LocationCardMobile loc={loc} type="recommended" />
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+
+                        {/* Trending */}
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title={t('dashboard.trending')}
+                                subtitle={t('dashboard.hot_spots')}
+                                onSeeAll={() => navigate('/explore')}
+                                isDark={isDark}
+                            />
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                {isLoading
+                                    ? Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={i} className="snap-center flex-shrink-0">
+                                            <DashboardCardSkeleton isDark={isDark} />
+                                        </div>
+                                    ))
+                                    : trending.map((loc) => (
+                                        <div key={loc.id} className="snap-center">
+                                            <LocationCardMobile loc={loc} type="trending" />
+                                        </div>
+                                    ))
+                                }
+                            </div>
                         </div>
                     </div>
-
-                    <AnimatePresence mode="wait">
-                        {mobileView === 'map' ? (
-                            <motion.div
-                                key="map"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="px-5 pb-8"
-                            >
-                                <MapDiscoveryPanel
-                                    height="h-[calc(100dvh-220px)]"
-                                    setIsFilterOpen={setIsFilterOpen}
-                                />
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="feed"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="space-y-8 pb-14"
-                            >
-                                {/* Explore by Country */}
-                                <div className="space-y-4">
-                                    <div className="px-5">
-                                        <SectionHeader
-                                            title={t('dashboard.explore_countries')}
-                                            subtitle={t('dashboard.culinary_traditions')}
-                                            onSeeAll={() => navigate('/explore')}
-                                            isDark={isDark}
-                                        />
-                                    </div>
-                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
-                                        {countries.map((country) => (
-                                            <button
-                                                key={country.slug}
-                                                onClick={() => navigate(`/explore/${country.slug}`)}
-                                                aria-label={`Explore ${country.name}`}
-                                                className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
-                                            >
-                                                <img
-                                                    src={country.image}
-                                                    crossOrigin="anonymous"
-                                                    alt={country.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                                                <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                                    {country.newCount} New
-                                                </div>
-                                                <div className="absolute bottom-3.5 left-4">
-                                                    <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Recommended */}
-                                <div className="space-y-4">
-                                    <div className="px-5">
-                                        <SectionHeader
-                                            title={t('dashboard.recommended')}
-                                            subtitle={t('dashboard.perfect_spots')}
-                                            onSeeAll={() => navigate('/explore')}
-                                            isDark={isDark}
-                                        />
-                                    </div>
-                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
-                                        {isLoading
-                                            ? Array.from({ length: 3 }).map((_, i) => (
-                                                <div key={i} className="snap-center flex-shrink-0">
-                                                    <DashboardCardSkeleton isDark={isDark} />
-                                                </div>
-                                            ))
-                                            : recommended.map((loc) => (
-                                                <div key={loc.id} className="snap-center">
-                                                    <LocationCardMobile loc={loc} type="recommended" />
-                                                </div>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-
-                                {/* Trending */}
-                                <div className="space-y-4">
-                                    <div className="px-5">
-                                        <SectionHeader
-                                            title={t('dashboard.trending')}
-                                            subtitle={t('dashboard.hot_spots')}
-                                            onSeeAll={() => navigate('/explore')}
-                                            isDark={isDark}
-                                        />
-                                    </div>
-                                    <div className="flex gap-3 overflow-x-auto pb-2 px-5 scrollbar-hide snap-x snap-mandatory">
-                                        {isLoading
-                                            ? Array.from({ length: 3 }).map((_, i) => (
-                                                <div key={i} className="snap-center flex-shrink-0">
-                                                    <DashboardCardSkeleton isDark={isDark} />
-                                                </div>
-                                            ))
-                                            : trending.map((loc) => (
-                                                <div key={loc.id} className="snap-center">
-                                                    <LocationCardMobile loc={loc} type="trending" />
-                                                </div>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </div>
 
                 {/* ── DESKTOP ── */}

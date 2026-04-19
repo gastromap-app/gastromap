@@ -229,8 +229,8 @@ const ProfilePage = () => {
             <div className="px-5 mt-8">
                 <div className="flex items-center justify-between mb-4 px-2">
                     <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.contributions')}</h3>
-                    <Link to="/dashboard/add-place" className="flex items-center gap-1.5 text-xs font-bold text-blue-500 hover:text-blue-600">
-                        <PlusCircle size={14} /> {t('profile.add_place')}
+                    <Link to="/dashboard/add-place" className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600">
+                        <PlusCircle size={13} /> Place
                     </Link>
                 </div>
                 <div className={`rounded-[24px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>

@@ -2,24 +2,19 @@ import { create } from 'zustand'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
 
 /**
- * useLocationsStore — client-side filter state for the locations list.
+ * useLocationsStore — Single Source of Truth for location data.
  *
  * Canonical location: @/shared/store/useLocationsStore
- * This store manages UI filter state only (active filters, search query).
- * The actual data fetching is done by React Query hooks in @/shared/api/queries.js.
  *
- * For components that need the full filtered dataset without React Query
- * (e.g. map markers, quick counts), the store also caches filteredLocations.
+ * This store is the ONLY source of location data for all user-facing pages
+ * (Dashboard, Map, Explore, AI tools, etc.). Data is loaded once via
+ * `initialize()` (called in App.jsx) and persists across route changes.
  *
- * @typedef {Object} LocationFiltersState
- * @property {string}   activeCategory
- * @property {string}   searchQuery
- * @property {string[]} activePriceLevels   - e.g. ['$', '$$']
- * @property {number|null} minRating        - 0–5
- * @property {string[]} activeVibes         - e.g. ['Romantic', 'Casual']
- * @property {string|null} activeBestTime   - 'morning'|'lunch'|'evening'|null
- * @property {number} radius                - km radius (0 = disabled)
- * @property {'rating'|'price_asc'|'price_desc'|'name'} sortBy
+ * Admin pages use their own React Query hook (useAdminLocationsQuery) for
+ * independent fetching with `all: true` (includes pending/rejected locations).
+ *
+ * Filter state (category, search, price, vibes, etc.) is also managed here.
+ * Changing any filter automatically recomputes `filteredLocations`.
  */
 
 const DEFAULT_FILTERS = {
@@ -243,7 +238,7 @@ export const useLocationsStore = create((set, get) => ({
         set((state) => {
             const locations = [
                 ...state.locations,
-                { ...location, id: Math.random().toString(36).slice(2, 11) },
+                { ...location, id: location.id || Math.random().toString(36).slice(2, 11) },
             ]
             return { locations, filteredLocations: applyAllFilters(locations, state) }
         }),
@@ -290,5 +285,11 @@ export const useLocationsStore = create((set, get) => ({
             console.error('[useLocationsStore] initialize failed:', err.message)
             set({ isLoading: false, initError: err.message })
         }
+    },
+
+    /** Force re-fetch locations from Supabase (resets isLoading guard first). */
+    reinitialize: async () => {
+        set({ isLoading: false })
+        await get().initialize()
     },
 }))

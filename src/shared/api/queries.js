@@ -41,6 +41,7 @@ export const queryKeys = {
 // ─── Location Queries ──────────────────────────────────────────────────────
 
 /**
+ * @deprecated Use useAdminLocationsQuery() for admin pages, or useLocationsStore for user-facing pages.
  * Fetch filtered locations list.
  * @param {import('./locations.api').LocationFilters} filters
  */
@@ -51,19 +52,25 @@ export function useLocations(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
-        // ARCH-5 FIX: 5min staleTime for user-facing (reduces mobile re-fetches)
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
-        // ARCH-1 FIX: sync TanStack Query results into Zustand store
-        // so MapTab and other store consumers stay in sync
-        select: (data) => {
-            if (data?.data?.length) {
-                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                    useLocationsStore.getState().setLocations(data.data)
-                })
-            }
-            return data
+    })
+}
+
+/**
+ * Admin-only: Fetch locations with fresh data (includes pending/rejected).
+ * Does NOT sync to Zustand store — admin pages manage their own data.
+ * @param {import('./locations.api').LocationFilters} filters
+ */
+export function useAdminLocationsQuery(filters = {}) {
+    return useQuery({
+        queryKey: queryKeys.locations.filtered({ ...filters, admin: true }),
+        queryFn: async () => {
+            const { getLocations } = await import('./locations.api')
+            return getLocations(filters)
         },
+        staleTime: 0,
+        refetchOnWindowFocus: true,
     })
 }
 
@@ -138,7 +145,16 @@ export function useCreateLocationMutation() {
             const { createLocation } = await import('./locations.api')
             return createLocation(data)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.locations.all }),
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+            // Sync to Zustand store (user-facing pages)
+            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
+                import('./locations.api').then(({ normalise }) => {
+                    const loc = normalise(data)
+                    if (loc) useLocationsStore.getState().addLocation(loc)
+                })
+            })
+        },
     })
 }
 
@@ -149,9 +165,16 @@ export function useUpdateLocationMutation() {
             const { updateLocation } = await import('./locations.api')
             return updateLocation(id, updates)
         },
-        onSuccess: (_data, { id }) => {
+        onSuccess: (data, { id }) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
+            // Sync to Zustand store (user-facing pages)
+            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
+                import('./locations.api').then(({ normalise }) => {
+                    const loc = normalise(data)
+                    if (loc) useLocationsStore.getState().updateLocation(id, loc)
+                })
+            })
         },
     })
 }
@@ -163,7 +186,13 @@ export function useDeleteLocationMutation() {
             const { deleteLocation } = await import('./locations.api')
             return deleteLocation(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.locations.all }),
+        onSuccess: (_data, id) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+            // Sync to Zustand store (user-facing pages)
+            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
+                useLocationsStore.getState().deleteLocation(id)
+            })
+        },
     })
 }
 
@@ -381,9 +410,21 @@ export function useUpdateLocationStatusMutation() {
             const { updateLocation } = await import('./locations.api')
             return updateLocation(id, { status })
         },
-        onSuccess: () => {
+        onSuccess: (data, { id, status }) => {
             qc.invalidateQueries({ queryKey: ['locations'] })
             qc.invalidateQueries({ queryKey: ['pending-locations'] })
+            // Sync to Zustand store (user-facing pages)
+            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
+                if (status === 'approved') {
+                    import('./locations.api').then(({ normalise }) => {
+                        const loc = normalise(data)
+                        if (loc) useLocationsStore.getState().addLocation(loc)
+                    })
+                } else {
+                    // Remove from user-facing store (rejected/revision_requested/pending)
+                    useLocationsStore.getState().deleteLocation(id)
+                }
+            })
         },
     })
 }

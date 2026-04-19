@@ -6,7 +6,7 @@ import {
     Edit, Trash2, Gem, Trophy, X, Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useLocations } from '@/shared/api/queries'
+import { useAdminLocationsQuery } from '@/shared/api/queries'
 
 // Country flag + image map
 const COUNTRY_META = {
@@ -43,7 +43,7 @@ const LocationHierarchyExplorer = ({ className }) => {
     }, [])
 
     // Load all locations from DB
-    const { data: locsData, isLoading } = useLocations({ all: true, limit: 500 })
+    const { data: locsData, isLoading } = useAdminLocationsQuery({ all: true, limit: 500 })
     const allLocations = locsData?.data ?? []
 
     // Build hierarchy from real data

@@ -47,8 +47,6 @@ const LocationDetailsPage = () => {
     // Also trigger store.initialize() if store is empty and we have no location yet
     useEffect(() => {
         if (storeLocations.length === 0 && !storeIsLoading) {
-            // Reset isLoading guard if stuck, then initialize
-            useLocationsStore.setState({ isLoading: false })
             useLocationsStore.getState().initialize()
         }
     }, [storeLocations.length, storeIsLoading])

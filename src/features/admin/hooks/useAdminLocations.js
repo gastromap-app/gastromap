@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { 
-    useLocations, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
+    useAdminLocationsQuery, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
     useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
     useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
     useAIQueryMutation, useCulinaryContextMutation 
@@ -53,7 +53,7 @@ export const useAdminLocations = () => {
     const navigate = useNavigate()
 
     // Data fetching
-    const { data: locsData, isLoading: loadingLocations, error: loadError } = useLocations({ all: true, limit: 500 })
+    const { data: locsData, isLoading: loadingLocations, error: loadError } = useAdminLocationsQuery({ all: true, limit: 500 })
     const locationsList = locsData?.data ?? []
     
     const createLocMutation = useCreateLocationMutation()

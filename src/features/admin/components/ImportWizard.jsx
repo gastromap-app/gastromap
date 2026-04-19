@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useLocationsStore } from '../../public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
     const [step, setStep] = useState(1)

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
-import { useLocations } from '@/shared/api/queries'
+import { useAdminLocationsQuery } from '@/shared/api/queries'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useNavigate } from 'react-router-dom'
@@ -8,7 +8,7 @@ import { Edit, Trash } from 'lucide-react'
 
 export default function AdminPage() {
     const { user, logout } = useAuthStore()
-    const { data: locations = [] } = useLocations()
+    const { data: { data: locations = [] } = {} } = useAdminLocationsQuery()
     const navigate = useNavigate()
 
     const handleLogout = () => {

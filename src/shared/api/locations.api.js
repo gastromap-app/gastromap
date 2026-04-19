@@ -656,6 +656,8 @@ export async function getLocationsNearby(coords, radiusKm = 2) {
     return { data: filtered, total: filtered.length, hasMore: false }
 }
 
+export { normalise }
+
 export default {
     getLocations,
     getLocation,

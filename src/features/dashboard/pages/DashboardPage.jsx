@@ -4,7 +4,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
     MapPin, Star, ChevronRight, Search as SearchIcon,
     SlidersHorizontal, Sunrise, Sun, Sunset, Sparkles,
@@ -293,44 +293,20 @@ const DashboardPage = () => {
     }
     const debouncedSearch = useDebounce(searchQuery, 300)
 
-    // ─── Load data on mount ──────────────────────────────────────────────────
-    // Always ensure data is available when Dashboard mounts.
-    // The isLoading guard in initialize() prevents duplicate fetches,
-    // but we force-reset it if stuck (e.g. after navigation on mobile).
+    // ─── Ensure data is loaded when Dashboard mounts/remounts ──────────────────
+    // The store is the single source of truth; initialize() only fetches if needed.
+    // With the React Query select-callback race condition removed, isLoading
+    // can no longer get stuck, so no defensive force-resets are required.
     useEffect(() => {
-        const { initialize, isLoading, locations, isInitialized } = useLocationsStore.getState()
-        // If locations are loaded and not empty, nothing to do
-        if (isInitialized && locations.length > 0) return
-        // If isLoading is stuck true (race condition), force-reset it
-        if (isLoading) {
-            useLocationsStore.setState({ isLoading: false })
+        const { isInitialized, locations, initialize } = useLocationsStore.getState()
+        if (!isInitialized || locations.length === 0) {
+            initialize()
         }
-        initialize()
     }, [])
-
-    // FIX: Re-check data availability when returning to this route.
-    // This catches the mobile tab-switch case where the component remounts.
-    const { pathname } = useLocation()
-    const isInitialMount = React.useRef(true)
-    useEffect(() => {
-        // Skip the initial mount (handled above)
-        if (isInitialMount.current) {
-            isInitialMount.current = false
-            return
-        }
-        const { locations, isLoading } = useLocationsStore.getState()
-        if (locations.length === 0 && !isLoading) {
-            useLocationsStore.setState({ isLoading: false })
-            useLocationsStore.getState().initialize()
-        }
-    }, [pathname])
 
     // Pull-to-refresh
     const handleRefresh = async () => {
-        const { initialize } = useLocationsStore.getState()
-        // Force refetch by resetting isLoading guard
-        useLocationsStore.setState({ isLoading: false })
-        await initialize()
+        await useLocationsStore.getState().reinitialize()
     }
     const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
 

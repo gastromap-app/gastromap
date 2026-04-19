@@ -156,6 +156,7 @@ const INITIAL_LOCATIONS = isDev ? MOCK_LOCATIONS : []
 export const useLocationsStore = create((set, get) => ({
     locations: INITIAL_LOCATIONS,
     isInitialized: false, // true after first successful full fetch (no city/country filter)
+    initError: null,      // error message if last init failed (allows retry)
     filteredLocations: INITIAL_LOCATIONS,
     isLoading: false,
 
@@ -273,13 +274,17 @@ export const useLocationsStore = create((set, get) => ({
                     locations: data,
                     filteredLocations: applyAllFilters(data, state),
                     isLoading: false,
-                    isInitialized: true, // mark global store as fully loaded
+                    isInitialized: true,
+                    initError: null,
                 }))
             } else {
-                set({ isLoading: false, isInitialized: true })
+                // Empty response is still a successful init — DB may have no data yet
+                set({ isLoading: false, isInitialized: true, initError: null })
             }
-        } catch {
-            set({ isLoading: false, isInitialized: true })
+        } catch (err) {
+            // On error: do NOT set isInitialized=true — allow retry on next mount
+            console.error('[useLocationsStore] initialize failed:', err.message)
+            set({ isLoading: false, initError: err.message })
         }
     },
 }))

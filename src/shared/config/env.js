@@ -49,8 +49,11 @@ export const config = {
 
     // ─── Knowledge Graph ──────────────────────────────────────────────────────
     kg: {
-        /** Primary: Supabase Edge Function (auth, dedup, sanitize) */
-        saveUrl: `${SUPABASE_FUNCTIONS_URL}/kg-save`,
+        /**
+         * Vercel serverless function — uses SUPABASE_SERVICE_ROLE_KEY to bypass RLS.
+         * Previously pointed to a Supabase Edge Function that was never deployed.
+         */
+        saveUrl: '/api/kg/save',
         saveUrlFallback: '/api/kg/save',
     },
 

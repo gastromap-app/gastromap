@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -39,25 +38,23 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
-    const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
     const { user } = useAuthStore()
     const addFav = useAddFavoriteMutation()
     const removeFav = useRemoveFavoriteMutation()
     const { data: dbFavs = [] } = useUserFavorites(user?.id)
     const dbFavIds = dbFavs.map(f => f.location_id)
-    const isFavorite = (id) => dbFavIds.includes(id) || isLocalFav(id)
-    const toggleFavorite = async (e, id) => {
+    // DB cache is the source of truth — mutations update it optimistically via onMutate
+    const isFavorite = (id) => dbFavIds.includes(id)
+    const toggleFavorite = (e, id) => {
         e.stopPropagation()
-        // DASH-5 FIX: show login prompt instead of silent fail for unauthenticated users
         if (!user?.id) {
             navigate(`/login?next=/location/${id}`)
             return
         }
-        localToggle(id)  // instant UI (optimistic update)
         if (dbFavIds.includes(id)) {
-            await removeFav.mutateAsync({ userId: user.id, locationId: id })
+            removeFav.mutate({ userId: user.id, locationId: id })
         } else {
-            await addFav.mutateAsync({ userId: user.id, locationId: id })
+            addFav.mutate({ userId: user.id, locationId: id })
         }
     }
 

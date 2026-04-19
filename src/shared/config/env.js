@@ -56,7 +56,7 @@ export const config = {
 
     // ─── Culinary APIs ────────────────────────────────────────────────────────
     culinary: {
-        spoonacularKey: import.meta.env.VITE_SPOONACULAR_API_KEY ?? '1b1558e8934f47daafb5a28ce844f9be',
+        spoonacularKey: import.meta.env.VITE_SPOONACULAR_API_KEY ?? '',
         get isSpoonacularConfigured() {
             return Boolean(this.spoonacularKey)
         },

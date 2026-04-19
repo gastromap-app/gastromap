@@ -259,8 +259,7 @@ export const useLocationsStore = create((set, get) => ({
 
     /** Load all locations from Supabase and populate the store. */
     initialize: async () => {
-        if (get().isLoading) {
-            console.warn('[useLocationsStore] initialize skipped — isLoading=true (stuck?)')
+        if (get().isInitialized || get().isLoading) {
             return
         }
         set({ isLoading: true })

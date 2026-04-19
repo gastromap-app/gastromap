@@ -7,7 +7,7 @@
 // Supabase Edge Functions base URL
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
-  : 'https://myyzguendoruefiiufop.supabase.co/functions/v1'
+  : 'https://fglvibyyiqbfkqrdomyv.supabase.co/functions/v1'
 
 export const config = {
     // ─── Supabase ─────────────────────────────────────────────────────────────

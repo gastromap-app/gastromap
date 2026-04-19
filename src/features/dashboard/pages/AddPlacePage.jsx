@@ -9,6 +9,7 @@ import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { createSubmission, compressImage, uploadSubmissionPhoto } from '@/shared/api/submissions.api'
 import { enrichLocation } from '@/shared/api/ai'
 import { searchPlaces, searchCities, searchAddresses } from '../hooks/useNominatim'
+import { CATEGORIES_PUBLIC as CATEGORIES } from '@/shared/constants/taxonomy'
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -18,14 +19,8 @@ const STEPS = [
     { id: 'review',   label: 'Review'   },
 ]
 
-const CATEGORIES = [
-    { id: 'restaurant', label: 'Restaurant', emoji: '🍽️' },
-    { id: 'cafe',       label: 'Café',       emoji: '☕' },
-    { id: 'bar',        label: 'Bar',        emoji: '🍺' },
-    { id: 'bakery',     label: 'Bakery',     emoji: '🥐' },
-    { id: 'other',      label: 'Other',      emoji: '📍' },
-]
-
+// UI-subset of canonical PRICE_LEVELS (adds sub/range display copy);
+// canonical list for admin back-office lives in shared/constants/taxonomy.js.
 const PRICE_LEVELS = [
     { id: '$',    label: '€',    sub: 'Budget',      range: 'up to €15' },
     { id: '$$',   label: '€€',   sub: 'Mid-range',   range: '€15–35'    },
@@ -166,7 +161,7 @@ function AutocompleteInput({
         setOpen(suggestions.length > 0 && value.length >= minLength)
     }, [suggestions, value, minLength])
 
-    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
+    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-input focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
 
     return (
         <div ref={ref} className="relative">

@@ -1,13 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hammer, AlertTriangle, MessageCircle, ArrowLeft } from 'lucide-react'
+import { Hammer, AlertTriangle, MessageCircle, ArrowLeft, LogOut } from 'lucide-react'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { Link } from 'react-router-dom'
+// Note: we intentionally use window.location.href instead of useNavigate
+// so a full page reload clears all in-memory state after sign-out.
 
 export const MaintenanceGuard = ({ children }) => {
     const { appStatus, maintenanceMessage, downMessage } = useAppConfigStore()
-    const { user } = useAuthStore()
+    const { user, logout } = useAuthStore()
+    const [signingOut, setSigningOut] = useState(false)
 
     // Admins bypass maintenance mode
     if (user?.role === 'admin' || appStatus === 'active') {
@@ -15,6 +18,17 @@ export const MaintenanceGuard = ({ children }) => {
     }
 
     const isDown = appStatus === 'down'
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await logout()
+        } finally {
+            // Hard redirect — guarantees a clean app re-mount and avoids
+            // any React Router / auth-listener race conditions.
+            window.location.href = '/login'
+        }
+    }
 
     return (
         <div className="fixed inset-0 z-[9999] bg-[#FDFDFD] dark:bg-slate-950 flex items-center justify-center p-6 text-center">
@@ -42,9 +56,22 @@ export const MaintenanceGuard = ({ children }) => {
                     <Link to="/" className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                         <ArrowLeft size={18} /> Back to Home
                     </Link>
-                    <button className="w-full h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all">
+                    <button className="w-full h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                         <MessageCircle size={18} /> Contact Support
                     </button>
+                    {user && (
+                        <button
+                            onClick={handleSignOut}
+                            disabled={signingOut}
+                            className="w-full h-14 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {signingOut
+                                ? <span className="w-4 h-4 rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
+                                : <LogOut size={18} />
+                            }
+                            {signingOut ? 'Signing out…' : 'Sign Out'}
+                        </button>
+                    )}
                 </div>
 
                 <div className="mt-20 pt-10 border-t border-slate-100 dark:border-slate-800/50">

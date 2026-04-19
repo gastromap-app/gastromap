@@ -167,7 +167,9 @@
     "feedback_title": "Отправить Отзыв",
     "feedback_desc": "Помогите нам улучшить GastroMap",
     "feedback_placeholder": "Поделитесь своими мыслями, предложениями или проблемами…",
-    "feedback_send": "Отправить"
+    "feedback_send": "Отправить",
+    "saved": "Сохранено",
+    "signing_out": "Выход…"
   },
   "notifications": {
     "title": "Уведомления",

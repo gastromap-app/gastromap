@@ -192,8 +192,8 @@ const LocationDetailsPage = () => {
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-105 ${info.color}`}>
                             <info.icon size={20} />
                         </div>
-                        <p className={`text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 ${textStyle}`}>{info.label}</p>
-                        <p className={`text-xs font-black ${textStyle}`}>{info.value}</p>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-50 mb-1 ${textStyle}`}>{info.label}</p>
+                        <p className={`text-[13px] font-bold leading-tight ${textStyle}`}>{info.value}</p>
                     </motion.div>
                 ))}
             </div>
@@ -210,14 +210,14 @@ const LocationDetailsPage = () => {
                             <UtensilsCrossed size={20} />
                         </div>
                         <div>
-                            <p className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${textStyle}`}>Primary Cuisine</p>
-                            <p className={`text-sm font-black ${textStyle}`}>{translate(location.cuisine) || 'International'}</p>
+                            <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-50 ${textStyle}`}>Primary Cuisine</p>
+                            <p className={`text-sm font-bold ${textStyle}`}>{translate(location.cuisine) || 'International'}</p>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
                         {location.special_labels?.map(label => (
-                            <span key={label} className={`px-4 py-2 rounded-xl text-[10px] font-black border transition-all ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                            <span key={label} className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${isDark ? 'bg-blue-500/12 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
                                 {translate(label)}
                             </span>
                         ))}
@@ -233,10 +233,10 @@ const LocationDetailsPage = () => {
                 <p className={`text-sm leading-relaxed font-medium ${subTextStyle}`}>
                     {location.description}
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                     {location.tags?.map(tag => (
-                        <span key={tag} className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all cursor-default ${isDark ? 'bg-white/5 border-white/5 text-gray-500 dark:text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
-                            #{translate(tag).toUpperCase()}
+                        <span key={tag} className={`px-3 py-1 rounded-full text-[11px] font-medium border cursor-default ${isDark ? 'bg-white/[0.04] border-white/8 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                            #{translate(tag)}
                         </span>
                     ))}
                 </div>

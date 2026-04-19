@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, MapPin, Star, Search, SlidersHorizontal, Home } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
@@ -121,6 +122,11 @@ export function DrillDownExplorer({
 
     if (level === 'home') return null // Parent renders its own content
 
+    // ── Portal root — escapes PageTransition's CSS transform/filter containing block ──
+    // Without a portal, `fixed inset-0` on the overlay would be relative to
+    // PageTransition (which applies scale/blur via framer-motion), not the viewport.
+    const portalRoot = typeof document !== 'undefined' ? document.body : null
+
     // Breadcrumbs
     const crumbs = [
         { label: 'Home', level: 'home' },
@@ -128,9 +134,9 @@ export function DrillDownExplorer({
         ...(selectedCity && level === 'locations' ? [{ label: `📍 ${selectedCity}`, level: 'locations' }] : []),
     ]
 
-    return (
+    const overlay = (
         <div
-            className="fixed inset-0 z-20 flex flex-col"
+            className="fixed inset-0 z-[90] flex flex-col"
             style={{
                 background: isDark ? '#0a0a0f' : '#f9f9fb',
                 // Outer container accounts for safe-area only — do NOT repeat it in children
@@ -325,6 +331,8 @@ export function DrillDownExplorer({
             </div>
         </div>
     )
+
+    return portalRoot ? createPortal(overlay, portalRoot) : overlay
 }
 
 /* ── Country cards for home level — used directly in DashboardPage ── */

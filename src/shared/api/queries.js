@@ -983,3 +983,50 @@ export function useUserGrowth(days = 30) {
         refetchOnMount: true,
     })
 }
+
+// ─── Geo Covers ───────────────────────────────────────────────────────────────
+
+/** Fetch all covers for a given geo type ('country' | 'city'). */
+export function useGeoCovers(geoType = 'country') {
+    return useQuery({
+        queryKey: ['geo-covers', geoType],
+        queryFn: async () => {
+            const { getGeoCovers } = await import('./geo.api')
+            return getGeoCovers(geoType)
+        },
+        staleTime: 10 * 60 * 1000, // 10 min — images rarely change
+        refetchOnWindowFocus: false,
+    })
+}
+
+/** Upload image + upsert the db record in one mutation. */
+export function useUpsertGeoCoverMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ file, url, slug, geoType, name }) => {
+            const { uploadGeoCoverImage, upsertGeoCover } = await import('./geo.api')
+            const image_url = file
+                ? await uploadGeoCoverImage(file, slug, geoType)
+                : url
+            await upsertGeoCover({ slug, geo_type: geoType, name, image_url })
+            return image_url
+        },
+        onSuccess: (_data, { geoType }) => {
+            qc.invalidateQueries({ queryKey: ['geo-covers', geoType] })
+        },
+    })
+}
+
+/** Delete a geo cover record. */
+export function useDeleteGeoCoverMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ slug, geoType }) => {
+            const { deleteGeoCover } = await import('./geo.api')
+            return deleteGeoCover(slug, geoType)
+        },
+        onSuccess: (_data, { geoType }) => {
+            qc.invalidateQueries({ queryKey: ['geo-covers', geoType] })
+        },
+    })
+}

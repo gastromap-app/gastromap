@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites } from '@/shared/api/queries'
+import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useGeoCovers } from '@/shared/api/queries'
 import { useNavigate } from 'react-router-dom'
 import {
     MapPin, Star, ChevronRight, Search as SearchIcon,
@@ -282,6 +282,10 @@ const DashboardPage = () => {
     const isDark = theme === 'dark'
     const isLoading = useLocationsStore(s => s.isLoading)
 
+    // Geo cover images from DB (admin-uploaded). Falls back to static map below.
+    const { data: geoCoversData = [] } = useGeoCovers('country')
+    const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
+
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -345,15 +349,16 @@ const DashboardPage = () => {
             countryMap[slug].count++
         })
         const dynamic = Object.values(countryMap).sort((a, b) => b.count - a.count)
-        // Enrich with static images; fall back to first location photo if no static image
+        // Priority: 1) admin-uploaded DB image  2) static map  3) first location photo  4) Poland default
         return dynamic.map(c => ({
             ...c,
-            image: COUNTRY_IMAGES[c.slug]
+            image: dbCoverMap[c.slug]
+                ?? COUNTRY_IMAGES[c.slug]
                 ?? locations.find(l => l.country?.toLowerCase() === c.name.toLowerCase())?.photos?.[0]
-                ?? COUNTRY_IMAGES.poland, // ultimate fallback
+                ?? COUNTRY_IMAGES.poland,
             newCount: c.count,
         }))
-    }, [locations])
+    }, [locations, dbCoverMap])
 
     const recommended = useMemo(
         () => [...filteredLocations].sort((a, b) => b.rating - a.rating).slice(0, 5),

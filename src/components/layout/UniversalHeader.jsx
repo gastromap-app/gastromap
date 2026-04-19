@@ -14,7 +14,7 @@ export function UniversalHeader() {
     const { user: authUser } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
     const location = useLocation()
-    const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
+    const user = authUser || null
     const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'
 
@@ -164,8 +164,12 @@ export function UniversalHeader() {
                                     <PlusCircle size={14} />
                                     <span>Place</span>
                                 </Link>
-                                <Link to="/profile" aria-label={`Profile for ${user.name}`} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-md border-2 border-white/20 hover:scale-110 transition-transform">
-                                    {user.name.charAt(0)}
+                                <Link
+                                    to="/profile"
+                                    aria-label={user ? `Profile for ${user.name}` : 'Sign in'}
+                                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-md border-2 border-white/20 hover:scale-110 transition-transform"
+                                >
+                                    {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
                                 </Link>
                             </div>
                         </motion.div>

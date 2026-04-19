@@ -94,14 +94,15 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                     </div>
                 )}
 
-                {/* Favorite button */}
+                {/* Favorite button — 44px touch target */}
                 <button
                     onClick={(e) => toggleFavorite(e, loc.id)}
-                    className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90"
+                    aria-label={saved ? 'Remove from saved' : 'Save place'}
+                    className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-black/60"
                 >
                     <Heart
-                        size={14}
-                        className={saved ? 'text-red-400 fill-red-400' : 'text-white'}
+                        size={16}
+                        className={saved ? 'text-red-400 fill-red-400' : 'text-white/90'}
                     />
                 </button>
             </div>
@@ -111,30 +112,36 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 <h4 className={`text-[14px] font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {loc.title || 'Unknown Place'}
                 </h4>
-                <p className="text-[12px] text-gray-500 mt-0.5 truncate">
-                    {loc.subtitle || 'Authentic flavors'}
+                {/* Subtitle: real data — cuisine + city, not a generic fallback */}
+                <p className="text-[12px] text-gray-400 mt-0.5 truncate">
+                    {[loc.cuisine, loc.city].filter(Boolean).join(' · ') || loc.category || ''}
                 </p>
 
-                {/* Tags row */}
-                <div className="flex items-center gap-1.5 mt-2.5">
-                    {loc.best_time && loc.best_time.length > 0 && (
-                        <div className="flex items-center gap-0.5 mr-0.5">
-                            {loc.best_time.includes('morning') && <Sunrise size={11} className="text-orange-400" />}
-                            {loc.best_time.includes('day') && <Sun size={11} className="text-yellow-500" />}
-                            {loc.best_time.includes('evening') && <Sunset size={11} className="text-orange-500" />}
-                            {loc.best_time.includes('late_night') && <Sparkles size={11} className="text-indigo-400" />}
-                        </div>
-                    )}
-                    {loc.special_labels?.slice(0, 2).map(label => (
-                        <span
-                            key={label}
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
-                            }`}
-                        >
-                            {translate(label)}
+                {/* Footer row: best time icons + price + label chip */}
+                <div className="flex items-center justify-between mt-2.5">
+                    <div className="flex items-center gap-1.5">
+                        {loc.best_time && loc.best_time.length > 0 && (
+                            <div className="flex items-center gap-0.5">
+                                {loc.best_time.includes('morning') && <Sunrise size={11} className="text-orange-400" />}
+                                {loc.best_time.includes('day') && <Sun size={11} className="text-yellow-500" />}
+                                {loc.best_time.includes('evening') && <Sunset size={11} className="text-orange-500" />}
+                                {loc.best_time.includes('late_night') && <Sparkles size={11} className="text-indigo-400" />}
+                            </div>
+                        )}
+                        {loc.special_labels?.[0] && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                isDark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-600'
+                            }`}>
+                                {translate(loc.special_labels[0])}
+                            </span>
+                        )}
+                    </div>
+                    {/* Price level — key decision signal for users */}
+                    {(loc.price_range || loc.price_level || loc.priceLevel) && (
+                        <span className={`text-[11px] font-bold tracking-tight ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {loc.price_range ?? loc.price_level ?? loc.priceLevel}
                         </span>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>
@@ -483,11 +490,30 @@ const DashboardPage = () => {
                                             <DashboardCardSkeleton isDark={isDark} />
                                         </div>
                                     ))
-                                    : recommended.map((loc) => (
-                                        <div key={loc.id} className="snap-center">
-                                            <LocationCardMobile loc={loc} type="recommended" />
-                                        </div>
-                                    ))
+                                    : recommended.length > 0
+                                        ? recommended.map((loc) => (
+                                            <div key={loc.id} className="snap-center">
+                                                <LocationCardMobile loc={loc} type="recommended" />
+                                            </div>
+                                        ))
+                                        : (
+                                            /* Empty state — only shown after loading finishes */
+                                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-card border ${
+                                                isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'
+                                            }`}>
+                                                <div className="text-4xl">🍽️</div>
+                                                <div className="text-center">
+                                                    <p className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>No places yet</p>
+                                                    <p className="text-[12px] text-gray-400 mt-0.5">Be the first to add a spot</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate('/dashboard/add-place')}
+                                                    className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform"
+                                                >
+                                                    + Add a place
+                                                </button>
+                                            </div>
+                                        )
                                 }
                             </div>
                         </div>

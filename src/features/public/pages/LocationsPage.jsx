@@ -78,7 +78,7 @@ const MobileCard = memo(function MobileCard({ item }) {
                 {/* Special label */}
                 <div className="absolute top-3 left-3 flex gap-2">
                     {item.special_labels?.slice(0, 1).map(label => (
-                        <div key={label} className="bg-blue-600 text-white px-2.5 py-1 rounded-pill text-[9px] font-black uppercase tracking-wider shadow-lg">
+                        <div key={label} className="bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-pill text-[10px] font-semibold shadow-lg">
                             {label}
                         </div>
                     ))}
@@ -97,10 +97,10 @@ const MobileCard = memo(function MobileCard({ item }) {
                 {/* Bottom overlay: category pill + title + maps CTA */}
                 <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end gap-2">
                     <div className="flex-1 min-w-0 space-y-1">
-                        <span className="bg-white/20 backdrop-blur-md text-white px-2.5 py-0.5 rounded-pill text-[9px] font-black uppercase border border-white/40">
+                        <span className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-pill text-[10px] font-semibold border border-white/30">
                             {item.category}
                         </span>
-                        <h4 className="text-xl font-black text-white leading-tight truncate">{item.title}</h4>
+                        <h4 className="text-[18px] font-bold text-white leading-tight truncate">{item.title}</h4>
                     </div>
                     {/* Maps CTA — now wired to open Google Maps */}
                     <button
@@ -122,7 +122,9 @@ const MobileCard = memo(function MobileCard({ item }) {
                         <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.rating}</span>
                         <span className={`text-[11px] ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>({item.reviews ?? '—'})</span>
                     </div>
-                    <span className="text-blue-500 font-bold text-sm">{item.priceLevel}</span>
+                    <span className={`font-semibold text-[13px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {item.price_range ?? item.price_level ?? item.priceLevel ?? ''}
+                    </span>
                 </div>
 
                 {/* Cuisine + open status */}

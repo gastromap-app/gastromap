@@ -372,6 +372,26 @@ const DashboardPage = () => {
                 {/* ── MOBILE ── */}
                 <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
+                    {/* Drill-down overlay (Country → Cities → Locations) */}
+                    {drillLevel !== 'home' && (
+                        <DrillDownExplorer
+                            countries={countries}
+                            level={drillLevel}
+                            setLevel={setDrillLevel}
+                            selectedCountry={drillCountry}
+                            setSelectedCountry={setDrillCountry}
+                            selectedCity={drillCity}
+                            setSelectedCity={setDrillCity}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            setIsFilterOpen={setIsFilterOpen}
+                        />
+                    )}
+
+                    {/* Home content (visible when not drilling) */}
+                    {drillLevel === 'home' && (
+                    <>
+
                     {/* Greeting */}
                     <div className="px-5 mb-5">
                         <p className="text-[13px] font-medium text-gray-500 mb-0.5">{greeting}</p>
@@ -429,7 +449,7 @@ const DashboardPage = () => {
                                 {countries.map((country) => (
                                     <button
                                         key={country.slug}
-                                        onClick={() => navigate(`/explore/${country.slug}`)}
+                                        onClick={() => handleSelectCountry(country)}
                                         aria-label={`Explore ${country.name}`}
                                         className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
                                     >
@@ -499,6 +519,8 @@ const DashboardPage = () => {
                             </div>
                         </div>
                     </div>
+                    </>
+                    )}
                 </div>
 
                 {/* ── DESKTOP ── */}

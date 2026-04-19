@@ -770,11 +770,13 @@ export async function getKnowledgeStats() {
 /**
  * Matches a location's text content with Knowledge Graph entities.
  * Returns relevant cuisines, dishes, and ingredients.
- * 
- * @param {Object} location 
+ *
+ * @param {Object} location
+ * @param {{ allCuisines?: any[], allDishes?: any[], allIngredients?: any[] }} [preloaded]
+ *   Optional pre-fetched KG data — pass when calling in a loop to avoid N+1 queries.
  * @returns {Promise<{cuisines: string[], dishes: string[], ingredients: string[]}>}
  */
-export async function matchLocationWithKG(location) {
+export async function matchLocationWithKG(location, preloaded = {}) {
     const textToMatch = [
         location.title,
         location.description,
@@ -784,9 +786,9 @@ export async function matchLocationWithKG(location) {
     ].join(' ').toLowerCase()
 
     const [allCuisines, allDishes, allIngredients] = await Promise.all([
-        getCuisines(),
-        getDishes(),
-        getIngredients()
+        preloaded.allCuisines ?? getCuisines(),
+        preloaded.allDishes   ?? getDishes(),
+        preloaded.allIngredients ?? getIngredients(),
     ])
 
     const matches = {
@@ -881,10 +883,18 @@ export async function syncKGToLocations(onProgress) {
     
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
 
+    // Fetch KG reference data ONCE before the loop — avoids N×3 DB queries
+    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+        getCuisines(),
+        getDishes(),
+        getIngredients(),
+    ])
+    const preloaded = { allCuisines, allDishes, allIngredients }
+
     let updatedCount = 0
     for (let i = 0; i < locations.length; i++) {
         const loc = locations[i]
-        const kgMatches = await matchLocationWithKG(loc)
+        const kgMatches = await matchLocationWithKG(loc, preloaded)
 
         // Merge KG names into ai_keywords (additive)
         const newKeywords = Array.from(new Set([

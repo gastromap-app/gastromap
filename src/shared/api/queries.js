@@ -515,6 +515,20 @@ export function useAddFavoriteMutation() {
             const { addFavorite } = await import('./favorites.api')
             return addFavorite(userId, locationId)
         },
+        onMutate: async ({ userId, locationId }) => {
+            await qc.cancelQueries({ queryKey: ['favorites', userId] })
+            const prev = qc.getQueryData(['favorites', userId])
+            qc.setQueryData(['favorites', userId], (old = []) =>
+                old.some(f => f.location_id === locationId)
+                    ? old
+                    : [...old, { location_id: locationId, created_at: new Date().toISOString() }]
+            )
+            return { prev, userId }
+        },
+        onError: (_err, _vars, ctx) => {
+            if (ctx?.prev !== undefined)
+                qc.setQueryData(['favorites', ctx.userId], ctx.prev)
+        },
         onSuccess: (_, { userId }) => {
             qc.invalidateQueries({ queryKey: ['favorites', userId] })
             qc.invalidateQueries({ queryKey: ['favorites-with-locations', userId] })
@@ -528,6 +542,18 @@ export function useRemoveFavoriteMutation() {
         mutationFn: async ({ userId, locationId }) => {
             const { removeFavorite } = await import('./favorites.api')
             return removeFavorite(userId, locationId)
+        },
+        onMutate: async ({ userId, locationId }) => {
+            await qc.cancelQueries({ queryKey: ['favorites', userId] })
+            const prev = qc.getQueryData(['favorites', userId])
+            qc.setQueryData(['favorites', userId], (old = []) =>
+                old.filter(f => f.location_id !== locationId)
+            )
+            return { prev, userId }
+        },
+        onError: (_err, _vars, ctx) => {
+            if (ctx?.prev !== undefined)
+                qc.setQueryData(['favorites', ctx.userId], ctx.prev)
         },
         onSuccess: (_, { userId }) => {
             qc.invalidateQueries({ queryKey: ['favorites', userId] })

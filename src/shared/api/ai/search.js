@@ -37,7 +37,7 @@ export async function semanticSearch(queryText, limit = 10, apiKey = null) {
             body: JSON.stringify({
                 model: 'openai/text-embedding-3-small',
                 input: queryText,
-                dimensions: 768,
+                dimensions: 768,  // Use 768 to match pgvector column dimensions
             }),
         })
 

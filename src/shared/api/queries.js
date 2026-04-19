@@ -537,7 +537,7 @@ export function useAddVisitMutation() {
 export function useDeleteVisitMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ visitId }) => {
+        mutationFn: async ({ visitId, userId }) => {
             const { deleteVisit } = await import('./visits.api')
             return deleteVisit(visitId)
         },

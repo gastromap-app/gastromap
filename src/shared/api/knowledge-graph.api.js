@@ -16,7 +16,7 @@ import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/share
 /**
  * Generate embedding for text using OpenRouter's text-embedding-3-small model.
  * @param {string} text - Text to embed
- * @returns {Promise<number[]>} 768-dimensional vector
+ * @returns {Promise<number[]>} Embedding vector (dimensions match pgvector column)
  */
 async function generateEmbedding(text) {
     const appCfg = useAppConfigStore.getState()
@@ -27,12 +27,13 @@ async function generateEmbedding(text) {
     }
 
     // Try primary model, fallback to alternative
+    // Model dimensions: text-embedding-3-small → 1536, nemotron-embed → 768
     const models = [
-        'openai/text-embedding-3-small',
-        'nvidia/nemotron-embed-20250702:free',
+        { name: 'openai/text-embedding-3-small', dimensions: 768 },
+        { name: 'nvidia/nemotron-embed-20250702:free', dimensions: 768 },
     ]
 
-    for (const model of models) {
+    for (const { name: model, dimensions } of models) {
         try {
             const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
                 method: 'POST',
@@ -45,7 +46,7 @@ async function generateEmbedding(text) {
                 body: JSON.stringify({
                     model,
                     input: text,
-                    dimensions: 768,
+                    dimensions,
                 }),
             })
 
@@ -364,7 +365,7 @@ async function saveViaProxy(type, data) {
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
     const timeout = setTimeout(() => {
-        console.error('[saveViaProxy] ⏱️ SHIT! fetch timed out after 10s')
+        console.error('[saveViaProxy] ⏱️ ERROR: fetch timed out after 10s')
         controller.abort()
     }, 10_000)
 

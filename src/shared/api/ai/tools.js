@@ -125,7 +125,8 @@ export async function executeTool(name, args, locations = []) {
                 try {
                     const semanticResults = await semanticSearch(keyword, limit * 2, null)
                     const semanticIds = new Set(semanticResults.map(r => r.id))
-                    // Sort: semantic matches first, then by rating
+                    // Restrict to literal matches first, then boost semantic matches
+                    results = literalMatches
                     results.sort((a, b) => {
                         const aS = semanticIds.has(a.id) ? 1 : 0
                         const bS = semanticIds.has(b.id) ? 1 : 0

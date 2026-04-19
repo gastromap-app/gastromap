@@ -50,7 +50,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
         e.stopPropagation()
         // DASH-5 FIX: show login prompt instead of silent fail for unauthenticated users
         if (!user?.id) {
-            navigate('/login?next=/dashboard')
+            navigate(`/login?next=/location/${id}`)
             return
         }
         localToggle(id)  // instant UI (optimistic update)
@@ -272,7 +272,7 @@ const DashboardPage = () => {
     const { t } = useTranslation()
     const { user: authUser } = useAuthStore()
     const user = authUser ?? null
-    const { locations } = useLocationsStore()
+    const { locations, filteredLocations } = useLocationsStore()
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -374,14 +374,14 @@ const DashboardPage = () => {
     }, [locations])
 
     const recommended = useMemo(
-        () => [...locations].sort((a, b) => b.rating - a.rating).slice(0, 5),
-        [locations]
+        () => [...filteredLocations].sort((a, b) => b.rating - a.rating).slice(0, 5),
+        [filteredLocations]
     )
 
     const trending = useMemo(() => {
         const topIds = new Set(recommended.map(l => l.id))
-        return [...locations].filter(l => !topIds.has(l.id)).slice(-5).reverse()
-    }, [locations, recommended])
+        return [...filteredLocations].filter(l => !topIds.has(l.id)).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 5)
+    }, [filteredLocations, recommended])
 
     const firstName = user?.name?.split(' ')[0] || 'there'
     const greeting = getGreeting(t)
@@ -434,8 +434,11 @@ const DashboardPage = () => {
                         </button>
                     </div>
 
+                    {/* Pull-to-refresh indicator */}
+                    <PullRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} />
+
                     {/* Feed content — map is available on separate MapPage */}
-                    <div className="space-y-8 pb-14 px-5">
+                    <div className="space-y-8 pb-14 px-5" {...pullHandlers}>
                         {/* Explore by Country */}
                         <div className="space-y-4">
                             <SectionHeader

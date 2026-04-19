@@ -51,10 +51,16 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
 const ProfilePage = () => {
     const { t, i18n } = useTranslation()
     const { user: authUser, logout } = useAuthStore()
-    const user = authUser || { name: 'Alex Johnson', email: 'alex@gastromap.com' }
+    const navigate = useNavigate()
+
+    // Redirect to login if not authenticated (instead of showing demo user)
+    if (!authUser) {
+        navigate('/login', { replace: true })
+        return null
+    }
+    const user = authUser
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const navigate = useNavigate()
 
     const [signingOut, setSigningOut] = useState(false)
 

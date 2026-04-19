@@ -57,24 +57,27 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Missing Authorization header. Please log in.' })
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    // Normalize URL: remove trailing slash if present to avoid //auth/v1
-    const cleanUrl = supabaseUrl?.replace(/\/+$/, '')
-    const serviceKey  = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+    // Support both server-only and VITE_ prefixed env vars
+    const supabaseUrl = (
+        process.env.SUPABASE_URL ||
+        process.env.VITE_SUPABASE_URL ||
+        'https://myyzguendoruefiiufop.supabase.co'
+    )
+    const cleanUrl   = supabaseUrl.replace(/\/+$/, '')
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
-    // Debug: логируем наличие env vars (без значений)
     console.log('[kg/save] env check:', {
-        hasSupabaseUrl:      !!supabaseUrl,
-        hasServiceKey:       !!serviceKey,
-        serviceKeyLen:       serviceKey.length,
-        cleanUrl:            cleanUrl,
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceKey:  !!serviceKey,
+        serviceKeyLen:  serviceKey.length,
+        urlHost:        new URL(cleanUrl).hostname,
     })
 
-    if (!cleanUrl || !serviceKey) {
+    if (!serviceKey) {
+        console.error('[kg/save] SUPABASE_SERVICE_ROLE_KEY is not set in Vercel env vars!')
         return res.status(500).json({
-            error: 'Server misconfiguration on Vercel',
-            details: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.',
-            hint: 'Check Vercel Dashboard -> Project Settings -> Environment Variables.'
+            error: 'Server misconfiguration: SUPABASE_SERVICE_ROLE_KEY is missing.',
+            hint: 'Add SUPABASE_SERVICE_ROLE_KEY in Vercel Dashboard → Project Settings → Environment Variables.',
         })
     }
 

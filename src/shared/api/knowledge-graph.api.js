@@ -321,43 +321,47 @@ export async function getCuisineById(id) {
 async function saveViaProxy(type, data) {
     console.log(`[proxy] 🛰️ POST kg-save | type: ${type} | item: "${data.name}"`)
 
-    // ── 1. Proactive JWT Retrieval with Timeout ──────────────────────────────
-    // If it hangs at getSession, it might be due to auth-refresh locking.
+    // ── 1. JWT Retrieval ──────────────────────────────────────────────────────
     let jwt = ''
     try {
-        console.log('[saveViaProxy] ⏳ Checking session...')
-        
-        // Race getSession against a 3s timeout
+        // Increase timeout to 8s — Supabase session refresh can take a few seconds
         const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session check timeout')), 3000))
-        
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Session check timeout')), 8000)
+        )
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-        
         if (session?.access_token) {
             jwt = session.access_token
-            console.log(`[saveViaProxy] ✅ JWT ready (len: ${jwt.length})`)
-        } else {
-            console.warn('[saveViaProxy] ⚠️ No active session found — proxy might reject with 401')
         }
     } catch (e) {
         console.warn('[saveViaProxy] ❌ Session retrieval failed/timed out:', e.message)
     }
 
     if (!jwt) {
-        // We try once more from localStorage before giving up
+        // Fallback: read directly from Supabase's localStorage key
+        // Key format: sb-{project-ref}-auth-token
         try {
-            const stored = localStorage.getItem('sb-gastromap-auth')
-            if (stored) {
-                const parsed = JSON.parse(stored)
-                jwt = parsed.access_token
-                console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
+            const supabaseRef = supabase.supabaseUrl?.match(/\/\/([^.]+)\./)?.[1] ?? ''
+            const keys = [
+                `sb-${supabaseRef}-auth-token`,
+                `sb-myyzguendoruefiiufop-auth-token`,
+                `sb-fglvibyyiqbfkqrdomyv-auth-token`,
+            ]
+            for (const key of keys) {
+                const stored = localStorage.getItem(key)
+                if (stored) {
+                    const parsed = JSON.parse(stored)
+                    const token = parsed?.access_token || parsed?.session?.access_token
+                    if (token) { jwt = token; break }
+                }
             }
+            if (jwt) console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
         } catch (e) { /* ignore */ }
     }
 
     if (!jwt) {
-        console.error('[proxy] 🛑 No JWT available — proxy will likely fail')
-        // We still TRY the fetch, maybe it's local dev without auth
+        console.error('[proxy] 🛑 No JWT — admin must be logged in to save KG items')
+        throw new ApiError('Not authenticated. Please log in as admin.', 401, 'AUTH_REQUIRED')
     }
 
     console.log('[saveViaProxy] 🌐 Sending POST to kg-save Edge Function with JWT (len:', jwt.length, ')')

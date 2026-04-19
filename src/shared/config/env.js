@@ -7,7 +7,7 @@
 // Supabase Edge Functions base URL
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
-  : 'https://fglvibyyiqbfkqrdomyv.supabase.co/functions/v1'
+  : 'https://myyzguendoruefiiufop.supabase.co/functions/v1'
 
 export const config = {
     // ─── Supabase ─────────────────────────────────────────────────────────────
@@ -24,8 +24,8 @@ export const config = {
     // ─── AI / LLM (OpenRouter — free models, cascading) ──────────────────────
     ai: {
         openRouterKey: import.meta.env.VITE_OPENROUTER_API_KEY ?? '',
-        model: import.meta.env.VITE_AI_MODEL ?? 'nvidia/nemotron-nano-9b-v2:free',
-        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'z-ai/glm-4.5-air:free',
+        model: import.meta.env.VITE_AI_MODEL ?? 'openai/gpt-oss-120b:free',
+        modelFallback: import.meta.env.VITE_AI_MODEL_FALLBACK ?? 'meta-llama/llama-3.3-70b-instruct:free',
         maxHistoryLength: 50,
         maxResponseTokens: 1024,
         /**

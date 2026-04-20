@@ -12,10 +12,9 @@ export function MainLayout() {
     const { theme } = useTheme()
     const [isChatOpen, setIsChatOpen] = useState(false)
     const location = useLocation()
-    const isExplore = location.pathname.startsWith('/explore')
     const isMap = location.pathname === '/map'
     // Full-screen pages: no extra bottom padding (they handle their own layout)
-    const isFullScreen = isExplore || isMap
+    const isFullScreen = isMap
 
     return (
         <AuroraBackground theme={theme}>

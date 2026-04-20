@@ -339,14 +339,10 @@ const LocationsPage = () => {
         <div data-lenis-prevent className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
-            {/* ── MOBILE: Map + Search + Filters only ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0">
-                <div className="w-full h-full [&>div]:h-full [&>div]:w-full [&>div]:rounded-none [&>div]:border-none">
-                    <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}><MapTab activeFilter={activeCategory} /></React.Suspense>
-                </div>
-
-                {/* Floating search + filter bar */}
-                <div className="absolute left-4 right-4 z-40" style={{ top: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+            {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={scrollContainerRef}>
+                {/* Header with search */}
+                <div className="sticky top-0 z-40 px-4 pt-20 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
                     <div className="flex gap-2">
                         <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border backdrop-blur-xl shadow-lg ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/90 border-gray-200 shadow-xl'}`}>
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
@@ -370,6 +366,30 @@ const LocationsPage = () => {
                             <SlidersHorizontal size={18} />
                         </button>
                     </div>
+                </div>
+
+                {/* Mobile location cards */}
+                <div className="px-4 pb-24 space-y-4">
+                    {isLoading ? (
+                        Array.from({ length: 6 }).map((_, i) => (
+                            <LocationCardMobileSkeleton key={i} isDark={isDark} />
+                        ))
+                    ) : isError ? (
+                        <ErrorState isDark={isDark} />
+                    ) : localFilteredLocations.length === 0 ? (
+                        <EmptyState query={localSearch} isDark={isDark} />
+                    ) : (
+                        <motion.div
+                            initial="hidden"
+                            animate="visible"
+                            variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
+                            className="space-y-4"
+                        >
+                            {localFilteredLocations.map((item) => (
+                                <MobileCard key={item.id} item={item} />
+                            ))}
+                        </motion.div>
+                    )}
                 </div>
             </div>
 
@@ -498,7 +518,7 @@ const LocationsPage = () => {
 
                         {/* Results count */}
                         <p className={`text-sm font-bold ml-auto ${subTextStyle}`}>
-                            {filteredLocations.length} result{filteredLocations.length !== 1 ? 's' : ''}
+                            {localFilteredLocations.length} result{localFilteredLocations.length !== 1 ? 's' : ''}
                         </p>
                     </div>
 
@@ -523,7 +543,7 @@ const LocationsPage = () => {
                                 variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
                                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
                             >
-                                {filteredLocations.map((item) => (
+                                {localFilteredLocations.map((item) => (
                                     <DesktopCard
                                         key={item.id}
                                         item={item}

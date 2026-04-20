@@ -52,8 +52,6 @@ export function UniversalHeader() {
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
 
-    const isAIGuide = location.pathname === '/ai-guide'
-
     // No header background — items have their own floating glass styling.
     // On scroll: very subtle fade so content behind header is readable.
     const headerBgClass = isScrolled
@@ -72,14 +70,13 @@ export function UniversalHeader() {
 
             <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-4 md:py-4">
                 <AnimatePresence mode="wait">
-                    {!isAIGuide ? (
-                        <motion.div
-                            key="standard-header"
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -10, opacity: 0 }}
-                            className="flex justify-between items-center w-full h-10"
-                        >
+                    <motion.div
+                        key="standard-header"
+                        initial={{ y: -10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -10, opacity: 0 }}
+                        className="flex justify-between items-center w-full h-10"
+                    >
                             {/* Logo Capsule */}
                             <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all backdrop-blur-md px-3 py-1.5 rounded-full border shadow-sm ${isDark ? 'bg-white/10 border-white/10' : 'bg-white/40 border-white/40'}`}>
                                 <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
@@ -176,56 +173,6 @@ export function UniversalHeader() {
                                 </Link>
                             </div>
                         </motion.div>
-                    ) : (
-                        <motion.div
-                            key="ai-header"
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -10, opacity: 0 }}
-                            className="w-full flex flex-col items-center pt-1 pb-2"
-                        >
-                            {/* Level 1: Branding - Compact */}
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <Sparkles size={18} className="text-blue-500" />
-                                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                                    {t('nav.ai_guide')}
-                                </h1>
-                            </div>
-
-                            {/* Level 2: Navigation - Compact Height */}
-                            <div className="flex justify-between items-center w-full px-4 h-10 relative overflow-visible">
-                                {/* Dashboard Hint (Left) */}
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => navigate('/dashboard')}
-                                    aria-label="Back to dashboard"
-                                    className="relative flex items-center gap-2 pr-8 group pointer-events-auto h-full"
-                                >
-                                    {/* Natural Glow - No clipping */}
-                                    <div className={`absolute -left-10 inset-y-0 w-32 bg-gradient-to-r ${isDark ? 'from-blue-600/30' : 'from-blue-500/20'} to-transparent blur-xl pointer-events-none`} />
-                                    <div className="relative z-10 flex flex-col items-start">
-                                        <ChevronLeft className="w-5 h-5 text-blue-500 animate-pulse" />
-                                        <span className="text-[7px] font-black uppercase tracking-tighter text-blue-500/60 leading-none">{t('common.back')}</span>
-                                    </div>
-                                </motion.button>
-
-                                {/* Saved Hint (Right) */}
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => navigate('/saved')}
-                                    aria-label="Go to saved locations"
-                                    className="relative flex items-center gap-2 pl-8 group pointer-events-auto text-right h-full"
-                                >
-                                    {/* Natural Glow - No clipping */}
-                                    <div className={`absolute -right-10 inset-y-0 w-32 bg-gradient-to-l ${isDark ? 'from-indigo-600/30' : 'from-indigo-500/20'} to-transparent blur-xl pointer-events-none`} />
-                                    <div className="relative z-10 flex flex-col items-end">
-                                        <ChevronRight className="w-5 h-5 text-indigo-500 animate-pulse" />
-                                        <span className="text-[7px] font-black uppercase tracking-tighter text-indigo-500/60 leading-none">{t('nav.saved')}</span>
-                                    </div>
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    )}
                 </AnimatePresence>
             </div>
         </header>

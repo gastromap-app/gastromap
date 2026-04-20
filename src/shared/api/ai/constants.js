@@ -31,7 +31,7 @@ export const MODEL_CASCADE = [
     'google/gemma-3-27b-it:free',             // ✅ Stable fallback
     'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG (when available)
     'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
-    'nvidia/nemotron-nano-9b:free',           // ✅ Lightweight last resort
+    'stepfun/step-3.5-flash:free',             // ✅ Lightweight last resort
 ]
 
 /**

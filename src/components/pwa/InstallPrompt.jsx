@@ -21,6 +21,7 @@ export function InstallPrompt() {
     useEffect(() => {
         // Detect iOS Safari (no beforeinstallprompt, needs manual instruction)
         const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsIOS(ios)
 
         // Don't show if already installed

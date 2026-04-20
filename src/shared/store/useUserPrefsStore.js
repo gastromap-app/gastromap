@@ -23,10 +23,27 @@ async function syncToSupabase(prefs) {
     try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) return
-        await supabase
+        const userId = session.user.id
+
+        // Try `profiles` table first (legacy schema)
+        const { error: profilesError } = await supabase
             .from('profiles')
             .update({ preferences: { onboarding: prefs } })
-            .eq('id', session.user.id)
+            .eq('id', userId)
+
+        if (profilesError) {
+            // Fallback: try `user_profiles` table (new schema)
+            await supabase
+                .from('user_profiles')
+                .upsert({
+                    id: userId,
+                    dna_cuisines:  prefs.favoriteCuisines  || [],
+                    dna_vibes:     prefs.vibePreference    || [],
+                    dna_allergens: prefs.dietaryRestrictions || [],
+                    dna_price:     prefs.priceRange        || [],
+                    updated_at:    new Date().toISOString(),
+                })
+        }
     } catch {
         // Silently fail — localStorage is always the source of truth
     }
@@ -72,6 +89,62 @@ export const useUserPrefsStore = create(
             },
 
             resetPrefs: () => set({ prefs: DEFAULT_PREFS }),
+
+            /**
+             * Load DNA prefs from Supabase and merge into local store.
+             * Called by OnboardingGate on fresh devices where localStorage is empty.
+             * Returns true if remote data was found (onboarding was done), false otherwise.
+             */
+            loadFromSupabase: async () => {
+                if (!supabase) return false
+                try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session?.user) return false
+                    const userId = session.user.id
+
+                    // Try user_profiles first (new schema)
+                    const { data: up } = await supabase
+                        .from('user_profiles')
+                        .select('dna_cuisines, dna_vibes, dna_allergens, dna_price, onboarding_done')
+                        .eq('id', userId)
+                        .maybeSingle()
+
+                    if (up?.onboarding_done || up?.dna_cuisines?.length > 0) {
+                        set((state) => ({
+                            prefs: {
+                                ...state.prefs,
+                                favoriteCuisines:    up.dna_cuisines    || state.prefs.favoriteCuisines,
+                                vibePreference:      up.dna_vibes       || state.prefs.vibePreference,
+                                dietaryRestrictions: up.dna_allergens   || state.prefs.dietaryRestrictions,
+                                priceRange:          up.dna_price?.length ? up.dna_price : state.prefs.priceRange,
+                            },
+                        }))
+                        return true
+                    }
+
+                    // Fallback: try legacy profiles table
+                    const { data: prof } = await supabase
+                        .from('profiles')
+                        .select('preferences')
+                        .eq('id', userId)
+                        .maybeSingle()
+
+                    const onb = prof?.preferences?.onboarding
+                    if (onb?.cuisines?.length > 0) {
+                        set((state) => ({
+                            prefs: {
+                                ...state.prefs,
+                                favoriteCuisines:    onb.cuisines    || state.prefs.favoriteCuisines,
+                                vibePreference:      onb.vibes       || state.prefs.vibePreference,
+                                dietaryRestrictions: onb.allergens   || state.prefs.dietaryRestrictions,
+                                priceRange:          onb.budget?.length ? onb.budget : state.prefs.priceRange,
+                            },
+                        }))
+                        return true
+                    }
+                } catch { /* silently fail — localStorage is source of truth */ }
+                return false
+            },
         }),
         {
             name: 'user-prefs-storage',

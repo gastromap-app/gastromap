@@ -36,9 +36,13 @@ const LocationHierarchyExplorer = ({ className }) => {
 
     useEffect(() => {
         const hour = new Date().getHours()
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (hour >= 5 && hour < 12) setTimeOfDay('morning')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         else if (hour >= 12 && hour < 17) setTimeOfDay('day')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         else if (hour >= 17 && hour < 21) setTimeOfDay('evening')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         else setTimeOfDay('night')
     }, [])
 

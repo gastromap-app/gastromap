@@ -166,7 +166,7 @@ function PopupCard({ loc }) {
                 <h3 className="font-black text-gray-900 text-sm leading-tight truncate">{loc.title}</h3>
                 <div className="flex items-center justify-between mt-1 mb-2.5">
                     <span className="text-[10px] text-gray-500 font-semibold">{loc.category}</span>
-                    <span className="text-[10px] font-bold text-gray-600">{loc.priceLevel}</span>
+                    <span className="text-[10px] font-bold text-gray-600">{loc.price_level || loc.priceLevel}</span>
                 </div>
                 <Link
                     to={`/location/${loc.id}`}
@@ -186,7 +186,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
     const { filteredLocations: storeFiltered } = useLocationsStore()
     const [userPos, setUserPos] = React.useState(null)
     const [locateTrigger, setLocateTrigger] = React.useState(0)
-    const [locating, setLocating] = React.useState(false)
+    const [_locating, setLocating] = React.useState(false)
     const [geoState, setGeoState] = React.useState('idle') // 'idle'|'locating'|'success'|'denied'|'unavailable'
     const [zoom, setZoom] = React.useState(14)
     const [selectedId, setSelectedId] = React.useState(null)
@@ -194,6 +194,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
     // On mount: только проверяем статус разрешения (без запроса!)
     // Если уже granted — тихо берём позицию без диалога
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!navigator.geolocation) { setGeoState('unavailable'); return }
         if (navigator.permissions) {
             navigator.permissions.query({ name: 'geolocation' }).then((result) => {
@@ -256,7 +257,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
             valid.reduce((s, l) => s + l.coordinates.lat, 0) / valid.length,
             valid.reduce((s, l) => s + l.coordinates.lng, 0) / valid.length,
         ]
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps — intentionally run once on mount
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const clusters = useMemo(
         () => clusterLocations(displayLocations, zoom),
@@ -277,7 +278,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
     })
 
     return (
-        <div className="w-full h-full md:h-[600px] rounded-none md:rounded-[32px] overflow-hidden md:shadow-xl md:border md:border-white/20 relative z-0">
+        <div className="w-full h-full overflow-hidden relative z-0">
             {/* Locate Me */}
             {/* Locate Me — bottom-right, above nav bar */}
             {/* Locate Me button */}
@@ -297,7 +298,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
                                 ? 'bg-black/60 border-white/20 text-white hover:bg-black/80'
                                 : 'bg-white/95 border-white/60 text-blue-600 hover:bg-white')}
                 `}
-                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
+                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 88px)' }}
             >
                 {geoState === 'locating' ? (
                     <div className="w-5 h-5 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
@@ -316,13 +317,13 @@ const MapTab = ({ activeFilter = 'All' }) => {
             {geoState === 'denied' && (
                 <div
                     className="absolute z-[499] right-16 bg-red-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-2 rounded-xl shadow-lg pointer-events-none"
-                    style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 18px)', maxWidth: '180px' }}
+                    style={{ bottom: 'calc(env(safe-area-inset-bottom) + 94px)', maxWidth: '180px' }}
                 >
                     Location blocked. Allow in browser settings.
                 </div>
             )}
 
-            {/* Location count */}
+            {/* Location count — bottom-left above nav */}
             <div
                 className={`
                     absolute left-4 z-[500]
@@ -331,7 +332,7 @@ const MapTab = ({ activeFilter = 'All' }) => {
                         ? 'bg-black/60 border-white/20 text-white/70'
                         : 'bg-white/90 border-white/60 text-gray-700'}
                 `}
-                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px + 12px)' }}
+                style={{ bottom: 'calc(env(safe-area-inset-bottom) + 88px)' }}
             >
                 {displayLocations.length} place{displayLocations.length !== 1 ? 's' : ''}
             </div>

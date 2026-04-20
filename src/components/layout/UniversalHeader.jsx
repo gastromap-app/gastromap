@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { usePWA } from '@/hooks/usePWA'
+import { LanguageSelector } from '@/features/shared/components/LanguageSelector'
 
 export function UniversalHeader() {
     const { t } = useTranslation()
@@ -53,24 +54,20 @@ export function UniversalHeader() {
 
     const isAIGuide = location.pathname === '/ai-guide'
 
-    const headerBgClass = isScrolled || isAIGuide
-        ? (isDark
-            ? 'bg-gradient-to-b from-black/90 via-black/80 to-transparent backdrop-blur-xl'
-            : 'bg-gradient-to-b from-white/90 via-white/80 to-transparent backdrop-blur-xl')
-        : 'bg-transparent'
+    // No header background — items have their own floating glass styling.
+    // On scroll: very subtle fade so content behind header is readable.
+    const headerBgClass = isScrolled
+        ? (isDark ? 'bg-black/20 backdrop-blur-md' : 'bg-white/20 backdrop-blur-md')
+        : ''
 
     return (
         <header
             className="fixed top-0 left-0 right-0 z-[100] transition-none"
             style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-            {/* Background Layer with Smooth Mask */}
+            {/* Background Layer */}
             <div
-                className={`absolute inset-0 w-full h-full transition-all duration-700 pointer-events-none ${headerBgClass}`}
-                style={{
-                    maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)'
-                }}
+                className={`absolute inset-0 w-full h-full transition-all duration-500 pointer-events-none ${headerBgClass}`}
             />
 
             <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-4 md:py-4">
@@ -109,6 +106,9 @@ export function UniversalHeader() {
                                 <button onClick={toggleTheme} aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'} className={`hidden sm:block p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                     {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-600" />}
                                 </button>
+                                <div className="hidden sm:block">
+                                    <LanguageSelector className="" />
+                                </div>
 
                                 {/* Mobile overflow menu */}
                                 <div className="relative sm:hidden" ref={menuRef}>
@@ -155,6 +155,9 @@ export function UniversalHeader() {
                                                         Install app
                                                     </button>
                                                 )}
+                                                <div className={`w-full min-h-11 flex items-center px-4 py-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                    <LanguageSelector />
+                                                </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

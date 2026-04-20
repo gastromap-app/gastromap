@@ -3,17 +3,25 @@ import { supabase } from './client'
 export async function getLeaderboard(limit = 50) {
     if (!supabase) return []
     try {
-        // Fetch reviews and visits counts directly — no RPC needed
-        const [profilesRes, reviewsRes, visitsRes] = await Promise.all([
-            supabase.from('profiles').select('id, name, avatar_url'),
-            supabase.from('reviews').select('user_id').eq('status', 'published'),
+        // Try `profiles` (legacy: full_name column) then `user_profiles` (new: display_name column)
+        let profiles = []
+        const profilesRes = await supabase.from('profiles').select('id, full_name, avatar_url')
+        if (!profilesRes.error && profilesRes.data?.length) {
+            profiles = profilesRes.data.map(p => ({ id: p.id, name: p.full_name, avatar: p.avatar_url }))
+        } else {
+            const upRes = await supabase.from('user_profiles').select('id, display_name, avatar_url')
+            profiles = (upRes.data || []).map(p => ({ id: p.id, name: p.display_name, avatar: p.avatar_url }))
+        }
+
+        // Reviews with status 'approved' (admin approved) or 'published'
+        const [reviewsRes, visitsRes] = await Promise.all([
+            supabase.from('reviews').select('user_id').in('status', ['approved', 'published']),
             supabase.from('user_visits').select('user_id'),
         ])
-        const profiles = profilesRes.data || []
-        const reviews  = reviewsRes.data || []
-        const visits   = visitsRes.data  || []
+        const reviews = reviewsRes.data || []
+        const visits  = visitsRes.data  || []
 
-        // Aggregate
+        // Aggregate points
         const reviewCount = {}
         reviews.forEach(r => { reviewCount[r.user_id] = (reviewCount[r.user_id] || 0) + 1 })
         const visitCount = {}
@@ -21,12 +29,12 @@ export async function getLeaderboard(limit = 50) {
 
         return profiles
             .map(p => ({
-                user_id:        p.id,
-                user_name:      p.name || 'User',
-                user_avatar:    p.avatar_url || null,
-                total_points:   (reviewCount[p.id] || 0) * 5 + (visitCount[p.id] || 0) * 2,
-                reviews_count:  reviewCount[p.id] || 0,
-                visits_count:   visitCount[p.id]  || 0,
+                user_id:         p.id,
+                user_name:       p.name || 'User',
+                user_avatar:     p.avatar || null,
+                total_points:    (reviewCount[p.id] || 0) * 5 + (visitCount[p.id] || 0) * 2,
+                reviews_count:   reviewCount[p.id] || 0,
+                visits_count:    visitCount[p.id]  || 0,
                 locations_added: 0,
             }))
             .filter(u => u.total_points > 0)

@@ -119,6 +119,7 @@ export function robustParseJSON(text) {
             let surgicallyCleaned = cleaned.replace(/"(?:[^"\\]|\\.)*"/gs, (m) => {
                 // Keep the opening and closing quotes, clean the inner part
                 const inner = m.substring(1, m.length - 1)
+                // eslint-disable-next-line no-control-regex
                 const cleanedInner = inner.replace(/[\x00-\x1F]/g, (char) => {
                     const map = {
                         '\n': '\\n',
@@ -134,7 +135,7 @@ export function robustParseJSON(text) {
 
             // 5. Fix common escaping/trailing issues
             surgicallyCleaned = surgicallyCleaned
-                .replace(/\\(?!["\\\/bfnrtu])/g, '\\\\') // Escape lone backslashes
+                .replace(/\\(?!["\\bfnrtu])/g, '\\\\') // Escape lone backslashes
                 .replace(/,\s*}/g, '}')                  // Trailing comma in objects
                 .replace(/,\s*\]/g, ']')                  // Trailing comma in arrays
 

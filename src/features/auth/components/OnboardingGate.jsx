@@ -14,10 +14,12 @@ import { OnboardingFlow } from './OnboardingFlow'
  *
  * "Never show again" guarantee: OnboardingFlow always saves
  * favoriteCuisines with length > 0 (uses ['any'] as the skip marker).
+ * On fresh devices (empty localStorage) we check Supabase first before
+ * deciding to show the flow — fixes repeat-onboarding after reinstall (BUG-ON1).
  */
 export function OnboardingGate({ children }) {
     const { isAuthenticated, user } = useAuthStore()
-    const { prefs, resetPrefs } = useUserPrefsStore()
+    const { prefs, resetPrefs, loadFromSupabase } = useUserPrefsStore()
 
     const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -37,12 +39,23 @@ export function OnboardingGate({ children }) {
     }, [user?.id, resetPrefs])
 
     useEffect(() => {
-        if (isAuthenticated && prefs.favoriteCuisines.length === 0 && !hasTriggeredRef.current) {
-            hasTriggeredRef.current = true
-            // Small delay so the app layout renders first
-            const t = setTimeout(() => setShowOnboarding(true), 600)
-            return () => clearTimeout(t)
-        }
+        if (!isAuthenticated || hasTriggeredRef.current) return
+
+        // Local prefs already populated — no onboarding needed
+        if (prefs.favoriteCuisines.length > 0) return
+
+        // Local store is empty — check Supabase before showing onboarding
+        // (handles fresh-device / reinstall scenario — BUG-ON1)
+        hasTriggeredRef.current = true
+        loadFromSupabase().then((found) => {
+            if (!found) {
+                // Truly first time — show onboarding after layout renders
+                setTimeout(() => setShowOnboarding(true), 600)
+                // Note: no cleanup needed — hasTriggeredRef prevents double-fire
+            }
+            // If found, prefs store was updated → cuisines.length > 0, gate stays closed
+        })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, prefs.favoriteCuisines.length])
 
     // OnboardingFlow is solely responsible for saving prefs.

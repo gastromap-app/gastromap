@@ -45,9 +45,10 @@ export async function getProfiles() {
     if (!supabase) return mockProfiles
     const { data } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar_url, created_at')
+        .select('id, email, full_name, name, role, avatar_url, created_at')
         .order('created_at', { ascending: false })
-    return data || []
+    // Normalise: some installs use full_name, some use name
+    return (data || []).map(p => ({ ...p, name: p.full_name || p.name || p.email?.split('@')[0] || '—' }))
 }
 
 export async function updateProfileRole(userId, role) {
@@ -65,13 +66,19 @@ export async function getPendingReviews() {
     if (!supabase) return mockPendingReviews
     const { data } = await supabase
         .from('reviews')
-        .select('*, profiles(name), locations(id, title, city)')
+        .select('*, profiles(full_name, name), locations(id, title, city)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
-    return data || []
+    // Normalise author name across schema variants
+    return (data || []).map(r => ({
+        ...r,
+        profiles: r.profiles
+            ? { ...r.profiles, name: r.profiles.full_name || r.profiles.name || '—' }
+            : null,
+    }))
 }
 
-export async function updateReviewStatus(reviewId, status, comment) {
+export async function updateReviewStatus(reviewId, status, _comment) {
     if (!supabase) return { error: 'No Supabase' }
     // reviews table columns: id, user_id, location_id, rating, review_text, status, created_at, updated_at
     // admin_comment column does NOT exist — only update status + updated_at
@@ -127,7 +134,7 @@ export async function getTopLocations(limit = 5) {
     const { data, error } = await supabase
         .from('locations')
         .select('id, title, city, category, rating, reviews(count), user_visits(count)')
-        .eq('status', 'active')
+        .in('status', ['active', 'approved'])
         .order('rating', { ascending: false })
         .limit(limit * 3) // fetch more, sort in JS
 
@@ -158,7 +165,7 @@ export async function getCategoryStats() {
     for (const loc of data || []) {
         if (!map[loc.category]) map[loc.category] = { category: loc.category, total: 0, active: 0, ratings: [] }
         map[loc.category].total++
-        if (loc.status === 'active') map[loc.category].active++
+        if (loc.status === 'active' || loc.status === 'approved') map[loc.category].active++
         if (loc.rating) map[loc.category].ratings.push(Number(loc.rating))
     }
 
@@ -182,7 +189,7 @@ export async function getCityStats() {
     const { data, error } = await supabase
         .from('locations')
         .select('city, country, rating')
-        .eq('status', 'active')
+        .in('status', ['active', 'approved'])
 
     if (error) { console.error('[admin.api] getCityStats:', error.message); return [] }
 
@@ -295,7 +302,7 @@ export async function getDetailedEngagement() {
             ? Math.round((approvedRatings.reduce((a, b) => a + b, 0) / approvedRatings.length) * 100) / 100
             : null,
         total_locations:   lv.length,
-        active_locations:  lv.filter(l => l.status === 'active').length,
+        active_locations:  lv.filter(l => l.status === 'active' || l.status === 'approved').length,
         pending_locations: lv.filter(l => l.status === 'pending').length,
         total_users:       uv.length,
         admin_users:       uv.filter(u => u.role === 'admin').length,

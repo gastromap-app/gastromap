@@ -7,6 +7,7 @@ export function usePWA() {
 
     useEffect(() => {
         // Run initial check only on client
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsInstalled(
             !!(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
         )

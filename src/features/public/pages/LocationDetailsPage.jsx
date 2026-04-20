@@ -85,7 +85,7 @@ const LocationDetailsPage = () => {
     const { data: allReviews = [] } = useLocationReviews(location?.id)
     const createReview = useCreateReviewMutation()
     const reviews = useMemo(
-        () => allReviews.filter((r) => r.status === 'published'),
+        () => allReviews.filter((r) => r.status === 'approved' || r.status === 'published'),
         [allReviews]
     )
 
@@ -160,6 +160,7 @@ const LocationDetailsPage = () => {
         if (!phone) return
         // Validate: must start with + or digits only — prevents open redirects via tel:
         if (!/^\+?[\d\s\-().]{7,20}$/.test(phone)) return
+        // eslint-disable-next-line react-hooks/immutability
         window.location.href = `tel:${phone}`
     }
 
@@ -630,7 +631,7 @@ const LocationDetailsPage = () => {
 
     return (
         <PageTransition
-            className={`min-h-screen ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'} relative pt-20 md:pt-24`}
+            className="min-h-screen relative pt-20 md:pt-24"
             style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
         >
 

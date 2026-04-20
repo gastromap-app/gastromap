@@ -94,7 +94,7 @@ export const NOTIFICATION_TYPES = {
  * @returns {'granted' | 'denied' | 'default' | 'unsupported'}
  */
 export function getPermissionStatus() {
-    if (!('Notification' in window)) {
+    if (typeof Notification === 'undefined') {
         return 'unsupported'
     }
     return Notification.permission
@@ -104,7 +104,7 @@ export function getPermissionStatus() {
  * Check if notifications are supported
  */
 export function isSupported() {
-    return 'Notification' in window
+    return typeof Notification !== 'undefined'
 }
 
 /**
@@ -452,6 +452,39 @@ function urlBase64ToUint8Array(base64String) {
         outputArray[i] = rawData.charCodeAt(i)
     }
     return outputArray
+}
+
+// ─── Server-side Notifications (for other users) ──────────────────────────
+
+/**
+ * Send a notification to a specific user by inserting directly
+ * into the notifications table.  Unlike storeNotification() which
+ * targets the current authenticated user, this can target ANY user —
+ * perfect for admin actions like approving / rejecting submissions.
+ *
+ * @param {{ userId: string, type: string, title: string, body: string, data?: object }} params
+ * @returns {Promise<boolean>}
+ */
+export async function sendNotificationToUser({ userId, type, title, body, data = {} }) {
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                type,
+                title,
+                body,
+                data,
+                read: false,
+                created_at: new Date().toISOString(),
+            })
+
+        if (error) throw error
+        return true
+    } catch (err) {
+        console.warn('[Notifications] Could not send notification to user:', err.message)
+        return false
+    }
 }
 
 // ─── Convenience Functions ──────────────────────────────────────────────────

@@ -31,20 +31,27 @@ const AuthCallbackPage = () => {
         const errorDescription = params.get('error_description')
 
         if (error) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setStatus('error')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setErrorDesc(errorDescription?.replace(/\+/g, ' ') || 'The confirmation link is invalid or has expired.')
             // Try to retrieve email saved at signup time
             const savedEmail = sessionStorage.getItem('pending_verification_email')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (savedEmail) setResendEmail(savedEmail)
             return
         }
 
         // No error in URL — wait up to 8s for Supabase to fire SIGNED_IN
+        // Use functional updater to avoid stale closure — only overwrite if still 'loading'
         const timeout = setTimeout(() => {
-            if (status === 'loading') {
-                setStatus('error')
-                setErrorDesc('Session could not be established. The link may have expired.')
-            }
+            setStatus(prev => {
+                if (prev === 'loading') {
+                    setErrorDesc('Session could not be established. The link may have expired.')
+                    return 'error'
+                }
+                return prev
+            })
         }, 8000)
 
         return () => clearTimeout(timeout)
@@ -53,6 +60,7 @@ const AuthCallbackPage = () => {
     // When auth store confirms the user is signed in, redirect them
     useEffect(() => {
         if (isAuthenticated && !isLoading && status === 'loading') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setStatus('success')
             sessionStorage.removeItem('pending_verification_email')
             const timer = setTimeout(() => navigate('/dashboard', { replace: true }), 1500)

@@ -83,6 +83,7 @@ const CookiePolicyPage = lazy(() => import('@/features/dashboard/pages/CookiePol
 const AIGuidePage = lazy(() => import('@/features/dashboard/pages/AIGuidePage'))
 const SavedPage = lazy(() => import('@/features/dashboard/pages/SavedPage'))
 const VisitedPage = lazy(() => import('@/features/dashboard/pages/VisitedPage'))
+const MapPage = lazy(() => import('@/features/dashboard/pages/MapPage'))
 const ExploreWrapper = lazy(() => import('@/features/dashboard/pages/ExploreWrapper'))
 
 // ─── LAZY: Admin pages ─────────────────────────────────────────────────────
@@ -176,7 +177,14 @@ export const AppRouter = () => {
                         />
                         <Route path="/saved" element={<SavedPage />} />
                         <Route path="/visited" element={<VisitedPage />} />
-                        <Route path="/map" element={<Navigate to="/explore" replace />} />
+                        <Route
+                            path="/map"
+                            element={
+                                <ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}>
+                                    <MapPage />
+                                </ErrorBoundary>
+                            }
+                        />
                     </Route>
                 </Route>
 

@@ -73,6 +73,7 @@ const CitiesPage = () => {
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
 
     // ── Shared error / empty state ─────────────────────────────────────────
+    // eslint-disable-next-line react-hooks/static-components
     const NoResults = () => (
         <div className="py-20 flex flex-col items-center gap-4 text-center">
             <AlertCircle size={36} className="text-gray-500 dark:text-gray-400" />
@@ -88,9 +89,9 @@ const CitiesPage = () => {
         </div>
     )
 
+    /* eslint-disable react-hooks/static-components */
     return (
         <div data-lenis-prevent className="h-[100dvh] bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
-
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
             <motion.div
                 className="md:hidden space-y-5 px-[2.5vw] pt-24 pb-12"

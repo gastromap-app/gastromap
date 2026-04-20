@@ -63,3 +63,7 @@ htmlcov/
 *.lzo
 ```
 .env*.local
+
+# IDE worktrees
+.claude/worktrees/
+.qoder/repowiki/

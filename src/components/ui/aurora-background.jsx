@@ -14,7 +14,7 @@ const AuroraBackground = ({ theme = 'light', children, className }) => {
     const isLight = theme === 'light'
 
     // Background base color
-    const bgClass = isLight ? 'bg-blue-50' : 'bg-[#0f172a]'
+    const bgClass = isLight ? 'bg-[#f8faff]' : 'bg-[#0f172a]'
 
     // Blob colors (using style tags for dynamic dynamic variable isn't as performant, so simple classes)
     const blob1Class = isLight ? 'bg-blue-400' : 'bg-blue-800'
@@ -23,7 +23,7 @@ const AuroraBackground = ({ theme = 'light', children, className }) => {
 
     // Fix: Sync body background with theme to prevent "white corners" on mobile overscroll
     React.useEffect(() => {
-        document.body.style.backgroundColor = isLight ? '#eff6ff' : '#0f172a' // blue-50 : slate-900
+        document.body.style.backgroundColor = isLight ? '#f8faff' : '#0f172a'
     }, [isLight])
 
     return (
@@ -33,23 +33,19 @@ const AuroraBackground = ({ theme = 'light', children, className }) => {
                 {/* Blob 1 (Top Left) */}
                 <div
                     className={cn(
-                        "absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full blur-[60px] md:blur-[100px] mix-blend-normal md:mix-blend-multiply filter will-change-transform animate-aurora-1 opacity-20 md:opacity-40",
+                        "absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full blur-[60px] md:blur-[100px] mix-blend-normal filter will-change-transform animate-aurora-1 opacity-20 md:opacity-40",
                         blob1Class
                     )}
                 />
-
-                {/* Blob 2 (Center Right) */}
                 <div
                     className={cn(
-                        "absolute top-[20%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[60px] md:blur-[100px] mix-blend-normal md:mix-blend-multiply filter will-change-transform animate-aurora-2 opacity-15 md:opacity-30 animation-delay-2000",
+                        "absolute top-[20%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[60px] md:blur-[100px] mix-blend-normal filter will-change-transform animate-aurora-2 opacity-15 md:opacity-30 animation-delay-2000",
                         blob2Class
                     )}
                 />
-
-                {/* Blob 3 (Bottom Left) - Keep as primary light source */}
                 <div
                     className={cn(
-                        "absolute bottom-[-10%] left-[10%] w-[80%] h-[50%] rounded-full blur-[80px] md:blur-[120px] mix-blend-normal md:mix-blend-multiply filter will-change-transform animate-aurora-3 opacity-20 md:opacity-40 animation-delay-5000",
+                        "absolute bottom-[-10%] left-[10%] w-[80%] h-[50%] rounded-full blur-[80px] md:blur-[120px] mix-blend-normal filter will-change-transform animate-aurora-3 opacity-20 md:opacity-40 animation-delay-5000",
                         blob3Class
                     )}
                 />

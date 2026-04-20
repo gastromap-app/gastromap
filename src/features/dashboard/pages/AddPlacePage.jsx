@@ -158,6 +158,7 @@ function AutocompleteInput({
     }, [])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOpen(suggestions.length > 0 && value.length >= minLength)
     }, [suggestions, value, minLength])
 

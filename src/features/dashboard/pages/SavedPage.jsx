@@ -59,14 +59,18 @@ function SavedCard({ favorite, index, onRemove }) {
 
                 {/* Meta row */}
                 <div className="flex items-center gap-3 mt-2">
-                    <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {loc.priceLevel}
-                    </span>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
-                        isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                        {loc.vibe}
-                    </span>
+                    {(loc.price_level || loc.priceLevel) && (
+                        <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {loc.price_level || loc.priceLevel}
+                        </span>
+                    )}
+                    {(loc.special_labels?.[0] || loc.vibe) && (
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
+                            isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                            {loc.special_labels?.[0] || loc.vibe}
+                        </span>
+                    )}
                 </div>
             </Link>
 

@@ -20,7 +20,6 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
-import { DrillDownExplorer, CountryCards } from '../components/DrillDownExplorer'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -289,15 +288,8 @@ const DashboardPage = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
-    // Drill-down navigation state
-    const [drillLevel, setDrillLevel] = useState('home') // 'home' | 'cities' | 'locations'
-    const [drillCountry, setDrillCountry] = useState(null)
-    const [drillCity, setDrillCity] = useState(null)
-
     const handleSelectCountry = (country) => {
-        setDrillCountry(country)
-        setDrillCity(null)
-        setDrillLevel('cities')
+        navigate(`/explore/${country.slug}`)
     }
     const debouncedSearch = useDebounce(searchQuery, 300)
 
@@ -381,25 +373,7 @@ const DashboardPage = () => {
                 {/* ── MOBILE ── */}
                 <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
-                    {/* Drill-down overlay (Country → Cities → Locations) */}
-                    {drillLevel !== 'home' && (
-                        <DrillDownExplorer
-                            countries={countries}
-                            level={drillLevel}
-                            setLevel={setDrillLevel}
-                            selectedCountry={drillCountry}
-                            setSelectedCountry={setDrillCountry}
-                            selectedCity={drillCity}
-                            setSelectedCity={setDrillCity}
-                            searchQuery={searchQuery}
-                            setSearchQuery={setSearchQuery}
-                            setIsFilterOpen={setIsFilterOpen}
-                        />
-                    )}
 
-                    {/* Home content (visible when not drilling) */}
-                    {drillLevel === 'home' && (
-                    <>
 
                     {/* Greeting */}
                     <div className="px-5 mb-5">
@@ -547,8 +521,6 @@ const DashboardPage = () => {
                             </div>
                         </div>
                     </div>
-                    </>
-                    )}
                 </div>
 
                 {/* ── DESKTOP ── */}
@@ -563,12 +535,6 @@ const DashboardPage = () => {
                         setIsFilterOpen={setIsFilterOpen}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
-                        drillLevel={drillLevel}
-                        setDrillLevel={setDrillLevel}
-                        drillCountry={drillCountry}
-                        setDrillCountry={setDrillCountry}
-                        drillCity={drillCity}
-                        setDrillCity={setDrillCity}
                         handleSelectCountry={handleSelectCountry}
                     />
                 </div>
@@ -582,8 +548,7 @@ const DashboardPage = () => {
 const DesktopDashboard = ({
     _locations, recommended, trending, authUser, countries, theme,
     setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
-    drillLevel, setDrillLevel, drillCountry, setDrillCountry,
-    drillCity, setDrillCity, handleSelectCountry,
+    handleSelectCountry,
 }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -606,22 +571,6 @@ const DesktopDashboard = ({
 
     return (
         <div className="pb-20 max-w-6xl mx-auto w-full">
-
-            {/* Drill-down overlay (Country → Cities → Locations) */}
-            {drillLevel !== 'home' && activeTab === 'overview' && (
-                <DrillDownExplorer
-                    countries={countries}
-                    level={drillLevel}
-                    setLevel={setDrillLevel}
-                    selectedCountry={drillCountry}
-                    setSelectedCountry={setDrillCountry}
-                    selectedCity={drillCity}
-                    setSelectedCity={setDrillCity}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    setIsFilterOpen={setIsFilterOpen}
-                />
-            )}
 
             {/* Hero */}
             <div className="mt-10 mb-8">
@@ -691,7 +640,7 @@ const DesktopDashboard = ({
             {/* Content */}
             {activeTab === 'map' ? (
                 <MapDiscoveryPanel height="h-[calc(100vh-300px)]" setIsFilterOpen={setIsFilterOpen} />
-            ) : drillLevel !== 'home' ? null : (
+            ) : (
                 <motion.div
                     initial="hidden"
                     animate="visible"

@@ -91,7 +91,7 @@ const CitiesPage = () => {
 
     /* eslint-disable react-hooks/static-components */
     return (
-        <div data-lenis-prevent className="h-[100dvh] bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
+        <div data-lenis-prevent className="bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
             <motion.div
                 className="md:hidden space-y-5 px-[2.5vw] pt-24 pb-12"

@@ -30,11 +30,16 @@ function buildFallback(country) {
  * React Query caches: stale after 24h, kept in memory 48h.
  */
 export function useCitiesQuery(country) {
+    // Capitalize first letter and replace dashes with spaces for Nominatim API
+    const countryName = country
+        ? country.charAt(0).toUpperCase() + country.slice(1).replace(/-/g, ' ')
+        : country
+
     return useQuery({
         queryKey: ['cities', country?.toLowerCase()],
         queryFn: async () => {
             try {
-                const cities = await getCitiesForCountry(country)
+                const cities = await getCitiesForCountry(countryName)
                 return cities.length > 0 ? cities : buildFallback(country)
             } catch {
                 return buildFallback(country)

@@ -21,6 +21,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const { options: cuisineOptions } = useCuisineOptions()
 
     // Merge static labels + live KG cuisine names for the "Cuisine & Menu" group
+    // eslint-disable-next-line no-unused-vars
     const cuisineMenuItems = useMemo(() => [
         ...CUISINE_MENU_LABELS,
         ...cuisineOptions.map(c => c.name),

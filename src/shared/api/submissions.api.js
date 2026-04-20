@@ -1,5 +1,6 @@
 import { supabase, ApiError } from './client'
 import { config } from '@/shared/config/env'
+import { sendNotificationToUser, NOTIFICATION_TYPES } from './notifications.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
 
@@ -62,15 +63,39 @@ export async function getPendingSubmissions() {
  */
 export async function approveSubmission(id, locationData) {
     if (!USE_SUPABASE) return { id }
+
+    // Fetch submission to get submitter's user_id for notification
+    const submission = unwrap(
+        await supabase
+            .from('user_submissions')
+            .select('user_id, title')
+            .eq('id', id)
+            .single()
+    )
+
     const location = unwrap(
         await supabase.from('locations').insert(locationData).select().single()
     )
-    return unwrap(
+
+    const result = unwrap(
         await supabase
             .from('user_submissions')
             .update({ status: 'approved', location_id: location.id, reviewed_at: new Date().toISOString() })
             .eq('id', id)
+            .select()
+            .single()
     )
+
+    // Notify the submitter about approval (non-blocking — failure won't break the flow)
+    const locationName = locationData.title || submission.title || 'Your location'
+    await sendNotificationToUser({
+        userId: submission.user_id,
+        type: NOTIFICATION_TYPES.LOCATION_APPROVED.id,
+        title: 'Location approved!',
+        body: `Your location "${locationName}" has been approved and is now visible to users.`,
+    })
+
+    return result
 }
 
 /**
@@ -78,12 +103,34 @@ export async function approveSubmission(id, locationData) {
  */
 export async function rejectSubmission(id, reason) {
     if (!USE_SUPABASE) return { id }
-    return unwrap(
+
+    // Fetch submission to get submitter's user_id for notification
+    const submission = unwrap(
+        await supabase
+            .from('user_submissions')
+            .select('user_id, title')
+            .eq('id', id)
+            .single()
+    )
+
+    const result = unwrap(
         await supabase
             .from('user_submissions')
             .update({ status: 'rejected', rejection_reason: reason, reviewed_at: new Date().toISOString() })
             .eq('id', id)
     )
+
+    // Notify the submitter about rejection (non-blocking — failure won't break the flow)
+    const locationName = submission.title || 'Your location'
+    await sendNotificationToUser({
+        userId: submission.user_id,
+        type: NOTIFICATION_TYPES.LOCATION_REJECTED.id,
+        title: 'Location needs changes',
+        body: `"${locationName}" was not approved. Reason: ${reason}`,
+        data: { reason },
+    })
+
+    return result
 }
 
 // ─── Photo upload ──────────────────────────────────────────────────────────

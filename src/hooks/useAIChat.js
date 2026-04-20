@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
+import { config } from '@/shared/config/env'
 
 /**
  * useAIChat — GastroGuide conversation logic with OpenRouter API streaming.
@@ -47,7 +48,9 @@ export function useAIChat() {
     const { locations } = useLocationsStore()
     const { user } = useAuthStore()
     // Use centralized AI configuration logic (Runtime Admin key > Env key)
-    const { apiKey: activeApiKey } = getActiveAIConfig()
+    const { apiKey: activeApiKey, useProxy } = getActiveAIConfig()
+    // hasAIAccess: true when either a direct key OR a proxy (prod environment) is available
+    const hasAIAccess = Boolean(activeApiKey) || useProxy || config.ai.useProxy
 
     const sendMessage = useCallback(async (text) => {
         if (!text?.trim() || isTyping) return
@@ -99,8 +102,10 @@ export function useAIChat() {
         }
 
         try {
-            // ── Streaming path (OpenRouter API) ──────────────────────────────
-            if (activeApiKey) {
+            // ── Streaming / Proxy path ───────────────────────────────────────
+            // Uses OpenRouter directly (when apiKey set) OR via Supabase proxy
+            // (no key but PROD). Only falls through to local engine when both fail.
+            if (hasAIAccess) {
                 // Add an empty assistant message that will fill with streamed chunks
                 addMessage('assistant', '…')
                 let accumulated = ''
@@ -118,7 +123,7 @@ export function useAIChat() {
                     intent: result.intent,
                 })
             } else {
-                // ── Non-streaming fallback (local engine) ────────────────────
+                // ── Local engine fallback (no API key, no proxy — dev only) ──
                 const response = await analyzeQuery(text.trim(), context)
                 addMessage('assistant', response.content, {
                     matches: response.matches,
@@ -139,7 +144,7 @@ export function useAIChat() {
         messages,
         isTyping,
         error,
-        isStreaming: isTyping && Boolean(activeApiKey),
+        isStreaming: isTyping && hasAIAccess,
         sendMessage,
         clearHistory,
     }

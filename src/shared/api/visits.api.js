@@ -16,7 +16,14 @@ export async function getUserVisitsWithLocations(userId) {
 
 export async function addVisit(userId, locationId, rating, reviewText) {
     if (!supabase) throw new ApiError('No Supabase', 0, 'NO_CLIENT')
-    const { data, error } = await supabase.from('user_visits').upsert({ user_id: userId, location_id: locationId, rating, review_text: reviewText, visited_at: new Date().toISOString() }).select().single()
+    const { data, error } = await supabase
+        .from('user_visits')
+        .upsert(
+            { user_id: userId, location_id: locationId, rating, review_text: reviewText, visited_at: new Date().toISOString() },
+            { onConflict: 'user_id,location_id' }
+        )
+        .select()
+        .single()
     if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
     return data
 }

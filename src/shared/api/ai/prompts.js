@@ -21,7 +21,7 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
         appCfg = useAppConfigStore.getState()
-    } catch (e) {
+    } catch {
         const { getActiveAIConfig } = await import('../ai-config.api')
         appCfg = getActiveAIConfig()
     }

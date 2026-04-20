@@ -580,7 +580,7 @@ const DashboardPage = () => {
 // ─── DESKTOP DASHBOARD ────────────────────────────────────────────────────────
 
 const DesktopDashboard = ({
-    locations, recommended, trending, authUser, countries, theme,
+    _locations, recommended, trending, authUser, countries, theme,
     setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
     drillLevel, setDrillLevel, drillCountry, setDrillCountry,
     drillCity, setDrillCity, handleSelectCountry,

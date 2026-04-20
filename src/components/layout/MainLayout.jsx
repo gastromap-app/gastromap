@@ -14,15 +14,19 @@ export function MainLayout() {
     const location = useLocation()
     const isAIGuide = location.pathname === '/ai-guide'
     const isExplore = location.pathname.startsWith('/explore')
+    const isMap = location.pathname === '/map'
+    // Full-screen pages: no extra bottom padding (they handle their own layout)
+    const isFullScreen = isAIGuide || isExplore || isMap
 
     return (
         <AuroraBackground theme={theme}>
             <div className="flex flex-col min-h-screen text-foreground relative">
                 <UniversalHeader />
                 <main
-                    className={`flex-1 relative transition-all duration-300 ${isAIGuide || isExplore ? '' : 'pb-24'} md:pb-0`}
-                    style={(!isAIGuide && !isExplore) ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : undefined}
+                    className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24'} md:pb-0`}
+                    style={!isFullScreen ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : undefined}
                 >
+                    {/* Map page uses fixed inset-0 and renders above this container */}
                     <Outlet />
                 </main>
                 <BottomNav />

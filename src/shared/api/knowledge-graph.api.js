@@ -356,7 +356,7 @@ async function saveViaProxy(type, data) {
                 }
             }
             if (jwt) console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
     }
 
     if (!jwt) {
@@ -406,6 +406,7 @@ async function saveViaProxy(type, data) {
     try {
         result = await res.json()
     } catch (parseErr) {
+        void parseErr
         const raw = await res.text().catch(() => '')
         console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
         throw new ApiError(`kg-save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')

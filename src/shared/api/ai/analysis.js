@@ -133,5 +133,14 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
         }
     }
 
-    return analyzeQuery(message, context)
+    // Fallback: run local engine and simulate streaming so onChunk is always called
+    const result = await analyzeQuery(message, context)
+    if (onChunk && result?.content) {
+        const words = result.content.split(' ')
+        for (let i = 0; i < words.length; i++) {
+            onChunk((i === 0 ? '' : ' ') + words[i])
+            await new Promise(r => setTimeout(r, 18))
+        }
+    }
+    return result
 }

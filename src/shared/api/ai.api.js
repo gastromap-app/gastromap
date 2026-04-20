@@ -39,7 +39,7 @@ const MODEL_CASCADE = [
     'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best quality (intermittent 503)
     'openai/gpt-oss-20b:free',                // ✅ Reliable, fast
     'z-ai/glm-4.5-air:free',                  // ✅ Multilingual
-    'nvidia/nemotron-nano-9b:free',            // ✅ Lightweight last resort
+    'stepfun/step-3.5-flash:free',               // ✅ Lightweight last resort
 ]
 
 /**

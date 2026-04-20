@@ -5,7 +5,6 @@ import { ChevronRight, MapPin, Star, Search, SlidersHorizontal, Home } from 'luc
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 
 // COUNTRY_CITIES used as FALLBACK only when no DB data is available
 const COUNTRY_CITIES_FALLBACK = {
@@ -52,7 +51,7 @@ const pageTransition = { type: 'spring', stiffness: 320, damping: 32 }
  *   setIsFilterOpen
  */
 export function DrillDownExplorer({
-    countries,
+    _countries,
     level, setLevel,
     selectedCountry, setSelectedCountry,
     selectedCity, setSelectedCity,
@@ -62,7 +61,6 @@ export function DrillDownExplorer({
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
-    const { t } = useTranslation()
     const { locations, isInitialized } = useLocationsStore()
 
     // DYNAMIC cities: derive from real DB data, fall back to static list
@@ -97,10 +95,17 @@ export function DrillDownExplorer({
         if (data.city)    setSelectedCity(data.city)
         setLevel(nextLevel)
     }
+    // eslint-disable-next-line no-unused-vars
     const pop = () => {
         setDirection(-1)
-        if (level === 'locations') setLevel('cities')
-        else if (level === 'cities') setLevel('home')
+        if (level === 'locations') {
+            setSelectedCity(null)
+            setLevel('cities')
+        } else if (level === 'cities') {
+            setSelectedCity(null)
+            setSelectedCountry(null)
+            setLevel('home')
+        }
     }
 
     // Filtered locations for current city
@@ -138,8 +143,7 @@ export function DrillDownExplorer({
         <div
             className="fixed inset-0 z-[90] flex flex-col"
             style={{
-                background: isDark ? '#0a0a0f' : '#f9f9fb',
-                // Outer container accounts for safe-area only — do NOT repeat it in children
+                background: isDark ? '#0f172a' : '#f8faff',
                 paddingTop: 'env(safe-area-inset-top)',
             }}
         >
@@ -157,6 +161,13 @@ export function DrillDownExplorer({
                                 onClick={() => {
                                     if (crumb.level === level) return
                                     setDirection(-1)
+                                    // Reset stale state when jumping back to a higher level
+                                    if (crumb.level === 'home') {
+                                        setSelectedCity(null)
+                                        setSelectedCountry(null)
+                                    } else if (crumb.level === 'cities') {
+                                        setSelectedCity(null)
+                                    }
                                     setLevel(crumb.level)
                                 }}
                                 className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all active:scale-95 ${
@@ -181,7 +192,7 @@ export function DrillDownExplorer({
                         <input
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            placeholder={level === 'locations' ? `Search in ${selectedCity}…` : 'Search…'}
+                            placeholder={level === 'locations' && selectedCity ? `Search in ${selectedCity}…` : 'Search…'}
                             className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
                         />
                         {searchQuery && (
@@ -337,8 +348,7 @@ export function DrillDownExplorer({
 
 /* ── Country cards for home level — used directly in DashboardPage ── */
 export function CountryCards({ countries, onSelectCountry }) {
-    const { theme } = useTheme()
-    const isDark = theme === 'dark'
+    const { theme: _theme } = useTheme()
 
     return (
         <div className="flex gap-3 overflow-x-auto pb-4 -mx-[2.5vw] px-[2.5vw] scrollbar-hide snap-x snap-mandatory">

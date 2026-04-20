@@ -22,12 +22,19 @@ const MOCK_USERS = [
 // ─── Supabase helpers ──────────────────────────────────────────────────────
 
 async function _fetchProfile(userId) {
+    // Try `profiles` table first (legacy schema)
     try {
-        const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-        return data
-    } catch {
-        return null
-    }
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+        if (!error && data) return data
+    } catch { /* table may not exist */ }
+
+    // Fallback: `user_profiles` table (new schema)
+    try {
+        const { data, error } = await supabase.from('user_profiles').select('*').eq('id', userId).single()
+        if (!error && data) return { ...data, full_name: data.display_name }
+    } catch { /* table may not exist yet */ }
+
+    return null
 }
 
 function _mapUser(authUser, profile) {
@@ -204,23 +211,56 @@ export async function uploadAvatar(userId, file) {
 
 /**
  * Update user profile fields (name, avatar).
+ * Tries `profiles` table first, then `user_profiles` as fallback.
+ * Also updates Supabase Auth user_metadata so the name persists even without a DB profile table.
  */
 export async function updateProfile(userId, updates) {
     if (!USE_SUPABASE) { await simulateDelay(300); return { id: userId, ...updates } }
+
+    // Always update Supabase Auth metadata — works even without a profiles table
+    const metaUpdates = {}
+    if (updates.name) metaUpdates.full_name = updates.name
+    if (updates.avatar !== undefined) metaUpdates.avatar_url = updates.avatar
+
+    if (Object.keys(metaUpdates).length > 0) {
+        await supabase.auth.updateUser({ data: metaUpdates })
+    }
 
     const dbUpdates = {}
     if (updates.name) dbUpdates.full_name = updates.name
     if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(dbUpdates)
-        .eq('id', userId)
-        .select()
-        .single()
+    // Try `profiles` table first (legacy schema)
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(dbUpdates)
+            .eq('id', userId)
+            .select()
+            .single()
+        if (!error && data) {
+            return { id: data.id, name: data.full_name, avatar: data.avatar_url, role: data.role }
+        }
+    } catch { /* profiles table may not exist */ }
 
-    if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR')
-    return { id: data.id, name: data.full_name, avatar: data.avatar_url, role: data.role }
+    // Fallback: try `user_profiles` table (new schema)
+    try {
+        const upsertData = { id: userId, updated_at: new Date().toISOString() }
+        if (updates.name) upsertData.display_name = updates.name
+        if (updates.avatar !== undefined) upsertData.avatar_url = updates.avatar
+
+        const { data } = await supabase
+            .from('user_profiles')
+            .upsert(upsertData)
+            .select()
+            .single()
+        if (data) {
+            return { id: data.id, name: data.display_name, avatar: data.avatar_url, role: data.role }
+        }
+    } catch { /* user_profiles table may not exist yet */ }
+
+    // At minimum return the updates so UI stays in sync
+    return { id: userId, name: updates.name, avatar: updates.avatar }
 }
 
 /**

@@ -189,7 +189,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                     <h4 className={`text-xl font-black leading-tight group-hover:text-blue-600 transition-colors ${textStyle}`}>
                         {item.title}
                     </h4>
-                    <span className="text-blue-500 font-black text-sm flex-shrink-0">{item.priceLevel}</span>
+                    <span className="text-blue-500 font-black text-sm flex-shrink-0">{item.price_level ?? item.priceLevel}</span>
                 </div>
                 <p className={`text-[13px] font-bold ${subTextStyle}`}>{item.cuisine} · {item.category}</p>
 
@@ -275,7 +275,6 @@ const LocationsPage = () => {
         sortBy,
         minRating,
         activePriceLevels,
-        setCategory,
         setSearchQuery: storeSetSearch,
         setSortBy,
         resetFilters,
@@ -314,6 +313,7 @@ const LocationsPage = () => {
     }, [cityData, localSearch, activeCategory, minRating, activePriceLevels])
 
     const scrollContainerRef = useRef(null)
+    // eslint-disable-next-line no-unused-vars
     const virtualizer = useVirtualizer({
         count: isLoading ? 0 : localFilteredLocations.length,
         getScrollElement: () => scrollContainerRef.current,
@@ -352,7 +352,7 @@ const LocationsPage = () => {
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
                             <input
                                 type="text"
-                                placeholder={`Search in ${city}...`}
+                                placeholder={city ? `Search in ${city}...` : 'Search restaurants...'}
                                 value={localSearch}
                                 onChange={(e) => setLocalSearch(e.target.value)}
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -399,7 +399,7 @@ const LocationsPage = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder={`Search in ${city}, ${country}...`}
+                                    placeholder={city ? `Search in ${city}${country ? `, ${country}` : ''}...` : 'Search everywhere...'}
                                     value={localSearch}
                                     onChange={(e) => setLocalSearch(e.target.value)}
                                     className={`w-full h-16 pl-14 pr-12 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${isDark ? 'bg-white/5 text-white border-white/10 focus:border-blue-500' : 'bg-white shadow-xl focus:border-blue-500'}`}

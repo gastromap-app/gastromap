@@ -604,7 +604,7 @@ export function useAddVisitMutation() {
 export function useDeleteVisitMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ visitId, userId }) => {
+        mutationFn: async ({ visitId, userId: _userId }) => {
             const { deleteVisit } = await import('./visits.api')
             return deleteVisit(visitId)
         },
@@ -617,13 +617,14 @@ export function useDeleteVisitMutation() {
 
 // ─── Reviews ───
 export function useLocationReviews(locationId) {
-    return useQuery({ 
-        queryKey: ['reviews', locationId], 
+    return useQuery({
+        queryKey: ['reviews', locationId],
         queryFn: async () => {
             const { getLocationReviews } = await import('./reviews.api')
             return getLocationReviews(locationId)
-        }, 
-        staleTime: 60_000 
+        },
+        enabled: !!locationId,
+        staleTime: 60_000
     })
 }
 

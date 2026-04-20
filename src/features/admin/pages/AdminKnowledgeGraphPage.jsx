@@ -672,6 +672,7 @@ const AdminKnowledgeGraphPage = () => {
     const [syncStatus] = useState(null)
     const [showMergeModal, setShowMergeModal] = useState(false)
     const [duplicateGroups, setDuplicateGroups] = useState([])
+    const [_isCreateOpen, setIsCreateOpen] = useState(false)
 
     const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
     const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()

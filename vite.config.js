@@ -138,29 +138,29 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-core': ['react', 'react-dom'],
-          'react-router': ['react-router-dom'],
-          'framer-motion': ['framer-motion'],
-          'lucide': ['lucide-react'],
-          'leaflet': ['leaflet', 'react-leaflet'],
-          'i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          'tanstack': ['@tanstack/react-query', '@tanstack/react-virtual'],
-          'admin': [
-            '/src/features/admin/layout/AdminLayout.jsx',
-            '/src/features/admin/pages/AdminDashboardPage.jsx',
-            '/src/features/admin/pages/AdminLocationsPage.jsx',
-            '/src/features/admin/pages/AdminUsersPage.jsx',
-            '/src/features/admin/pages/AdminSubscriptionsPage.jsx',
-            '/src/features/admin/pages/AdminModerationPage.jsx',
-            '/src/features/admin/pages/AdminAIPage.jsx',
-            '/src/features/admin/pages/AdminKnowledgeGraphPage.jsx',
-            '/src/features/admin/pages/AdminNotificationsPage.jsx',
-            '/src/features/admin/pages/AdminStatsPage.jsx',
-            '/src/features/admin/pages/AdminSettingsPage.jsx',
-            '/src/features/admin/components/ImportWizard.jsx',
-            '/src/features/admin/components/LocationHierarchyExplorer.jsx',
-          ],
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
+            return 'react-core'
+          }
+          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/') || id.includes('node_modules/@remix-run/router/')) {
+            return 'react-router'
+          }
+          if (id.includes('node_modules/framer-motion/')) {
+            return 'framer-motion'
+          }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'lucide'
+          }
+          if (id.includes('node_modules/leaflet/') || id.includes('node_modules/react-leaflet/')) {
+            return 'leaflet'
+          }
+          if (id.includes('node_modules/i18next/') || id.includes('node_modules/react-i18next/') || id.includes('node_modules/i18next-browser-languagedetector/')) {
+            return 'i18n'
+          }
+          if (id.includes('node_modules/@tanstack/')) {
+            return 'tanstack'
+          }
+          // admin pages are lazy-loaded — let Vite split them automatically
         }
       }
     },
@@ -175,5 +175,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
+    exclude: ['.claude/**', '**/.claude/worktrees/**', 'coverage/**', 'dist/**', 'node_modules/**'],
   },
 })

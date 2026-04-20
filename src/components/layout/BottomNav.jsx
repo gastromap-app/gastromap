@@ -14,7 +14,7 @@ export function BottomNav() {
 
     const navItems = [
         { icon: Home,        label: t('nav.overview'), path: '/dashboard' },
-        { icon: Map,         label: t('nav.explore'),  path: '/explore' },
+        { icon: Map,         label: t('nav.map'),      path: '/map' },
         { icon: Sparkles,    label: t('nav.ai_guide'), path: '/ai-guide' },
         { icon: Heart,       label: t('nav.saved'),    path: '/saved' },
         { icon: CheckCircle, label: t('nav.visited'),  path: '/visited' },
@@ -47,7 +47,7 @@ export function BottomNav() {
                         <div className="flex justify-around items-center h-full px-1">
                             {navItems.map((item) => {
                                 const isActive = location.pathname === item.path
-                                    || (item.path === '/explore' && location.pathname.startsWith('/location'))
+                                    || (item.path === '/map' && location.pathname.startsWith('/location'))
 
                                 return (
                                     <Link

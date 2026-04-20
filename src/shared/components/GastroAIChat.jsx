@@ -52,6 +52,7 @@ const buildWelcomeMessages = (userName) => [
  * Merges welcome demo messages with real persisted chat history so the
  * interface never looks empty on first launch.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGastroAI = () => {
     const { user } = useAuthStore()
     const { messages: storedMessages, isTyping, sendMessage, clearHistory } = useAIChat()
@@ -100,7 +101,7 @@ export function ChatInterface({
                 <div
                     className="absolute top-0 left-0 right-0 h-40 z-20 pointer-events-none"
                     style={{
-                        background: `linear-gradient(to bottom, ${isDark ? '#000' : '#fff'} 0%, ${isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)'} 40%, transparent 100%)`,
+                        background: `linear-gradient(to bottom, ${isDark ? '#0f172a' : '#f8faff'} 0%, ${isDark ? 'rgba(15,23,42,0.8)' : 'rgba(248,250,255,0.8)'} 40%, transparent 100%)`,
                     }}
                 />
             )}

@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "vitest run tests/e2e",
+    "test:api": "vitest run --config vitest.config.api.js",
     "i18n:check": "node scripts/check-translations.js",
     "i18n:add": "node scripts/add-translation.js"
   },

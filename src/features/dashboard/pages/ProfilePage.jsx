@@ -7,6 +7,7 @@ import {
     HelpCircle, Mail, Shield, Globe, UserX, PlusCircle, CheckCircle2, Clock, Sparkles, Users, ShieldCheck
 } from 'lucide-react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useUserVisits, useUserFavorites, useUserReviews, useUserRank } from '@/shared/api/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
@@ -14,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 
 // Simple Feedback Modal Component nested for convenience
 const FeedbackModal = ({ isOpen, onClose, theme }) => {
-    const { t, i18n } = useTranslation()
+    const { t } = useTranslation()
     const isDark = theme === 'dark'
     if (!isOpen || typeof document === 'undefined') return null
 
@@ -53,16 +54,35 @@ const ProfilePage = () => {
     const { user: authUser, logout } = useAuthStore()
     const navigate = useNavigate()
 
-    // Redirect to login if not authenticated (instead of showing demo user)
+    // ── ALL hooks must be called unconditionally (Rules of Hooks) ──
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
+    const [signingOut, setSigningOut] = useState(false)
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+    const [toast, setToast] = useState(null)
+
+    // Styling (derived from hooks, not hooks themselves)
+    const textStyle = isDark ? "text-white" : "text-gray-900"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
+    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
+    const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
+
+    // Real data from Supabase — safe with undefined userId (queries stay disabled)
+    const { data: visits = [] }    = useUserVisits(authUser?.id)
+    const { data: favorites = [] } = useUserFavorites(authUser?.id)
+    const { data: reviews = [] }   = useUserReviews(authUser?.id)
+    const { data: rankData }       = useUserRank(authUser?.id)
+
+    // DNA profile from local store (synced from Supabase via onboarding)
+    const { prefs } = useUserPrefsStore()
+
+    // Redirect to login if not authenticated
     if (!authUser) {
         navigate('/login', { replace: true })
         return null
     }
     const user = authUser
-    const { theme } = useTheme()
-    const isDark = theme === 'dark'
-
-    const [signingOut, setSigningOut] = useState(false)
 
     const handleSignOut = async () => {
         setSigningOut(true)
@@ -74,26 +94,10 @@ const ProfilePage = () => {
         }
     }
 
-    // State for Feedback
-    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
-    const [toast, setToast] = useState(null)
-
     const showToast = (msg) => {
         setToast(msg)
         setTimeout(() => setToast(null), 3500)
     }
-
-    // Styling
-    const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
-    const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
-
-    // Real data from Supabase
-    const { data: visits = [] }    = useUserVisits(user?.id)
-    const { data: favorites = [] } = useUserFavorites(user?.id)
-    const { data: reviews = [] }   = useUserReviews(user?.id)
-    const { data: rankData }       = useUserRank(user?.id)
 
     const stats = [
         { label: t('profile.level'), val: rankData?.points > 100 ? 'Expert' : rankData?.points > 20 ? 'Regular' : 'Newbie', icon: Star, color: 'text-yellow-500 bg-yellow-500/10', link: null },
@@ -105,9 +109,9 @@ const ProfilePage = () => {
     const contributions = reviews.slice(0, 3).map(r => ({
         id: r.id,
         name: r.locations?.title || 'Location',
-        isApproved: r.status === 'published',
-        statusLabel: r.status === 'published' ? t('profile.published') : t('profile.pending'),
-        points: r.status === 'published' ? '+5 XP' : t('profile.in_review'),
+        isApproved: r.status === 'approved' || r.status === 'published',
+        statusLabel: (r.status === 'approved' || r.status === 'published') ? t('profile.published') : t('profile.pending'),
+        points: (r.status === 'approved' || r.status === 'published') ? '+5 XP' : t('profile.in_review'),
         date: r.created_at ? new Date(r.created_at).toLocaleDateString() : '—',
     }))
 
@@ -278,42 +282,84 @@ const ProfilePage = () => {
             {/* Taste Preferences Section - "The Foodie DNA" */}
             <div className="px-5 mt-8">
                 <div className={`p-6 rounded-[32px] border backdrop-blur-md ${cardBg}`}>
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                            <Utensils size={18} />
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                <Utensils size={18} />
+                            </div>
+                            <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.taste_profile')}</h3>
                         </div>
-                        <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.taste_profile')}</h3>
+                        <button
+                            onClick={() => navigate('/profile/edit')}
+                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'}`}
+                        >
+                            Edit
+                        </button>
                     </div>
 
-                    <div className="space-y-6">
-                        {/* Foodie DNA Section */}
-                        <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.foodie_dna_label')}</label>
-                            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50/50 border-blue-100/50'}`}>
-                                <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.foodieDNA || t('profile.no_dna')}
-                                </p>
-                            </div>
+                    <div className="space-y-5">
+                        {/* Cuisines */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Cuisines</label>
+                            {prefs.favoriteCuisines?.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prefs.favoriteCuisines.map(c => (
+                                        <span key={c} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                                            {c}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set — complete onboarding</p>
+                            )}
                         </div>
 
-                        {/* Preferred Atmosphere */}
-                        <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.atmosphere_label')}</label>
-                            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-indigo-500/5 border-indigo-500/10' : 'bg-indigo-50/50 border-indigo-100/50'}`}>
-                                <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.atmospherePreference || t('profile.no_atmosphere')}
-                                </p>
-                            </div>
+                        {/* Vibes */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Atmosphere</label>
+                            {prefs.vibePreference?.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prefs.vibePreference.map(v => (
+                                        <span key={v} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}`}>
+                                            {v}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set</p>
+                            )}
                         </div>
 
-                        {/* Must-have Features */}
-                        <div className="space-y-3">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.features_label')}</label>
-                            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-green-500/5 border-green-500/10' : 'bg-green-50/50 border-green-100/50'}`}>
-                                <p className={`text-[13px] leading-relaxed italic ${textStyle} opacity-70`}>
-                                    {user.preferences?.longTerm?.features || t('profile.no_features')}
-                                </p>
-                            </div>
+                        {/* Budget */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Budget</label>
+                            {prefs.priceRange?.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prefs.priceRange.map(p => (
+                                        <span key={p} className={`px-3 py-1.5 rounded-full text-xs font-black border ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-100 text-amber-600'}`}>
+                                            {p}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set</p>
+                            )}
+                        </div>
+
+                        {/* Allergens / Dietary */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Dietary & Allergens</label>
+                            {prefs.dietaryRestrictions?.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prefs.dietaryRestrictions.map(a => (
+                                        <span key={a} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+                                            {a}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>No restrictions</p>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -212,7 +212,7 @@ export function ChatInterface({
                     onSubmit={handleSend}
                     className={`flex-shrink-0 p-3 md:p-4 border-t backdrop-blur-xl ${
                         transparent
-                            ? 'bg-white/20 dark:bg-black/30 border-white/20 dark:border-white/10 fixed bottom-20 left-0 right-0 md:relative md:bottom-0 z-[80]'
+                            ? 'bg-white/20 dark:bg-black/30 border-white/20 dark:border-white/10 relative z-10'
                             : 'bg-white/80 dark:bg-gray-900/80 border-black/5 dark:border-white/5'
                     }`}
                 >

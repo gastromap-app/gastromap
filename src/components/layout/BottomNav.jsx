@@ -20,21 +20,17 @@ export function BottomNav() {
         { icon: CheckCircle, label: t('nav.visited'),  path: '/visited' },
     ]
 
-    // Hide bottom nav on AI Guide page — AnimatedInputBar replaces it
-    const isHidden = location.pathname === '/ai-guide'
-
     return (
         <AnimatePresence mode="wait">
-            {!isHidden && (
-                <motion.div
-                    key="bottom-nav"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-                    className="fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none"
-                    style={{ bottom: 'calc(12px + env(safe-area-inset-bottom))' }}
-                >
+            <motion.div
+                key="bottom-nav"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+                className="fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none"
+                style={{ bottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+            >
                     <nav
                         className={cn(
                             "max-w-md mx-auto pointer-events-auto rounded-[28px] border backdrop-blur-2xl shadow-2xl",
@@ -105,7 +101,6 @@ export function BottomNav() {
                         </div>
                     </nav>
                 </motion.div>
-            )}
         </AnimatePresence>
     )
 }

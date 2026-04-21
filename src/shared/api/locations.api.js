@@ -441,10 +441,14 @@ function _toRow(d) {
     const row = {}
 
     // Required or core fields
-    row.title = d.title || d.name || 'Untitled'
-    row.category = (d.category || d.type || 'other').toLowerCase()
-    row.city = d.city || ''
-    row.country = d.country || ''
+    if (d.title !== undefined) row.title = d.title || 'Untitled'
+    else if (d.name !== undefined) row.title = d.name || 'Untitled'
+
+    if (d.category !== undefined) row.category = (d.category || 'other').toLowerCase()
+    else if (d.type !== undefined) row.category = (d.type || 'other').toLowerCase()
+
+    if (d.city !== undefined) row.city = d.city || ''
+    if (d.country !== undefined) row.country = d.country || ''
 
     if (d.description !== undefined) row.description = d.description
     if (d.address !== undefined)     row.address = d.address

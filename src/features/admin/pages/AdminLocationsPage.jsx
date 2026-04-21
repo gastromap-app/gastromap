@@ -73,6 +73,7 @@ const AdminLocationsPage = () => {
         culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
         locationsList, pendingLocations, loadError, filteredLocations,
+        paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
@@ -169,10 +170,29 @@ const AdminLocationsPage = () => {
                     totalCount={locationsList.length}
                 />
 
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-slate-800/50">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(p => p - 1)}
+                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        >← Prev</button>
+                        <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                            {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        >Next →</button>
+                    </div>
+                )}
+
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
                     {view === 'list' && (
                         <ListViewSection
-                            filteredLocations={filteredLocations}
+                            filteredLocations={paginatedLocations}
                             viewMode={viewMode}
                             onEditLocation={handleEdit}
                             onDelete={handleDelete}

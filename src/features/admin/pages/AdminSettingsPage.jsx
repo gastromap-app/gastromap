@@ -146,11 +146,6 @@ const AdminSettingsPage = () => {
                 eyebrow="Admin"
                 title="Настройки"
                 subtitle="Управление приложением, брендингом и статусом."
-                actions={
-                    <button onClick={handleSave} className={adminBtnPrimary}>
-                        <Save size={13} /> Save Changes
-                    </button>
-                }
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -285,6 +280,17 @@ const AdminSettingsPage = () => {
                         </div>
                     </SettingSection>
                 </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex justify-end pt-6">
+                <button 
+                    onClick={handleSave} 
+                    className={cn(adminBtnPrimary, "h-14 px-10 text-sm shadow-xl shadow-indigo-500/20 active:scale-95")}
+                >
+                    <Save size={16} /> 
+                    <span>Сохранить изменения</span>
+                </button>
             </div>
         </div>
     )

@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Trash2, Globe, CheckCircle2, AlertCircle, Link as LinkIcon, X } from 'lucide-react'
+import { Upload, Trash2, Globe, CheckCircle2, AlertCircle, Link as LinkIcon, X, MapPin } from 'lucide-react'
 import AdminPageHeader from '../components/AdminPageHeader'
 import { useGeoCovers, useUpsertGeoCoverMutation, useDeleteGeoCoverMutation } from '@/shared/api/queries'
+import { supabase } from '@/shared/api/client'
 
 // ─── Static fallback data ─────────────────────────────────────────────────────
 const COUNTRIES = [
@@ -17,7 +19,7 @@ const COUNTRIES = [
 ]
 
 // ─── Upload Card ──────────────────────────────────────────────────────────────
-function CountryCoverCard({ country, cover }) {
+function GeoCoverCard({ item, cover, geoType }) {
     const inputRef = useRef(null)
     const [urlMode, setUrlMode] = useState(false)
     const [urlInput, setUrlInput] = useState('')
@@ -49,9 +51,9 @@ function CountryCoverCard({ country, cover }) {
             await upsert.mutateAsync({
                 file: selectedFile || null,
                 url: urlInput || null,
-                slug: country.slug,
-                geoType: 'country',
-                name: country.name,
+                slug: item.slug,
+                geoType,
+                name: item.name,
             })
             setPreview(null)
             setSelectedFile(null)
@@ -64,7 +66,7 @@ function CountryCoverCard({ country, cover }) {
 
     const handleDelete = async () => {
         try {
-            await remove.mutateAsync({ slug: country.slug, geoType: 'country' })
+            await remove.mutateAsync({ slug: item.slug, geoType })
             setPreview(null)
             showToast('Cover removed')
         } catch (err) {
@@ -84,7 +86,7 @@ function CountryCoverCard({ country, cover }) {
                 {currentImage ? (
                     <img
                         src={currentImage}
-                        alt={country.name}
+                        alt={item.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 ) : (
@@ -101,10 +103,14 @@ function CountryCoverCard({ country, cover }) {
                 </div>
                 <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
 
-                {/* Flag + name badge */}
+                {/* Name badge */}
                 <div className="absolute bottom-2 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                    <span className="text-base">{country.flag}</span>
-                    <span className="text-white text-[11px] font-bold">{country.name}</span>
+                    {item.flag && <span className="text-base">{item.flag}</span>}
+                    {geoType === 'city' && <MapPin size={12} className="text-white" />}
+                    <span className="text-white text-[11px] font-bold">{item.name}</span>
+                    {item.country && geoType === 'city' && (
+                        <span className="text-white/60 text-[10px]">({item.country})</span>
+                    )}
                 </div>
 
                 {/* Delete button */}
@@ -193,18 +199,71 @@ function CountryCoverCard({ country, cover }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminGeoCoversPage() {
-    const { data: covers = [], isLoading } = useGeoCovers('country')
+    const [activeTab, setActiveTab] = useState('country') // 'country' | 'city'
+
+    const { data: covers = [], isLoading } = useGeoCovers(activeTab)
+
+    // Fetch all unique cities from locations table (for Cities tab)
+    const { data: dbCities = [] } = useQuery({
+        queryKey: ['admin-cities-for-covers'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('locations')
+                .select('city, country')
+                .eq('status', 'approved')
+                .not('city', 'is', null)
+
+            const cityMap = {}
+            data?.forEach(row => {
+                if (!row.city) return
+                const slug = row.city.toLowerCase().replace(/\s+/g, '-')
+                if (!cityMap[slug]) {
+                    cityMap[slug] = { slug, name: row.city, country: row.country }
+                }
+            })
+            return Object.values(cityMap).sort((a, b) => a.name.localeCompare(b.name))
+        },
+        staleTime: 5 * 60 * 1000,
+    })
 
     // Build a lookup: slug → cover record
     const coverMap = Object.fromEntries(covers.map(c => [c.slug, c]))
+
+    const items = activeTab === 'country' ? COUNTRIES : dbCities
 
     return (
         <div className="space-y-6 pb-12">
             <AdminPageHeader
                 title="Geo Covers"
-                subtitle="Upload or link cover photos for each country shown on the dashboard"
+                subtitle="Upload or link cover photos for countries and cities shown on the dashboard"
                 icon={Globe}
             />
+
+            {/* Tab toggle */}
+            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit">
+                <button
+                    onClick={() => setActiveTab('country')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                        activeTab === 'country'
+                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                >
+                    <Globe size={15} />
+                    Countries
+                </button>
+                <button
+                    onClick={() => setActiveTab('city')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                        activeTab === 'city'
+                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                >
+                    <MapPin size={15} />
+                    Cities
+                </button>
+            </div>
 
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl px-5 py-4 text-[13px] text-blue-700 dark:text-blue-300 font-medium">
                 Images are stored in Supabase Storage <code className="bg-blue-100 dark:bg-blue-800/40 px-1.5 py-0.5 rounded text-[11px]">geo-covers</code> bucket and served publicly.
@@ -213,17 +272,23 @@ export default function AdminGeoCoversPage() {
 
             {isLoading ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {COUNTRIES.map(c => (
-                        <div key={c.slug} className="h-52 rounded-[24px] bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="h-52 rounded-[24px] bg-slate-100 dark:bg-slate-800 animate-pulse" />
                     ))}
+                </div>
+            ) : items.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                    <MapPin size={40} className="mx-auto mb-3 opacity-40" />
+                    <p className="text-sm font-medium">{activeTab === 'city' ? 'No approved cities found in the database' : 'No items'}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {COUNTRIES.map(country => (
-                        <CountryCoverCard
-                            key={country.slug}
-                            country={country}
-                            cover={coverMap[country.slug] ?? null}
+                    {items.map(item => (
+                        <GeoCoverCard
+                            key={item.slug}
+                            item={item}
+                            cover={coverMap[item.slug] ?? null}
+                            geoType={activeTab}
                         />
                     ))}
                 </div>

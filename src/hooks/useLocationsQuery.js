@@ -30,11 +30,12 @@ export function useLocationsQuery(city, country) {
                 try {
                     const { getLocations } = await import('@/shared/api/locations.api')
                     // EXPL-2 FIX: no city/country on /explore root → fetch all active locations
+                    console.log('[useLocationsQuery] Fetching:', { city, country })
                     const result = await getLocations({
                         ...(city ? { city } : {}),
                         ...(country ? { country } : {}),
                         limit: 200,
-                        status: 'active',
+                        // Don't pass status — let the API use default 'approved' for public queries
                     })
                     // БД ответила — запрос дошёл до Supabase
                     supabaseReached = true

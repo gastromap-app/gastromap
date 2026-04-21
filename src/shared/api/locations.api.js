@@ -163,8 +163,8 @@ export async function getLocations(filters = {}) {
     // bypass requested + no status = return everything regardless of status
 
     if (category && category !== 'All') q = q.eq('category', category)
-    if (city)    q = q.ilike('city', city)
-    if (country) q = q.ilike('country', country)
+    if (city)    q = q.ilike('city', `%${city}%`)
+    if (country) q = q.ilike('country', `%${country}%`)
     if (minRating != null) q = q.gte('rating', minRating)
     if (priceLevel?.length) q = q.in('price_level', priceLevel)
     if (vibe?.length) q = q.overlaps('vibe', vibe)
@@ -173,6 +173,8 @@ export async function getLocations(filters = {}) {
     if (query) {
         q = q.or(`title.ilike.%${query}%,city.ilike.%${query}%`)
     }
+
+    console.log('[locations.api] Query params:', { city, country, status: bypassStatus ? 'any' : (status ?? 'approved') })
 
     const { data, error, count } = await q
 

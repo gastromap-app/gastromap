@@ -39,6 +39,11 @@ function CityCard({ city, country, navigate, desktop = false }) {
                     <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
                         Explore venues
                     </span>
+                    {city.count !== undefined && city.count > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-semibold ${desktop ? 'text-xs' : 'text-[11px]'}`}>
+                            {city.count}
+                        </span>
+                    )}
                 </div>
             </div>
             <div className={`absolute right-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 ${

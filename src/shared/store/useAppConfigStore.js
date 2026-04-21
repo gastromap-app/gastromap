@@ -21,6 +21,14 @@ export const useAppConfigStore = create(
             aiGuideTemp: 0.7,
             aiAssistantTemp: 0.4,
 
+            // Custom model cascade order (empty = use default from constants.js)
+            aiModelCascade: [],
+            // Max output tokens per agent
+            aiGuideMaxTokens: 1024,
+            aiAssistantMaxTokens: 1024,
+            // Tone for GastroGuide: 'friendly' | 'professional' | 'expert'
+            aiGuideTone: 'friendly',
+
             // Custom system prompts (empty = use defaults from ai.api.js / kg-ai-agent.api.js)
             aiGuideSystemPrompt: '',
             aiAssistantSystemPrompt: '',

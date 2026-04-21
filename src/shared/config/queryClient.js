@@ -2,19 +2,19 @@ import { QueryClient } from '@tanstack/react-query'
 
 /**
  * Single QueryClient instance for the entire app.
- * Configured for mobile-first PWA usage:
- * - No refetch on window focus (prevents janky mobile UX for regular users)
- * - staleTime: 5 min — avoids redundant network requests
+ * Configured for Realtime caching:
+ * - staleTime: 5 min — avoids redundant network requests on mount/focus
+ * - RealtimeSubscriber invalidates cache automatically when DB changes
+ * - refetchOnWindowFocus: true (fetches fresh data if 5 min passed or cache invalidated)
  * - gcTime: 10 min — keeps data in cache between route changes
- *
- * Admin pages override these with adminQueryOptions (staleTime: 0)
  */
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
+            refetchOnMount: true,
             retry: 1,
-            staleTime: 5 * 60 * 1000,  // 5 min for regular users
+            staleTime: 5 * 60 * 1000, // 5 min
             gcTime: 10 * 60 * 1000,
         },
         mutations: {

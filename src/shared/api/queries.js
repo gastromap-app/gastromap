@@ -437,7 +437,7 @@ export function useUpdateLocationStatusMutation() {
             qc.invalidateQueries({ queryKey: ['pending-locations'] })
             // Sync to Zustand store (user-facing pages)
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                if (status === 'approved') {
+                if (status === 'approved' || status === 'active') {
                     import('./locations.api').then(({ normalise }) => {
                         const loc = normalise(data)
                         if (loc) useLocationsStore.getState().addLocation(loc)

@@ -285,6 +285,15 @@ export const useAdminLocations = () => {
         }
     }
 
+    const handleToggleVisibility = async (id, currentStatus) => {
+        try {
+            const newStatus = (currentStatus === 'active' || currentStatus === 'approved') ? 'hidden' : 'active'
+            await updateLocStatusMutation.mutateAsync({ id, status: newStatus })
+        } catch (error) {
+            console.error('Toggle visibility failed:', error)
+        }
+    }
+
     const handleReject = async (id) => {
         try {
             await updateLocStatusMutation.mutateAsync({ id, status: 'rejected' })
@@ -497,6 +506,7 @@ export const useAdminLocations = () => {
         addCulinaryItem,
         handleApprove,
         handleReject,
+        handleToggleVisibility,
         handleDelete,
         handleImproveText,
         handleSave,

@@ -43,22 +43,38 @@ export async function getRecentActivity(limit = 10) {
 
 export async function getProfiles() {
     if (!supabase) return mockProfiles
+    // Fetch profiles with a count of their submissions
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, status, avatar_url, created_at, last_active_at')
+        .select(`
+            id, email, name, role, status, avatar_url, created_at, last_active_at,
+            user_submissions!user_id(count)
+        `)
         .order('created_at', { ascending: false })
-    if (error) throw error
-    return (data || []).map(p => ({
-        id: p.id,
-        email: p.email,
-        name: p.name || p.email?.split('@')[0] || '—',
-        role: p.role || 'user',
-        status: p.status || 'active',
-        avatar_url: p.avatar_url,
-        created_at: p.created_at,
-        last_active_at: p.last_active_at,
-        submittedLocations: 0,
-    }))
+
+    if (error) {
+        console.error('[getProfiles] Error:', error)
+        throw error
+    }
+
+    return (data || []).map(p => {
+        // Handle count structure which can be an array or object depending on Supabase version/config
+        const subCount = Array.isArray(p.user_submissions) 
+            ? (p.user_submissions[0]?.count || 0) 
+            : (p.user_submissions?.count || 0)
+
+        return {
+            id: p.id,
+            email: p.email,
+            name: p.name || p.email?.split('@')[0] || '—',
+            role: p.role || 'user',
+            status: p.status || 'active',
+            avatar_url: p.avatar_url,
+            created_at: p.created_at,
+            last_active_at: p.last_active_at,
+            submittedLocations: subCount,
+        }
+    })
 }
 
 export async function updateProfileRole(userId, role) {
@@ -102,19 +118,32 @@ export async function getUserDetails(userId) {
             .from('user_preferences')
             .select('*')
             .eq('user_id', userId)
-            .single()
+            .maybeSingle()
         preferences = prefs || null
     } catch {}
 
-    // Submitted locations — locations table has no submitted_by/created_by column
-    const submittedLocations = []
+    // Submitted locations - fetch from user_submissions table
+    let submittedLocations = []
+    try {
+        const { data: subs } = await supabase
+            .from('user_submissions')
+            .select('id, title, category, city, submitted_at, status')
+            .eq('user_id', userId)
+            .order('submitted_at', { ascending: false })
+        submittedLocations = (subs || []).map(s => ({
+            ...s,
+            date: s.submitted_at // UI expects .date
+        }))
+    } catch (e) {
+        console.error('[getUserDetails] Error fetching submissions:', e)
+    }
 
     // Favorites
     let favorites = []
     try {
         const { data: favs } = await supabase
             .from('user_favorites')
-            .select('location_id, created_at')
+            .select('location_id, created_at, locations(title, city)')
             .eq('user_id', userId)
             .limit(20)
         favorites = favs || []

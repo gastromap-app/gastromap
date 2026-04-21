@@ -48,39 +48,25 @@ async function saveDNAToSupabase({ cuisines, vibes, budget, allergens }) {
         if (!session?.user) return
         const userId = session.user.id
 
-        // Always upsert to user_profiles (new schema — created by SQL in ARCHITECTURE.md)
+        // Always upsert to user_preferences
         // Keep 'any' in the DB — it acts as a sentinel that onboarding was completed.
-        // Filtering it out would cause repeat-onboarding on fresh devices (BUG-ON1).
         const { error: upError } = await supabase
-            .from('user_profiles')
+            .from('user_preferences')
             .upsert({
-                id:                userId,
-                dna_cuisines:      cuisines,   // preserve 'any' sentinel
-                dna_vibes:         vibes,
-                dna_allergens:     allergens,
-                dna_price:         budget,
-                onboarding_done:   true,
-                updated_at:        new Date().toISOString(),
-            }, { onConflict: 'id' })
+                user_id:              userId,
+                onboarding_completed: true,
+                favorite_cuisines:    cuisines,   // preserve 'any' sentinel
+                vibe_preferences:     vibes,
+                dietary_restrictions: allergens,
+                price_range:          budget?.length > 0 ? budget[0] : null,
+                last_updated:         new Date().toISOString(),
+            }, { onConflict: 'user_id' })
 
         if (upError) {
-            console.warn('[Onboarding] user_profiles upsert failed:', upError.message)
+            console.warn('[Onboarding] user_preferences upsert failed:', upError.message)
         } else {
-            console.log('[Onboarding] ✅ DNA saved to user_profiles')
+            console.log('[Onboarding] ✅ DNA saved to user_preferences')
         }
-
-        // Also attempt profiles table (legacy — ignore errors)
-        await supabase
-            .from('profiles')
-            .upsert({
-                id: userId,
-                preferences: {
-                    onboarding: { cuisines, vibes, budget, allergens }
-                },
-            }, { onConflict: 'id' })
-            .then(() => {})
-            .catch(() => {})
-
     } catch (err) {
         console.warn('[Onboarding] saveDNAToSupabase error:', err.message)
     }
@@ -434,6 +420,7 @@ export function OnboardingFlow({ onComplete }) {
 
         // 1. Save to Zustand + localStorage (instant, always works)
         updatePrefs({
+            onboardingCompleted:  true,
             favoriteCuisines:     dna.cuisines,
             vibePreference:       dna.vibes,
             priceRange:           dna.budget,
@@ -450,6 +437,7 @@ export function OnboardingFlow({ onComplete }) {
     const handleSkip = () => {
         // Mark cuisines as ['any'] so OnboardingGate never shows again
         updatePrefs({
+            onboardingCompleted: true,
             favoriteCuisines: cuisines.length > 0 ? cuisines : ['any'],
             vibePreference:   vibes,
             priceRange:       budget.length > 0 ? budget : ['$$'],

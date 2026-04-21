@@ -295,10 +295,13 @@ const AdminUsersPage = () => {
                         <div className="py-8 text-center text-slate-400 text-sm font-semibold">No users found.</div>
                     ) : (
                         pagedUsers.map(user => (
-                            <button
+                            <div
                                 key={`card-${user.id}`}
                                 onClick={() => openUser(user)}
-                                className="w-full text-left bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-slate-800"
+                                onKeyDown={(e) => e.key === 'Enter' && openUser(user)}
+                                role="button"
+                                tabIndex={0}
+                                className="w-full text-left bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-slate-800 cursor-pointer outline-none focus:ring-2 ring-indigo-500/20"
                             >
                                 <div className="flex items-start gap-3">
                                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-900 dark:text-white font-bold text-sm shadow-inner shrink-0">
@@ -346,7 +349,7 @@ const AdminUsersPage = () => {
                                         </button>
                                     </div>
                                 </div>
-                            </button>
+                            </div>
                         ))
                     )}
                 </div>

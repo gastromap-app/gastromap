@@ -8,6 +8,7 @@ import { supabase } from '@/shared/api/client'
  */
 
 const DEFAULT_PREFS = {
+    onboardingCompleted: false,
     favoriteCuisines: [],
     dietaryRestrictions: [],
     atmospherePreference: [],
@@ -25,27 +26,26 @@ async function syncToSupabase(prefs) {
         if (!session?.user) return
         const userId = session.user.id
 
-        // Try `profiles` table first (legacy schema)
-        const { error: profilesError } = await supabase
-            .from('profiles')
-            .update({ preferences: { onboarding: prefs } })
-            .eq('id', userId)
-
-        if (profilesError) {
-            // Fallback: try `user_profiles` table (new schema)
-            await supabase
-                .from('user_profiles')
+        // Sync to both tables for redundancy and backward compatibility
+        await Promise.all([
+            supabase
+                .from('profiles')
+                .update({ onboarding_completed: prefs.onboardingCompleted })
+                .eq('id', userId),
+            supabase
+                .from('user_preferences')
                 .upsert({
-                    id: userId,
-                    dna_cuisines:  prefs.favoriteCuisines  || [],
-                    dna_vibes:     prefs.vibePreference    || [],
-                    dna_allergens: prefs.dietaryRestrictions || [],
-                    dna_price:     prefs.priceRange        || [],
-                    updated_at:    new Date().toISOString(),
-                })
-        }
-    } catch {
-        // Silently fail — localStorage is always the source of truth
+                    user_id: userId,
+                    onboarding_completed: prefs.onboardingCompleted,
+                    favorite_cuisines:  prefs.favoriteCuisines  || [],
+                    vibe_preferences:     prefs.vibePreference    || [],
+                    dietary_restrictions: prefs.dietaryRestrictions || [],
+                    price_range:     prefs.priceRange?.length ? prefs.priceRange[0] : null,
+                    last_updated:    new Date().toISOString(),
+                }, { onConflict: 'user_id' })
+        ])
+    } catch (error) {
+        console.error('[PrefsStore] Sync failed:', error)
     }
 }
 
@@ -102,47 +102,34 @@ export const useUserPrefsStore = create(
                     if (!session?.user) return false
                     const userId = session.user.id
 
-                    // Try user_profiles first (new schema)
-                    const { data: up } = await supabase
-                        .from('user_profiles')
-                        .select('dna_cuisines, dna_vibes, dna_allergens, dna_price, onboarding_done')
-                        .eq('id', userId)
-                        .maybeSingle()
+                    // Fetch from both profiles (new source of truth) and user_preferences (legacy)
+                    const [profileRes, prefsRes] = await Promise.all([
+                        supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
+                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range').eq('user_id', userId).maybeSingle()
+                    ])
 
-                    if (up?.onboarding_done || up?.dna_cuisines?.length > 0) {
+                    const profile = profileRes.data
+                    const up = prefsRes.data
+
+                    // profiles.onboarding_completed takes precedence
+                    const onboardingCompleted = profile?.onboarding_completed ?? up?.onboarding_completed ?? false
+
+                    if (up || profile) {
                         set((state) => ({
                             prefs: {
                                 ...state.prefs,
-                                favoriteCuisines:    up.dna_cuisines    || state.prefs.favoriteCuisines,
-                                vibePreference:      up.dna_vibes       || state.prefs.vibePreference,
-                                dietaryRestrictions: up.dna_allergens   || state.prefs.dietaryRestrictions,
-                                priceRange:          up.dna_price?.length ? up.dna_price : state.prefs.priceRange,
+                                onboardingCompleted: onboardingCompleted,
+                                favoriteCuisines:    up?.favorite_cuisines    || state.prefs.favoriteCuisines,
+                                vibePreference:      up?.vibe_preferences       || state.prefs.vibePreference,
+                                dietaryRestrictions: up?.dietary_restrictions   || state.prefs.dietaryRestrictions,
+                                priceRange:          up?.price_range ? [up.price_range] : state.prefs.priceRange,
                             },
                         }))
-                        return true
+                        return !!onboardingCompleted
                     }
-
-                    // Fallback: try legacy profiles table
-                    const { data: prof } = await supabase
-                        .from('profiles')
-                        .select('preferences')
-                        .eq('id', userId)
-                        .maybeSingle()
-
-                    const onb = prof?.preferences?.onboarding
-                    if (onb?.cuisines?.length > 0) {
-                        set((state) => ({
-                            prefs: {
-                                ...state.prefs,
-                                favoriteCuisines:    onb.cuisines    || state.prefs.favoriteCuisines,
-                                vibePreference:      onb.vibes       || state.prefs.vibePreference,
-                                dietaryRestrictions: onb.allergens   || state.prefs.dietaryRestrictions,
-                                priceRange:          onb.budget?.length ? onb.budget : state.prefs.priceRange,
-                            },
-                        }))
-                        return true
-                    }
-                } catch { /* silently fail — localStorage is source of truth */ }
+                } catch (error) {
+                    console.error('[PrefsStore] Failed to load from Supabase:', error)
+                }
                 return false
             },
         }),

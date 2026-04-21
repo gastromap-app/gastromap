@@ -12,6 +12,7 @@ import { MOCK_LOCATIONS, MOCK_CATEGORIES } from '@/mocks/locations'
 import { supabase, ApiError } from './client'
 import { enrichLocationData } from '@/features/admin/components/LocationForm/enrichment'
 import { config } from '@/shared/config/env'
+import { CATEGORIES_FULL } from '../constants/taxonomy'
 // import { 
 //     processLocationTranslations, 
 //     saveTranslations,
@@ -59,7 +60,7 @@ function normalise(row) {
         lat,
         lng,
 
-        category: row.category ?? 'other',
+        category: CATEGORIES_FULL.find(c => c.toLowerCase() === (row.category || '').toLowerCase()) || row.category || 'Other',
         type: row.category ?? 'other',
 
         cuisine: cuisineRaw,
@@ -312,16 +313,18 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     
     // Auto-translate if translatable fields changed
     if (shouldTranslate) {
+        // Get current location first to compare changes
+        const current = await getLocation(id, { adminMode: true })
+        
         const translatableFields = ['title', 'description', 'address', 'insider_tip', 'what_to_try', 'ai_context']
-        const hasTranslatableField = translatableFields.some(field => updates[field] !== undefined)
+        const hasTranslatableField = translatableFields.some(field => updates[field] !== undefined && JSON.stringify(updates[field]) !== JSON.stringify(current[field]))
         
         // Auto-enrich AI data if primary fields changed
-        const aiTriggerFields = ['title', 'description', 'cuisine', 'tags', 'vibe']
-        const shouldEnrichAI = aiTriggerFields.some(field => updates[field] !== undefined)
+        const aiTriggerFields = ['title', 'description', 'cuisine_types', 'tags', 'vibe']
+        const shouldEnrichAI = aiTriggerFields.some(field => updates[field] !== undefined && JSON.stringify(updates[field]) !== JSON.stringify(current[field]))
 
         if (shouldEnrichAI) {
             console.log('[locations.api] Re-enriching location with AI...')
-            const current = await getLocation(id, { adminMode: true })
             const merged = { ...current, ...updates }
             const enriched = await enrichLocationWithAI(merged)
             

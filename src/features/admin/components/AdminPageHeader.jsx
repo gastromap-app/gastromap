@@ -34,7 +34,7 @@ export default function AdminPageHeader({
             {/* Left: text */}
             <div className="min-w-0">
                 {eyebrow && (
-                    <p className="text-[9px] lg:text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 mb-1.5 leading-none">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500/80 dark:text-indigo-400/80 mb-2 leading-none">
                         {eyebrow}
                     </p>
                 )}
@@ -44,7 +44,7 @@ export default function AdminPageHeader({
                     </h1>
                     {badge && (
                         <span className={cn(
-                            'inline-flex items-center px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest leading-none',
+                            'inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest leading-none',
                             badge.color ?? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                         )}>
                             {badge.label}
@@ -70,7 +70,7 @@ export default function AdminPageHeader({
 
 /** Preset button styles для использования в actions */
 export const adminBtnPrimary =
-    'inline-flex items-center gap-1.5 h-9 px-4 rounded-[14px] bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-[10px] uppercase tracking-widest shadow-sm shadow-indigo-500/20 transition-all'
+    'inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all'
 
 export const adminBtnSecondary =
-    'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-[14px] bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all'
+    'inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-xs uppercase tracking-widest shadow-sm backdrop-blur-md transition-all'

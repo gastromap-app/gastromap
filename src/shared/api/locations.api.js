@@ -10,6 +10,7 @@
 
 import { MOCK_LOCATIONS, MOCK_CATEGORIES } from '@/mocks/locations'
 import { supabase, ApiError } from './client'
+import { enrichLocationData } from '@/features/admin/components/LocationForm/enrichment'
 import { config } from '@/shared/config/env'
 // import { 
 //     processLocationTranslations, 
@@ -227,8 +228,12 @@ export async function getLocation(id, { adminMode = false } = {}) {
  * Kept for backward compatibility during migration.
  */
 async function enrichLocationWithAI(locationData) {
-    const { enrichLocationData } = await import('@/features/admin/components/LocationForm/enrichment')
-    return enrichLocationData(locationData)
+    try {
+        return await enrichLocationData(locationData)
+    } catch (err) {
+        console.warn('[locations.api] AI enrichment failed, continuing without it:', err.message)
+        return locationData
+    }
 }
 
 /**

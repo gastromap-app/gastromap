@@ -1,36 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { getCitiesForCountry, getCityImage } from '@/services/nominatimApi'
+import { getCityImage } from '@/services/nominatimApi'
+import { supabase } from '@/shared/api/client'
 
 /**
- * Well-known cities per country — used as fallback if Nominatim returns nothing
- * or while the user is offline.
- */
-const FALLBACK_CITIES = {
-    poland:      ['Krakow', 'Warsaw', 'Gdansk', 'Wroclaw', 'Poznan', 'Lodz'],
-    france:      ['Paris', 'Lyon', 'Marseille', 'Bordeaux', 'Nice', 'Toulouse'],
-    spain:       ['Barcelona', 'Madrid', 'Seville', 'Valencia', 'Bilbao', 'Granada'],
-    germany:     ['Berlin', 'Munich', 'Hamburg', 'Cologne', 'Frankfurt', 'Dresden'],
-    italy:       ['Rome', 'Milan', 'Florence', 'Venice', 'Naples', 'Bologna'],
-    portugal:    ['Lisbon', 'Porto', 'Faro', 'Braga', 'Coimbra'],
-    netherlands: ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven'],
-    czechia:     ['Prague', 'Brno', 'Ostrava', 'Plzen', 'Olomouc'],
-    austria:     ['Vienna', 'Graz', 'Linz', 'Salzburg', 'Innsbruck'],
-    hungary:     ['Budapest', 'Debrecen', 'Miskolc', 'Pecs', 'Gyor'],
-}
-
-function buildFallback(country) {
-    const names = FALLBACK_CITIES[country?.toLowerCase()] ?? []
-    return names.map(name => ({ name, lat: null, lon: null, image: getCityImage(name) }))
-}
-
-/**
- * Fetch real cities for a country from Nominatim (OpenStreetMap).
- * Falls back to a curated list if the API is unreachable or returns nothing.
+ * Fetch cities for a country from the locations table in Supabase.
+ * Returns only cities that have approved locations in the database.
  *
  * React Query caches: stale after 24h, kept in memory 48h.
  */
 export function useCitiesQuery(country) {
-    // Capitalize first letter and replace dashes with spaces for Nominatim API
+    // Capitalize first letter and replace dashes with spaces for country name
     const countryName = country
         ? country.charAt(0).toUpperCase() + country.slice(1).replace(/-/g, ' ')
         : country
@@ -38,18 +17,48 @@ export function useCitiesQuery(country) {
     return useQuery({
         queryKey: ['cities', country?.toLowerCase()],
         queryFn: async () => {
-            try {
-                const cities = await getCitiesForCountry(countryName)
-                return cities.length > 0 ? cities : buildFallback(country)
-            } catch {
-                return buildFallback(country)
+            // Get unique cities from locations table filtered by country
+            const { data, error } = await supabase
+                .from('locations')
+                .select('city')
+                .ilike('country', `%${countryName}%`)
+                .eq('status', 'approved')
+                .not('city', 'is', null)
+
+            if (error) {
+                throw new Error(`Failed to fetch cities: ${error.message}`)
             }
+
+            if (!data || data.length === 0) {
+                return []
+            }
+
+            // Aggregate unique cities and count locations in each
+            const cityMap = {}
+            data.forEach(row => {
+                const name = row.city
+                if (!name) return
+                cityMap[name] = (cityMap[name] || 0) + 1
+            })
+
+            // Convert to array format with count and image
+            const cities = Object.entries(cityMap).map(([name, count]) => ({
+                name,
+                count,
+                image: getCityImage(name),
+            }))
+
+            // Sort by count (descending) then by name
+            cities.sort((a, b) => {
+                if (b.count !== a.count) return b.count - a.count
+                return a.name.localeCompare(b.name)
+            })
+
+            return cities
         },
         staleTime: 24 * 60 * 60 * 1000,
         gcTime:    48 * 60 * 60 * 1000,
         enabled: !!country,
         retry: 1,
-        // Show fallback data immediately while fetching (placeholderData)
-        placeholderData: () => buildFallback(country),
     })
 }

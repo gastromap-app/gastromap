@@ -43,38 +43,46 @@ export async function getRecentActivity(limit = 10) {
 
 export async function getProfiles() {
     if (!supabase) return mockProfiles
-    // Fetch profiles with a count of their submissions
-    const { data, error } = await supabase
+    
+    // 1. Fetch profiles
+    const { data: profiles, error } = await supabase
         .from('profiles')
-        .select(`
-            id, email, name, role, status, avatar_url, created_at, last_active_at,
-            user_submissions!user_id(count)
-        `)
+        .select('id, email, name, role, status, avatar_url, created_at, last_active_at')
         .order('created_at', { ascending: false })
 
     if (error) {
-        console.error('[getProfiles] Error:', error)
+        console.error('[getProfiles] Error fetching profiles:', error)
         throw error
     }
 
-    return (data || []).map(p => {
-        // Handle count structure which can be an array or object depending on Supabase version/config
-        const subCount = Array.isArray(p.user_submissions) 
-            ? (p.user_submissions[0]?.count || 0) 
-            : (p.user_submissions?.count || 0)
+    // 2. Fetch submission counts separately (robust to missing FK relationships in PostgREST)
+    let countsMap = {}
+    try {
+        const { data: subs } = await supabase
+            .from('user_submissions')
+            .select('user_id')
+        
+        countsMap = (subs || []).reduce((acc, curr) => {
+            if (curr.user_id) {
+                acc[curr.user_id] = (acc[curr.user_id] || 0) + 1
+            }
+            return acc
+        }, {})
+    } catch (e) {
+        console.error('[getProfiles] Error fetching submission counts:', e)
+    }
 
-        return {
-            id: p.id,
-            email: p.email,
-            name: p.name || p.email?.split('@')[0] || '—',
-            role: p.role || 'user',
-            status: p.status || 'active',
-            avatar_url: p.avatar_url,
-            created_at: p.created_at,
-            last_active_at: p.last_active_at,
-            submittedLocations: subCount,
-        }
-    })
+    return (profiles || []).map(p => ({
+        id: p.id,
+        email: p.email,
+        name: p.name || p.email?.split('@')[0] || '—',
+        role: p.role || 'user',
+        status: p.status || 'active',
+        avatar_url: p.avatar_url,
+        created_at: p.created_at,
+        last_active_at: p.last_active_at,
+        submittedLocations: countsMap[p.id] || 0,
+    }))
 }
 
 export async function updateProfileRole(userId, role) {

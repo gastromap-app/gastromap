@@ -93,7 +93,11 @@ export async function geocodeCity(city, country) {
  * @returns {Promise<Array<{ name: string, lat: number, lon: number, image: string }>>}
  */
 export async function getCitiesForCountry(country) {
-    const cacheKey = `nominatim:cities:${country.toLowerCase()}`
+    const cacheKey = `nominatim:cities:v2:${country.toLowerCase()}`
+
+    // Invalidate old v1 cache entries that may contain the country itself
+    try { localStorage.removeItem(`nominatim:cities:${country.toLowerCase()}`) } catch { /* ignore */ }
+
     try {
         const cached = localStorage.getItem(cacheKey)
         if (cached) {
@@ -104,12 +108,15 @@ export async function getCitiesForCountry(country) {
         // ignore
     }
 
+    // Use structured query: search for cities WITHIN the country
+    // q="cities in X" gives city-level results; countrycodes narrows scope
     const params = new URLSearchParams({
-        country,
+        q: `cities in ${country}`,
         featuretype: 'city',
         format: 'json',
         limit: '15',
         addressdetails: '1',
+        'accept-language': 'en',
     })
 
     const res = await fetch(`${NOMINATIM_BASE}/search?${params}`, {
@@ -125,7 +132,16 @@ export async function getCitiesForCountry(country) {
 
     const seen = new Set()
     const cities = results
-        .filter(r => r.name && r.lat && r.lon)
+        .filter(r => {
+            if (!r.name || !r.lat || !r.lon) return false
+            // Exclude the country itself from results
+            const type = (r.type || '').toLowerCase()
+            const placeClass = (r.class || '').toLowerCase()
+            const isCountry = r.name.toLowerCase() === country.toLowerCase()
+                || type === 'country'
+                || (type === 'administrative' && placeClass === 'boundary' && !r.name.includes(' '))
+            return !isCountry
+        })
         .map(r => ({
             name: r.name,
             lat: parseFloat(r.lat),

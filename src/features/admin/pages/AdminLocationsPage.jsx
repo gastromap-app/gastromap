@@ -59,14 +59,13 @@ import LocationFilters from '../components/LocationFilters'
 import LocationStats from '../components/LocationStats'
 import AdminLocationsHeader from '../components/AdminLocationsHeader'
 import ListViewSection from '../components/ListViewSection'
-import ModerationQueueView from '../components/ModerationQueueView'
 import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
     const hook = useAdminLocations()
     
     const {
-        view, setView, searchQuery, setSearchQuery, statusFilter, setStatusFilter,
+        view, setView, searchQuery, setSearchQuery,
         selectedLocation, isSlideOverOpen, setIsSlideOverOpen,
         isImportWizardOpen, setIsImportWizardOpen, viewMode, setViewMode,
         formData, setFormData,
@@ -132,11 +131,8 @@ const AdminLocationsPage = () => {
                     onViewChange={setView}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
-                    statusFilter={statusFilter}
-                    onStatusFilterChange={setStatusFilter}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    pendingCount={pendingLocations.length}
                 />
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
@@ -150,14 +146,6 @@ const AdminLocationsPage = () => {
                             onReject={handleReject}
                             openActionMenuId={openActionMenuId}
                             onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
-                        />
-                    )}
-                    {view === 'moderation' && (
-                        <ModerationQueueView
-                            pendingLocations={pendingLocations}
-                            onEdit={handleEdit}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
                         />
                     )}
                 </div>

@@ -43,12 +43,22 @@ export async function getRecentActivity(limit = 10) {
 
 export async function getProfiles() {
     if (!supabase) return mockProfiles
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, full_name, name, role, avatar_url, created_at')
+        .select('id, email, name, role, status, avatar_url, created_at, last_active_at')
         .order('created_at', { ascending: false })
-    // Normalise: some installs use full_name, some use name
-    return (data || []).map(p => ({ ...p, name: p.full_name || p.name || p.email?.split('@')[0] || '—' }))
+    if (error) throw error
+    return (data || []).map(p => ({
+        id: p.id,
+        email: p.email,
+        name: p.name || p.email?.split('@')[0] || '—',
+        role: p.role || 'user',
+        status: p.status || 'active',
+        avatar_url: p.avatar_url,
+        created_at: p.created_at,
+        last_active_at: p.last_active_at,
+        submittedLocations: 0,
+    }))
 }
 
 export async function updateProfileRole(userId, role) {
@@ -60,6 +70,62 @@ export async function updateProfileRole(userId, role) {
         .select()
         .single()
     return { data, error }
+}
+
+export async function updateUserStatus(userId, status) {
+    if (!supabase) throw new Error('No Supabase')
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ status })
+        .eq('id', userId)
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function getUserDetails(userId) {
+    if (!supabase) throw new Error('No Supabase')
+
+    // Profile
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+    if (error) throw error
+
+    // User preferences (DNA)
+    let preferences = null
+    try {
+        const { data: prefs } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', userId)
+            .single()
+        preferences = prefs || null
+    } catch {}
+
+    // Submitted locations — locations table has no submitted_by/created_by column
+    const submittedLocations = []
+
+    // Favorites
+    let favorites = []
+    try {
+        const { data: favs } = await supabase
+            .from('user_favorites')
+            .select('location_id, created_at')
+            .eq('user_id', userId)
+            .limit(20)
+        favorites = favs || []
+    } catch {}
+
+    return {
+        ...profile,
+        preferences,
+        submittedLocations,
+        favorites,
+    }
 }
 
 export async function getPendingReviews() {

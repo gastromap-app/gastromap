@@ -117,6 +117,9 @@ export function ChatInterface({
                     const isUser = msg.role === 'user'
                     // Support both 'ai' (legacy) and 'assistant' (new store)
                     const attachments = msg.attachments ?? msg.matches ?? []
+                    const validCards = attachments.filter(loc =>
+                        loc?.id && loc?.title && loc.id.length > 10  // Only real DB locations have UUID-length IDs
+                    )
 
                     return (
                         <div
@@ -138,9 +141,9 @@ export function ChatInterface({
                             </div>
 
                             {/* Location recommendation cards */}
-                            {attachments.length > 0 && (
+                            {validCards.length > 0 && (
                                 <div className="mt-2 space-y-3 w-full max-w-[85%]">
-                                    {attachments.map((loc) => (
+                                    {validCards.map((loc) => (
                                         <motion.div
                                             key={loc.id}
                                             initial={{ opacity: 0, y: 10 }}

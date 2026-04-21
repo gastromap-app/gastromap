@@ -1,4 +1,3 @@
-import { MOCK_LOCATIONS } from '../mocks/locations';
 import { MOCK_USER_PERSONA } from '../mocks/userPersona';
 
 /**
@@ -19,7 +18,14 @@ class GastroIntelligence {
      */
     async analyzeQuery(text, locations) {
         const query = text.toLowerCase();
-        const pool = (locations?.length > 0) ? locations : MOCK_LOCATIONS;
+        const pool = (locations?.length > 0) ? locations : [];
+
+        if (pool.length === 0) {
+            return {
+                content: "I'm your GastroGuide! Ask me where to eat, what to try, or for recommendations based on your mood. Make sure you're connected to the internet so I can search the database for you.",
+                matches: [],
+            };
+        }
 
         // Multilingual food/recommendation intent detection (EN + RU)
         const isRecommendation =
@@ -67,7 +73,7 @@ class GastroIntelligence {
         }
 
         return {
-            content: "I'm your GastroGuide! Ask me where to eat, what to try, or for recommendations based on your mood — I'll find the best spot for you.",
+            content: "I'm your GastroGuide! Ask me where to eat, what to try, or for recommendations based on your mood. Make sure you're connected to the internet so I can search the database for you.",
             matches: [],
         };
     }

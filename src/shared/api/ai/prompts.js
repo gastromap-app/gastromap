@@ -77,8 +77,11 @@ ${knowledgeContext}
 ${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
 ${profile}
 
-INSTRUCTIONS:
-- Use the USER PROFILE & EXPERIENCE to tailor your tone and recommendations.
-- If they've liked certain dishes or vibes in the past, prioritize similar matches.
-- Reference their past experiences naturally (e.g., "Since you enjoyed the spicy ramen at X, you'll love the Y here").`
+PERSONALIZATION GUIDELINES:
+- The USER PREFERENCES and USER PROFILE are context for smarter responses, NOT strict search filters.
+- Use them to personalize your tone, add relevant warnings, and suggest better alternatives when appropriate.
+- If the user's preferences conflict with what they're asking about, acknowledge it helpfully but still answer their question fully.
+- Reference their past experiences naturally when relevant (e.g., "Since you enjoyed Pod Baranem, you might also like...").
+- When the user explicitly asks for something outside their profile, respect their current intent over stored preferences.
+- Always search broadly first, then apply preference-aware analysis to the results.`
 }

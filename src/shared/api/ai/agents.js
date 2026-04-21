@@ -9,6 +9,7 @@
 
 import { fetchOpenRouter } from './openrouter'
 import { executeTool } from './tools'
+import { MODEL_CASCADE } from './constants'
 
 /**
  * Parse XML-style tool calls emitted by models that don't support native function calling.
@@ -68,8 +69,34 @@ function parseXmlToolCalls(text) {
  *   - modelUsed: Which model was actually used from cascade
  */
 export async function runAgentPass(messages, locations = []) {
+    const startTime = Date.now()
+
+    // ── Read admin config from store ────────────────────────────────────────
+    let adminCascade = []
+    let adminTemp = 0.7
+    let adminMaxTokens = 1024
+    try {
+        const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
+        const cfg = useAppConfigStore.getState()
+        adminCascade = cfg.aiModelCascade || []
+        adminTemp = cfg.aiGuideTemp ?? 0.7
+        adminMaxTokens = cfg.aiGuideMaxTokens ?? 1024
+    } catch {}
+
+    // Use admin cascade if set, otherwise fall back to MODEL_CASCADE
+    const cascade = adminCascade.length > 0 ? adminCascade : MODEL_CASCADE
+
+    // Tracked tool calls for enhanced metadata
+    const trackedToolCalls = []
+
     // First call: detect tool calls
-    const { response: res, modelUsed } = await fetchOpenRouter(messages, { stream: false, withTools: true })
+    const { response: res, modelUsed } = await fetchOpenRouter(messages, {
+        stream: false,
+        withTools: true,
+        temperature: adminTemp,
+        maxTokens: adminMaxTokens,
+        cascade,
+    })
     const data = await res.json()
     const choice = data.choices?.[0]
 
@@ -80,19 +107,33 @@ export async function runAgentPass(messages, locations = []) {
 
     // ── Path A: Native OpenAI tool_calls ────────────────────────────────────
     if (finishReason === 'tool_calls' && assistantMsg.tool_calls?.length) {
-        return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, locations, modelUsed, 'native')
+        return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, locations, modelUsed, 'native', {
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, adminMaxTokens,
+        })
     }
 
     // ── Path B: XML tool calls embedded in text (some free models) ──────────
     const xmlCalls = parseXmlToolCalls(assistantMsg.content)
     if (xmlCalls.length) {
-        return runToolCalls(xmlCalls, assistantMsg, messages, locations, modelUsed, 'xml')
+        return runToolCalls(xmlCalls, assistantMsg, messages, locations, modelUsed, 'xml', {
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, adminMaxTokens,
+        })
     }
 
     // ── Path C: No tool calls — return text directly ─────────────────────────
     // Strip any stray XML artifacts the model might have left in the text
     const cleanText = (assistantMsg.content ?? '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').trim()
-    return { text: cleanText, usedLocations: [], modelUsed }
+    return {
+        text: cleanText,
+        usedLocations: [],
+        modelUsed,
+        toolCalls: trackedToolCalls,
+        timing: {
+            startMs: startTime,
+            toolExecutionMs: 0,
+            totalMs: Date.now() - startTime,
+        },
+    }
 }
 
 /**
@@ -105,9 +146,11 @@ export async function runAgentPass(messages, locations = []) {
  * @param {string} modelUsed    - Which model produced this response
  * @param {'native'|'xml'} mode - Whether we're handling native or XML tool calls
  */
-async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelUsed, mode) {
+async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelUsed, mode, meta = {}) {
+    const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 1024, cascade } = meta
     const toolResults = []
     let usedLocations = []
+    let toolTime = 0
 
     for (const toolCall of toolCalls) {
         let args = {}
@@ -117,7 +160,13 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
             args = {}
         }
 
+        const toolStart = Date.now()
         const result = await executeTool(toolCall.function.name, args, locations)
+        toolTime += Date.now() - toolStart
+
+        // Track this tool call for enhanced metadata
+        const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0)
+        trackedToolCalls.push({ name: toolCall.function.name, args, resultCount })
 
         if (mode === 'native') {
             // Native mode: use the OpenAI tool role format
@@ -173,9 +222,25 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
         ]
     }
 
-    const { response: finalRes } = await fetchOpenRouter(finalMessages, { stream: false, withTools: false })
+    const { response: finalRes } = await fetchOpenRouter(finalMessages, {
+        stream: false,
+        withTools: false,
+        temperature: adminTemp,
+        maxTokens: adminMaxTokens,
+        cascade,
+    })
     const finalData = await finalRes.json()
     const finalContent = finalData.choices?.[0]?.message?.content ?? ''
 
-    return { text: finalContent, usedLocations, modelUsed }
+    return {
+        text: finalContent,
+        usedLocations,
+        modelUsed,
+        toolCalls: trackedToolCalls,
+        timing: {
+            startMs: startTime,
+            toolExecutionMs: toolTime,
+            totalMs: Date.now() - startTime,
+        },
+    }
 }

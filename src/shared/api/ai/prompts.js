@@ -59,7 +59,7 @@ ${userData.userExperience || 'No direct review history yet.'}
             // Timeout after 2s — don't block the chat on slow KG lookups
             const kgContext = await Promise.race([
                 getAIContextForQuery(queryContext),
-                new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+                new Promise(resolve => setTimeout(() => resolve(null), 5000)),
             ])
             if (kgContext?.relevantCuisines?.length) {
                 const cuisines = kgContext.relevantCuisines.map(c =>

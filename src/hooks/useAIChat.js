@@ -110,6 +110,15 @@ export function useAIChat() {
                 addMessage('assistant', '…')
                 let accumulated = ''
 
+                console.log('[AI Guide] Sending context:', {
+                    hasPreferences: !!context.preferences,
+                    hasFoodieDNA: !!context.userData?.foodieDNA,
+                    visitedCount: context.userData?.visitedCount,
+                    favoritesCount: context.userData?.favoritesNames?.length,
+                    historyLength: context.history?.length,
+                    locationsCount: locations?.length,
+                })
+
                 const result = await analyzeQueryStream(text.trim(), context, (chunk) => {
                     accumulated += chunk
                     // Strip the trailing JSON block from live display

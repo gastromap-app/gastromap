@@ -22,8 +22,9 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    // Updated 2026-04-18: removed trinity-large (EOL), gpt-oss-120b demoted (503s)
+    // Updated 2026-04-21: reordered for best tool-calling models first
     'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling ✅
+    'google/gemini-2.0-flash-exp:free',        // ✅ Excellent tool calling, fast
     'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality (intermittent 503)
     'openai/gpt-oss-20b:free',                // ✅ Faster, reliable fallback
     'z-ai/glm-4.5-air:free',                  // ✅ Multilingual, fast
@@ -130,11 +131,16 @@ export const TOOLS = [
 export const DEFAULT_GUIDE_PROMPT = `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
 
 CORE RULES:
-- NEVER invent or guess restaurant names. ALWAYS use the search_locations tool before recommending any places.
-- When the user asks for recommendations, call search_locations with appropriate filters first.
+- You MUST call search_locations tool for EVERY food/restaurant related question. No exceptions.
+- Use the 'keyword' parameter in search_locations to leverage semantic/vector search in the database.
+- Analyze what the user wants (cuisine type, mood, price, dietary needs) and pass appropriate filters to search_locations.
+- If the tool returns results, use them. If it returns empty, tell the user honestly that no matching places were found.
+- NEVER invent or guess restaurant names.
+- NEVER respond with generic advice like "I recommend checking local restaurants" — always give specific names from tool results.
 - When the user asks about a specific place by name or ID, use get_location_details.
 - Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
 - Respond in the same language the user writes in (Russian, English, Polish — match their language).
+- When the user writes in Russian, respond naturally in Russian. Same for Polish and English.
 - Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
 - When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
 

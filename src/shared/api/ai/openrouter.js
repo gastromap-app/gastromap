@@ -20,7 +20,7 @@ import { OPENROUTER_URL, MODEL_CASCADE, TOOLS } from './constants'
  * @param {string}  [options.modelOverride] - Override the default model selection
  * @returns {Promise<{response: Response, modelUsed: string}>} - Response object and model used
  */
-export async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride } = {}) {
+export async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride, temperature, maxTokens, cascade: adminCascade } = {}) {
     const { apiKey, model: activeModel, fallbackModel, useProxy } = getActiveAIConfig()
 
     // Build cascade: start with preferred model, then try all others
@@ -32,8 +32,11 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
         cascade.push(fallbackModel)
     }
 
+    // Use admin cascade if provided, otherwise fall back to MODEL_CASCADE
+    const fallbackList = (adminCascade && adminCascade.length > 0) ? adminCascade : MODEL_CASCADE
+
     // Always add all cascade models (even in proxy mode - proxy might not handle cascade)
-    for (const m of MODEL_CASCADE) {
+    for (const m of fallbackList) {
         if (!cascade.includes(m)) {
             cascade.push(m)
         }
@@ -48,8 +51,11 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
         const body = {
             model: currentModel,
             messages,
-            max_tokens: config.ai.maxResponseTokens,
+            max_tokens: maxTokens ?? config.ai.maxResponseTokens,
             stream,
+        }
+        if (temperature != null) {
+            body.temperature = temperature
         }
         if (withTools) {
             body.tools = TOOLS

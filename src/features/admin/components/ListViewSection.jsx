@@ -9,44 +9,73 @@ import LocationListItem from './LocationListItem'
  * Renders the list or map view of locations.
  * Handles both table/list display modes and interactive map mode.
  */
-const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onApprove, onReject, openActionMenuId, onToggleActionMenu }) => {
+const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu }) => {
     const renderTableView = (filtered) => (
-        <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-900/50">
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest pl-8 lg:pl-10">Объект</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Локация</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Рейтинг</th>
-                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Статус</th>
-                        <th className="px-6 py-4 text-right pr-8 lg:pr-10"></th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {filtered && filtered.length > 0 ? (
-                        filtered.map((loc) => (
-                            <LocationListItem
-                                key={loc.id}
-                                loc={loc}
-                                onEdit={() => onEditLocation(loc)}
-                                onApprove={onApprove}
-                                onReject={onReject}
-                                onDelete={onDelete}
-                                isOpenActionMenu={openActionMenuId === loc.id}
-                                onToggleActionMenu={(id) => onToggleActionMenu(id)}
-                            />
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="5" className="text-center py-20">
-                                <p className="text-lg font-bold text-slate-400">
-                                    Нет объектов для отображения
-                                </p>
-                            </td>
+        <div className="flex-1 flex flex-col">
+            {/* Mobile Card List */}
+            <div className="grid grid-cols-1 gap-4 lg:hidden p-5 pb-32">
+                {filtered && filtered.length > 0 ? (
+                    filtered.map((loc) => (
+                        <LocationListItem
+                            key={loc.id}
+                            loc={loc}
+                            onEdit={() => onEditLocation(loc)}
+                            onApprove={onApprove}
+                            onReject={onReject}
+                            onToggleVisibility={onToggleVisibility}
+                            onDelete={onDelete}
+                            isOpenActionMenu={openActionMenuId === loc.id}
+                            onToggleActionMenu={(id) => onToggleActionMenu(id)}
+                            viewMode="card"
+                        />
+                    ))
+                ) : (
+                    <div className="text-center py-20 bg-slate-50/50 dark:bg-slate-800/20 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-800">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Нет объектов</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto custom-scrollbar font-black leading-none">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-50 dark:border-slate-800/50">
+                            <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] pl-10 lg:pl-12">Объект</th>
+                            <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Локация</th>
+                            <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Рейтинг</th>
+                            <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Статус</th>
+                            <th className="px-6 py-5 text-right pr-10 lg:pr-12"></th>
                         </tr>
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                        {filtered && filtered.length > 0 ? (
+                            filtered.map((loc) => (
+                                <LocationListItem
+                                    key={loc.id}
+                                    loc={loc}
+                                    onEdit={() => onEditLocation(loc)}
+                                    onApprove={onApprove}
+                                    onReject={onReject}
+                                    onToggleVisibility={onToggleVisibility}
+                                    onDelete={onDelete}
+                                    isOpenActionMenu={openActionMenuId === loc.id}
+                                    onToggleActionMenu={(id) => onToggleActionMenu(id)}
+                                    viewMode="table"
+                                />
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="5" className="text-center py-32">
+                                    <p className="text-[11px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-[0.3em]">
+                                        Нет объектов для отображения
+                                    </p>
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 

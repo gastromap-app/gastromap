@@ -11,6 +11,9 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 
+import { Dialog, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
+
 export default function AdminLayout() {
     const location = useLocation()
     const navigate = useNavigate()
@@ -23,8 +26,10 @@ export default function AdminLayout() {
     const [showNotifications, setShowNotifications] = useState(false)
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsSidebarOpen(false)
+        // Auto-close mobile sidebar on navigation
+        if (isSidebarOpen) {
+            setIsSidebarOpen(false)
+        }
     }, [location.pathname])
 
     const navItems = [
@@ -68,7 +73,7 @@ export default function AdminLayout() {
         : 'AD'
 
     const SidebarContent = ({ collapsed = false }) => (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50 transition-all duration-300 relative">
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50 transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
             <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
             {/* Logo Section */}
@@ -79,25 +84,25 @@ export default function AdminLayout() {
                 {!collapsed && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                         <h1 className="text-lg font-black text-slate-900 dark:text-white leading-none tracking-tighter">GastroOS</h1>
-                        <p className="text-[9px] font-black text-indigo-500 mt-1.5 uppercase tracking-[0.2em] leading-none">Admin Panel</p>
+                        <p className="text-[10px] font-black text-indigo-500 mt-1.5 uppercase tracking-[0.2em] leading-none">Admin Panel</p>
                     </motion.div>
                 )}
             </div>
 
             {/* Nav */}
-            <nav className={cn("flex-1 px-4 py-10 space-y-2 overflow-y-auto relative z-10", collapsed && "px-3")}>
+            <nav className={cn("flex-1 px-4 py-8 space-y-1.5 overflow-y-auto relative z-10 custom-scrollbar", collapsed && "px-3")}>
                 {navItems.map(item => {
                     const isActive = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path))
                     return (
                         <Link key={item.path} to={item.path}>
                             <div className={cn(
-                                "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+                                "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
                                 isActive
                                     ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30"
                                     : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
                             )}>
                                 <item.icon size={18} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-white" : "text-slate-400 group-hover:text-indigo-500")} />
-                                {!collapsed && <span className="text-[13px] font-black tracking-tight">{item.label}</span>}
+                                {!collapsed && <span className="text-sm font-black tracking-tight">{item.label}</span>}
                                 {isActive && !collapsed && (
                                     <motion.div layoutId="activeNavTab" className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
                                 )}
@@ -108,16 +113,16 @@ export default function AdminLayout() {
             </nav>
 
             {/* Footer Actions */}
-            <div className="p-6 bg-slate-50/30 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/50 space-y-3 relative z-10">
-                <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-black text-[10px] uppercase tracking-widest", collapsed && "justify-center px-0")}>
+            <div className="p-6 bg-slate-50/30 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/50 space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
+                <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     <ArrowLeft size={18} />
                     {!collapsed && <span>Back to App</span>}
                 </Link>
-                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-black text-[10px] uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     {theme === 'dark' ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-indigo-600" />}
                     {!collapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
                 </button>
-                <button onClick={handleLogout} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-rose-500/80 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all font-black text-[10px] uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <button onClick={handleLogout} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-rose-500/80 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     <LogOut size={18} />
                     {!collapsed && <span>Sign Out</span>}
                 </button>
@@ -125,38 +130,66 @@ export default function AdminLayout() {
         </div>
     )
 
-    /* eslint-disable react-hooks/static-components */
     return (
-        <div className="flex h-screen bg-[#FDFDFD] dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-200">
-            {/* Desktop Sidebar — explicit h-screen so SidebarContent h-full resolves */}
-            <motion.aside animate={{ width: isCollapsed ? 100 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col h-screen relative z-30 flex-shrink-0">
+        <div className="flex h-screen bg-[#FDFDFD] dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-200 safe-bottom">
+            {/* Desktop Sidebar */}
+            <motion.aside animate={{ width: isCollapsed ? 80 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col h-screen relative z-30 flex-shrink-0">
                 <SidebarContent collapsed={isCollapsed} />
                 <button onClick={() => setIsCollapsed(!isCollapsed)} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                 </button>
             </motion.aside>
 
-            {/* Mobile Sidebar */}
-            <AnimatePresence>
-                {isSidebarOpen && (
-                    <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[60] lg:hidden" />
-                        <motion.aside initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-slate-900 z-[70] lg:hidden shadow-2xl">
-                            <SidebarContent />
-                            <button onClick={() => setIsSidebarOpen(false)} className="absolute top-6 right-6 p-2 text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl"><X size={18} /></button>
-                        </motion.aside>
-                    </>
-                )}
-            </AnimatePresence>
+            {/* Mobile Sidebar (Headless UI Dialog) */}
+            <Transition.Root show={isSidebarOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-[100] lg:hidden" onClose={setIsSidebarOpen}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="transition-opacity ease-linear duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="transition-opacity ease-linear duration-300"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 flex">
+                        <Transition.Child
+                            as={Fragment}
+                            enter="transition ease-in-out duration-300 transform"
+                            enterFrom="-translate-x-full"
+                            enterTo="translate-x-0"
+                            leave="transition ease-in-out duration-300 transform"
+                            leaveFrom="translate-x-0"
+                            leaveTo="-translate-x-full"
+                        >
+                            <Dialog.Panel className="relative flex w-full max-w-[300px] flex-1 flex-col bg-white dark:bg-slate-900 shadow-2xl">
+                                <SidebarContent />
+                                <div className="absolute top-4 right-4 pt-[env(safe-area-inset-top)]">
+                                    <button
+                                        type="button"
+                                        className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl"
+                                        onClick={() => setIsSidebarOpen(false)}
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            </Dialog.Panel>
+                        </Transition.Child>
+                    </div>
+                </Dialog>
+            </Transition.Root>
 
             {/* Main Content Area — explicit h-screen + overflow-hidden makes height chain reliable */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-                {/* Top Header — flex-none, NOT sticky (scroll is on <main>, header is always visible) */}
-                <header className="flex-none h-20 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 lg:px-10 z-20 transition-all relative">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2.5 text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm" aria-label="Open menu">
+                {/* Top Header — flex-none, compact on mobile, respects safe area */}
+                <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
+                    <div className="flex items-center gap-3 md:gap-6">
+                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm" aria-label="Open menu">
                             <Menu size={20} />
                         </button>
 
@@ -233,7 +266,7 @@ export default function AdminLayout() {
                                                         {!n.unread && <div className="w-2 h-2 rounded-full bg-transparent mt-1.5 shrink-0" />}
                                                         <div className="min-w-0">
                                                             <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug">{n.text}</p>
-                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -263,8 +296,8 @@ export default function AdminLayout() {
                                     {user?.name || 'Admin'}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Online</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Online</span>
                                 </div>
                             </div>
                             <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-slate-900 font-bold text-sm shadow-xl active:scale-95 transition-transform cursor-pointer border-2 border-slate-50 dark:border-slate-800 overflow-hidden">
@@ -274,7 +307,7 @@ export default function AdminLayout() {
                     </div>
                 </header>
 
-                <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
+                <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
                     <div className="max-w-[1600px] mx-auto min-h-full">
                         <Outlet />
                     </div>

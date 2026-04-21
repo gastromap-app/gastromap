@@ -8,9 +8,11 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
@@ -57,7 +59,6 @@ import LocationListItem from '../components/LocationListItem'
 import LocationFormSlideOver from '../components/LocationFormSlideOver'
 import LocationFilters from '../components/LocationFilters'
 import LocationStats from '../components/LocationStats'
-import AdminLocationsHeader from '../components/AdminLocationsHeader'
 import ListViewSection from '../components/ListViewSection'
 import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 
@@ -75,7 +76,7 @@ const AdminLocationsPage = () => {
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
-        handleApprove, handleReject, handleDelete, handleSave,
+        handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
         isExporting, handleExport
     } = hook
 
@@ -90,7 +91,7 @@ const AdminLocationsPage = () => {
 
 
     return (
-        <div className="space-y-6 lg:space-y-8 pb-10">
+        <div className="space-y-6 lg:space-y-10 pb-12 font-sans">
             {/* Error Message Display */}
             {loadError && (
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-6 rounded-3xl mb-6">
@@ -108,24 +109,55 @@ const AdminLocationsPage = () => {
                 </div>
             )}
 
-            <AdminLocationsHeader
-                onCreateNew={handleCreateNew}
-                onImport={() => setIsImportWizardOpen(true)}
-                onExport={handleExport}
-                isExporting={isExporting}
-                onBulkReindex={() => {
-                    if (confirm('Запустить фоновое индексирование всех объектов без векторного поиска?')) {
-                        bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {
-                            onSuccess: (data) => alert(`Обработано ${data.processed} объектов`)
-                        })
-                    }
-                }}
-                isBulkReindexPending={bulkReindexMutation.isPending}
+            <AdminPageHeader
+                eyebrow="Admin"
+                title="Locations"
+                subtitle="Manage restaurants, cafes, and gastro-spots database."
+                actions={
+                    <div className="flex items-center gap-2">
+                        <div className="hidden sm:flex items-center gap-2">
+                            <button
+                                onClick={() => setIsImportWizardOpen(true)}
+                                className={adminBtnSecondary}
+                            >
+                                <Upload size={16} />
+                                <span className="hidden lg:inline ml-1">Импорт</span>
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                disabled={isExporting}
+                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                            >
+                                <Download size={16} />
+                                <span className="hidden lg:inline ml-1">{isExporting ? 'Exporting...' : 'Экспорт'}</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Запустить фоновое индексирование всех объектов?')) {
+                                        bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
+                                    }
+                                }}
+                                disabled={bulkReindexMutation.isPending}
+                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                            >
+                                <Sparkles size={16} className="text-indigo-500" />
+                                <span className="hidden lg:inline ml-1">Reindex</span>
+                            </button>
+                        </div>
+                        <button
+                            onClick={handleCreateNew}
+                            className={adminBtnPrimary}
+                        >
+                            <Plus size={18} />
+                            <span className="hidden sm:inline ml-1">Новый</span>
+                        </button>
+                    </div>
+                }
             />
 
             <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
                 <LocationFilters
                     view={view}
                     onViewChange={setView}
@@ -133,6 +165,8 @@ const AdminLocationsPage = () => {
                     onViewModeChange={setViewMode}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
+                    filteredCount={filteredLocations.length}
+                    totalCount={locationsList.length}
                 />
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
@@ -144,6 +178,7 @@ const AdminLocationsPage = () => {
                             onDelete={handleDelete}
                             onApprove={handleApprove}
                             onReject={handleReject}
+                            onToggleVisibility={handleToggleVisibility}
                             openActionMenuId={openActionMenuId}
                             onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
                         />

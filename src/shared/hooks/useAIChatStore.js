@@ -22,8 +22,13 @@ export const useAIChatStore = create(
             messages: [],          // ChatMessage[]
             isTyping: false,       // assistant is generating
             error: null,
+            sessionId: null,
 
             // ─── Actions ─────────────────────────────────────────────────
+
+            setSessionId: (sessionId) => set({ sessionId }),
+
+            loadHistory: (sessionId, messages) => set({ sessionId, messages }),
 
             addMessage: (role, content, extras = {}) => {
                 const message = {
@@ -42,17 +47,20 @@ export const useAIChatStore = create(
              * Finds the most recent message with the given role and replaces its content.
              */
             updateLastMessage: (role, content, extras = {}) => {
+                let updatedMessage = null;
                 set((state) => {
                     const messages = [...state.messages]
                     // Walk from end to find the last message with this role
                     for (let i = messages.length - 1; i >= 0; i--) {
                         if (messages[i].role === role) {
                             messages[i] = { ...messages[i], content, ...extras }
+                            updatedMessage = messages[i];
                             break
                         }
                     }
                     return { messages }
                 })
+                return updatedMessage;
             },
 
             setTyping: (isTyping) => set({ isTyping }),
@@ -61,7 +69,7 @@ export const useAIChatStore = create(
 
             clearError: () => set({ error: null }),
 
-            clearHistory: () => set({ messages: [], error: null }),
+            clearHistory: () => set({ messages: [], error: null, sessionId: null }),
 
             /**
              * Keep only the last N messages to avoid hitting context limits.
@@ -76,8 +84,8 @@ export const useAIChatStore = create(
         }),
         {
             name: 'ai-chat-storage',
-            // Only persist messages, not transient states
-            partialize: (state) => ({ messages: state.messages }),
+            // Only persist messages and sessionId
+            partialize: (state) => ({ messages: state.messages, sessionId: state.sessionId }),
         }
     )
 )

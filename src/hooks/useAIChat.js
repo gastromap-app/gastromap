@@ -7,6 +7,8 @@ import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { config } from '@/shared/config/env'
+import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
+import { useEffect } from 'react'
 
 /**
  * useAIChat — GastroGuide conversation logic with OpenRouter API streaming.
@@ -41,6 +43,9 @@ export function useAIChat() {
         clearError,
         clearHistory,
         trimHistory,
+        sessionId,
+        setSessionId,
+        loadHistory,
     } = useAIChatStore()
 
     const { prefs } = useUserPrefsStore()
@@ -52,12 +57,42 @@ export function useAIChat() {
     // hasAIAccess: true when either a direct key OR a proxy (prod environment) is available
     const hasAIAccess = Boolean(activeApiKey) || useProxy || config.ai.useProxy
 
+    // Fetch chat history on mount or when user changes
+    useEffect(() => {
+        let mounted = true;
+        if (user?.id) {
+            fetchChatHistory(user.id).then(history => {
+                if (mounted && history?.sessionId) {
+                    const currentMessages = useAIChatStore.getState().messages;
+                    // Overwrite if local is empty or we have a different session
+                    if (currentMessages.length === 0 || useAIChatStore.getState().sessionId !== history.sessionId) {
+                        loadHistory(history.sessionId, history.messages);
+                    }
+                }
+            }).catch(err => console.error('Failed to load chat history', err));
+        }
+        return () => { mounted = false };
+    }, [user?.id, loadHistory]);
+
     const sendMessage = useCallback(async (text) => {
         if (!text?.trim() || isTyping) return
 
         clearError()
-        addMessage('user', text.trim())
+        const userMsg = addMessage('user', text.trim())
         setTyping(true)
+
+        // DB Persistence: Ensure session and save user message
+        let currentSessionId = useAIChatStore.getState().sessionId;
+        if (user?.id && !currentSessionId) {
+            const session = await createChatSession(user.id);
+            if (session) {
+                currentSessionId = session.id;
+                setSessionId(currentSessionId);
+            }
+        }
+        if (user?.id && currentSessionId) {
+            saveChatMessage(currentSessionId, user.id, userMsg);
+        }
 
         // Build conversation history for multi-turn context
         const history = messages
@@ -127,17 +162,24 @@ export function useAIChat() {
                 })
 
                 // Final update — parsed content + resolved location cards
-                updateLastMessage('assistant', result.content, {
+                const finalMsg = updateLastMessage('assistant', result.content, {
                     matches: result.matches,
                     intent: result.intent,
                 })
+                
+                if (user?.id && currentSessionId && finalMsg) {
+                    saveChatMessage(currentSessionId, user.id, finalMsg);
+                }
             } else {
                 // ── Local engine fallback (no API key, no proxy — dev only) ──
                 const response = await analyzeQuery(text.trim(), context)
-                addMessage('assistant', response.content, {
+                const finalMsg = addMessage('assistant', response.content, {
                     matches: response.matches,
                     intent: response.intent,
                 })
+                if (user?.id && currentSessionId && finalMsg) {
+                    saveChatMessage(currentSessionId, user.id, finalMsg);
+                }
             }
 
             trimHistory()

@@ -11,10 +11,10 @@
  * forking the list.
  */
 
-// The canonical 11-item category list for admin/back-office forms.
+// The canonical 12-item category list for admin/back-office forms.
 export const CATEGORIES_FULL = [
     'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
-    'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining',
+    'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining', 'Other'
 ]
 
 // Compact public-facing subset used by the Suggest-a-Place wizard.

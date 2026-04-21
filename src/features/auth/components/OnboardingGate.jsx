@@ -42,21 +42,19 @@ export function OnboardingGate({ children }) {
         if (!isAuthenticated || hasTriggeredRef.current) return
 
         // Local prefs already populated — no onboarding needed
-        if (prefs.favoriteCuisines.length > 0) return
+        if (prefs.onboardingCompleted) return
 
         // Local store is empty — check Supabase before showing onboarding
         // (handles fresh-device / reinstall scenario — BUG-ON1)
         hasTriggeredRef.current = true
-        loadFromSupabase().then((found) => {
-            if (!found) {
+        loadFromSupabase().then((completed) => {
+            if (!completed) {
                 // Truly first time — show onboarding after layout renders
                 setTimeout(() => setShowOnboarding(true), 600)
-                // Note: no cleanup needed — hasTriggeredRef prevents double-fire
             }
-            // If found, prefs store was updated → cuisines.length > 0, gate stays closed
         })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, prefs.favoriteCuisines.length])
+    }, [isAuthenticated, prefs.onboardingCompleted])
 
     // OnboardingFlow is solely responsible for saving prefs.
     // We just close the gate here — no updatePrefs to avoid stale-closure overwrites.

@@ -75,7 +75,11 @@ export async function analyzeQuery(message, context = {}) {
         } catch { fallbackLocations = [] }
     }
     const result = await gastroIntelligence.analyzeQuery(message, fallbackLocations)
-    return { content: result.content, matches: result.matches ?? [], intent }
+    // Validate: only return locations that exist in the store
+    const validMatches = (result.matches ?? []).filter(loc =>
+        loc?.id && typeof loc.id === 'string' && loc.id.length > 10  // UUID format check
+    )
+    return { content: result.content, matches: validMatches, intent }
 }
 
 /**
@@ -135,12 +139,17 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     // Fallback: run local engine and simulate streaming so onChunk is always called
     const result = await analyzeQuery(message, context)
-    if (onChunk && result?.content) {
+    // Validate: only return locations that exist in the store
+    const validMatches = (result.matches ?? []).filter(loc =>
+        loc?.id && typeof loc.id === 'string' && loc.id.length > 10  // UUID format check
+    )
+    const validatedResult = { ...result, matches: validMatches }
+    if (onChunk && validatedResult?.content) {
         const words = result.content.split(' ')
         for (let i = 0; i < words.length; i++) {
             onChunk((i === 0 ? '' : ' ') + words[i])
             await new Promise(r => setTimeout(r, 18))
         }
     }
-    return result
+    return validatedResult
 }

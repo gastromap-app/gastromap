@@ -366,6 +366,28 @@ export function useUpdateProfileRoleMutation() {
     })
 }
 
+export function useUpdateUserStatusMutation() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ userId, status }) => {
+            const { updateUserStatus } = await import('./admin.api')
+            return updateUserStatus(userId, status)
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+    })
+}
+
+export function useUserDetails(userId) {
+    return useQuery({
+        queryKey: ['user-details', userId],
+        queryFn: async () => {
+            const { getUserDetails } = await import('./admin.api')
+            return getUserDetails(userId)
+        },
+        enabled: !!userId,
+    })
+}
+
 // ─── Moderation ───
 export function usePendingReviews() {
     return useQuery({ 

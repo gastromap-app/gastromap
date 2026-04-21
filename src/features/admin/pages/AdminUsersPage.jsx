@@ -3,17 +3,42 @@ import {
     Users, Search, Filter, MoreHorizontal,
     Mail, Shield, Calendar, ChevronRight, X,
     ArrowUpRight, Clock, Star, MapPin, Building2, Zap,
-    CheckCircle2, Ban, KeyRound, ChevronDown
+    CheckCircle2, Ban, KeyRound, ChevronDown, Heart,
+    UtensilsCrossed, Wallet, Leaf, AlertCircle
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import AdminPageHeader from '../components/AdminPageHeader'
-import { useProfiles, useUpdateProfileRoleMutation } from '@/shared/api/queries'
+import {
+    useProfiles,
+    useUpdateProfileRoleMutation,
+    useUpdateUserStatusMutation,
+    useUserDetails
+} from '@/shared/api/queries'
+
+const relativeTime = (date) => {
+    if (!date) return '—'
+    const now = Date.now()
+    const diff = now - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    if (days < 30) return `${days}d ago`
+    return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const formatDate = (date) => {
+    if (!date) return '—'
+    return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
 const AdminUsersPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [roleFilter, setRoleFilter] = useState('All')
+    const [statusFilter, setStatusFilter] = useState('All')
     const [showFilters, setShowFilters] = useState(false)
     const [selectedUser, setSelectedUser] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
@@ -22,7 +47,9 @@ const AdminUsersPage = () => {
     const [saveToast, setSaveToast] = useState(null)
 
     const { data: profiles = [], isLoading: loadingProfiles } = useProfiles()
+    const { data: userDetails, isLoading: loadingUserDetails } = useUserDetails(selectedUser?.id)
     const updateProfileRole = useUpdateProfileRoleMutation()
+    const updateStatus = useUpdateUserStatusMutation()
 
     const showToast = (msg) => {
         setSaveToast(msg)
@@ -38,11 +65,12 @@ const AdminUsersPage = () => {
             const name = u.name || u.email || ''
             const matchesSearch = !q || name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
             const matchesRole = roleFilter === 'All' || u.role === roleFilter
-            return matchesSearch && matchesRole
+            const matchesStatus = statusFilter === 'All' || u.status === statusFilter
+            return matchesSearch && matchesRole && matchesStatus
         })
-    }, [profiles, searchQuery, roleFilter])
+    }, [profiles, searchQuery, roleFilter, statusFilter])
 
-    React.useEffect(() => { setCurrentPage(1) }, [searchQuery, roleFilter])
+    React.useEffect(() => { setCurrentPage(1) }, [searchQuery, roleFilter, statusFilter])
     const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
     const pagedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
@@ -54,33 +82,73 @@ const AdminUsersPage = () => {
     }
 
     const handleUpdate = async () => {
-        await updateProfileRole.mutateAsync({ userId: selectedUser.id, role: editRole })
-        setIsSlideOverOpen(false)
-        showToast(`${selectedUser.name || selectedUser.email} updated successfully.`)
-    }
+        const roleChanged = editRole !== selectedUser.role
+        const statusChanged = editStatus !== selectedUser.status
 
-    const handleBanToggle = async (user) => {
         try {
-            // Toggle user role between user/moderator vs banned
-            if (user.role !== 'admin') {
-                // We use a 'suspended' note in the name field as a lightweight ban
-                // Real implementation would need a 'status' column in profiles
-                showToast(`${user.name || user.email} ${user.role === 'banned' ? 'reactivated' : 'restricted'} (contact DB admin to apply full ban).`)
-            } else {
-                showToast('Cannot restrict admin users.')
+            if (roleChanged) {
+                await updateProfileRole.mutateAsync({ userId: selectedUser.id, role: editRole })
             }
+            if (statusChanged) {
+                await updateStatus.mutateAsync({ userId: selectedUser.id, status: editStatus })
+            }
+            if (roleChanged || statusChanged) {
+                showToast(`${selectedUser.name || selectedUser.email} updated successfully.`)
+            }
+            setIsSlideOverOpen(false)
         } catch (err) {
             showToast('Error: ' + err.message)
         }
     }
 
+    const handleStatusChange = async (user, newStatus) => {
+        if (user.role === 'admin') {
+            showToast('Cannot change admin status.')
+            return
+        }
+        try {
+            await updateStatus.mutateAsync({ userId: user.id, status: newStatus })
+            showToast(`${user.name || user.email} — status changed to ${newStatus}`)
+        } catch (err) {
+            showToast('Error: ' + err.message)
+        }
+    }
+
+    const getQuickActionStatus = (status) => {
+        if (status === 'active') return 'suspended'
+        return 'active'
+    }
+
     const stats = [
         { label: 'Total Users', val: loadingProfiles ? '...' : profiles.length.toString(), icon: Users, bg: 'bg-blue-50 dark:bg-blue-500/10', color: 'text-blue-600' },
-        { label: 'Moderators', val: profiles.filter(u => u.role === 'moderator').length.toString(), icon: Star, bg: 'bg-indigo-50 dark:bg-indigo-500/10', color: 'text-indigo-600 dark:text-indigo-400' },
         { label: 'Active', val: profiles.filter(u => u.status === 'active').length.toString(), icon: Zap, bg: 'bg-green-50 dark:bg-green-500/10', color: 'text-green-600' },
+        { label: 'Suspended', val: profiles.filter(u => u.status === 'suspended').length.toString(), icon: AlertCircle, bg: 'bg-amber-50 dark:bg-amber-500/10', color: 'text-amber-600' },
+        { label: 'Banned', val: profiles.filter(u => u.status === 'banned').length.toString(), icon: Ban, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-600' },
     ]
 
+    const roleBadgeClass = (role) => {
+        if (role === 'admin') return 'text-rose-600 dark:text-rose-400'
+        if (role === 'moderator') return 'text-indigo-500 dark:text-indigo-400'
+        return 'text-slate-500 dark:text-slate-400'
+    }
+
+    const statusBadgeClass = (status) => {
+        if (status === 'active') return 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
+        if (status === 'suspended') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+        return 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+    }
+
+    const statusDotClass = (status) => {
+        if (status === 'active') return 'bg-green-500'
+        if (status === 'suspended') return 'bg-amber-500'
+        return 'bg-red-500'
+    }
+
     const selectClass = "w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 font-bold text-sm text-slate-900 dark:text-white appearance-none outline-none focus:border-indigo-500 transition-all cursor-pointer"
+
+    const preferences = userDetails?.preferences || {}
+    const submittedLocations = userDetails?.submittedLocations || []
+    const favorites = userDetails?.favorites || []
 
     return (
         <div className="space-y-6 lg:space-y-10 pb-12 font-sans">
@@ -107,7 +175,7 @@ const AdminUsersPage = () => {
             />
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 lg:gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-8">
                 {stats.map((s, i) => (
                     <div key={i} className="bg-white dark:bg-slate-900/50 p-3 lg:p-7 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex flex-col sm:flex-row items-center gap-2 lg:gap-5 group hover:border-indigo-500/10 transition-all overflow-hidden relative">
                         <div className={cn("w-10 h-10 lg:w-16 lg:h-16 rounded-[18px] lg:rounded-[24px] flex items-center justify-center relative z-10 shrink-0 shadow-inner", s.bg, s.color)}>
@@ -178,21 +246,41 @@ const AdminUsersPage = () => {
                                 exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                             >
-                                <div className="flex flex-wrap gap-2 pt-2">
-                                    {['All', 'admin', 'moderator', 'user'].map(role => (
-                                        <button
-                                            key={role}
-                                            onClick={() => setRoleFilter(role)}
-                                            className={cn(
-                                                "px-4 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all",
-                                                roleFilter === role
-                                                    ? "bg-indigo-600 text-white shadow-md"
-                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600"
-                                            )}
-                                        >
-                                            {role === 'admin' ? 'Admin' : role === 'moderator' ? 'Moderator' : role === 'user' ? 'User' : role}
-                                        </button>
-                                    ))}
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest py-1.5">Role:</span>
+                                        {['All', 'admin', 'moderator', 'user'].map(role => (
+                                            <button
+                                                key={role}
+                                                onClick={() => setRoleFilter(role)}
+                                                className={cn(
+                                                    "px-4 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all",
+                                                    roleFilter === role
+                                                        ? "bg-indigo-600 text-white shadow-md"
+                                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600"
+                                                )}
+                                            >
+                                                {role === 'admin' ? 'Admin' : role === 'moderator' ? 'Moderator' : role === 'user' ? 'User' : role}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest py-1.5">Status:</span>
+                                        {['All', 'active', 'suspended', 'banned'].map(status => (
+                                            <button
+                                                key={status}
+                                                onClick={() => setStatusFilter(status)}
+                                                className={cn(
+                                                    "px-4 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all",
+                                                    statusFilter === status
+                                                        ? "bg-indigo-600 text-white shadow-md"
+                                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600"
+                                                )}
+                                            >
+                                                {status === 'active' ? 'Active' : status === 'suspended' ? 'Suspended' : status === 'banned' ? 'Banned' : status}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
@@ -221,23 +309,42 @@ const AdminUsersPage = () => {
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
                                             <Mail size={10} />{user.email}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-2">
+                                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                                             <Badge variant="outline" className={cn(
                                                 "bg-transparent border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                                                user.role === 'admin' ? 'text-rose-600 dark:text-rose-400' : user.role === 'moderator' ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+                                                roleBadgeClass(user.role)
                                             )}>
                                                 {user.role}
                                             </Badge>
                                             <div className={cn(
                                                 "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                                                user.status === 'active' ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-500/10 text-red-500'
+                                                statusBadgeClass(user.status)
                                             )}>
-                                                <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", user.status === 'active' ? 'bg-green-500' : 'bg-red-500')} />
+                                                <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", statusDotClass(user.status))} />
                                                 {user.status}
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400">
+                                            <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(user.created_at)}</span>
+                                            <span className="flex items-center gap-1"><Clock size={10} />{relativeTime(user.last_active_at)}</span>
+                                            <span className="flex items-center gap-1"><MapPin size={10} />{(user.submittedLocations || 0)}</span>
+                                        </div>
                                     </div>
-                                    <ChevronRight size={16} className="text-slate-400 shrink-0 mt-1" />
+                                    <div className="flex flex-col items-center gap-2 shrink-0">
+                                        <ChevronRight size={16} className="text-slate-400" />
+                                        <button
+                                            aria-label={`${user.status === 'active' ? 'Suspend' : 'Activate'} ${user.name || user.email}`}
+                                            onClick={(e) => { e.stopPropagation(); handleStatusChange(user, getQuickActionStatus(user.status)) }}
+                                            className={cn(
+                                                "p-2 rounded-xl transition-all",
+                                                user.status === 'active'
+                                                    ? "text-slate-300 hover:text-red-500 hover:bg-red-50"
+                                                    : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
+                                            )}
+                                        >
+                                            {user.status === 'active' ? <Ban size={16} /> : <CheckCircle2 size={16} />}
+                                        </button>
+                                    </div>
                                 </div>
                             </button>
                         ))
@@ -245,23 +352,25 @@ const AdminUsersPage = () => {
                 </div>
 
                 <div className="hidden md:block overflow-x-auto custom-scrollbar font-black leading-none">
-                    <table className="w-full text-left border-collapse min-w-[700px]">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-900/50">
                                 <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest pl-10 lg:pl-12">Member</th>
                                 <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Role</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Activity</th>
                                 <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Status</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Registered</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Last Active</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Contributions</th>
                                 <th className="px-6 py-4 text-right pr-10 lg:pr-12"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                             {loadingProfiles ? (
-                                <tr><td colSpan={5} className="py-12 text-center text-slate-400 text-sm font-semibold">Loading users...</td></tr>
+                                <tr><td colSpan={7} className="py-12 text-center text-slate-400 text-sm font-semibold">Loading users...</td></tr>
                             ) : filteredUsers.length === 0 ? (
-                                <tr><td colSpan={5} className="py-12 text-center text-slate-400 text-sm font-semibold">No users found.</td></tr>
+                                <tr><td colSpan={7} className="py-12 text-center text-slate-400 text-sm font-semibold">No users found.</td></tr>
                             ) : (
-                                filteredUsers.map((user) => (
+                                pagedUsers.map((user) => (
                                     <tr
                                         key={user.id}
                                         onClick={() => openUser(user)}
@@ -283,29 +392,36 @@ const AdminUsersPage = () => {
                                         <td className="px-6 py-5">
                                             <Badge variant="outline" className={cn(
                                                 "bg-transparent border border-slate-100 dark:border-slate-800/50 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest",
-                                                user.role === 'admin' ? 'text-rose-600 dark:text-rose-400' : user.role === 'moderator' ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+                                                roleBadgeClass(user.role)
                                             )}>
                                                 {user.role}
                                             </Badge>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[11px] font-bold text-slate-500">—</span>
+                                            <div className={cn(
+                                                "inline-flex items-center p-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
+                                                statusBadgeClass(user.status)
+                                            )}>
+                                                <div className={cn("w-1.5 h-1.5 rounded-full mr-2", statusDotClass(user.status))} />
+                                                {user.status}
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <div className={cn(
-                                                "inline-flex items-center p-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                                                user.status === 'active' ? 'bg-green-50 dark:bg-green-500/5 text-green-600' : 'bg-red-50 text-red-500'
-                                            )}>
-                                                <div className={cn("w-1.5 h-1.5 rounded-full mr-2", user.status === 'active' ? 'bg-green-500' : 'bg-red-500')} />
-                                                {user.status}
+                                            <span className="text-[11px] font-bold text-slate-500">{formatDate(user.created_at)}</span>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className="text-[11px] font-bold text-slate-500">{relativeTime(user.last_active_at)}</span>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
+                                                <MapPin size={12} className="text-slate-400" />
+                                                {user.submittedLocations || 0}
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right pr-10 lg:pr-12">
                                             <button
-                                                aria-label={`Ban or activate ${user.name || user.email}`}
-                                                onClick={(e) => { e.stopPropagation(); handleBanToggle(user) }}
+                                                aria-label={`${user.status === 'active' ? 'Suspend' : 'Activate'} ${user.name || user.email}`}
+                                                onClick={(e) => { e.stopPropagation(); handleStatusChange(user, getQuickActionStatus(user.status)) }}
                                                 className={cn(
                                                     "p-2 rounded-xl transition-all",
                                                     user.status === 'active'
@@ -329,9 +445,9 @@ const AdminUsersPage = () => {
                 {isSlideOverOpen && selectedUser && (
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSlideOverOpen(false)} className="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-md" />
-                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="fixed top-0 right-0 w-full sm:w-[500px] bg-white dark:bg-slate-900 h-full z-[110] flex flex-col shadow-2xl">
+                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="fixed top-0 right-0 w-full sm:w-[540px] bg-white dark:bg-slate-900 h-full z-[110] flex flex-col shadow-2xl">
 
-                            <div className="p-8 lg:p-12 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+                            <div className="p-8 lg:p-10 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
                                 <div>
                                     <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-none mb-1.5">User Profile</h2>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">ID: #USER-{selectedUser.id}</p>
@@ -339,28 +455,38 @@ const AdminUsersPage = () => {
                                 <button onClick={() => setIsSlideOverOpen(false)} aria-label="Close panel" className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all"><X size={20} /></button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-10 lg:p-14 space-y-12 custom-scrollbar">
-                                <div className="flex flex-col items-center py-10 bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-inner group">
-                                    <div className="w-28 h-28 rounded-[36px] bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/20 mb-6 group-hover:scale-105 transition-transform">{(selectedUser.name || selectedUser.email || 'U').charAt(0)}</div>
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.name || selectedUser.email}</h3>
+                            <div className="flex-1 overflow-y-auto p-8 lg:p-10 space-y-10 custom-scrollbar">
+                                {/* Profile Header */}
+                                <div className="flex flex-col items-center py-8 bg-slate-50/50 dark:bg-slate-800/30 rounded-[36px] border border-slate-100 dark:border-slate-800/50 shadow-inner group">
+                                    <div className="w-24 h-24 rounded-[32px] bg-indigo-600 text-white flex items-center justify-center text-3xl font-bold shadow-2xl shadow-indigo-500/20 mb-5 group-hover:scale-105 transition-transform">
+                                        {(selectedUser.name || selectedUser.email || 'U').charAt(0)}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-none">{selectedUser.name || selectedUser.email}</h3>
                                     <p className="text-[13px] font-medium text-slate-400 mt-2">{selectedUser.email}</p>
-                                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-2">
-                                        Joined {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('en-GB') : '—'}
-                                    </p>
+                                    <div className="flex items-center gap-3 mt-3">
+                                        <div className={cn(
+                                            "inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider",
+                                            statusBadgeClass(editStatus)
+                                        )}>
+                                            <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", statusDotClass(editStatus))} />
+                                            {editStatus}
+                                        </div>
+                                        <Badge variant="outline" className={cn(
+                                            "bg-transparent border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider",
+                                            roleBadgeClass(editRole)
+                                        )}>
+                                            {editRole}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 mt-4 text-[11px] font-bold text-slate-400">
+                                        <span className="flex items-center gap-1"><Calendar size={10} />Joined {formatDate(selectedUser.created_at)}</span>
+                                        <span className="flex items-center gap-1"><Clock size={10} />{relativeTime(selectedUser.last_active_at)}</span>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6 leading-none">
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm text-center">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Visits</p>
-                                        <p className="text-3xl font-bold text-slate-900 dark:text-white">—</p>
-                                    </div>
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm text-center">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Reviews</p>
-                                        <p className="text-3xl font-bold text-slate-900 dark:text-white">—</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 pt-4 leading-none">
+                                {/* Account Management */}
+                                <div className="space-y-5">
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Account Management</h4>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-2">Access Level</label>
                                         <select
@@ -381,19 +507,129 @@ const AdminUsersPage = () => {
                                             className={selectClass}
                                         >
                                             <option value="active">Active</option>
-                                            <option value="inactive">Restricted</option>
+                                            <option value="suspended">Suspended</option>
+                                            <option value="banned">Banned</option>
                                         </select>
                                     </div>
+                                    <button
+                                        onClick={handleUpdate}
+                                        disabled={updateProfileRole.isPending || updateStatus.isPending}
+                                        className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[24px] font-bold text-[11px] uppercase tracking-widest shadow-2xl active:scale-[0.97] transition-all disabled:opacity-50"
+                                    >
+                                        {(updateProfileRole.isPending || updateStatus.isPending) ? 'Saving...' : 'Save Changes'}
+                                    </button>
                                 </div>
-                            </div>
 
-                            <div className="p-10 lg:p-12 border-t border-slate-100 dark:border-slate-800/50 flex gap-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shrink-0">
-                                <button onClick={handleUpdate} className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[28px] font-bold text-[11px] uppercase tracking-widest shadow-2xl active:scale-[0.97] transition-all">
-                                    Save Changes
-                                </button>
-                                <button onClick={() => setIsSlideOverOpen(false)} className="px-10 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-[28px] font-bold text-[11px] uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">
-                                    Cancel
-                                </button>
+                                {loadingUserDetails ? (
+                                    <div className="py-6 text-center text-slate-400 text-sm font-semibold">Loading details...</div>
+                                ) : (
+                                    <>
+                                        {/* DNA Preferences */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                                <UtensilsCrossed size={12} /> DNA Preferences
+                                            </h4>
+                                            {(!preferences.favorite_cuisines?.length && !preferences.vibe_preference?.length && !preferences.price_range?.length && !preferences.dietary_restrictions?.length) ? (
+                                                <div className="text-[13px] font-medium text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/50">
+                                                    No preferences configured
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/50">
+                                                    {preferences.favorite_cuisines?.length > 0 && (
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Favorite Cuisines</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {preferences.favorite_cuisines.map((c, i) => (
+                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold">{c}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {preferences.vibe_preference?.length > 0 && (
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Vibe Preferences</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {preferences.vibe_preference.map((v, i) => (
+                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-bold">{v}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {preferences.price_range?.length > 0 && (
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Price Range</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {preferences.price_range.map((p, i) => (
+                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">{p}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {preferences.dietary_restrictions?.length > 0 && (
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Dietary Restrictions</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {preferences.dietary_restrictions.map((d, i) => (
+                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold">{d}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Contributions */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                                <MapPin size={12} /> Contributions
+                                            </h4>
+                                            <div className="bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/50">
+                                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{submittedLocations.length}</p>
+                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Submitted Locations</p>
+                                                {submittedLocations.length === 0 ? (
+                                                    <p className="text-[13px] font-medium text-slate-400 mt-3">No contributions yet</p>
+                                                ) : (
+                                                    <div className="mt-4 space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                                        {submittedLocations.map((loc, i) => (
+                                                            <div key={i} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[12px] font-bold text-slate-900 dark:text-white truncate">{loc.title || 'Untitled'}</p>
+                                                                    <p className="text-[11px] text-slate-400 mt-0.5">{loc.city || '—'}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 shrink-0">
+                                                                    <span className={cn(
+                                                                        "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider",
+                                                                        loc.status === 'approved' ? 'bg-green-50 dark:bg-green-500/10 text-green-600' :
+                                                                        loc.status === 'pending' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' :
+                                                                        'bg-slate-100 dark:bg-slate-700 text-slate-500'
+                                                                    )}>
+                                                                        {loc.status || 'unknown'}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-400">{formatDate(loc.date)}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Favorites */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                                <Heart size={12} /> Favorites
+                                            </h4>
+                                            <div className="bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/50">
+                                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{favorites.length}</p>
+                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Saved Places</p>
+                                                {favorites.length === 0 && (
+                                                    <p className="text-[13px] font-medium text-slate-400 mt-3">No favorites yet</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </motion.div>
                     </>

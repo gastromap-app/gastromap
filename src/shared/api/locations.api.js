@@ -260,11 +260,7 @@ export async function createLocation(data, enableTranslation = null) {
 
     // Create location IMMEDIATELY (without waiting for translations)
     const row = _toRow(locationData)
-    const { data: created, error } = await supabase
-        .from('locations')
-        .insert(row)
-        .select()
-        .single()
+    const { data: created, error } = await _smartSave('locations', null, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)
 
@@ -354,12 +350,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     }
 
     const row = _toRow(locationData)
-    const { data: updated, error } = await supabase
-        .from('locations')
-        .update(row)
-        .eq('id', id)
-        .select()
-        .single()
+    const { data: updated, error } = await _smartSave('locations', id, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)
     
@@ -433,6 +424,45 @@ export async function getLocationTranslated(id, lang = 'en') {
     }
     
     return location
+}
+
+// ─── Smart Sanitizer ───────────────────────────────────────────────────────
+/**
+ * Executes a save (insert or update) but smartly catches missing column errors.
+ * If a column is missing in the DB schema, it strips it and retries.
+ */
+async function _smartSave(table, id, row) {
+    let payload = { ...row }
+    let maxRetries = 10 // Prevent infinite loops
+
+    while (maxRetries > 0) {
+        const req = id 
+            ? supabase.from(table).update(payload).eq('id', id).select().single()
+            : supabase.from(table).insert(payload).select().single()
+            
+        const { data, error } = await req
+
+        if (error) {
+            // Check if it's a missing column error (PostgREST PGRST200)
+            if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
+                // Parse missing column name: "Could not find the 'xyz' column of 'table'..."
+                const match = error.message.match(/find the '([^']+)' column/)
+                if (match && match[1]) {
+                    const missingCol = match[1]
+                    console.warn(`[smartSave] Column '${missingCol}' missing in DB schema. Stripping it and retrying...`)
+                    delete payload[missingCol]
+                    maxRetries--
+                    continue // retry request without this column
+                }
+            }
+            // Other error
+            return { data: null, error }
+        }
+
+        return { data, error: null }
+    }
+    
+    return { data: null, error: { message: 'Exceeded max retries for smartSave missing columns', code: '500' } }
 }
 
 // ─── Shape converter (app → DB) ────────────────────────────────────────────

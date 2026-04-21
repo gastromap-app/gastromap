@@ -26,6 +26,8 @@ export const useAdminLocations = () => {
     const [openActionMenuId, setOpenActionMenuId] = useState(null)
     const [isImproving, setIsImproving] = useState(null)
     const [isExporting, setIsExporting] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const PAGE_SIZE = 20
 
     const handleExport = async () => {
         setIsExporting(true)
@@ -426,6 +428,18 @@ export const useAdminLocations = () => {
         return matchesSearch && matchesStatus
     })
 
+    // Pagination logic
+    const totalPages = Math.ceil(filteredLocations.length / PAGE_SIZE)
+    const paginatedLocations = filteredLocations.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+    )
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchQuery, statusFilter])
+
     const addImageUrl = (url) => {
         if (!url) return
         setFormData(prev => {
@@ -497,6 +511,13 @@ export const useAdminLocations = () => {
         spoonacularMutation,
         aiQueryMutation,
         culinaryContextMutation,
+        
+        // Pagination
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        PAGE_SIZE,
+        paginatedLocations,
         
         // Handlers
         handleCreateNew,

@@ -56,9 +56,11 @@ const LocationHierarchyExplorer = ({ className }) => {
         const citiesByCountry = {}
         const locationsByCity = {}
 
-        allLocations.forEach(loc => {
-            const country = loc.country || 'Unknown'
-            const city = loc.city || 'Unknown'
+        allLocations
+            .filter(loc => loc.status === 'active' || loc.status === 'approved')
+            .forEach(loc => {
+                const country = loc.country || 'Unknown'
+                const city = loc.city || 'Unknown'
 
             if (!countryMap[country]) {
                 countryMap[country] = { id: country, name: country, count: 0, status: 'active', ...COUNTRY_META[country] || DEFAULT_COUNTRY }

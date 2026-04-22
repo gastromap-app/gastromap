@@ -70,6 +70,7 @@ const LocationFormSlideOver = ({
     formData,
     setFormData,
     onSave,
+    onDelete,
     // AI props
     aiQueryMutation,
     reindexMutation,
@@ -844,20 +845,34 @@ const LocationFormSlideOver = ({
 
                 {/* ── Footer ── */}
                 <div className="px-5 sm:px-12 py-5 sm:py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl shrink-0 sticky bottom-0 z-30">
-                        <div className="flex flex-row gap-3 sm:gap-6 max-w-5xl mx-auto">
-                            <button
-                                onClick={onClose}
-                                className="flex-1 py-5 rounded-2xl sm:rounded-[24px] border-2 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs sm:text-[13px] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-widest active:scale-[0.98]"
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                onClick={onSave}
-                                className="flex-[2] py-5 rounded-2xl sm:rounded-[24px] bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white text-xs sm:text-[13px] font-black shadow-2xl shadow-indigo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest"
-                            >
-                                <Save size={20} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
-                                <span>{isNew ? 'Создать' : 'Сохранить'}</span>
-                            </button>
+                        <div className="flex flex-col gap-3 max-w-5xl mx-auto">
+                            <div className="flex flex-row gap-3 sm:gap-6">
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 py-5 rounded-2xl sm:rounded-[24px] border-2 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs sm:text-[13px] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-widest active:scale-[0.98]"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    onClick={onSave}
+                                    className="flex-[2] py-5 rounded-2xl sm:rounded-[24px] bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white text-xs sm:text-[13px] font-black shadow-2xl shadow-indigo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest"
+                                >
+                                    <Save size={20} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
+                                    <span>{isNew ? 'Создать' : 'Сохранить'}</span>
+                                </button>
+                            </div>
+                            {!isNew && onDelete && (
+                                <button
+                                    onClick={() => {
+                                        onDelete(selectedLocation?.id)
+                                        onClose()
+                                    }}
+                                    className="w-full py-4 rounded-2xl sm:rounded-[24px] border-2 border-rose-200 dark:border-rose-900/50 text-rose-500 dark:text-rose-400 text-xs sm:text-[13px] font-black hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 size={16} strokeWidth={2.5} />
+                                    <span>Удалить локацию</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </motion.div>

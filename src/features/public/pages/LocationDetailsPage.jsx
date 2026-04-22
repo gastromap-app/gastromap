@@ -20,6 +20,7 @@ import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
+import { MenuScanner } from '@/features/public/components/MenuScanner'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -357,41 +358,39 @@ const LocationDetailsPage = () => {
     )
 
     const renderMenu = () => {
-        // Mocking an admin choice: "text" vs "file"
-        const menuType = location.id === '1' ? 'text' : 'file';
-
-        if (menuType === 'file') {
-            return (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                    <div className={`p-10 rounded-[40px] border-2 border-dashed flex flex-col items-center justify-center gap-6 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
-                        <div className="w-20 h-20 rounded-3xl bg-blue-600/10 flex items-center justify-center text-blue-600">
-                            <FileText size={40} />
-                        </div>
-                        <div className="space-y-2">
-                            <h4 className={`text-xl font-black ${textStyle}`}>Digital Menu Available</h4>
-                            <p className={`text-sm max-w-xs mx-auto ${subTextStyle}`}>This location has provided their menu in a physical or digital document format.</p>
-                        </div>
-                        <button className="px-8 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all">
-                            View Full Menu (PDF)
-                        </button>
-                    </div>
-                    {/* Visual hint of the file */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {[1, 2].map(i => (
-                            <div key={i} className="aspect-[3/4] rounded-3xl overflow-hidden border border-gray-100 dark:border-white/10 relative group bg-black">
-                                <LazyImage src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=1970&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="menu page" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <ImageIcon className="text-white opacity-40" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
-            )
-        }
+        const hasRealMenu = location?.menu_url || (location?.kg_dishes?.length > 0)
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                {/* ── AI Menu Scanner ──────────────────────────────────────── */}
+                <div className={`p-6 rounded-[32px] border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                            <Camera size={20} />
+                        </div>
+                        <div>
+                            <p className={`font-black text-sm ${textStyle}`}>AI Menu Scanner</p>
+                            <p className={`text-xs ${subTextStyle}`}>Photo a menu → AI extracts dishes &amp; prices</p>
+                        </div>
+                    </div>
+                    <MenuScanner onDishesExtracted={(dishes) => console.log('[MenuScanner] extracted:', dishes)} />
+                </div>
+
+                {/* ── KG Dishes (from database) ─────────────────────────── */}
+                {location?.kg_dishes?.length > 0 && (
+                    <div className="space-y-3">
+                        <h4 className={`text-sm font-black uppercase tracking-wider ${subTextStyle}`}>Known dishes</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {location.kg_dishes.map((dish, i) => (
+                                <span key={i} className={`px-4 py-2 rounded-2xl text-sm font-bold border ${isDark ? 'border-white/10 bg-white/5 text-white/80' : 'border-gray-200 bg-white text-gray-700'}`}>
+                                    {dish}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Static sample sections (visible when no real menu) ── */}
                 {[
                     {
                         title: "Signature Mains", items: [

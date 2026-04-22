@@ -54,7 +54,9 @@ function cityMatch(loc, cityQuery) {
 function mapLocation(l) {
     return {
         id:             l.id,
-        name:           l.title,
+        name:           l.title,     // for internal AI logic
+        title:          l.title,     // for UI consistency
+        image:          l.image_url || l.image, // for UI cards
         category:       l.category,
         city:           l.city,
         country:        l.country ?? null,
@@ -63,7 +65,7 @@ function mapLocation(l) {
         tags:           l.tags ?? [],
         vibe:           l.vibe ?? [],
         price_level:    l.price_level,
-        rating:         l.rating ?? null,
+        rating:         l.rating ?? l.google_rating ?? null,
         description:    l.description,
         insider_tip:    l.insider_tip ?? null,
         what_to_try:    l.what_to_try ?? [],
@@ -180,7 +182,7 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
 
 // ─── Tier 3: Keyword search (pgvector semantic + literal fallback) ────────────
 
-async function applyKeywordSearch(results, keyword, limit) {
+async function applyKeywordSearch(results, keyword, limit, { city, category } = {}) {
     const kw = norm(keyword)
 
     // Helper: search inside all kg_profile array fields
@@ -212,7 +214,7 @@ async function applyKeywordSearch(results, keyword, limit) {
 
     // Semantic boost via pgvector (finds contextually related items even without exact match)
     try {
-        const semanticResults = await semanticSearch(keyword, limit * 3, null)
+        const semanticResults = await semanticSearch(keyword, limit * 3, null, { city, category })
         if (semanticResults?.length) {
             const semanticIds = new Set(semanticResults.map(r => r.id))
             // Union: literal matches + semantically similar locations not in literal set
@@ -254,39 +256,73 @@ export async function executeTool(name, args, locations = []) {
             keyword, michelin, limit = 5,
         } = args
 
-        let pool = []
-
-        // ── Tier 1: Supabase query (primary, always fresh) ──────────────────
-        const dbRows = await querySupabase({ price_range, min_rating, michelin })
-        if (dbRows?.length) {
-            pool = dbRows
-        } else {
-            // ── Tier 3 Fallback: in-memory Zustand store ─────────────────────
-            console.warn('[ai.tools] Supabase unavailable — using in-memory store')
-            if (!locations?.length) {
-                try {
-                    const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                    locations = useLocationsStore.getState().locations
-                } catch (e) {
-                    console.warn('[ai.tools] Could not load store:', e.message)
+        // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
+        if (keyword) {
+            // Call semanticSearch (Hybrid RPC) which handles city/category server-side
+            const semanticResults = await semanticSearch(keyword, limit * 5, null, { city, category })
+            
+            if (semanticResults?.length) {
+                // Hydrate semantic results with full data from the store to ensure 
+                // the AI has access to all metadata (kg_profile, insider_tips, etc.)
+                let activeLocations = locations
+                if (!activeLocations?.length) {
+                    try {
+                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                        activeLocations = useLocationsStore.getState().locations
+                    } catch { activeLocations = [] }
                 }
-            }
-            pool = [...(locations || [])]
 
-            // Apply SQL-equivalent filters in memory when DB is unavailable
-            if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_level))
-            if (min_rating)          pool = pool.filter(l => (l.rating ?? 0) >= min_rating)
-            if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
+                pool = semanticResults.map(sr => {
+                    const full = activeLocations.find(l => l.id === sr.id)
+                    // If we found the full record in the store, use it. 
+                    // Otherwise fall back to the RPC result fields.
+                    return full ? { ...full, rrf_score: sr.rrf_score } : sr
+                })
+                
+                // Apply remaining structured filters that RPC doesn't handle
+                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_level))
+                if (min_rating)          pool = pool.filter(l => (l.rating ?? 0) >= min_rating)
+                if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
+                
+                // Apply advanced text filters (amenities, dietary, etc.)
+                pool = applyTextFilters(pool, { amenities, best_for, dietary_options, tags, cuisine_types })
+            }
         }
 
-        // ── Tier 2: Client-side text filters (diacritics-safe via norm()) ───
-        pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options })
+        // ── Case B: Structured Browse (if no keyword OR if hybrid failed/empty) ──
+        if (!pool.length) {
+            // Tier 1: Supabase query (primary, always fresh)
+            const dbRows = await querySupabase({ price_range, min_rating, michelin })
+            if (dbRows?.length) {
+                pool = dbRows
+            } else {
+                // Tier 3 Fallback: in-memory Zustand store
+                console.warn('[ai.tools] Supabase unavailable — using in-memory store')
+                if (!locations?.length) {
+                    try {
+                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                        locations = useLocationsStore.getState().locations
+                    } catch (e) {
+                        console.warn('[ai.tools] Could not load store:', e.message)
+                    }
+                }
+                pool = [...(locations || [])]
 
-        // ── Keyword: pgvector semantic + literal ─────────────────────────────
-        if (keyword) {
-            pool = await applyKeywordSearch(pool, keyword, limit)
-        } else {
-            pool.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                // Apply SQL-equivalent filters in memory when DB is unavailable
+                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_level))
+                if (min_rating)          pool = pool.filter(l => (l.rating ?? 0) >= min_rating)
+                if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
+            }
+
+            // Tier 2: Client-side text filters (diacritics-safe via norm())
+            pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options })
+            
+            // If keyword exists but hybrid failed, do a literal fallback
+            if (keyword) {
+                pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
+            } else {
+                pool.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            }
         }
 
         const results = pool.slice(0, limit)

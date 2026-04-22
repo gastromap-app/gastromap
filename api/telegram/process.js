@@ -12,6 +12,130 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// ── Step 0: Normalize query to English ──────────────────────────────────────
+async function normalizeQueryToEnglish(query, apiKey) {
+    if (!apiKey) return query
+    // Если запрос уже на английском — не тратим токены
+    const hasNonLatin = /[а-яёА-ЯЁіїєґ]/u.test(query)
+    if (!hasNonLatin) return query
+
+    try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://gastromap-five.vercel.app',
+                'X-Title': 'GastroMap Bot',
+            },
+            body: JSON.stringify({
+                model: 'google/gemma-3-27b-it:free',
+                messages: [{
+                    role: 'user',
+                    content: `Translate this restaurant/cafe search query to English. Return ONLY the translated query, nothing else:\n\n${query}`
+                }],
+                max_tokens: 100,
+                temperature: 0,
+            }),
+        })
+        const data = await res.json()
+        const translated = data.choices?.[0]?.message?.content?.trim()
+        if (translated) {
+            console.log(`[process] Query normalized: "${query}" → "${translated}"`)
+            return translated
+        }
+    } catch (err) {
+        console.warn('[process] Query normalization failed:', err.message)
+    }
+    return query
+}
+
+// ── Auto-translate after insert ──────────────────────────────────────────────
+async function triggerAutoTranslation(locationId, locationData, apiKey) {
+    if (!apiKey) return
+    const SUPPORTED_LANGS = ['pl', 'uk', 'ru']
+    const TRANSLATABLE_FIELDS = ['title', 'description', 'insider_tip', 'what_to_try']
+
+    const translations = {}
+
+    for (const lang of SUPPORTED_LANGS) {
+        try {
+            const translated = {}
+            for (const field of TRANSLATABLE_FIELDS) {
+                const val = locationData[field]
+                if (!val) continue
+                if (Array.isArray(val)) {
+                    // Переводим массив как одну строку через | для экономии токенов
+                    const joined = val.join(' | ')
+                    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'google/gemma-3-27b-it:free',
+                            messages: [{ role: 'user', content: `Translate to ${lang === 'pl' ? 'Polish' : lang === 'uk' ? 'Ukrainian' : 'Russian'}. Return ONLY the translation, preserve | separators:\n\n${joined}` }],
+                            max_tokens: 300,
+                            temperature: 0,
+                        }),
+                    })
+                    const data = await res.json()
+                    const t = data.choices?.[0]?.message?.content?.trim()
+                    if (t) translated[field] = t.split(' | ').map(s => s.trim())
+                } else {
+                    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'google/gemma-3-27b-it:free',
+                            messages: [{ role: 'user', content: `Translate to ${lang === 'pl' ? 'Polish' : lang === 'uk' ? 'Ukrainian' : 'Russian'}. Return ONLY the translation:\n\n${val}` }],
+                            max_tokens: 400,
+                            temperature: 0,
+                        }),
+                    })
+                    const data = await res.json()
+                    const t = data.choices?.[0]?.message?.content?.trim()
+                    if (t) translated[field] = t
+                }
+            }
+            translations[lang] = translated
+            console.log(`[process] Translation done: ${lang}`)
+        } catch (err) {
+            console.warn(`[process] Translation ${lang} failed:`, err.message)
+        }
+    }
+
+    // EN — оригинал
+    translations['en'] = Object.fromEntries(
+        TRANSLATABLE_FIELDS
+            .filter(f => locationData[f])
+            .map(f => [f, locationData[f]])
+    )
+
+    // Сохраняем в location_translations
+    try {
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://myyzguendoruefiiufop.supabase.co'
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(supabaseUrl, serviceKey)
+
+        const { error } = await supabase
+            .from('location_translations')
+            .upsert({ location_id: locationId, translations }, { onConflict: 'location_id' })
+
+        if (error) console.warn('[process] Save translations error:', error.message)
+        else console.log('[process] Translations saved for', locationId)
+    } catch (err) {
+        console.warn('[process] Save translations exception:', err.message)
+    }
+}
+
+
+
 const TELEGRAM_API = 'https://api.telegram.org'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const APIFY_API = 'https://api.apify.com/v2'
@@ -222,7 +346,7 @@ async function searchBrave(query) {
 // ── Step 4: LLM Synthesis ────────────────────────────────────────────────────
 async function synthesizeWithLLM(placesData, apifyData, braveResults, userQuery) {
     const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY
-    if (!apiKey) { console.warn('[process] No OPENROUTER_API_KEY'); return {} }
+    if (!apiKey) { console.warn('[process] No OPENROUTER_API_KEY for synthesis'); return {} }
 
     // Собираем весь контекст
     const ctx = []
@@ -440,14 +564,16 @@ export default async function handler(req, res) {
     const token = process.env.TELEGRAM_BOT_TOKEN
     const userQuery = query.value
 
-    console.log(`[process] Pipeline for: "${userQuery}"`)
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY
+    const userQueryNormalized = await normalizeQueryToEnglish(userQuery, apiKey)
+    console.log(`[process] Pipeline for: "${userQuery}" (normalized: "${userQueryNormalized}")`)
 
     try {
         // Шаги 1–3 параллельно
         const [placesData, apifyData, braveResults] = await Promise.allSettled([
-            searchGooglePlaces(userQuery),
-            searchApify(userQuery),
-            searchBrave(userQuery),
+            searchGooglePlaces(userQueryNormalized),
+            searchApify(userQueryNormalized),
+            searchBrave(userQueryNormalized),
         ]).then(r => r.map(x => x.status === 'fulfilled' ? x.value : null))
 
         console.log('[process] Sources:', { places: !!placesData, apify: !!apifyData, brave: !!braveResults })
@@ -460,7 +586,7 @@ export default async function handler(req, res) {
         }
 
         // Шаг 4: LLM
-        const llmData = await synthesizeWithLLM(placesData, apifyData, braveResults, userQuery)
+        const llmData = await synthesizeWithLLM(placesData, apifyData, braveResults, userQueryNormalized)
 
         // Объединяем: Apify > Places > LLM
         const finalData = {
@@ -481,6 +607,17 @@ export default async function handler(req, res) {
         // Шаг 5: Supabase
         const created = await insertLocation(finalData)
         console.log('[process] Created location:', created.id)
+
+        // Запускаем автоперевод в фоне (non-blocking)
+        const translationData = {
+            title: finalData.title || created.title,
+            description: llmData.description || finalData.description,
+            insider_tip: llmData.insider_tip || finalData.insider_tip,
+            what_to_try: llmData.what_to_try || finalData.what_to_try,
+        }
+        triggerAutoTranslation(created.id, translationData, apiKey).catch(err =>
+            console.warn('[process] Auto-translation background error:', err.message)
+        )
 
         // Шаг 6: Telegram ответ — полная карточка
         const adminUrl = `https://gastromap-five.vercel.app/admin/locations/${created.id}`

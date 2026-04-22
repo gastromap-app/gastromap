@@ -75,6 +75,7 @@ const AdminLocationsPage = () => {
         locationsList, pendingLocations, loadError, filteredLocations,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
+        embeddingMutation, bulkEmbeddingMutation,
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
@@ -142,7 +143,23 @@ const AdminLocationsPage = () => {
                                 className={cn(adminBtnSecondary, "disabled:opacity-40")}
                             >
                                 <Sparkles size={16} className="text-indigo-500" />
-                                <span className="hidden lg:inline ml-1">Reindex</span>
+                                <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? 'Reindexing...' : 'Reindex'}</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const mode = confirm('Обновить только пустые embeddings?\n\nОК = только пустые\nОтмена = все локации')
+                                    bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
+                                }}
+                                disabled={bulkEmbeddingMutation.isPending}
+                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                                title="Обновить векторные embeddings"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                    <polyline points="3.29 7 12 12 20.71 7"/>
+                                    <line x1="12" y1="22" x2="12" y2="12"/>
+                                </svg>
+                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? 'Embedding...' : 'Embeddings'}</span>
                             </button>
                         </div>
                         <button
@@ -218,6 +235,7 @@ const AdminLocationsPage = () => {
                         extractMutation={extractMutation}
                         aiQueryMutation={aiQueryMutation}
                         reindexMutation={reindexMutation}
+                        embeddingMutation={embeddingMutation}
                         isImproving={isImproving}
                         setIsImproving={setIsImproving}
                         handleAIMagic={handleAIMagic}

@@ -73,6 +73,7 @@ const LocationFormSlideOver = ({
     // AI props
     aiQueryMutation,
     reindexMutation,
+    embeddingMutation,
     extractMutation,
     handleAIMagic,
     isImproving,
@@ -134,6 +135,16 @@ const LocationFormSlideOver = ({
         } finally {
             setIsImproving(null)
         }
+    }
+
+    const handleUpdateEmbedding = () => {
+        if (!selectedLocation?.id) return
+        embeddingMutation.mutate(selectedLocation.id, {
+            onSuccess: () => {
+                // Toast via existing toast system if available
+                console.log('[LocationForm] Embedding updated ✅')
+            },
+        })
     }
 
     const handleReindex = () => {
@@ -792,8 +803,16 @@ const LocationFormSlideOver = ({
                                                                         <RefreshCw size={16} className={reindexMutation.isPending ? 'animate-spin' : ''} />
                                                                         {reindexMutation.isPending ? 'Индексирую данные...' : 'Переиндексировать объект'}
                                                                     </button>
+                                                                    <button
+                                                                        onClick={handleUpdateEmbedding}
+                                                                        disabled={embeddingMutation?.isPending}
+                                                                        className="w-full py-4 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-[12px] font-black shadow-lg shadow-violet-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                                                    >
+                                                                        <RefreshCw size={16} className={embeddingMutation?.isPending ? 'animate-spin' : ''} />
+                                                                        {embeddingMutation?.isPending ? 'Генерирую вектор...' : '🔢 Обновить Embedding'}
+                                                                    </button>
                                                                     <p className="text-[9px] text-slate-400 text-center px-4">
-                                                                        Обновляет векторные представления для умного поиска и рекомендаций. Рекомендуется после значительных изменений.
+                                                                        Обновляет AI-контекст и векторный индекс для умного поиска. Рекомендуется после значительных изменений.
                                                                     </p>
                                                                 </div>
                                                             ) : (

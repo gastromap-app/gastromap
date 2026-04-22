@@ -294,6 +294,39 @@ export function useBulkReindexLocationsMutation() {
 }
 
 /**
+ * Admin: Update vector embedding for a single location.
+ */
+export function useUpdateLocationEmbeddingMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (id) => {
+            const { updateLocationEmbedding } = await import('./ai-assistant.service')
+            return updateLocationEmbedding(id)
+        },
+        onSuccess: (_data, id) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+        },
+    })
+}
+
+/**
+ * Admin: Bulk update embeddings for all (or empty) locations.
+ */
+export function useBulkUpdateEmbeddingsMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (config) => {
+            const { bulkUpdateEmbeddings } = await import('./ai-assistant.service')
+            return bulkUpdateEmbeddings(config)
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+        },
+    })
+}
+
+/**
  * Admin: Synchronize location with updated Knowledge Graph logic.
  */
 export function useSyncLocationWithKGMutation() {

@@ -101,3 +101,32 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
         return []
     }
 }
+
+/**
+ * Build embed text from all semantic fields of a location.
+ */
+function buildEmbedText(loc) {
+    const parts = [
+        loc.title,
+        loc.category,
+        loc.cuisine,
+        loc.description,
+    ]
+    for (const field of ['tags', 'vibe', 'features', 'best_for', 'ai_keywords']) {
+        const v = loc[field]
+        if (Array.isArray(v) && v.length) parts.push(v.join(' '))
+        else if (typeof v === 'string' && v) parts.push(v)
+    }
+    if (loc.ai_context) parts.push(loc.ai_context.slice(0, 500))
+    return parts.filter(Boolean).join(' | ')
+}
+
+/**
+ * Generate & return embedding vector for a location object.
+ * Returns float[] (768 dims) or null on failure.
+ */
+export async function generateEmbeddingForLocation(location) {
+    const text = buildEmbedText(location)
+    if (!text.trim()) return null
+    return generateEmbedding(text)
+}

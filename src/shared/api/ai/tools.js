@@ -75,6 +75,7 @@ function mapLocation(l) {
         kg_dishes:      l.kg_dishes      ?? [],
         kg_ingredients: l.kg_ingredients ?? [],
         kg_allergens:   l.kg_allergens   ?? [],
+        kg_profile:     l.kg_profile     ?? null,
         opening_hours:  l.opening_hours ?? null,
         amenities:      l.amenities ?? [],
         dietary:        l.dietary ?? [],
@@ -182,7 +183,19 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
 async function applyKeywordSearch(results, keyword, limit) {
     const kw = norm(keyword)
 
-    // Literal text match
+    // Helper: search inside all kg_profile array fields
+    const kgProfileMatch = (l) => {
+        const p = l.kg_profile
+        if (!p) return false
+        const arrays = ['cuisines','dishes','ingredients','allergens','flavor_profile',
+            'atmosphere','dining_style','occasion_tags','price_context','diet_friendly',
+            'search_phrases','what_makes_unique','best_dishes','local_context']
+        return arrays.some(field =>
+            Array.isArray(p[field]) && p[field].some(v => norm(v).includes(kw))
+        )
+    }
+
+    // Literal text match (includes all kg_profile fields)
     const literalMatches = results.filter(l =>
         norm(l.title).includes(kw) ||
         norm(l.description).includes(kw) ||
@@ -193,7 +206,8 @@ async function applyKeywordSearch(results, keyword, limit) {
         l.vibe?.some(v => norm(v).includes(kw)) ||
         l.ai_keywords?.some(k => norm(k).includes(kw)) ||
         l.what_to_try?.some(w => norm(w).includes(kw)) ||
-        l.kg_dishes?.some(d => norm(d).includes(kw))
+        l.kg_dishes?.some(d => norm(d).includes(kw)) ||
+        kgProfileMatch(l)
     )
 
     // Semantic boost via pgvector (finds contextually related items even without exact match)

@@ -175,6 +175,16 @@ IMPORTANT FIELD NOTES (when reading tool results):
 - 'kg_dishes' — verified signature dishes from Knowledge Graph (prefer these over guessing)
 - 'kg_ingredients' — key ingredients used in this restaurant
 - 'kg_allergens' — allergen flags (gluten, dairy, nuts, etc.) — important for dietary context
+- 'kg_profile' — rich AI-generated profile with deep food intelligence:
+    - kg_profile.flavor_profile — taste descriptors (umami, rich, spicy, hearty...)
+    - kg_profile.atmosphere — vibe (cozy, lively, romantic, rustic...)
+    - kg_profile.occasion_tags — best occasions (date night, solo lunch, rainy day...)
+    - kg_profile.search_phrases — natural queries users might type
+    - kg_profile.best_dishes — top dishes to order
+    - kg_profile.what_makes_unique — unique selling points
+    - kg_profile.price_context — value context (budget-friendly, cash only, great value)
+    - kg_profile.diet_friendly — dietary accommodations (vegan-friendly, gluten-free...)
+  Always check kg_profile for nuanced recommendations — it contains the richest semantic data.
 - 'special_labels' — accolades like "Michelin Bib", "Signature Cuisine" (highlight these)
 
 When a user asks in Russian, respond in Russian. In Polish — in Polish. Match their language always.`

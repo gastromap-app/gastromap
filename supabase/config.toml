@@ -1,2 +1,3 @@
-[project]
+# A string used to distinguish different Supabase projects on the same host.
+# Defaults to the project_id of the associated supabase project.
 project_id = "myyzguendoruefiiufop"

@@ -68,9 +68,9 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
             const { data, error } = await supabase.rpc('search_locations_hybrid', {
                 query_embedding: queryEmbedding,
                 query_text: queryText,
-                city_filter: city || null,
-                category_filter: category || null,
-                match_count: limit,
+                p_city: city || null,
+                p_category: category || null,
+                p_limit: limit,
                 rrf_k: 60,
             })
 
@@ -85,9 +85,9 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
         // Fallback: FTS only (no embedding needed)
         const { data, error } = await supabase.rpc('search_locations_fulltext', {
             query_text: queryText,
-            city_filter: city || null,
-            category_filter: category || null,
-            match_count: limit,
+            p_city: city || null,
+            p_category: category || null,
+            p_limit: limit,
         })
 
         if (error) {

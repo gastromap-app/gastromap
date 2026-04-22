@@ -232,6 +232,7 @@ const AdminLocationsPage = () => {
                         formData={formData}
                         setFormData={setFormData}
                         onSave={handleSave}
+                        onDelete={handleDelete}
                         extractMutation={extractMutation}
                         aiQueryMutation={aiQueryMutation}
                         reindexMutation={reindexMutation}

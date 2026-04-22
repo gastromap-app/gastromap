@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(200).end()
 
-    const token = process.env.TELEGRAM_BOT_TOKEN
+    const token = process.env.GASTROMAP_LOCATION_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN
     if (!token) {
         console.error('[telegram/webhook] TELEGRAM_BOT_TOKEN not set')
         return res.status(200).json({ ok: true }) // всегда 200 для Telegram

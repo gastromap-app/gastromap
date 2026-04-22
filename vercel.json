@@ -4,6 +4,15 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "vite",
+  "functions": {
+    "api/telegram/process.js": {
+      "maxDuration": 60,
+      "memory": 512
+    },
+    "api/telegram/webhook.js": {
+      "maxDuration": 10
+    }
+  },
   "headers": [
     {
       "source": "/assets/(.*)",

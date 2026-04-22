@@ -7,19 +7,7 @@ import { fileURLToPath } from 'url'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [
-          // React 19 Compiler: automatic memoization (replaces manual useMemo/useCallback)
-          // Docs: https://react.dev/learn/react-compiler
-          ['babel-plugin-react-compiler', {
-            // compilationMode: 'annotation' — compile only files with 'use memo' directive
-            // compilationMode: 'all'        — compile all files (default for React 19)
-            compilationMode: 'all',
-          }],
-        ],
-      },
-    }),
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png', 'offline.html'],

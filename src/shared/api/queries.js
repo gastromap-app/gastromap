@@ -243,10 +243,15 @@ export function useSyncLocationKGMutation() {
  * Full enrichment: semantic + KG for one location.
  */
 export function useEnrichLocationFullMutation() {
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: async (locationId) => {
             const { enrichLocationFull } = await import('./ai-assistant.service')
             return enrichLocationFull(locationId)
+        },
+        onSuccess: (_data, locationId) => {
+            qc.invalidateQueries({ queryKey: queryKeys.locations.detail(locationId) })
+            qc.invalidateQueries({ queryKey: queryKeys.locations.all })
         },
     })
 }

@@ -345,9 +345,9 @@ Important: Return ONLY valid JSON. No markdown. No explanation.`
 // ── Step 5: Supabase Insert ───────────────────────────────────────────────────
 async function insertLocation(locationData) {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://myyzguendoruefiiufop.supabase.co'
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 
-    if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
+    if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_KEY not set')
 
     const supabase = createClient(supabaseUrl, serviceKey)
 

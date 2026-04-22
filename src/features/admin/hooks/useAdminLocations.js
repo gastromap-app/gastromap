@@ -5,6 +5,7 @@ import {
     useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
     useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
     useUpdateLocationEmbeddingMutation, useBulkUpdateEmbeddingsMutation,
+    useEnrichLocationFullMutation,
     useAIQueryMutation, useCulinaryContextMutation 
 } from '@/shared/api/queries'
 
@@ -69,6 +70,7 @@ export const useAdminLocations = () => {
     const bulkReindexMutation = useBulkReindexLocationsMutation()
     const embeddingMutation = useUpdateLocationEmbeddingMutation()
     const bulkEmbeddingMutation = useBulkUpdateEmbeddingsMutation()
+    const fullEnrichMutation = useEnrichLocationFullMutation()
     const spoonacularMutation = useSpoonacularSearchMutation()
     const aiQueryMutation = useAIQueryMutation()
     const culinaryContextMutation = useCulinaryContextMutation()
@@ -512,6 +514,7 @@ export const useAdminLocations = () => {
         reindexMutation,
         embeddingMutation,
         bulkEmbeddingMutation,
+        fullEnrichMutation,
         bulkReindexMutation,
         spoonacularMutation,
         aiQueryMutation,

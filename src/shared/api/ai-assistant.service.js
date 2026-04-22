@@ -167,13 +167,27 @@ export async function syncLocationWithKnowledgeGraph(id) {
  * @returns {Promise<{ semantic: Object, kg: Object }>}
  */
 export async function enrichLocationFull(id) {
+    console.log('[ai-assistant.service] Full enrich:', id)
+
+    // Step 1 & 2 in parallel — semantic summary + KG sync
     const [semantic, kg] = await Promise.allSettled([
         reindexLocationSemantic(id),
         syncLocationWithKnowledgeGraph(id),
     ])
+
+    // Step 3 — embedding (sequential, depends on updated ai_context from step 1)
+    let embeddingResult = null
+    try {
+        embeddingResult = await updateLocationEmbedding(id)
+    } catch (err) {
+        console.error('[ai-assistant.service] Embedding step failed:', err.message)
+        embeddingResult = { error: err.message }
+    }
+
     return {
-        semantic: semantic.status === 'fulfilled' ? semantic.value : { error: semantic.reason?.message },
-        kg:       kg.status       === 'fulfilled' ? kg.value       : { error: kg.reason?.message },
+        semantic:  semantic.status  === 'fulfilled' ? semantic.value  : { error: semantic.reason?.message },
+        kg:        kg.status        === 'fulfilled' ? kg.value        : { error: kg.reason?.message },
+        embedding: embeddingResult,
     }
 }
 

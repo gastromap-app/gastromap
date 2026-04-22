@@ -75,7 +75,7 @@ const AdminLocationsPage = () => {
         locationsList, pendingLocations, loadError, filteredLocations,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
-        embeddingMutation, bulkEmbeddingMutation,
+        embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
@@ -236,6 +236,7 @@ const AdminLocationsPage = () => {
                         aiQueryMutation={aiQueryMutation}
                         reindexMutation={reindexMutation}
                         embeddingMutation={embeddingMutation}
+                        fullEnrichMutation={fullEnrichMutation}
                         isImproving={isImproving}
                         setIsImproving={setIsImproving}
                         handleAIMagic={handleAIMagic}

@@ -74,6 +74,7 @@ const LocationFormSlideOver = ({
     aiQueryMutation,
     reindexMutation,
     embeddingMutation,
+    fullEnrichMutation,
     extractMutation,
     handleAIMagic,
     isImproving,
@@ -135,6 +136,20 @@ const LocationFormSlideOver = ({
         } finally {
             setIsImproving(null)
         }
+    }
+
+    const handleFullEnrich = () => {
+        if (!selectedLocation?.id) return
+        fullEnrichMutation.mutate(selectedLocation.id, {
+            onSuccess: (result) => {
+                const errors = [result?.semantic?.error, result?.kg?.error, result?.embedding?.error].filter(Boolean)
+                if (errors.length) {
+                    console.warn('[LocationForm] Full enrich partial errors:', errors)
+                } else {
+                    console.log('[LocationForm] Full enrich complete ✅', result)
+                }
+            },
+        })
     }
 
     const handleUpdateEmbedding = () => {
@@ -796,23 +811,17 @@ const LocationFormSlideOver = ({
                                                             {!isNew ? (
                                                                 <div className="space-y-3">
                                                                     <button
-                                                                        onClick={handleReindex}
-                                                                        disabled={reindexMutation.isPending}
-                                                                        className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-[12px] font-black shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                                                        onClick={handleFullEnrich}
+                                                                        disabled={fullEnrichMutation?.isPending}
+                                                                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-[12px] font-black shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-60"
                                                                     >
-                                                                        <RefreshCw size={16} className={reindexMutation.isPending ? 'animate-spin' : ''} />
-                                                                        {reindexMutation.isPending ? 'Индексирую данные...' : 'Переиндексировать объект'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={handleUpdateEmbedding}
-                                                                        disabled={embeddingMutation?.isPending}
-                                                                        className="w-full py-4 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-[12px] font-black shadow-lg shadow-violet-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-                                                                    >
-                                                                        <RefreshCw size={16} className={embeddingMutation?.isPending ? 'animate-spin' : ''} />
-                                                                        {embeddingMutation?.isPending ? 'Генерирую вектор...' : '🔢 Обновить Embedding'}
+                                                                        <Sparkles size={16} className={fullEnrichMutation?.isPending ? 'animate-spin' : ''} />
+                                                                        {fullEnrichMutation?.isPending
+                                                                            ? 'Обогащаю данные...'
+                                                                            : '✨ Full Enrich'}
                                                                     </button>
                                                                     <p className="text-[9px] text-slate-400 text-center px-4">
-                                                                        Обновляет AI-контекст и векторный индекс для умного поиска. Рекомендуется после значительных изменений.
+                                                                        AI-контекст + ключевые слова + KG-теги + векторный индекс — всё за одно нажатие
                                                                     </p>
                                                                 </div>
                                                             ) : (

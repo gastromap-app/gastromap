@@ -1,68 +1,103 @@
 /**
- * Semantic Search via pgvector
+ * Semantic + Hybrid Search
  *
- * Converts user query into an embedding and searches for similar locations
- * using Supabase's vector database capabilities.
+ * Uses search_locations_hybrid RPC (pgvector cosine + FTS via RRF).
+ * Falls back to search_locations_fulltext if embedding generation fails.
  */
 
 import { supabase } from '@/shared/api/client'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import { config } from '@/shared/config/env'
 
 /**
- * Semantic search via pgvector in Supabase.
- * Converts user query into an embedding → then searches for similar locations.
- *
- * @param {string} queryText - User query to embed and search
- * @param {number} [limit=10] - Max number of results
- * @param {string} [apiKey=null] - Optional API key (if not provided, fetches from config)
- * @returns {Promise<Array>} - Array of matched locations
+ * Generate an embedding vector for the given text via OpenRouter.
+ * Tries paid model first, then free fallback.
  */
-export async function semanticSearch(queryText, limit = 10, apiKey = null) {
-    if (!apiKey) {
-        const { getActiveAIConfig } = await import('../ai-config.api')
-        apiKey = getActiveAIConfig().apiKey
-    }
+async function generateEmbedding(text) {
+    const appCfg = useAppConfigStore.getState()
+    const apiKey = appCfg.aiApiKey || config.ai?.openRouterKey
+    if (!apiKey) return null
 
-    if (!apiKey || !supabase) return []
+    const models = [
+        { name: 'openai/text-embedding-3-small', dimensions: 768 },
+        { name: 'nvidia/nemotron-embed-20250702:free', dimensions: 768 },
+    ]
+
+    for (const { name: model, dimensions } of models) {
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://gastromap.app',
+                    'X-Title': 'GastroMap',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ model, input: text, dimensions }),
+            })
+            if (!response.ok) continue
+            const data = await response.json()
+            const embedding = data.data?.[0]?.embedding
+            if (embedding?.length > 0) return embedding
+        } catch {
+            continue
+        }
+    }
+    return null
+}
+
+/**
+ * Hybrid search: pgvector (cosine similarity) + FTS (tsvector), merged via RRF.
+ * Searches across title, description, tags, kg_dishes, kg_cuisines, ai_keywords, etc.
+ *
+ * @param {string} queryText - Natural language query
+ * @param {number} [limit=10] - Max results
+ * @param {string} [city] - Optional city filter
+ * @param {string} [category] - Optional category filter
+ * @returns {Promise<Array>} Matched location rows
+ */
+export async function semanticSearch(queryText, limit = 10, _apiKey = null, { city, category } = {}) {
+    if (!queryText?.trim() || !supabase) return []
 
     try {
-        // 1. Generate embedding for user query
-        const embResponse = await fetch('https://openrouter.ai/api/v1/embeddings', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'X-Title': 'GastroMap',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'openai/text-embedding-3-small',
-                input: queryText,
-                dimensions: 768,  // Use 768 to match pgvector column dimensions
-            }),
-        })
+        // Try to generate embedding for hybrid search
+        const queryEmbedding = await generateEmbedding(queryText)
 
-        if (!embResponse.ok) return []
+        if (queryEmbedding) {
+            // Full hybrid: vector + FTS via RRF
+            const { data, error } = await supabase.rpc('search_locations_hybrid', {
+                query_embedding: queryEmbedding,
+                query_text: queryText,
+                city_filter: city || null,
+                category_filter: category || null,
+                match_count: limit,
+                rrf_k: 60,
+            })
 
-        const embData = await embResponse.json()
-        const queryEmbedding = embData.data?.[0]?.embedding
+            if (!error && data?.length > 0) {
+                return data
+            }
+            if (error) {
+                console.warn('[ai.search] hybrid RPC error:', error.message)
+            }
+        }
 
-        if (!queryEmbedding) return []
-
-        // 2. Call pgvector RPC function in Supabase
-        const { data, error } = await supabase.rpc('search_locations_by_embedding', {
-            query_embedding: queryEmbedding,
-            match_threshold: 0.35, // More permissive for broad intent
+        // Fallback: FTS only (no embedding needed)
+        const { data, error } = await supabase.rpc('search_locations_fulltext', {
+            query_text: queryText,
+            city_filter: city || null,
+            category_filter: category || null,
             match_count: limit,
         })
 
         if (error) {
-            console.warn('[ai.search] pgvector search error:', error.message)
+            console.warn('[ai.search] fulltext RPC error:', error.message)
             return []
         }
 
         return data || []
-    } catch (error) {
-        console.warn('[ai.search] semanticSearch failed:', error.message)
+    } catch (err) {
+        console.warn('[ai.search] semanticSearch failed:', err.message)
         return []
     }
 }

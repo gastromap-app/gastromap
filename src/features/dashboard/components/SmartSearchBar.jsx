@@ -38,7 +38,13 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
             .filter(l =>
                 l.title?.toLowerCase().includes(q) ||
                 l.category?.toLowerCase().includes(q) ||
-                (l.city || l.address || '').toLowerCase().includes(q)
+                (l.city || l.address || '').toLowerCase().includes(q) ||
+                l.cuisine?.toLowerCase().includes(q) ||
+                l.tags?.some(t => t.toLowerCase().includes(q)) ||
+                l.kg_dishes?.some(d => d.toLowerCase().includes(q)) ||
+                l.kg_cuisines?.some(c => c.toLowerCase().includes(q)) ||
+                l.ai_keywords?.some(k => k.toLowerCase().includes(q)) ||
+                l.description?.toLowerCase().includes(q)
             )
             .slice(0, 3)
     }, [value, locations])

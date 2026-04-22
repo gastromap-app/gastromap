@@ -5,6 +5,7 @@
  */
 
 import { getLocationById, updateLocation, getLocations } from './locations.api'
+import { generateEmbeddingForLocation } from './ai/search'
 import { generateLocationSemanticSummary } from './ai/index'
 import { matchLocationWithKG } from './knowledge-graph.api'
 
@@ -52,6 +53,55 @@ export async function bulkReindexLocations(config = {}) {
         }
     }
     return { success: true, count }
+}
+
+// ─── Embedding indexing ──────────────────────────────────────────────────────
+
+/**
+ * Admin: Generate & save vector embedding for a single location.
+ * Uses all semantic fields: title, cuisine, description, tags, vibe, ai_keywords, ai_context.
+ */
+export async function updateLocationEmbedding(id) {
+    console.log('[ai-assistant.service] Updating embedding:', id)
+    const location = await getLocationById(id, { adminMode: true })
+    if (!location) throw new Error('Location not found')
+
+    const embedding = await generateEmbeddingForLocation(location)
+    if (!embedding) throw new Error('Embedding generation failed')
+
+    return await updateLocation(id, { embedding })
+}
+
+/**
+ * Admin: Bulk update embeddings.
+ * @param {Object} config
+ * @param {number} [config.limit=50]
+ * @param {boolean} [config.onlyEmpty=false] — only locations where embedding is null
+ */
+export async function bulkUpdateEmbeddings(config = {}) {
+    const { limit = 50, onlyEmpty = false } = config
+
+    const { data: locations } = await getLocations({ limit, all: true })
+    if (!locations?.length) return { success: true, count: 0 }
+
+    const targets = onlyEmpty
+        ? locations.filter(l => !l.embedding)
+        : locations
+
+    console.log(`[ai-assistant.service] Bulk embedding update for ${targets.length} locations...`)
+
+    let count = 0
+    for (const loc of targets) {
+        try {
+            await updateLocationEmbedding(loc.id)
+            count++
+            // Small delay to avoid rate limits
+            await new Promise(r => setTimeout(r, 500))
+        } catch (err) {
+            console.error(`[ai-assistant.service] Embedding failed ${loc.id}:`, err.message)
+        }
+    }
+    return { success: true, count, total: targets.length }
 }
 
 // ─── KG sync ────────────────────────────────────────────────────────────────
@@ -170,6 +220,8 @@ function deriveAllergens(ingredients) {
 export default {
     reindexLocationSemantic,
     bulkReindexLocations,
+    updateLocationEmbedding,
+    bulkUpdateEmbeddings,
     syncLocationWithKnowledgeGraph,
     enrichLocationFull,
     bulkSyncKG,

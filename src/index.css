@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
     /* Base HSL Values - Light Mode (Apple Style) */
     --background: 0 0% 100%;
     /* Pure White */
@@ -119,4 +120,71 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Premium Language Menu Design */
+.language-container {
+    border-radius: 32px;
+    overflow: hidden;
+    border-width: 1px;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+}
+
+[data-theme='dark'] .language-container {
+    background-color: rgba(31, 33, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .language-container {
+    background-color: #ffffff;
+    border-color: #f3f4f6;
+}
+
+.language-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem;
+    transition: all 150ms ease;
+    cursor: pointer;
+}
+
+[data-theme='dark'] .language-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .language-item:hover {
+    background-color: #f9fafb;
+}
+
+.language-item:not(:last-child) {
+    border-bottom: 1px solid;
+}
+
+[data-theme='dark'] .language-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .language-item:not(:last-child) {
+    border-bottom-color: #f3f4f6;
+}
+
+.language-name {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.active-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    background-color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
 }

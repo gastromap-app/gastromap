@@ -48,19 +48,19 @@ const LanguageSettingsPage = () => {
                 {/* Language Section */}
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.app_language_title')}</h3>
-                    <div className={`rounded-[32px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
+                    <div className="language-container">
                         {languages.map((lang, idx) => (
                             <button
                                 key={lang.code}
                                 onClick={() => i18n.changeLanguage(lang.code)}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== languages.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                className="language-item"
                             >
                                 <div className="flex items-center gap-4">
                                     <span className="text-2xl">{lang.flag}</span>
-                                    <span className={`text-[16px] font-bold ${textStyle}`}>{lang.name}</span>
+                                    <span className={`language-name ${textStyle}`}>{lang.name}</span>
                                 </div>
                                 {i18n.language === lang.code && (
-                                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white scale-110 shadow-lg shadow-blue-500/30">
+                                    <div className="active-check">
                                         <Check size={14} strokeWidth={3} />
                                     </div>
                                 )}
@@ -75,16 +75,16 @@ const LanguageSettingsPage = () => {
                 {/* Region Section */}
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.local_region_title')}</h3>
-                    <div className={`rounded-[32px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
+                    <div className="language-container">
                         {regions.map((region, idx) => (
                             <button
                                 key={region.code}
                                 onClick={() => setSelectedRegion(region.code)}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== regions.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                className="language-item"
                             >
-                                <span className={`text-[16px] font-bold ${textStyle}`}>{region.name}</span>
+                                <span className={`language-name ${textStyle}`}>{region.name}</span>
                                 {selectedRegion === region.code && (
-                                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white scale-110 shadow-lg shadow-blue-500/30">
+                                    <div className="active-check">
                                         <Check size={14} strokeWidth={3} />
                                     </div>
                                 )}

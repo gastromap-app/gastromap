@@ -1,67 +1,82 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ChefHat, MoveUp } from 'lucide-react'
+import { ChefHat, MoveUp, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAIChat } from '@/hooks/useAIChat'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 
-// --- Welcome messages shown before user types anything ---
-
-const buildWelcomeMessages = (userName) => [
-    {
-        id: 'welcome-1',
-        role: 'assistant',
-        content: `Hi ${userName || 'there'}! I'm GastroGuide. Ask me anything about dining in Krakow.`,
-    },
-    {
-        id: 'welcome-2',
-        role: 'user',
-        content: "I'm looking for a cozy Italian place for a date tonight. Any ideas?",
-    },
-    {
-        id: 'welcome-3',
-        role: 'assistant',
-        content:
-            'Italian and cozy? Great choice! For a date in Krakow, I highly recommend these spots.',
-        matches: [
-            {
-                id: 'loc1',
-                title: 'Ti Amo Bella',
-                category: 'Italian',
-                rating: 4.8,
-                image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=300&q=80',
-                tags: ['Date', 'Pasta'],
-            },
-            {
-                id: 'loc2',
-                title: 'Mamma Mia',
-                category: 'Italian',
-                rating: 4.6,
-                image: 'https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?auto=format&fit=crop&w=300&q=80',
-                tags: ['Family', 'Authentic'],
-            },
-        ],
-    },
-]
-
 /**
  * useGastroAI - backward-compatible wrapper around the new useAIChat hook.
- *
- * Merges welcome demo messages with real persisted chat history so the
- * interface never looks empty on first launch.
+ * Returns REAL persisted chat history. Empty state is handled by the UI itself.
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export const useGastroAI = () => {
-    const { user } = useAuthStore()
-    const { messages: storedMessages, isTyping, sendMessage, clearHistory } = useAIChat()
-
-    // Show welcome messages only when there's no real history yet
-    const welcomeMessages = buildWelcomeMessages(user?.name)
-    const messages = storedMessages.length > 0 ? storedMessages : welcomeMessages
-
+    const { messages, isTyping, sendMessage, clearHistory } = useAIChat()
     return { messages, isTyping, sendMessage, clearHistory }
+}
+
+/**
+ * ChatInputBar — standalone input bar for placing anywhere (e.g. fixed bottom).
+ */
+export function ChatInputBar({ onSendMessage, isTyping, transparent = false, className = '' }) {
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+    const [input, setInput] = useState('')
+
+    const handleSend = (e) => {
+        e.preventDefault()
+        if (!input.trim()) return
+        onSendMessage(input)
+        setInput('')
+    }
+
+    return (
+        <form
+            onSubmit={handleSend}
+            className={`flex-shrink-0 px-3 py-2 ${
+                transparent
+                    ? 'bg-transparent'
+                    : 'bg-white/80 dark:bg-gray-900/80 border-t border-black/5 dark:border-white/5'
+            } ${className}`}
+        >
+            <div
+                className={`relative flex items-center rounded-full border transition-all shadow-lg ${
+                    transparent
+                        ? isDark
+                            ? 'bg-white/10 border-white/20 focus-within:border-white/40 focus-within:bg-white/15 backdrop-blur-xl'
+                            : 'bg-white/80 border-white/50 focus-within:border-white/80 focus-within:bg-white/95 backdrop-blur-xl'
+                        : 'bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus-within:border-indigo-200 focus-within:bg-white dark:focus-within:bg-gray-800'
+                }`}
+            >
+                <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Message GastroGuide..."
+                    className={`bg-transparent border-none shadow-none focus-visible:ring-0 text-base py-5 md:py-6 pl-5 pr-12 placeholder:font-medium ${
+                        transparent
+                            ? isDark
+                                ? 'text-white placeholder:text-gray-400'
+                                : 'text-gray-900 placeholder:text-gray-500'
+                            : 'text-gray-900 dark:text-white placeholder:text-gray-400'
+                    }`}
+                />
+                <Button
+                    type="submit"
+                    size="icon"
+                    className={`absolute right-2 w-9 h-9 rounded-full transition-all shadow-lg ${
+                        input.trim()
+                            ? 'bg-gradient-to-tr from-indigo-500 to-violet-500 text-white scale-100 hover:scale-110'
+                            : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 scale-90'
+                    }`}
+                    disabled={!input.trim() || isTyping}
+                >
+                    <MoveUp className="h-4 w-4" />
+                </Button>
+            </div>
+        </form>
+    )
 }
 
 // --- Unified Chat Interface Component ---
@@ -79,6 +94,7 @@ export function ChatInterface({
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const [input, setInput] = useState('')
+    const { user } = useAuthStore()
     const scrollRef = useRef(null)
 
     // Auto-scroll to latest message
@@ -110,9 +126,50 @@ export function ChatInterface({
             {/* Messages */}
             <div
                 data-lenis-prevent
-                className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 relative ${transparent ? 'pb-32' : ''} ${contentClassName}`}
+                className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 relative ${contentClassName}`}
                 ref={scrollRef}
             >
+                {/* Empty state — real welcome, no fake dialog */}
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-16 px-6">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+                            transparent
+                                ? 'bg-white/20 dark:bg-white/10 backdrop-blur-xl border border-white/30'
+                                : 'bg-indigo-50 dark:bg-indigo-500/20'
+                        }`}>
+                            <Sparkles className={`w-7 h-7 ${
+                                transparent ? 'text-white' : 'text-indigo-500'
+                            }`} />
+                        </div>
+                        <div>
+                            <h3 className={`text-lg font-bold mb-1 ${
+                                transparent ? 'text-white' : 'text-gray-900 dark:text-white'
+                            }`}>
+                                Hi{user?.name ? `, ${user.name}` : ''}! I'm GastroGuide
+                            </h3>
+                            <p className={`text-sm leading-relaxed max-w-xs ${
+                                transparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                                Ask me anything about restaurants, cafes, and hidden dining gems near you.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {['Best spots for a date 🕯️', 'Vegan breakfast 🥑', 'Cozy coffee ☕'].map(hint => (
+                                <button
+                                    key={hint}
+                                    onClick={() => onSendMessage?.(hint)}
+                                    className={`text-xs px-3 py-2 rounded-full border transition-all ${
+                                        transparent
+                                            ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                                            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
+                                >
+                                    {hint}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {messages.map((msg) => {
                     const isUser = msg.role === 'user'
@@ -219,51 +276,6 @@ export function ChatInterface({
                     </div>
                 )}
             </div>
-
-            {/* Input form */}
-            {!hideInput && (
-                <form
-                    onSubmit={handleSend}
-                    className={`flex-shrink-0 p-3 md:p-4 border-t backdrop-blur-xl ${
-                        transparent
-                            ? 'bg-white/20 dark:bg-black/30 border-white/20 dark:border-white/10 relative z-10'
-                            : 'bg-white/80 dark:bg-gray-900/80 border-black/5 dark:border-white/5'
-                    }`}
-                >
-                    <div
-                        className={`relative flex items-center rounded-full border transition-all shadow-lg ${
-                            transparent
-                                ? 'bg-white/90 dark:bg-black/70 border-white/40 dark:border-white/20 focus-within:border-white/60 focus-within:bg-white/95 dark:focus-within:bg-black/80 focus-within:shadow-2xl'
-                                : 'bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus-within:border-indigo-200 focus-within:bg-white dark:focus-within:bg-gray-800 focus-within:shadow-md'
-                        }`}
-                    >
-                        <Input
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="Message GastroGuide..."
-                            className={`bg-transparent border-none shadow-none focus-visible:ring-0 text-base py-5 md:py-6 pl-5 md:pl-6 pr-12 placeholder:font-medium ${
-                                transparent
-                                    ? 'text-gray-900 dark:text-white placeholder:text-gray-600 dark:placeholder:text-gray-400'
-                                    : 'text-gray-900 dark:text-white placeholder:text-gray-400'
-                            }`}
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            className={`absolute right-2 w-9 h-9 rounded-full transition-all shadow-lg ${
-                                input.trim()
-                                    ? transparent
-                                        ? 'bg-gradient-to-tr from-indigo-500 to-indigo-500 text-white scale-100 hover:scale-110'
-                                        : 'bg-black text-white scale-100'
-                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 scale-90'
-                            }`}
-                            disabled={!input.trim() || isTyping}
-                        >
-                            <MoveUp className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </form>
-            )}
         </div>
     )
 }

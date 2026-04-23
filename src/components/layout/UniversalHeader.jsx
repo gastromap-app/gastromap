@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
@@ -11,10 +11,8 @@ import { LanguageSelector } from '@/features/shared/components/LanguageSelector'
 export function UniversalHeader() {
     const { t } = useTranslation()
     const { theme, toggleTheme } = useTheme()
-    const navigate = useNavigate()
     const { user: authUser } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
-    const location = useLocation()
     const user = authUser || null
     const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'

@@ -49,7 +49,7 @@ export async function uploadFile(file, bucket = 'locations', folder = 'general')
     const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()
     const path = `${folder}/${timestamp}-${safeName}`
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
         .from(bucket)
         .upload(path, file, { 
             upsert: false,

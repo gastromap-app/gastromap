@@ -257,6 +257,7 @@ export async function executeTool(name, args, locations = []) {
         } = args
 
         // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
+        let pool = []
         if (keyword) {
             // Call semanticSearch (Hybrid RPC) which handles city/category server-side
             const semanticResults = await semanticSearch(keyword, limit * 5, null, { city, category })

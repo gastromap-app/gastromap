@@ -277,7 +277,7 @@ async function searchApify(query) {
 
         // Парсим additionalInfo (wifi, parking, etc.)
         const about = place.additionalInfo || {}
-        const aboutFlat = Object.entries(about).flatMap(([section, items]) =>
+        const aboutFlat = Object.entries(about).flatMap(([_section, items]) =>
             Array.isArray(items)
                 ? items.filter(i => Object.values(i)[0] === true).map(i => Object.keys(i)[0])
                 : []
@@ -558,7 +558,7 @@ async function insertLocation(d) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end()
 
-    const { chatId, query, username } = req.body || {}
+    const { chatId, query, username: _username } = req.body || {}
     if (!chatId || !query) return res.status(400).json({ error: 'Missing chatId or query' })
 
     const token = process.env.TELEGRAM_BOT_TOKEN

@@ -28,8 +28,6 @@ const LanguageSettingsPage = () => {
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
-    const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
@@ -49,7 +47,7 @@ const LanguageSettingsPage = () => {
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.app_language_title')}</h3>
                     <div className="language-container">
-                        {languages.map((lang, idx) => (
+                        {languages.map((lang) => (
                             <button
                                 key={lang.code}
                                 onClick={() => i18n.changeLanguage(lang.code)}
@@ -76,7 +74,7 @@ const LanguageSettingsPage = () => {
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.local_region_title')}</h3>
                     <div className="language-container">
-                        {regions.map((region, idx) => (
+                        {regions.map((region) => (
                             <button
                                 key={region.code}
                                 onClick={() => setSelectedRegion(region.code)}

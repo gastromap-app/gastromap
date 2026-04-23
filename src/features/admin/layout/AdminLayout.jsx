@@ -3,8 +3,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
     MapPin, Users, BarChart3, ArrowLeft, LogOut,
     LayoutDashboard, Heart, Bot, ChevronRight,
-    Menu, X, Bell, Search, Sun, Moon, PanelsTopLeft,
-    ChevronLeft, Settings, HelpCircle, Activity, Shield, ShieldCheck, Brain, Image
+    Menu, X, Bell, Search, Sun, Moon,
+    ChevronLeft, Settings, Shield, ShieldCheck, Brain, Image
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -14,65 +14,26 @@ import { useTheme } from '@/hooks/useTheme'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 
-export default function AdminLayout() {
-    const location = useLocation()
-    const navigate = useNavigate()
-    const logout = useAuthStore(state => state.logout)
-    const user = useAuthStore(state => state.user)
-    const { theme, toggleTheme } = useTheme()
+// ─── Nav items (static — defined outside component to avoid recreation) ───────
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const [isCollapsed, setIsCollapsed] = useState(false)
-    const [showNotifications, setShowNotifications] = useState(false)
+const NAV_ITEMS = [
+    { icon: LayoutDashboard, label: 'Overview',       path: '/admin' },
+    { icon: MapPin,          label: 'Locations',      path: '/admin/locations' },
+    { icon: Users,           label: 'Users',          path: '/admin/users' },
+    { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
+    { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
+    { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
+    { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
+    { icon: Bell,            label: 'Notifications',  path: '/admin/notifications' },
+    { icon: Image,           label: 'Geo Covers',     path: '/admin/geo-covers' },
+    { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },
+    { icon: Settings,        label: 'Settings',       path: '/admin/settings' },
+]
 
-    useEffect(() => {
-        // Auto-close mobile sidebar on navigation
-        if (isSidebarOpen) {
-            setIsSidebarOpen(false)
-        }
-    }, [location.pathname])
+// ─── SidebarContent (extracted to prevent re-creation on every render) ────────
 
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Overview',       path: '/admin' },
-        { icon: MapPin,          label: 'Locations',      path: '/admin/locations' },
-        { icon: Users,           label: 'Users',          path: '/admin/users' },
-        { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
-        { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
-        { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
-        { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
-        { icon: Bell,            label: 'Notifications',  path: '/admin/notifications' },
-        { icon: Image,           label: 'Geo Covers',     path: '/admin/geo-covers' },
-        { icon: BarChart3,       label: 'Analytics',      path: '/admin/stats' },
-        { icon: Settings,        label: 'Settings',       path: '/admin/settings' },
-    ]
-
-    const notifications = [
-        { id: 1, text: '3 new locations pending review', time: '2m ago', unread: true },
-        { id: 2, text: 'New user registered: john@example.com', time: '15m ago', unread: true },
-        { id: 3, text: 'AI Guide processed 150 requests', time: '1h ago', unread: false },
-    ]
-
-    // Breadcrumbs Logic
-    const segments = location.pathname.split('/').filter(Boolean)
-    const breadcrumbs = segments.map((segment, index) => {
-        const path = `/${segments.slice(0, index + 1).join('/')}`
-        const item = navItems.find(n => n.path === path)
-        return {
-            label: item ? item.label : segment.charAt(0).toUpperCase() + segment.slice(1),
-            path
-        }
-    })
-
-    const handleLogout = async () => {
-        await logout()
-        navigate('/login')
-    }
-
-    const userInitials = user?.name
-        ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-        : 'AD'
-
-    const SidebarContent = ({ collapsed = false }) => (
+function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme, theme }) {
+    return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50 transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
             <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
@@ -91,7 +52,7 @@ export default function AdminLayout() {
 
             {/* Nav */}
             <nav className={cn("flex-1 px-4 py-8 space-y-1.5 overflow-y-auto relative z-10 custom-scrollbar", collapsed && "px-3")}>
-                {navItems.map(item => {
+                {NAV_ITEMS.map(item => {
                     const isActive = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path))
                     return (
                         <Link key={item.path} to={item.path}>
@@ -129,12 +90,63 @@ export default function AdminLayout() {
             </div>
         </div>
     )
+}
+
+// ─── AdminLayout ──────────────────────────────────────────────────────────────
+
+export default function AdminLayout() {
+    const location = useLocation()
+    const navigate = useNavigate()
+    const logout = useAuthStore(state => state.logout)
+    const user = useAuthStore(state => state.user)
+    const { theme, toggleTheme } = useTheme()
+
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [showNotifications, setShowNotifications] = useState(false)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (isSidebarOpen) setIsSidebarOpen(false)
+    }, [location.pathname])
+
+    const notifications = [
+        { id: 1, text: '3 new locations pending review', time: '2m ago', unread: true },
+        { id: 2, text: 'New user registered: john@example.com', time: '15m ago', unread: true },
+        { id: 3, text: 'AI Guide processed 150 requests', time: '1h ago', unread: false },
+    ]
+
+    // Breadcrumbs
+    const segments = location.pathname.split('/').filter(Boolean)
+    const breadcrumbs = segments.map((segment, index) => {
+        const path = `/${segments.slice(0, index + 1).join('/')}`
+        const item = NAV_ITEMS.find(n => n.path === path)
+        return {
+            label: item ? item.label : segment.charAt(0).toUpperCase() + segment.slice(1),
+            path,
+        }
+    })
+
+    const handleLogout = async () => {
+        await logout()
+        navigate('/login')
+    }
+
+    const userInitials = user?.name
+        ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        : 'AD'
 
     return (
         <div className="flex h-screen bg-[#FDFDFD] dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-200 safe-bottom">
             {/* Desktop Sidebar */}
             <motion.aside animate={{ width: isCollapsed ? 80 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col h-screen relative z-30 flex-shrink-0">
-                <SidebarContent collapsed={isCollapsed} />
+                <SidebarContent
+                    collapsed={isCollapsed}
+                    location={location}
+                    handleLogout={handleLogout}
+                    toggleTheme={toggleTheme}
+                    theme={theme}
+                />
                 <button onClick={() => setIsCollapsed(!isCollapsed)} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                 </button>
@@ -166,7 +178,12 @@ export default function AdminLayout() {
                             leaveTo="-translate-x-full"
                         >
                             <Dialog.Panel className="relative flex w-full max-w-[300px] flex-1 flex-col bg-white dark:bg-slate-900 shadow-2xl">
-                                <SidebarContent />
+                                <SidebarContent
+                                    location={location}
+                                    handleLogout={handleLogout}
+                                    toggleTheme={toggleTheme}
+                                    theme={theme}
+                                />
                                 <div className="absolute top-4 right-4 pt-[env(safe-area-inset-top)]">
                                     <button
                                         type="button"
@@ -182,11 +199,11 @@ export default function AdminLayout() {
                 </Dialog>
             </Transition.Root>
 
-            {/* Main Content Area — explicit h-screen + overflow-hidden makes height chain reliable */}
+            {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-                {/* Top Header — flex-none, compact on mobile, respects safe area */}
+                {/* Top Header */}
                 <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
                     <div className="flex items-center gap-3 md:gap-6">
                         <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm" aria-label="Open menu">

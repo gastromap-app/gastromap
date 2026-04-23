@@ -43,7 +43,7 @@ export function useAIChat() {
         clearError,
         clearHistory,
         trimHistory,
-        sessionId,
+        _sessionId,
         setSessionId,
         loadHistory,
     } = useAIChatStore()

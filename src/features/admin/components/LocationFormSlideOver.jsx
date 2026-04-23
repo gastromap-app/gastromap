@@ -153,7 +153,7 @@ const LocationFormSlideOver = ({
         })
     }
 
-    const handleUpdateEmbedding = () => {
+    const _handleUpdateEmbedding = () => {
         if (!selectedLocation?.id) return
         embeddingMutation.mutate(selectedLocation.id, {
             onSuccess: () => {
@@ -163,7 +163,7 @@ const LocationFormSlideOver = ({
         })
     }
 
-    const handleReindex = () => {
+    const _handleReindex = () => {
         if (isNew) return
         reindexMutation.mutate(selectedLocation.id, {
             onSuccess: (updated) => {

@@ -204,7 +204,7 @@ export async function enrichLocationKGProfile(locationOrId, { force = false, api
     const { error: upErr } = await supabase
         .from('locations')
         .update({
-            kg_profile,
+            kg_profile: profile,
             kg_enriched_at: new Date().toISOString(),
         })
         .eq('id', loc.id)

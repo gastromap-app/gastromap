@@ -358,7 +358,7 @@ const LocationDetailsPage = () => {
     )
 
     const renderMenu = () => {
-        const hasRealMenu = location?.menu_url || (location?.kg_dishes?.length > 0)
+        const _hasRealMenu = location?.menu_url || (location?.kg_dishes?.length > 0)
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">

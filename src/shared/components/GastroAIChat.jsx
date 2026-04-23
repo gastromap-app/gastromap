@@ -18,6 +18,29 @@ export const useGastroAI = () => {
 }
 
 // ─── Modern typing indicator ──────────────────────────────────────────────────
+function TypingDots({ colorClass = 'bg-indigo-500' }) {
+    return (
+        <div className="flex gap-1.5 px-1">
+            {[0, 1, 2].map((i) => (
+                <motion.div
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full ${colorClass}`}
+                    animate={{ 
+                        opacity: [0.3, 1, 0.3],
+                        scale: [0.8, 1.2, 0.8],
+                    }}
+                    transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                        ease: "easeInOut"
+                    }}
+                />
+            ))}
+        </div>
+    )
+}
+
 function TypingBubble({ transparent, isDark }) {
     return (
         <motion.div
@@ -32,30 +55,12 @@ function TypingBubble({ transparent, isDark }) {
             }`}>
                 <Sparkles className={`w-4 h-4 ${transparent ? 'text-white' : 'text-indigo-500'}`} />
             </div>
-            <div className={`flex gap-1.5 p-3 rounded-2xl rounded-bl-none backdrop-blur-md border ${
+            <div className={`flex items-center p-3 rounded-2xl rounded-bl-none backdrop-blur-md border h-[42px] ${
                 transparent 
                     ? 'bg-white/15 border-white/20' 
                     : 'bg-white/80 dark:bg-black/40 border-gray-100 dark:border-white/10'
             }`}>
-                {[0, 1, 2].map((i) => (
-                    <motion.div
-                        key={i}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                            transparent || isDark ? 'bg-white' : 'bg-indigo-500'
-                        }`}
-                        animate={{ 
-                            opacity: [0.4, 1, 0.4],
-                            scale: [0.8, 1.1, 0.8],
-                            y: [0, -2, 0]
-                        }}
-                        transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            delay: i * 0.15,
-                            ease: "easeInOut"
-                        }}
-                    />
-                ))}
+                <TypingDots colorClass={transparent || isDark ? 'bg-white' : 'bg-indigo-500'} />
             </div>
         </motion.div>
     )
@@ -79,7 +84,7 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
     return (
         <form onSubmit={handleSend} className={`px-2 py-2 ${className}`}>
             <div
-                className={`relative flex items-center rounded-2xl border transition-all shadow-none ${
+                className={`relative flex items-center rounded-2xl border transition-all shadow-none ring-0 ${
                     transparent
                         ? isDark
                             ? 'bg-black/40 border-white/10 focus-within:border-white/20 backdrop-blur-2xl'
@@ -259,7 +264,7 @@ export function ChatInterface({
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+                                className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed flex items-center min-h-[42px] ${
                                     isUser
                                         ? transparent
                                             ? 'bg-indigo-600 text-white rounded-br-sm border border-white/20 ml-auto'
@@ -269,13 +274,14 @@ export function ChatInterface({
                                             : 'bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm mr-auto shadow-sm'
                                 }`}
                                 style={{ 
-                                    maxWidth: '88%',
-                                    boxShadow: isUser 
-                                        ? '0 4px 15px -3px rgba(79, 70, 229, 0.4)' 
-                                        : '0 4px 12px -2px rgba(0, 0, 0, 0.08)'
+                                    maxWidth: '88%'
                                 }}
                             >
-                                {msg.content ?? ''}
+                                {msg.content === '…' ? (
+                                    <TypingDots colorClass={isUser ? 'bg-white' : (transparent || isDark ? 'bg-white' : 'bg-indigo-500')} />
+                                ) : (
+                                    msg.content ?? ''
+                                )}
                             </motion.div>
 
 
@@ -340,7 +346,9 @@ export function ChatInterface({
 
             {/* Typing indicator */}
             <AnimatePresence>
-                {isTyping && <TypingBubble transparent={transparent} isDark={isDark} />}
+                {isTyping && messages.length > 0 && messages[messages.length - 1]?.role === 'user' && (
+                    <TypingBubble transparent={transparent} isDark={isDark} />
+                )}
             </AnimatePresence>
 
             {/* Scroll anchor — always at the bottom */}

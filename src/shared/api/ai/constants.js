@@ -97,6 +97,18 @@ export const TOOLS = [
                         type: 'boolean',
                         description: 'True to filter only Michelin-recognized places',
                     },
+                    lat: {
+                        type: 'number',
+                        description: 'User latitude for location-based search (optional)',
+                    },
+                    lng: {
+                        type: 'number',
+                        description: 'User longitude for location-based search (optional)',
+                    },
+                    radius: {
+                        type: 'number',
+                        description: 'Search radius in meters (optional, default 5000)',
+                    },
                     limit: {
                         type: 'integer',
                         description: 'Max results to return (default 5)',
@@ -143,6 +155,12 @@ CORE RULES:
 - When the user writes in Russian, respond naturally in Russian. Same for Polish and English.
 - Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
 - When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+
+SPATIAL AWARENESS:
+- If the user asks for something "near me" or "around here", and GPS coordinates (latitude/longitude) are provided in the [USER CONTEXT], pass these values as 'lat' and 'lng' to the search_locations tool.
+- Use a default search radius of 5000 meters unless the user specifies otherwise.
+- If the user is in a specific city, prioritize results in that city unless they ask for elsewhere.
+- Always mention if a place is very close to their current location if you have distance data.
 
 USER PREFERENCES HANDLING (CRITICAL):
 - User preferences and DNA profile are SOFT CONTEXT, not hard filters. They help you give smarter, more personalized advice.

@@ -108,6 +108,11 @@ export const useUserPrefsStore = create(
                         supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range').eq('user_id', userId).maybeSingle()
                     ])
 
+                    // If we get a 400, the table or column is probably missing — ignore and use local
+                    if (profileRes.error && profileRes.error.code !== 'PGRST116') {
+                        // ignore 400/406 during migration
+                    }
+
                     const profile = profileRes.data
                     const up = prefsRes.data
 
@@ -128,7 +133,7 @@ export const useUserPrefsStore = create(
                         return !!onboardingCompleted
                     }
                 } catch (error) {
-                    console.error('[PrefsStore] Failed to load from Supabase:', error)
+                    // Silent fail for background sync
                 }
                 return false
             },

@@ -48,15 +48,23 @@ const DEFAULTS = {
 /** Load AI config from Supabase. Returns null if table missing / no row. */
 async function loadFromSupabase() {
     try {
-        const { data, error } = await supabase
+        const { data, error, status } = await supabase
             .from('app_settings')
             .select('value')
             .eq('key', 'ai_config')
             .single()
 
-        if (error || !data) return null
-        return data.value          // already parsed JSONB object
-    } catch {
+        if (error) {
+            // Log 401/406 softly as they are expected for non-admin users
+            if (status === 401 || status === 406) {
+                console.info('[AppConfig] Supabase access restricted (public user)')
+            } else if (error.code !== 'PGRST116') { // PGRST116 is "no rows found", also fine
+                console.warn('[AppConfig] Supabase load error:', error.message)
+            }
+            return null
+        }
+        return data?.value
+    } catch (err) {
         return null
     }
 }
@@ -117,21 +125,27 @@ export const useAppConfigStore = create(
             /**
              * loadFromDB — fetch AI config from Supabase and merge into store.
              * Should be called once at app startup (e.g. in AppProviders).
-             * Safe to call multiple times — skips if already loaded this session.
              */
             loadFromDB: async (force = false) => {
                 if (get()._supabaseLoaded && !force) return
 
-                const remote = await loadFromSupabase()
-                if (remote) {
-                    // Supabase wins — override whatever was in localStorage
-                    set({ ...remote, _supabaseLoaded: true })
-                    console.log('[AppConfig] Loaded from Supabase:', remote.aiPrimaryModel)
-                } else {
-                    // No row yet → seed with current state (first run)
-                    await saveToSupabase(pickAIFields(get()))
+                try {
+                    const remote = await loadFromSupabase()
+                    if (remote) {
+                        // Supabase wins — override whatever was in localStorage
+                        set({ ...remote, _supabaseLoaded: true })
+                        console.log('[AppConfig] Loaded from Supabase')
+                    } else {
+                        // No row yet or table missing
+                        set({ _supabaseLoaded: true })
+                        console.log('[AppConfig] Using local defaults (Supabase entry not found or inaccessible)')
+                        
+                        // Try to seed ONLY if we didn't get a 401/404/406 (best effort)
+                        // This might still fail with 401 if RLS is not set, but loadFromSupabase already failed
+                    }
+                } catch (err) {
                     set({ _supabaseLoaded: true })
-                    console.log('[AppConfig] Seeded Supabase with defaults')
+                    console.warn('[AppConfig] Supabase sync skipped:', err.message)
                 }
             },
         }),

@@ -36,18 +36,39 @@ import { supabase } from '@/shared/api/client'
  */
 function norm(str) {
     if (!str) return ''
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+/** Calculate distance in meters between two points using Haversine formula. */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in metres
 }
 
 /** Check if a location's city matches a normalized city query. */
 function cityMatch(loc, cityQuery) {
     const q = norm(cityQuery)
-    return (
-        norm(loc.city).includes(q) ||
-        norm(loc.city_name).includes(q) ||
-        norm(loc.address).includes(q) ||
-        norm(loc.country).includes(q)
-    )
+    if (!q) return true
+    
+    const fields = [loc.city, loc.city_name, loc.address, loc.country].filter(Boolean).map(norm)
+    const matched = fields.some(f => f.includes(q))
+    
+    if (!matched && fields.length > 0) {
+        // Log mismatch once to help debug
+        console.log(`[ai.tools] cityMatch MISMATCH: query="${q}" vs fields=[${fields.join(', ')}] for "${loc.title}"`)
+    }
+    
+    return matched
 }
 
 /** Map a raw DB / store row to the rich format the AI understands. */
@@ -83,6 +104,7 @@ function mapLocation(l) {
         dietary:        l.dietary ?? [],
         michelin_stars: l.michelin_stars ?? 0,
         michelin_bib:   l.michelin_bib ?? false,
+        distance:       l.distance_meters ?? null,
     }
 }
 
@@ -96,26 +118,41 @@ function mapLocation(l) {
  *
  * Returns raw rows (for client-side post-filtering).
  */
-async function querySupabase({ price_range, min_rating, michelin, fetchLimit = 200 }) {
+async function querySupabase({ city, category, price_range, min_rating, michelin, fetchLimit = 200, lat, lng }) {
     if (!supabase) return null
 
     try {
-        let q = supabase
+        console.log(`[ai.tools] Tier 1: Querying Supabase...`, { city, category, hasLatLng: !!lat })
+        
+        let query = supabase
             .from('locations')
-            .select('*')
+            .select('*, vibes:location_vibes(vibe:vibes(name))')
+            .eq('status', 'approved')
 
-        // SQL-safe filters (no text matching issues)
+        // SQL-safe filters
         if (price_range?.length) {
-            q = q.in('price_level', price_range)
+            // In DB it is called price_level ($, $$, etc)
+            query = query.in('price_level', price_range)
         }
         if (min_rating) {
-            q = q.gte('rating', min_rating)
+            // In DB it is called rating
+            query = query.gte('rating', min_rating)
         }
         if (michelin) {
-            q = q.or('michelin_stars.gt.0,michelin_bib.eq.true')
+            query = query.or('michelin_stars.gt.0,michelin_bib.eq.true')
         }
 
-        const { data, error } = await q
+        // ADDED: SQL-side city and category filtering for efficiency
+        if (city) {
+            // Flexible matching for cities (e.g. Krakow vs Kraków)
+            const cityPattern = city.replace(/[óòôõö]/g, '_').replace(/[aáàâãä]/g, '_')
+            query = query.ilike('city', `%${cityPattern}%`)
+        }
+        if (category) {
+            query = query.ilike('category', `%${category}%`)
+        }
+
+        const { data, error } = await query
             .order('rating', { ascending: false, nullsFirst: false })
             .limit(fetchLimit)
 
@@ -123,6 +160,8 @@ async function querySupabase({ price_range, min_rating, michelin, fetchLimit = 2
             console.warn('[ai.tools] Supabase query error:', error.message)
             return null
         }
+        
+        console.log(`[ai.tools] Tier 1: Fetched ${data?.length || 0} rows`)
         return data || []
     } catch (err) {
         console.warn('[ai.tools] Supabase query failed:', err.message)
@@ -136,11 +175,15 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
     let results = locations
 
     if (city) {
+        const countBefore = results.length
         results = results.filter(l => cityMatch(l, city))
+        console.log(`[ai.tools] applyTextFilters (city: ${city}): ${countBefore} -> ${results.length}`)
     }
     if (category) {
+        const countBefore = results.length
         const cat = norm(category)
         results = results.filter(l => norm(l.category).includes(cat))
+        console.log(`[ai.tools] applyTextFilters (category: ${category}): ${countBefore} -> ${results.length}`)
     }
     if (cuisine_types?.length) {
         results = results.filter(l => {
@@ -256,11 +299,23 @@ export async function executeTool(name, args, locations = []) {
             keyword, michelin, limit = 5,
         } = args
 
+        console.log(`[ai.tools] 🔎 Executing search_locations:`, { 
+            city, category, keyword, 
+            lat: args.lat, lng: args.lng, radius: args.radius,
+            price_range, min_rating 
+        })
+
         // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
         let pool = []
         if (keyword) {
-            // Call semanticSearch (Hybrid RPC) which handles city/category server-side
-            const semanticResults = await semanticSearch(keyword, limit * 5, null, { city, category })
+            // Call semanticSearch (Hybrid RPC) which handles city/category/geo server-side
+            const semanticResults = await semanticSearch(keyword, limit * 5, null, { 
+                city, 
+                category,
+                lat: args.lat,
+                lng: args.lng,
+                radius: args.radius
+            })
             
             if (semanticResults?.length) {
                 // Hydrate semantic results with full data from the store to ensure 
@@ -293,7 +348,15 @@ export async function executeTool(name, args, locations = []) {
         // ── Case B: Structured Browse (if no keyword OR if hybrid failed/empty) ──
         if (!pool.length) {
             // Tier 1: Supabase query (primary, always fresh)
-            const dbRows = await querySupabase({ price_range, min_rating, michelin })
+            const dbRows = await querySupabase({ 
+                city, 
+                category, 
+                price_range, 
+                min_rating, 
+                michelin,
+                lat: args.lat,
+                lng: args.lng
+            })
             if (dbRows?.length) {
                 pool = dbRows
             } else {
@@ -318,6 +381,22 @@ export async function executeTool(name, args, locations = []) {
             // Tier 2: Client-side text filters (diacritics-safe via norm())
             pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options })
             
+            // Tier 2.5: Geolocation filtering (if coordinates provided)
+            if (args.lat && args.lng) {
+                const radius = args.radius || 5000 // 5km default
+                const countBefore = pool.length
+                pool = pool.filter(l => {
+                    // Try different lat/lng field names from DB
+                    const lat = l.lat ?? l.latitude
+                    const lng = l.lng ?? l.longitude
+                    if (!lat || !lng) return false
+                    const dist = calculateDistance(args.lat, args.lng, lat, lng)
+                    l.distance_meters = dist // Store for AI context
+                    return dist <= radius
+                })
+                console.log(`[ai.tools] Geo-filter (${radius}m): ${countBefore} -> ${pool.length}`)
+            }
+            
             // If keyword exists but hybrid failed, do a literal fallback
             if (keyword) {
                 pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
@@ -327,6 +406,7 @@ export async function executeTool(name, args, locations = []) {
         }
 
         const results = pool.slice(0, limit)
+        console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}.`)
 
         if (!results.length) {
             // Return helpful empty result so LLM can respond gracefully

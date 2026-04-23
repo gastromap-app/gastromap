@@ -9,17 +9,14 @@ import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/Ga
 // BottomNav: height=64px, bottom=calc(12px + safe-area-inset-bottom)
 // Input sits just above it: 64 + 12 = 76px + safe-area
 // We set INPUT_BOTTOM slightly higher (82px) for better breathing room
-const INPUT_BOTTOM = 'calc(82px + env(safe-area-inset-bottom))'
-// Reserve space at bottom of scroll area for the input bar (approx 60-70px tall)
-const SCROLL_PADDING_BOTTOM = 'calc(170px + env(safe-area-inset-bottom))'
-// Header height: Increase to ensure no messages start behind the header
-const HEADER_HEIGHT = 'calc(100px + env(safe-area-inset-top))'
+const INPUT_BOTTOM = 'calc(76px + env(safe-area-inset-bottom))'
+const SCROLL_PADDING_BOTTOM = 'calc(160px + env(safe-area-inset-bottom))'
+const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
-    // THIS is the single scroll container — ChatInterface renders content inside it
     const scrollRef = useRef(null)
 
     const handleCardClick = (locationId) => {
@@ -28,7 +25,6 @@ const AIGuidePage = () => {
 
     return (
         <div className="fixed inset-0 flex flex-col bg-transparent overflow-hidden">
-
             {/* Aurora while typing */}
             {isTyping && (
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -49,10 +45,12 @@ const AIGuidePage = () => {
                 data-lenis-prevent
                 className="relative z-10 flex-1 overflow-y-auto scroll-smooth overscroll-contain"
                 style={{ 
-                    paddingTop: HEADER_HEIGHT,
                     paddingBottom: SCROLL_PADDING_BOTTOM 
                 }}
             >
+                {/* Header Spacer to push content below UniversalHeader */}
+                <div style={{ height: HEADER_OFFSET }} className="w-full flex-shrink-0" />
+
                 <ChatInterface
                     messages={messages}
                     isTyping={isTyping}
@@ -66,17 +64,18 @@ const AIGuidePage = () => {
                 />
             </div>
 
-
             {/* Input fixed just above BottomNav */}
             <div
-                className="fixed left-0 right-0 z-20 px-3"
+                className="fixed left-0 right-0 z-30 px-3 pointer-events-none"
                 style={{ bottom: INPUT_BOTTOM }}
             >
-                <ChatInputBar
-                    onSendMessage={sendMessage}
-                    isTyping={isTyping}
-                    transparent={true}
-                />
+                <div className="max-w-4xl mx-auto w-full pointer-events-auto">
+                    <ChatInputBar
+                        onSendMessage={sendMessage}
+                        isTyping={isTyping}
+                        transparent={true}
+                    />
+                </div>
             </div>
         </div>
     )

@@ -28,7 +28,8 @@ import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { config } from '@/shared/config/env'
 import { ApiError } from './client'
 import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
-import { useAppConfigStore } from '@/store/useAppConfigStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import { semanticSearch } from './ai/search'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
@@ -145,7 +146,7 @@ const TOOLS = [
 
 // ─── Client-side tool executor ────────────────────────────────────────────
 
-function executeTool(name, args) {
+async function executeTool(name, args) {
     const { locations } = useLocationsStore.getState()
 
     if (name === 'search_locations') {
@@ -154,7 +155,51 @@ function executeTool(name, args) {
             features, best_for, dietary, min_rating, keyword, michelin, limit = 5
         } = args
 
+        // Hybrid Search Implementation
+        // We construct a query string from available filters to help the semantic search
+        const queryParts = []
+        if (keyword) queryParts.push(keyword)
+        if (cuisine?.length) queryParts.push(cuisine.join(' '))
+        if (vibe?.length) queryParts.push(vibe.join(' '))
+        if (best_for?.length) queryParts.push(best_for.join(' '))
+        if (features?.length) queryParts.push(features.join(' '))
+        
+        const queryText = queryParts.join(' ').trim() || 'best restaurants'
+        
+        try {
+            // Call the hybrid search engine
+            const results = await semanticSearch(queryText, limit, null, { city, category })
+            
+            if (results && results.length > 0) {
+                return results.map(l => ({
+                    id: l.id,
+                    name: l.title,
+                    category: l.category,
+                    cuisine: l.cuisine,
+                    vibe: l.vibe,
+                    price_level: l.price_level, // RPC returns snake_case
+                    rating: l.rating,
+                    address: l.address,
+                    opening_hours: l.opening_hours || null,
+                    phone: l.phone || null,
+                    website: l.website || null,
+                    features: l.features || [],
+                    best_for: l.best_for || [],
+                    dietary: l.dietary || [],
+                    michelin_stars: l.michelin_stars || 0,
+                    michelin_bib: l.michelin_bib || false,
+                    description: l.description,
+                    insider_tip: l.insider_tip || null,
+                    what_to_try: l.what_to_try || [],
+                }))
+            }
+        } catch (err) {
+            console.error('[GastroAI] Hybrid search failed, falling back to local search:', err)
+        }
+
+        // Fallback to local search if hybrid fails or returns nothing
         let results = [...locations]
+        // ... (existing local filtering logic kept for fallback)
 
         if (city) {
             const c = city.toLowerCase()
@@ -401,7 +446,7 @@ async function runAgentPass(messages) {
             args = {}
         }
 
-        const result = executeTool(toolCall.function.name, args)
+        const result = await executeTool(toolCall.function.name, args)
 
         toolResults.push({
             role: 'tool',

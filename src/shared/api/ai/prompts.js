@@ -42,7 +42,7 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
 
     // 1. Dynamic user personalization context (injecting knowledge from database)
     const geoLine = userData?.userCity
-        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)`
+        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)${userData.userLat ? `\n- Current GPS: ${userData.userLat}, ${userData.userLng}` : ''}`
         : '- Current location: unknown (ask if the city matters for the request)'
 
     const profile = userData ? `

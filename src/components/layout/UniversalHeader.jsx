@@ -152,9 +152,7 @@ export function UniversalHeader() {
                                                         Install app
                                                     </button>
                                                 )}
-                                                <div className={`w-full min-h-11 flex items-center px-4 py-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                                    <LanguageSelector />
-                                                </div>
+                                                <LanguageSelector variant="menuItem" isDark={isDark} />
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

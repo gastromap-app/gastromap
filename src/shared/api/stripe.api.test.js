@@ -13,7 +13,6 @@ import {
 
 // ─── Mock Supabase client ──────────────────────────────────────────────────
 const mockInsert = vi.fn()
-const mockFrom = vi.fn(() => ({ insert: mockInsert }))
 mockInsert.mockResolvedValue({ data: null, error: null })
 
 vi.mock('./client', () => ({

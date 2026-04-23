@@ -38,6 +38,9 @@ function LocationPicker({ position, onLocationSelect }) {
         typeof position[0] === 'number' && !isNaN(position[0]) &&
         typeof position[1] === 'number' && !isNaN(position[1]);
 
+    const lat = position?.[0]
+    const lng = position?.[1]
+
     useEffect(() => {
         if (isValidPosition) {
             // Only update view if the position is significantly different to prevent jumping
@@ -47,7 +50,7 @@ function LocationPicker({ position, onLocationSelect }) {
                 map.setView(position, map.getZoom());
             }
         }
-    }, [position?.[0], position?.[1], map, isValidPosition]);
+    }, [lat, lng, map, isValidPosition, position]);
 
     // Only render marker if position is valid
     return isValidPosition ? (

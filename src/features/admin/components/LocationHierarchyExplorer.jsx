@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     MapPin, ChevronRight, ArrowLeft, Building2, Star,
@@ -31,24 +31,11 @@ const DEFAULT_CITY_IMG = 'https://images.unsplash.com/photo-1477959858617-67f85c
 const LocationHierarchyExplorer = ({ className }) => {
     const [level, setLevel] = useState('countries')
     const [history, setHistory] = useState([])
-    const [, setTimeOfDay] = useState('day')
     const [selectedLocation, setSelectedLocation] = useState(null)
-
-    useEffect(() => {
-        const hour = new Date().getHours()
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (hour >= 5 && hour < 12) setTimeOfDay('morning')
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        else if (hour >= 12 && hour < 17) setTimeOfDay('day')
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        else if (hour >= 17 && hour < 21) setTimeOfDay('evening')
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        else setTimeOfDay('night')
-    }, [])
 
     // Load all locations from DB
     const { data: locsData, isLoading } = useAdminLocationsQuery({ all: true, limit: 500 })
-    const allLocations = locsData?.data ?? []
+    const allLocations = useMemo(() => locsData?.data ?? [], [locsData])
 
     // Build hierarchy from real data
     const { countries, citiesByCountry, locationsByCity } = useMemo(() => {

@@ -292,7 +292,7 @@ export default function AddPlacePage() {
             setPlaceSuggestions(results)
             setPlaceLoading(false)
         }, 350)
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     const onPlaceSelect = (s) => {
         setForm((f) => ({
@@ -321,7 +321,7 @@ export default function AddPlacePage() {
             setCitySuggestions(results)
             setCityLoading(false)
         }, 350)
-    }, [form.country_code]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [form.country_code])
 
     const onCitySelect = (s) => {
         setForm((f) => ({ ...f, city: s.name }))
@@ -343,7 +343,7 @@ export default function AddPlacePage() {
             setAddrSuggestions(results)
             setAddrLoading(false)
         }, 400)
-    }, [form.city, form.country_code]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [form.city, form.country_code])
 
     const onAddressSelect = (s) => {
         setForm((f) => ({ ...f, address: s.street }))

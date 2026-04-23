@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { geocodeCity, getCitiesForCountry, getCityImage } from './nominatimApi'
 
 // localStorage is mocked globally by src/test/setup.js

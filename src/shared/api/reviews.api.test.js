@@ -92,8 +92,7 @@ describe('reviews.api', () => {
         })
 
         it('returns empty array when supabase is null', async () => {
-            const { supabase } = await import('./client')
-            const origSupabase = supabase
+            await import('./client')
             // supabase is a module-level export; since we've mocked it, test via null
             // This test verifies the guard clause pattern works
             // In the mock, supabase is always truthy, so we test the normal path

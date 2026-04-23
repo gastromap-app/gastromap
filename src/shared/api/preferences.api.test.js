@@ -43,9 +43,7 @@ describe('preferences.api', () => {
         })
 
         it('falls back to user_profiles table when profiles has no preferences', async () => {
-            let callCount = 0
             mockFrom.mockImplementation((table) => {
-                callCount++
                 if (table === 'profiles') {
                     return makeChain({ data: { preferences: null }, error: { message: 'no row' } })
                 }

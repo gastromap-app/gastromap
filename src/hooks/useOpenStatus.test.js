@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { useOpenStatus } from './useOpenStatus'
 
 // Helper: create a Date at a specific hour:minute today
@@ -9,25 +9,14 @@ function dateAt(hour, minute = 0) {
 }
 
 describe('useOpenStatus', () => {
-    let realDate
-
-    beforeEach(() => {
-        realDate = Date
-    })
-
     afterEach(() => {
-        Date = realDate
+        vi.useRealTimers()
     })
 
     function mockDateAt(hour, minute = 0) {
         const fixed = dateAt(hour, minute)
-        Date = class extends realDate {
-            constructor(...args) {
-                if (args.length === 0) return new realDate(fixed.getTime())
-                return new realDate(...args)
-            }
-            static now() { return fixed.getTime() }
-        }
+        vi.useFakeTimers()
+        vi.setSystemTime(fixed)
     }
 
     it('returns null-ish values when openingHours is null/empty', () => {

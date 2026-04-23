@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { gastroIntelligence } from './gastroIntelligence'
 
 // Mock the mocks modules so tests are deterministic

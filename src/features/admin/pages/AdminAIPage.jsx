@@ -385,19 +385,7 @@ const AdminAIPage = () => {
     const [apiKeyError, setApiKeyError] = useState('')
     const [validationTrigger, setValidationTrigger] = useState(0)
 
-    // ── Validate API Key when it changes
-    React.useEffect(() => {
-        if (!primaryModel) return
-
-        if (apiKey && apiKey.startsWith('sk-or-')) {
-            validateKey(apiKey)
-        } else {
-            setApiKeyStatus(apiKey ? 'invalid' : 'idle')
-            setApiKeyError(apiKey ? 'Must start with sk-or-' : '')
-        }
-    }, [apiKey, primaryModel, validationTrigger])
-
-    const validateKey = async () => {
+    const validateKey = React.useCallback(async () => {
         setApiKeyStatus('validating')
         try {
             const result = await testAIConnection('ping', primaryModel)
@@ -412,7 +400,19 @@ const AdminAIPage = () => {
             setApiKeyStatus('error')
             setApiKeyError(err.message)
         }
-    }
+    }, [primaryModel])
+
+    // ── Validate API Key when it changes
+    React.useEffect(() => {
+        if (!primaryModel) return
+
+        if (apiKey && apiKey.startsWith('sk-or-')) {
+            validateKey()
+        } else {
+            setApiKeyStatus(apiKey ? 'invalid' : 'idle')
+            setApiKeyError(apiKey ? 'Must start with sk-or-' : '')
+        }
+    }, [apiKey, primaryModel, validationTrigger, validateKey])
 
     // ── Agents
     const [agentActive, setAgentActive] = useState({

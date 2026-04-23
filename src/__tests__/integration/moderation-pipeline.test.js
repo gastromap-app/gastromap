@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ─── Hoisted mocks (vi.mock factories are hoisted above imports) ────────────
 
-const { chain, mockSingle, mockSelect, mockInsert, mockUpdate, mockDelete, mockEq, mockIn, mockOrder, mockSendNotificationToUser } = vi.hoisted(() => {
+const { chain, mockSingle, _mockSelect, mockInsert, mockUpdate, _mockDelete, mockEq, _mockIn, mockOrder, mockSendNotificationToUser } = vi.hoisted(() => {
     const _mockSingle = vi.fn()
     const _mockSelect = vi.fn()
     const _mockInsert = vi.fn()
@@ -51,12 +51,12 @@ const { chain, mockSingle, mockSelect, mockInsert, mockUpdate, mockDelete, mockE
     return {
         chain: _chain,
         mockSingle: _mockSingle,
-        mockSelect: _mockSelect,
+        _mockSelect: _mockSelect,
         mockInsert: _mockInsert,
         mockUpdate: _mockUpdate,
-        mockDelete: _mockDelete,
+        _mockDelete: _mockDelete,
         mockEq: _mockEq,
-        mockIn: _mockIn,
+        _mockIn: _mockIn,
         mockOrder: _mockOrder,
         mockSendNotificationToUser: _mockSendNotificationToUser,
     }

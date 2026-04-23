@@ -4,7 +4,7 @@ import { ApiError } from './client'
 
 // ─── Hoisted mocks (vi.mock factories are hoisted above imports) ────────────
 
-const { chainable, mockInsert, mockSelect, mockUpdate, mockEq, mockOrder, mockSingle, mockUpload, mockGetPublicUrl, mockSendNotificationToUser } = vi.hoisted(() => {
+const { chainable, mockInsert, mockOrder, mockSingle, mockUpload, mockGetPublicUrl, mockSendNotificationToUser } = vi.hoisted(() => {
     const _mockInsert = vi.fn()
     const _mockSelect = vi.fn()
     const _mockUpdate = vi.fn()

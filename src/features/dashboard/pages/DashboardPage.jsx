@@ -31,6 +31,18 @@ function getGreeting(t) {
     return t('dashboard.greeting_evening')
 }
 
+// Static fallback images per country slug — defined at module level to keep stable reference
+const COUNTRY_IMAGES = {
+    poland:      'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop',
+    france:      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop',
+    spain:       'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=2070&auto=format&fit=crop',
+    italy:       'https://images.unsplash.com/photo-1529543544282-ea669407fca3?q=80&w=2048&auto=format&fit=crop',
+    germany:     'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=2070&auto=format&fit=crop',
+    portugal:    'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=2070&auto=format&fit=crop',
+    netherlands: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?q=80&w=2070&auto=format&fit=crop',
+    czechia:     'https://images.unsplash.com/photo-1541849546-216549ae216d?q=80&w=2070&auto=format&fit=crop',
+}
+
 // ─── LOCATION CARD MOBILE ────────────────────────────────────────────────────
 
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
@@ -316,17 +328,7 @@ const DashboardPage = () => {
     }, [debouncedSearch])
 
     // DASH-3 FIX: countries are now derived from actual locations in the store
-    // Static image map as visual fallback — keeps cards looking good even without location photos
-    const COUNTRY_IMAGES = {
-        poland:      'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop',
-        france:      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop',
-        spain:       'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=2070&auto=format&fit=crop',
-        italy:       'https://images.unsplash.com/photo-1529543544282-ea669407fca3?q=80&w=2048&auto=format&fit=crop',
-        germany:     'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=2070&auto=format&fit=crop',
-        portugal:    'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=2070&auto=format&fit=crop',
-        netherlands: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?q=80&w=2070&auto=format&fit=crop',
-        czechia:     'https://images.unsplash.com/photo-1541849546-216549ae216d?q=80&w=2070&auto=format&fit=crop',
-    }
+    // COUNTRY_IMAGES is defined at module level — no need to include in deps
     const countries = useMemo(() => {
         // Build from real DB data — aggregate unique countries with real location counts
         const countryMap = {}

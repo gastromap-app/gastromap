@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { 
     useAdminLocationsQuery, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
@@ -75,35 +75,7 @@ export const useAdminLocations = () => {
     const aiQueryMutation = useAIQueryMutation()
     const culinaryContextMutation = useCulinaryContextMutation()
 
-    // URL parameter handling
-    useEffect(() => {
-        const params = new URLSearchParams(location.search)
-        if (params.get('create') === 'true') {
-            const timer = setTimeout(() => {
-                handleCreateNew()
-                navigate(location.pathname, { replace: true })
-            }, 0)
-            return () => clearTimeout(timer)
-        } else if (params.get('import') === 'true') {
-            const timer = setTimeout(() => {
-                setIsImportWizardOpen(true)
-                navigate(location.pathname, { replace: true })
-            }, 0)
-            return () => clearTimeout(timer)
-        }
-    }, [location.search])
-
-    // Logging
-    useEffect(() => {
-        console.log('[Admin] locsData:', locsData)
-        if (loadError) console.error('[Admin] Load Error:', loadError)
-    }, [locsData, loadError])
-
-    useEffect(() => {
-        console.log('[Admin] locationsList.length:', locationsList.length)
-    }, [locationsList.length])
-
-    const handleCreateNew = () => {
+    const handleCreateNew = useCallback(() => {
         const emptyLocation = {
             id: 'NEW',
             title: '',
@@ -151,7 +123,35 @@ export const useAdminLocations = () => {
         setSelectedLocation(emptyLocation)
         setFormData(emptyLocation)
         setIsSlideOverOpen(true)
-    }
+    }, [setSelectedLocation, setFormData, setIsSlideOverOpen])
+
+    // URL parameter handling
+    useEffect(() => {
+        const params = new URLSearchParams(location.search)
+        if (params.get('create') === 'true') {
+            const timer = setTimeout(() => {
+                handleCreateNew()
+                navigate(location.pathname, { replace: true })
+            }, 0)
+            return () => clearTimeout(timer)
+        } else if (params.get('import') === 'true') {
+            const timer = setTimeout(() => {
+                setIsImportWizardOpen(true)
+                navigate(location.pathname, { replace: true })
+            }, 0)
+            return () => clearTimeout(timer)
+        }
+    }, [location.search, location.pathname, navigate, handleCreateNew])
+
+    // Logging
+    useEffect(() => {
+        console.log('[Admin] locsData:', locsData)
+        if (loadError) console.error('[Admin] Load Error:', loadError)
+    }, [locsData, loadError])
+
+    useEffect(() => {
+        console.log('[Admin] locationsList.length:', locationsList.length)
+    }, [locationsList.length])
 
     const prepareFormData = (loc) => {
         if (!loc) return null

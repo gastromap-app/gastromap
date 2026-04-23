@@ -13,7 +13,8 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '@/shared/lib/supabase'
+import { supabase } from '@/shared/api/client'
+
 
 // ─── Defaults (only used when Supabase row doesn't exist yet) ────────────────
 const DEFAULTS = {
@@ -138,8 +139,10 @@ export const useAppConfigStore = create(
             name: 'app-config-storage',
             // Exclude _supabaseLoaded from localStorage
             partialize: (state) => {
-                const { _supabaseLoaded, loadFromDB, updateSettings, setAppStatus, ...rest } = state
-                return rest
+                const EXCLUDED = ['_supabaseLoaded', 'loadFromDB', 'updateSettings', 'setAppStatus']
+                return Object.fromEntries(
+                    Object.entries(state).filter(([k]) => !EXCLUDED.includes(k))
+                )
             },
         }
     )

@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useGastroAI, ChatInterface } from '@/features/shared/components/GastroAIChat'
+import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
 
 export default function GastroGuideChat({ isOpen, onClose }) {
-    const { messages, isTyping, sendMessage } = useGastroAI()
+    const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const navigate = useNavigate()
 
     const handleCardClick = (locationId) => {
@@ -28,11 +28,6 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                 {/* The "Siri" Glow Container */}
                 <div className={`pointer-events-auto relative w-full h-full md:max-h-[650px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-white/50 dark:border-gray-700/50 overflow-hidden flex flex-col ${isTyping ? 'ring-2 ring-indigo-400/50' : ''}`}>
 
-                    {/* Aurora Animation when typing */}
-                    {isTyping && (
-                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-200/50 via-pink-100/30 to-transparent blur-2xl animate-pulse pointer-events-none" />
-                    )}
-
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-5 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-gray-900/50">
                         <div className="flex items-center gap-3">
@@ -46,15 +41,28 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                         </Button>
                     </div>
 
-                    {/* Chat Interface */}
-                    <ChatInterface
-                        messages={messages}
-                        isTyping={isTyping}
-                        onSendMessage={sendMessage}
-                        onCardClick={handleCardClick}
-                    />
+                    {/* Chat Interface - Scrollable Messages */}
+                    <div className="flex-1 overflow-y-auto">
+                        <ChatInterface
+                            messages={messages}
+                            isTyping={isTyping}
+                            onSendMessage={sendMessage}
+                            onCardClick={handleCardClick}
+                            geoStatus={geoStatus}
+                            requestGeo={requestGeo}
+                        />
+                    </div>
+
+                    {/* Chat Input Bar */}
+                    <div className="p-2 border-t border-black/5 dark:border-white/5">
+                        <ChatInputBar
+                            onSendMessage={sendMessage}
+                            isTyping={isTyping}
+                        />
+                    </div>
                 </div>
             </motion.div>
         </AnimatePresence>
     )
 }
+

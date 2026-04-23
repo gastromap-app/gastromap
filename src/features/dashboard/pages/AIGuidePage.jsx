@@ -5,12 +5,18 @@ import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/Ga
 
 // BottomNav: height=64px, bottom=calc(12px + safe-area-inset-bottom)
 // Input sits just above it: 64 + 12 = 76px + safe-area
-const INPUT_BOTTOM = 'calc(76px + env(safe-area-inset-bottom))'
-// Reserve space at bottom of scroll area so last message is never hidden behind input
-const SCROLL_PADDING_BOTTOM = 'calc(76px + env(safe-area-inset-bottom) + 72px)'
+// BottomNav: height=64px. We want input bar right above it.
+// BottomNav: height=64px, bottom=calc(12px + safe-area-inset-bottom)
+// Input sits just above it: 64 + 12 = 76px + safe-area
+// We set INPUT_BOTTOM slightly higher (82px) for better breathing room
+const INPUT_BOTTOM = 'calc(82px + env(safe-area-inset-bottom))'
+// Reserve space at bottom of scroll area for the input bar (approx 60-70px tall)
+const SCROLL_PADDING_BOTTOM = 'calc(170px + env(safe-area-inset-bottom))'
+// Header height: Increase to ensure no messages start behind the header
+const HEADER_HEIGHT = 'calc(100px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
-    const { messages, isTyping, sendMessage } = useGastroAI()
+    const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     // THIS is the single scroll container — ChatInterface renders content inside it
@@ -21,7 +27,7 @@ const AIGuidePage = () => {
     }
 
     return (
-        <div className="fixed inset-0 flex flex-col">
+        <div className="fixed inset-0 flex flex-col bg-transparent overflow-hidden">
 
             {/* Aurora while typing */}
             {isTyping && (
@@ -41,8 +47,11 @@ const AIGuidePage = () => {
             <div
                 ref={scrollRef}
                 data-lenis-prevent
-                className="relative z-10 flex-1 overflow-y-auto"
-                style={{ paddingBottom: SCROLL_PADDING_BOTTOM }}
+                className="relative z-10 flex-1 overflow-y-auto scroll-smooth overscroll-contain"
+                style={{ 
+                    paddingTop: HEADER_HEIGHT,
+                    paddingBottom: SCROLL_PADDING_BOTTOM 
+                }}
             >
                 <ChatInterface
                     messages={messages}
@@ -51,9 +60,12 @@ const AIGuidePage = () => {
                     onCardClick={handleCardClick}
                     transparent={true}
                     scrollContainerRef={scrollRef}
-                    contentClassName="pt-4 px-4"
+                    contentClassName="px-4"
+                    geoStatus={geoStatus}
+                    requestGeo={requestGeo}
                 />
             </div>
+
 
             {/* Input fixed just above BottomNav */}
             <div

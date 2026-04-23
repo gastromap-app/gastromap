@@ -10,6 +10,8 @@ import { config } from '@/shared/config/env'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { useEffect } from 'react'
+import { useGeoStore } from '@/shared/store/useGeoStore'
+
 
 /**
  * useAIChat — GastroGuide conversation logic with OpenRouter API streaming.
@@ -54,7 +56,7 @@ export function useAIChat() {
     const { locations } = useLocationsStore()
     const { user } = useAuthStore()
     // Request geo silently on chat mount — shared with the Map component via GeoStore
-    const { city: userCity, country: userCountry, requestGeo } = useUserGeo({ autoRequest: true })
+    const { city: userCity, country: userCountry, requestGeo, status } = useUserGeo({ autoRequest: true })
     // Use centralized AI configuration logic (Runtime Admin key > Env key)
     const { apiKey: activeApiKey, useProxy } = getActiveAIConfig()
     // hasAIAccess: true when either a direct key OR a proxy (prod environment) is available
@@ -134,6 +136,8 @@ export function useAIChat() {
             // Geolocation context — filled when user grants browser permission
             userCity: userCity || null,
             userCountry: userCountry || null,
+            userLat: useGeoStore.getState().lat || null,
+            userLng: useGeoStore.getState().lng || null,
         }
 
         const context = { 
@@ -171,7 +175,12 @@ export function useAIChat() {
                 })
 
                 // Final update — parsed content + resolved location cards
-                const finalMsg = updateLastMessage('assistant', result.content, {
+                const cleanContent = (result.content || '')
+                    .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
+                    .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
+                    .trim()
+
+                const finalMsg = updateLastMessage('assistant', cleanContent || 'I found some places for you:', {
                     matches: result.matches,
                     intent: result.intent,
                 })
@@ -198,7 +207,7 @@ export function useAIChat() {
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId])
+    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, status, requestGeo])
 
     return {
         messages,
@@ -207,5 +216,7 @@ export function useAIChat() {
         isStreaming: isTyping && hasAIAccess,
         sendMessage,
         clearHistory,
+        geoStatus: status,
+        requestGeo,
     }
 }

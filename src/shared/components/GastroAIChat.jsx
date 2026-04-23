@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChefHat, MoveUp, Sparkles } from 'lucide-react'
+import { ChefHat, MoveUp, Sparkles, MapPin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAIChat } from '@/hooks/useAIChat'
@@ -13,49 +13,46 @@ import { useTheme } from '@/hooks/useTheme'
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export const useGastroAI = () => {
-    const { messages, isTyping, sendMessage, clearHistory } = useAIChat()
-    return { messages, isTyping, sendMessage, clearHistory }
+    const { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo } = useAIChat()
+    return { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo }
 }
 
 // ─── Modern typing indicator ──────────────────────────────────────────────────
 function TypingBubble({ transparent, isDark }) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="flex items-start gap-2"
+            className="flex items-center gap-3 px-1 py-1"
         >
-            {/* Avatar */}
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
-                transparent
-                    ? 'bg-white/20 dark:bg-white/10 border border-white/30'
-                    : 'bg-indigo-100 dark:bg-indigo-500/20'
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                transparent ? 'bg-white/10' : 'bg-gray-100 dark:bg-gray-800'
             }`}>
-                <Sparkles className={`w-3.5 h-3.5 ${transparent ? 'text-white/80' : 'text-indigo-500'}`} />
+                <Sparkles className={`w-4 h-4 ${transparent ? 'text-white' : 'text-indigo-500'}`} />
             </div>
-
-            {/* Bubble */}
-            <div className={`px-4 py-3 rounded-2xl rounded-bl-none inline-flex items-center gap-1.5 ${
-                transparent
-                    ? 'bg-white/80 dark:bg-black/60 border border-white/30 dark:border-white/20'
-                    : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700'
+            <div className={`flex gap-1.5 p-3 rounded-2xl rounded-bl-none backdrop-blur-md border ${
+                transparent 
+                    ? 'bg-white/15 border-white/20' 
+                    : 'bg-white/80 dark:bg-black/40 border-gray-100 dark:border-white/10'
             }`}>
                 {[0, 1, 2].map((i) => (
-                    <motion.span
+                    <motion.div
                         key={i}
-                        className={`block w-2 h-2 rounded-full ${
-                            transparent
-                                ? isDark ? 'bg-white/70' : 'bg-gray-500/80'
-                                : 'bg-gray-400 dark:bg-gray-500'
+                        className={`w-1.5 h-1.5 rounded-full ${
+                            transparent || isDark ? 'bg-white' : 'bg-indigo-500'
                         }`}
-                        animate={{ y: [0, -5, 0] }}
+                        animate={{ 
+                            opacity: [0.4, 1, 0.4],
+                            scale: [0.8, 1.1, 0.8],
+                            y: [0, -2, 0]
+                        }}
                         transition={{
-                            duration: 0.6,
+                            duration: 1,
                             repeat: Infinity,
-                            ease: 'easeInOut',
                             delay: i * 0.15,
+                            ease: "easeInOut"
                         }}
                     />
                 ))}
@@ -80,44 +77,45 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
     }
 
     return (
-        <form onSubmit={handleSend} className={`px-3 py-2 ${className}`}>
+        <form onSubmit={handleSend} className={`px-2 py-2 ${className}`}>
             <div
-                className={`relative flex items-center rounded-full border transition-all ${
+                className={`relative flex items-center rounded-2xl border transition-all shadow-none ${
                     transparent
                         ? isDark
-                            ? 'bg-white/10 border-white/20 focus-within:border-white/40 focus-within:bg-white/15 backdrop-blur-xl'
-                            : 'bg-white/80 border-white/50 focus-within:border-white/80 focus-within:bg-white/95 backdrop-blur-xl'
-                        : 'bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus-within:border-indigo-200 focus-within:bg-white dark:focus-within:bg-gray-800'
+                            ? 'bg-black/40 border-white/10 focus-within:border-white/20 backdrop-blur-2xl'
+                            : 'bg-white/70 border-white/40 focus-within:border-white/60 backdrop-blur-2xl'
+                        : 'bg-gray-100/80 dark:bg-gray-800/80 border-transparent focus-within:border-indigo-500/30 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
             >
                 <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Message GastroGuide..."
-                    className={`bg-transparent border-none shadow-none focus-visible:ring-0 text-base py-5 pl-5 pr-12 placeholder:font-medium ${
+                    placeholder="Ask about places..."
+                    className={`bg-transparent border-none shadow-none focus-visible:ring-0 text-[16px] py-6 pl-4 pr-12 placeholder:font-normal ${
                         transparent
                             ? isDark
-                                ? 'text-white placeholder:text-gray-400'
-                                : 'text-gray-900 placeholder:text-gray-500'
+                                ? 'text-white placeholder:text-gray-500'
+                                : 'text-gray-900 placeholder:text-gray-400'
                             : 'text-gray-900 dark:text-white placeholder:text-gray-400'
                     }`}
                 />
                 <Button
                     type="submit"
                     size="icon"
-                    className={`absolute right-2 w-9 h-9 rounded-full transition-all ${
+                    className={`absolute right-2 w-10 h-10 rounded-xl transition-all shadow-none ${
                         input.trim() && !isTyping
-                            ? 'bg-gradient-to-tr from-indigo-500 to-violet-500 text-white scale-100 hover:scale-110'
-                            : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 scale-90'
+                            ? 'bg-indigo-600 text-white scale-100 hover:scale-105 active:scale-95'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 scale-90'
                     }`}
                     disabled={!input.trim() || isTyping}
                 >
-                    <MoveUp className="h-4 w-4" />
+                    <MoveUp className="h-5 w-5" />
                 </Button>
             </div>
         </form>
     )
 }
+
 
 // ─── Unified Chat Interface Component ────────────────────────────────────────
 
@@ -131,6 +129,8 @@ export function ChatInterface({
     contentClassName = '',
     // External scroll container ref — when parent owns the scroll
     scrollContainerRef = null,
+    geoStatus = 'idle',
+    requestGeo = () => {},
 }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -142,20 +142,29 @@ export function ChatInterface({
 
     // Scroll to bottom whenever messages change or typing starts/stops
     useEffect(() => {
-        const scrollEl = scrollContainerRef?.current ?? internalScrollRef.current
-        if (!scrollEl) return
+        const scrollToBottom = () => {
+            if (bottomRef.current) {
+                // Determine if we should use smooth scroll (for AI response) or instant (for history load)
+                const behavior = messages.length > 5 ? 'smooth' : 'auto'
+                bottomRef.current.scrollIntoView({ behavior, block: 'end' })
+            }
+        }
 
-        // Use requestAnimationFrame to wait for DOM paint
-        requestAnimationFrame(() => {
-            scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' })
-        })
-    }, [messages, isTyping, scrollContainerRef])
+        // Multiple triggers to ensure scroll happens after DOM settles
+        const timer1 = setTimeout(scrollToBottom, 50)
+        const timer2 = setTimeout(scrollToBottom, 300)
+        
+        return () => {
+            clearTimeout(timer1)
+            clearTimeout(timer2)
+        }
+    }, [messages.length, isTyping]) // length check is more robust for message lists
 
     return (
         <div
             ref={scrollContainerRef ? undefined : internalScrollRef}
             data-lenis-prevent
-            className={`flex flex-col space-y-4 p-4 md:p-6 ${contentClassName} ${className}`}
+            className={`flex flex-col space-y-3 p-2 md:p-4 ${contentClassName} ${className}`}
         >
             {/* Empty state */}
             {messages.length === 0 && (
@@ -185,9 +194,26 @@ export function ChatInterface({
                         <p className={`text-sm leading-relaxed max-w-xs ${
                             transparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
                         }`}>
-                            Ask me anything about restaurants, cafes, and hidden dining gems near you.
-                        </p>
-                    </motion.div>
+                        Ask me anything about restaurants, cafes, and hidden dining gems near you.
+                    </p>
+                    
+                    {/* Geo Hint */}
+                    {geoStatus !== 'granted' && (
+                        <motion.button
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            onClick={requestGeo}
+                            className={`flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border transition-all ${
+                                transparent
+                                    ? 'bg-blue-600/20 border-blue-400/30 text-white hover:bg-blue-600/30'
+                                    : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'
+                            }`}
+                        >
+                            <MapPin className="w-3.5 h-3.5" />
+                            {geoStatus === 'denied' ? 'Permission denied. Click to try again' : 'Share location for better results'}
+                        </motion.button>
+                    )}
+                </motion.div>
                     <motion.div
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -228,19 +254,31 @@ export function ChatInterface({
                             transition={{ duration: 0.22, ease: 'easeOut' }}
                             className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}
                         >
-                            <div
-                                className={`px-4 py-3 rounded-2xl text-[15px] leading-relaxed max-w-[85%] ${
+                            <motion.div
+                                layout
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
                                     isUser
                                         ? transparent
-                                            ? 'bg-white/90 dark:bg-white/95 text-gray-900 rounded-br-none border border-white/40'
-                                            : 'bg-black text-white rounded-br-none'
+                                            ? 'bg-indigo-600 text-white rounded-br-sm border border-white/20 ml-auto'
+                                            : 'bg-indigo-600 text-white rounded-br-sm ml-auto'
                                         : transparent
-                                        ? 'bg-white/80 dark:bg-black/60 text-gray-900 dark:text-white rounded-bl-none border border-white/30 dark:border-white/20'
-                                        : 'bg-white border border-black/5 text-gray-800 rounded-bl-none'
+                                            ? 'bg-white/10 dark:bg-black/50 text-white rounded-bl-sm border border-white/10 backdrop-blur-md mr-auto'
+                                            : 'bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm mr-auto shadow-sm'
                                 }`}
+                                style={{ 
+                                    maxWidth: '88%',
+                                    boxShadow: isUser 
+                                        ? '0 4px 15px -3px rgba(79, 70, 229, 0.4)' 
+                                        : '0 4px 12px -2px rgba(0, 0, 0, 0.08)'
+                                }}
                             >
                                 {msg.content ?? ''}
-                            </div>
+                            </motion.div>
+
+
 
                             {/* Location cards */}
                             {validCards.length > 0 && (

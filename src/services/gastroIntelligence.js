@@ -29,7 +29,7 @@ class GastroIntelligence {
 
         // Multilingual food/recommendation intent detection (EN + RU)
         const isRecommendation =
-            /\b(eat|cafe|where|recommend|dinner|lunch|breakfast|restaurant|bar|coffee|cozy|romantic|best|find|хочу|поесть|кафе|где|советуй|рекомендуй|ужин|обед|завтрак|ресторан|кофе|найди|лучший|хорош|уютн|романтич)\b/.test(query);
+            /\b(eat|cafe|where|recommend|dinner|lunch|breakfast|restaurant|bar|restobar|coffee|cozy|romantic|best|find|хочу|поесть|кафе|где|советуй|рекомендуй|ужин|обед|завтрак|ресторан|бар|рестобар|кофе|найди|лучший|хорош|уютн|романтич)\b/.test(query);
 
         let filtered = pool;
 

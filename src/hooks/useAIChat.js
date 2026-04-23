@@ -8,6 +8,7 @@ import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { config } from '@/shared/config/env'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
+import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { useEffect } from 'react'
 
 /**
@@ -52,6 +53,8 @@ export function useAIChat() {
     const { favoriteIds } = useFavoritesStore()
     const { locations } = useLocationsStore()
     const { user } = useAuthStore()
+    // Request geo silently on chat mount — shared with the Map component via GeoStore
+    const { city: userCity, country: userCountry, requestGeo } = useUserGeo({ autoRequest: true })
     // Use centralized AI configuration logic (Runtime Admin key > Env key)
     const { apiKey: activeApiKey, useProxy } = getActiveAIConfig()
     // hasAIAccess: true when either a direct key OR a proxy (prod environment) is available
@@ -127,7 +130,10 @@ export function useAIChat() {
                 .map(l => l.title),
             recentInterests: prefs.frequentSearches || [],
             userExperience,
-            foodieDNA: prefs.foodieDNA || ''
+            foodieDNA: prefs.foodieDNA || '',
+            // Geolocation context — filled when user grants browser permission
+            userCity: userCity || null,
+            userCountry: userCountry || null,
         }
 
         const context = { 
@@ -156,8 +162,11 @@ export function useAIChat() {
 
                 const result = await analyzeQueryStream(text.trim(), context, (chunk) => {
                     accumulated += chunk
-                    // Strip the trailing JSON block from live display
-                    const display = accumulated.replace(/\{"matches":\[.*?\]\}\s*$/s, '').trim()
+                    // Strip all tool-call artifacts from live display
+                    const display = accumulated
+                        .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
+                        .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
+                        .trim()
                     updateLastMessage('assistant', display || '…')
                 })
 

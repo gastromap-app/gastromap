@@ -14,7 +14,7 @@ const CUISINE_MENU_LABELS = [
 ]
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const isDark = theme === 'dark'
 
     // Cuisine list from KG (falls back to static taxonomy while loading)
@@ -195,19 +195,9 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div className="space-y-4 text-left md:col-span-2">
                                 <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Establishment Type</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                    {[
-                                        { id: 'all',        label: 'All',        icon: '🌎' },
-                                        { id: 'Cafe',       label: 'Cafe',       icon: '☕' },
-                                        { id: 'Restaurant', label: 'Restaurant', icon: '🍽️' },
-                                        { id: 'Street Food',label: 'Street',     icon: '🍕' },
-                                        { id: 'Bar',        label: 'Bar',        icon: '🍸' },
-                                        { id: 'Market',     label: 'Market',     icon: '🛒' },
-                                        { id: 'Bakery',     label: 'Bakery',     icon: '🥐' },
-                                        { id: 'Winery',     label: 'Winery',     icon: '🍷' },
-                                        { id: 'Coffee',     label: 'Coffee',     icon: '☕' },
-                                        { id: 'Pastry',     label: 'Pastry',     icon: '🍰' },
-                                    ].map(type => {
+                                    {ESTABLISHMENT_TYPES.map(type => {
                                         const isActive = selectedCategory === type.id
+                                        const displayLabel = i18n.language === 'ru' ? type.labelRu : type.label
                                         return (
                                             <button
                                                 key={type.id}
@@ -215,7 +205,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
                                                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{type.icon}</span>
-                                                <span className="text-[11px] font-bold">{type.label}</span>
+                                                <span className="text-[11px] font-bold">{displayLabel}</span>
                                             </button>
                                         )
                                     })}

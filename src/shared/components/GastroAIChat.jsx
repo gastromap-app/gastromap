@@ -70,6 +70,7 @@ export function ChatInterface({
     messages,
     isTyping,
     onSendMessage,
+    onCardClick,
     transparent = false,
     hideInput = false,
     className = '',
@@ -146,16 +147,26 @@ export function ChatInterface({
                                     {validCards.map((loc) => (
                                         <motion.div
                                             key={loc.id}
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`Open ${loc.title}`}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
+                                            onClick={() => onCardClick?.(loc.id)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault()
+                                                    onCardClick?.(loc.id)
+                                                }
+                                            }}
                                             className={`rounded-2xl p-3 flex gap-3 items-center shadow-lg backdrop-blur-sm cursor-pointer group transition-all hover:scale-[1.02] ${
                                                 transparent
                                                     ? 'bg-white/90 dark:bg-black/70 border border-white/40 dark:border-white/20'
                                                     : 'bg-white border border-gray-100'
-                                            }`}
+                                            } ${onCardClick ? 'active:scale-[0.98]' : ''}`}
                                         >
                                             <img
-                                                src={loc.image}
+                                                src={loc.image || loc.image_url}
                                                 alt={loc.title}
                                                 className="w-14 h-14 rounded-xl object-cover shadow-sm"
                                                 loading="lazy"

@@ -82,7 +82,19 @@ export const LABEL_TRANSLATIONS = {
     "День": "Day",
     "Вечер": "Evening",
     "Поздняя ночь": "Late Night",
-    "Ночь": "Night"
+    "Ночь": "Night",
+
+    // Establishment Types (Categories)
+    "Кафе": "Cafe",
+    "Ресторан": "Restaurant",
+    "Стритфуд": "Street Food",
+    "Бар": "Bar",
+    "Рестобар": "Restobar",
+    "Маркет": "Market",
+    "Пекарня": "Bakery",
+    "Винодельня": "Winery",
+    "Кофе": "Coffee",
+    "Кондитерская": "Pastry"
 };
 
 export const translate = (text) => {

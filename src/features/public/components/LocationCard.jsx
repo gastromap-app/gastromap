@@ -9,8 +9,11 @@ import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
 import { translate } from '@/utils/translation'
 import LazyImage from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
+import { useTranslation } from 'react-i18next'
+import { getCategoryLabel } from '@/shared/config/filterOptions'
 
 export default function LocationCard({ location }) {
+    const { i18n } = useTranslation()
     const navigate = useNavigate()
     const { isFavorite, toggleFavorite } = useFavoritesStore()
     const isFav = isFavorite(location.id)
@@ -34,7 +37,7 @@ export default function LocationCard({ location }) {
                 </div>
                 <div className="absolute top-2 left-2 flex gap-1.5">
                     <Badge className="bg-background/80 text-foreground backdrop-blur-sm border-none">
-                        {location.category}
+                        {getCategoryLabel(location.category, i18n.language)}
                     </Badge>
                     {location.cuisine && (
                         <Badge className="bg-blue-600/90 text-white backdrop-blur-sm border-none font-black shadow-lg">

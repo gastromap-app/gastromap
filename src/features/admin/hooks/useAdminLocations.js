@@ -28,8 +28,41 @@ export const useAdminLocations = () => {
     const [openActionMenuId, setOpenActionMenuId] = useState(null)
     const [isImproving, setIsImproving] = useState(null)
     const [isExporting, setIsExporting] = useState(false)
-    const [currentPage, setCurrentPage] = useState(1)
+    const [toast, setToast] = useState(null)
     const PAGE_SIZE = 20
+
+    // Auto-hide toast
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => setToast(null), 4000)
+            return () => clearTimeout(timer)
+        }
+    }, [toast])
+
+    // Background tasks listener with UI feedback
+    useEffect(() => {
+        const handleBgTask = (e) => {
+            const { type, status, id } = e.detail
+            
+            const taskNames = {
+                'ai-enrichment': 'AI Обогащение',
+                'translation': 'Авто-перевод',
+                'kg-sync': 'KG Синхронизация'
+            }
+
+            const name = taskNames[type] || type
+
+            if (status === 'running') {
+                setToast({ message: `${name}: процесс запущен...`, type: 'info' })
+            } else if (status === 'success') {
+                setToast({ message: `${name}: данные обновлены успешно!`, type: 'success' })
+            } else if (status === 'error') {
+                setToast({ message: `${name}: ошибка при выполнении.`, type: 'error' })
+            }
+        }
+        window.addEventListener('bg-task-status', handleBgTask)
+        return () => window.removeEventListener('bg-task-status', handleBgTask)
+    }, [])
 
     const handleExport = async () => {
         setIsExporting(true)
@@ -145,13 +178,20 @@ export const useAdminLocations = () => {
 
     // Logging
     useEffect(() => {
-        console.log('[Admin] locsData:', locsData)
+        if (locsData) console.log('[Admin] Locations loaded:', locsData.data?.length)
         if (loadError) console.error('[Admin] Load Error:', loadError)
     }, [locsData, loadError])
 
+    // Background tasks listener (future proofing for toasts)
     useEffect(() => {
-        console.log('[Admin] locationsList.length:', locationsList.length)
-    }, [locationsList.length])
+        const handleBgTask = (e) => {
+            const { type, status, id } = e.detail
+            console.log(`[Admin] Background task ${type} for ${id}: ${status}`)
+            // Here we can trigger a toast notification
+        }
+        window.addEventListener('bg-task-status', handleBgTask)
+        return () => window.removeEventListener('bg-task-status', handleBgTask)
+    }, [])
 
     const prepareFormData = (loc) => {
         if (!loc) return null
@@ -497,6 +537,8 @@ export const useAdminLocations = () => {
         setOpenActionMenuId,
         isImproving,
         setIsImproving,
+        toast,
+        setToast,
         
         // Data
         locationsList,

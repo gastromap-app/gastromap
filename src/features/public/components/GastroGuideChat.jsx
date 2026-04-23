@@ -1,11 +1,18 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGastroAI, ChatInterface } from '@/features/shared/components/GastroAIChat'
 
 export default function GastroGuideChat({ isOpen, onClose }) {
     const { messages, isTyping, sendMessage } = useGastroAI()
+    const navigate = useNavigate()
+
+    const handleCardClick = (locationId) => {
+        onClose?.()
+        navigate(`/location/${locationId}`)
+    }
 
     if (!isOpen) return null
 
@@ -44,6 +51,7 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                         messages={messages}
                         isTyping={isTyping}
                         onSendMessage={sendMessage}
+                        onCardClick={handleCardClick}
                     />
                 </div>
             </motion.div>

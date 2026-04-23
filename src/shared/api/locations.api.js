@@ -304,75 +304,121 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     const isAiReady = getActiveAIConfig().isConfigured
     const shouldTranslate = enableTranslation ?? isAiReady
 
-    let locationData = { ...updates }
-    let translations = null
-    
-    // Auto-translate if translatable fields changed
-    if (shouldTranslate) {
-        // Get current location first to compare changes
-        const current = await getLocation(id, { adminMode: true })
-        
-        const translatableFields = ['title', 'description', 'address', 'insider_tip', 'what_to_try', 'ai_context']
-        const hasTranslatableField = translatableFields.some(field => updates[field] !== undefined && JSON.stringify(updates[field]) !== JSON.stringify(current[field]))
-        
-        // Auto-enrich AI data if primary fields changed
-        const aiTriggerFields = ['title', 'description', 'cuisine_types', 'tags', 'vibe']
-        const shouldEnrichAI = aiTriggerFields.some(field => updates[field] !== undefined && JSON.stringify(updates[field]) !== JSON.stringify(current[field]))
-
-        if (shouldEnrichAI) {
-            console.log('[locations.api] Re-enriching location with AI...')
-            const merged = { ...current, ...updates }
-            const enriched = await enrichLocationWithAI(merged)
-            
-            // Extract AI fields into updates
-            if (enriched.ai_keywords) locationData.ai_keywords = enriched.ai_keywords
-            if (enriched.ai_context) locationData.ai_context = enriched.ai_context
-            if (enriched.embedding) locationData.embedding = enriched.embedding
-        }
-
-        if (hasTranslatableField) {
-            console.log('[locations.api] Auto-translating updated fields...')
-            
-            try {
-                // Get current location first
-                const current = await getLocation(id)
-                const merged = { ...current, ...updates }
-                
-                const { processLocationTranslations } = await import('./translation.api')
-                const result = await processLocationTranslations(merged, true)
-                locationData = result
-                translations = result.translations
-            } catch (error) {
-                console.error('[locations.api] Auto-translation failed:', error)
-                // Continue without translations
-            }
-        }
-    }
-
-    const row = _toRow(locationData)
+    const row = _toRow(updates)
     const { data: updated, error } = await _smartSave('locations', id, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)
     
-    // Update translations
-    if (translations) {
-        try {
-            const { saveTranslations } = await import('./translation.api')
-            await saveTranslations(updated.id, translations)
-        } catch (error) {
-            console.error('[locations.api] Failed to save translations:', error)
-        }
+    // ─── Background Tasks (Non-blocking) ──────────────────────────────────────
+    
+    // 1. AI Enrichment & Translation
+    if (shouldTranslate) {
+        console.log('[locations.api] Starting background enrichment/translation for updated location:', id)
+        
+        // Use a self-executing async function for background work
+        (async () => {
+            const dispatchStatus = (type, status) => {
+                window.dispatchEvent(new CustomEvent('bg-task-status', { 
+                    detail: { id, type, status } 
+                }))
+            }
+
+            try {
+                // Get fresh state of the location
+                const current = await getLocation(id, { adminMode: true })
+                if (!current) return
+
+                const translatableFields = ['title', 'description', 'address', 'insider_tip', 'what_to_try', 'ai_context']
+                const hasTranslatableField = translatableFields.some(field => 
+                    updates[field] !== undefined && 
+                    JSON.stringify(updates[field]) !== JSON.stringify(current[field])
+                )
+                
+                const aiTriggerFields = ['title', 'description', 'cuisine_types', 'tags', 'vibe']
+                const shouldEnrichAI = aiTriggerFields.some(field => 
+                    updates[field] !== undefined && 
+                    JSON.stringify(updates[field]) !== JSON.stringify(current[field])
+                )
+
+                let bgUpdates = {}
+
+                // A. Background AI Enrichment
+                if (shouldEnrichAI) {
+                    dispatchStatus('ai-enrichment', 'running')
+                    try {
+                        const enriched = await enrichLocationData(current)
+                        if (enriched.ai_enrichment_status === 'success') {
+                            if (enriched.ai_keywords) bgUpdates.ai_keywords = enriched.ai_keywords
+                            if (enriched.ai_context)  bgUpdates.ai_context  = enriched.ai_context
+                            if (enriched.embedding)   bgUpdates.embedding   = enriched.embedding
+                            
+                            // Taxonomy fields
+                            const aiFields = ['cuisine_types', 'price_range', 'tags', 'vibe', 'best_for', 'dietary_options']
+                            aiFields.forEach(field => {
+                                if (enriched[field] && updates[field] === undefined) {
+                                    bgUpdates[field] = enriched[field]
+                                }
+                            })
+                            dispatchStatus('ai-enrichment', 'success')
+                        } else {
+                            dispatchStatus('ai-enrichment', 'error')
+                        }
+                    } catch (aiErr) {
+                        console.warn('[locations.api] Background AI enrichment failed:', aiErr.message)
+                        dispatchStatus('ai-enrichment', 'error')
+                    }
+                }
+
+                // B. Background Translation
+                if (shouldTranslate && (hasTranslatableField || Object.keys(bgUpdates).length > 0)) {
+                    dispatchStatus('translation', 'running')
+                    try {
+                        const { processLocationTranslations, saveTranslations } = await import('./translation.api')
+                        const merged = { ...current, ...bgUpdates }
+                        const result = await processLocationTranslations(merged, true)
+                        
+                        if (result && result.translations) {
+                            await saveTranslations(id, result.translations)
+                            dispatchStatus('translation', 'success')
+                        }
+                    } catch (transErr) {
+                        console.warn('[locations.api] Background translation failed:', transErr.message)
+                        dispatchStatus('translation', 'error')
+                    }
+                }
+
+                // C. Save any background-generated improvements
+                if (Object.keys(bgUpdates).length > 0) {
+                    const bgRow = _toRow(bgUpdates)
+                    await _smartSave('locations', id, bgRow)
+                    console.log('[locations.api] Background updates saved for:', id)
+                }
+            } catch (err) {
+                console.error('[locations.api] Critical failure in background tasks:', err.message)
+            }
+        })()
     }
 
-    // Auto-sync KG fields in background (non-blocking)
-    // Triggered when cuisine/tags/description changed — adds matched KG data to kg_* columns
+    // 2. Knowledge Graph Sync
     const kgTriggerFields = ['title', 'cuisine', 'description', 'tags', 'vibe', 'what_to_try']
     const shouldSyncKG = kgTriggerFields.some(f => updates[f] !== undefined)
     if (shouldSyncKG) {
+        window.dispatchEvent(new CustomEvent('bg-task-status', { 
+            detail: { id: updated.id, type: 'kg-sync', status: 'running' } 
+        }))
         import('./knowledge-graph.api').then(({ syncKGForLocation }) => {
-            syncKGForLocation(updated.id).catch(e =>
-                console.warn('[locations.api] Background KG sync failed:', e.message)
-            )
+            syncKGForLocation(updated.id)
+                .then(() => {
+                    window.dispatchEvent(new CustomEvent('bg-task-status', { 
+                        detail: { id: updated.id, type: 'kg-sync', status: 'success' } 
+                    }))
+                })
+                .catch(e => {
+                    console.warn('[locations.api] Background KG sync failed:', e.message)
+                    window.dispatchEvent(new CustomEvent('bg-task-status', { 
+                        detail: { id: updated.id, type: 'kg-sync', status: 'error' } 
+                    }))
+                })
         })
     }
     

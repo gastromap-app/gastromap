@@ -24,7 +24,7 @@ export async function fetchChatHistory(userId) {
         .from('chat_messages')
         .select('*')
         .eq('session_id', session.id)
-        .order('created_at', { ascending: true });
+        .order('timestamp', { ascending: true });
 
     if (messagesError) {
         console.error('Error fetching chat messages:', messagesError);
@@ -38,7 +38,7 @@ export async function fetchChatHistory(userId) {
                 id: m.id,
                 role: m.role,
                 content: m.content,
-                timestamp: new Date(m.created_at).getTime(),
+                timestamp: new Date(m.timestamp).getTime(),
                 matches: metadata.matches || []
             };
         })

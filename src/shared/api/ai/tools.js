@@ -63,10 +63,12 @@ function cityMatch(loc, cityQuery) {
     const fields = [loc.city, loc.city_name, loc.address, loc.country].filter(Boolean).map(norm)
     const matched = fields.some(f => f.includes(q))
     
+    /* 
     if (!matched && fields.length > 0) {
-        // Log mismatch once to help debug
-        console.log(`[ai.tools] cityMatch MISMATCH: query="${q}" vs fields=[${fields.join(', ')}] for "${loc.title}"`)
+        // Log mismatch once to help debug (commented out for production-like feel)
+        // console.log(`[ai.tools] cityMatch MISMATCH: query="${q}" vs fields=[${fields.join(', ')}] for "${loc.title}"`)
     }
+    */
     
     return matched
 }
@@ -161,7 +163,7 @@ async function querySupabase({ city, category, price_range, min_rating, michelin
             return null
         }
         
-        console.log(`[ai.tools] Tier 1: Fetched ${data?.length || 0} rows`)
+        // console.log(`[ai.tools] Tier 1: Fetched ${data?.length || 0} rows`)
         return data || []
     } catch (err) {
         console.warn('[ai.tools] Supabase query failed:', err.message)
@@ -177,13 +179,13 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
     if (city) {
         const countBefore = results.length
         results = results.filter(l => cityMatch(l, city))
-        console.log(`[ai.tools] applyTextFilters (city: ${city}): ${countBefore} -> ${results.length}`)
+        // console.log(`[ai.tools] applyTextFilters (city: ${city}): ${countBefore} -> ${results.length}`)
     }
     if (category) {
         const countBefore = results.length
         const cat = norm(category)
         results = results.filter(l => norm(l.category).includes(cat))
-        console.log(`[ai.tools] applyTextFilters (category: ${category}): ${countBefore} -> ${results.length}`)
+        // console.log(`[ai.tools] applyTextFilters (category: ${category}): ${countBefore} -> ${results.length}`)
     }
     if (cuisine_types?.length) {
         results = results.filter(l => {
@@ -361,7 +363,7 @@ export async function executeTool(name, args, locations = []) {
                 pool = dbRows
             } else {
                 // Tier 3 Fallback: in-memory Zustand store
-                console.warn('[ai.tools] Supabase unavailable — using in-memory store')
+                // console.log('[ai.tools] No DB results or DB error — using in-memory fallback')
                 if (!locations?.length) {
                     try {
                         const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
@@ -394,7 +396,7 @@ export async function executeTool(name, args, locations = []) {
                     l.distance_meters = dist // Store for AI context
                     return dist <= radius
                 })
-                console.log(`[ai.tools] Geo-filter (${radius}m): ${countBefore} -> ${pool.length}`)
+                // console.log(`[ai.tools] Geo-filter (${radius}m): ${countBefore} -> ${pool.length}`)
             }
             
             // If keyword exists but hybrid failed, do a literal fallback

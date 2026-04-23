@@ -1,10 +1,16 @@
 import React from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface } from '@/features/shared/components/GastroAIChat'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage } = useGastroAI()
     const shouldReduceMotion = useReducedMotion()
+    const navigate = useNavigate()
+
+    const handleCardClick = (locationId) => {
+        navigate(`/location/${locationId}`)
+    }
 
     return (
         <div className="flex flex-col h-full min-h-0 relative">
@@ -31,6 +37,7 @@ const AIGuidePage = () => {
                     messages={messages}
                     isTyping={isTyping}
                     onSendMessage={sendMessage}
+                    onCardClick={handleCardClick}
                     transparent={true}
                     contentClassName="pt-4 pb-4 px-4"
                 />

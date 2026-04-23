@@ -24,16 +24,17 @@
 // label — что показывается пользователю
 // icon  — эмодзи для кнопки фильтра
 export const ESTABLISHMENT_TYPES = [
-    { id: 'all',         label: 'All',        icon: '🌎' },
-    { id: 'Cafe',        label: 'Cafe',        icon: '☕' },
-    { id: 'Restaurant',  label: 'Restaurant',  icon: '🍽️' },
-    { id: 'Street Food', label: 'Street',      icon: '🍕' },
-    { id: 'Bar',         label: 'Bar',         icon: '🍸' },
-    { id: 'Market',      label: 'Market',      icon: '🛒' },
-    { id: 'Bakery',      label: 'Bakery',      icon: '🥐' },
-    { id: 'Winery',      label: 'Winery',      icon: '🍷' },
-    { id: 'Coffee',      label: 'Coffee',      icon: '☕' },
-    { id: 'Pastry',      label: 'Pastry',      icon: '🍰' },
+    { id: 'all',         label: 'All',        labelRu: 'Все',          icon: '🌎' },
+    { id: 'Cafe',        label: 'Cafe',       labelRu: 'Кафе',         icon: '☕' },
+    { id: 'Restaurant',  label: 'Restaurant', labelRu: 'Ресторан',     icon: '🍽️' },
+    { id: 'Street Food', label: 'Street',     labelRu: 'Стритфуд',     icon: '🍕' },
+    { id: 'Bar',         label: 'Bar',        labelRu: 'Бар',          icon: '🍸' },
+    { id: 'Restobar',    label: 'Restobar',   labelRu: 'Рестобар',     icon: '🍹' },
+    { id: 'Market',      label: 'Market',     labelRu: 'Маркет',       icon: '🛒' },
+    { id: 'Bakery',      label: 'Bakery',     labelRu: 'Пекарня',      icon: '🥐' },
+    { id: 'Winery',      label: 'Winery',     labelRu: 'Винодельня',   icon: '🍷' },
+    { id: 'Coffee',      label: 'Coffee',     labelRu: 'Кофе',         icon: '☕' },
+    { id: 'Pastry',      label: 'Pastry',     labelRu: 'Кондитерская', icon: '🍰' },
 ]
 
 // ─── Время визита ────────────────────────────────────────────────────────────
@@ -131,6 +132,15 @@ export const LABEL_GROUPS = [
         ],
     },
 ]
+
+/**
+ * Возвращает локализованный label для типа заведения по его id.
+ */
+export function getCategoryLabel(id, lang = 'en') {
+    const type = ESTABLISHMENT_TYPES.find(t => t.id === id)
+    if (!type) return id
+    return lang === 'ru' ? (type.labelRu || type.label) : type.label
+}
 
 // ─── Вспомогательные функции ─────────────────────────────────────────────────
 

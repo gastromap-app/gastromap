@@ -9,7 +9,7 @@
  * @property {string} id - UUID локации
  * @property {string} title - Название заведения (каноническое поле)
  * @property {string} name - Алиас для title (для совместимости)
- * @property {'restaurant'|'cafe'|'bar'|'bakery'|'fine_dining'|'street_food'|'other'} category - Категория заведения
+ * @property {'restaurant'|'cafe'|'bar'|'restobar'|'bakery'|'fine_dining'|'street_food'|'other'} category - Категория заведения
  * @property {string} city - Город
  * @property {string} address - Полный адрес
  * @property {string} country - Страна

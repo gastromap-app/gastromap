@@ -41,8 +41,13 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
     ].filter(Boolean).join('\n')
 
     // 1. Dynamic user personalization context (injecting knowledge from database)
+    const geoLine = userData?.userCity
+        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)`
+        : '- Current location: unknown (ask if the city matters for the request)'
+
     const profile = userData ? `
 USER PROFILE & EXPERIENCE:
+${geoLine}
 - Visited locations: ${userData.visitedNames?.join(', ') || 'none yet'} (${userData.visitedCount || 0} total)
 - Favorite places: ${userData.favoritesNames?.join(', ') || 'none yet'}
 - Foodie DNA (Taste Profile): ${userData.foodieDNA || 'Developing taste profile'}
@@ -83,5 +88,6 @@ PERSONALIZATION GUIDELINES:
 - If the user's preferences conflict with what they're asking about, acknowledge it helpfully but still answer their question fully.
 - Reference their past experiences naturally when relevant (e.g., "Since you enjoyed Pod Baranem, you might also like...").
 - When the user explicitly asks for something outside their profile, respect their current intent over stored preferences.
-- Always search broadly first, then apply preference-aware analysis to the results.`
+- Always search broadly first, then apply preference-aware analysis to the results.
+- GEOLOCATION: If the user's city is listed in their profile (detected via GPS), ALWAYS pass city=<that city> to search_locations unless they ask about a different place. Never ask what city they are in if GPS detected it.`
 }

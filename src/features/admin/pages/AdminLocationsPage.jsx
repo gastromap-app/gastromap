@@ -82,8 +82,8 @@ const AdminLocationsPage = () => {
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
-        isExporting, handleExport
-    } = hook
+        isExporting, handleExport,
+        toast, setToast
 
     const LABEL_GROUPS = getLabelGroupsRu() // auto-synced from filterOptions.js
 
@@ -265,6 +265,33 @@ const AdminLocationsPage = () => {
                             console.log('Import successful')
                         }}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Toast Notifications */}
+            <AnimatePresence>
+                {toast && (
+                    <div className="fixed bottom-6 right-6 z-[9999]">
+                        <div 
+                            className={cn(
+                                "flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-bottom-5",
+                                toast.type === 'success' ? "bg-emerald-500/90 border-emerald-400 text-white" :
+                                toast.type === 'error' ? "bg-rose-500/90 border-rose-400 text-white" :
+                                "bg-indigo-600/90 border-indigo-400 text-white"
+                            )}
+                        >
+                            {toast.type === 'success' ? <CheckCircle size={18} /> : 
+                             toast.type === 'error' ? <AlertCircle size={18} /> : 
+                             <Sparkles size={18} className="animate-pulse" />}
+                            <span className="text-sm font-semibold tracking-wide">{toast.message}</span>
+                            <button 
+                                onClick={() => setToast(null)}
+                                className="ml-2 p-1 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>

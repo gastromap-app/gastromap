@@ -13,7 +13,7 @@
 
 // The canonical 12-item category list for admin/back-office forms.
 export const CATEGORIES_FULL = [
-    'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Market',
+    'Cafe', 'Restaurant', 'Street Food', 'Bar', 'Restobar', 'Market',
     'Bakery', 'Winery', 'Store', 'Coffee Shop', 'Pastry Shop', 'Fine Dining', 'Other'
 ]
 
@@ -22,6 +22,7 @@ export const CATEGORIES_PUBLIC = [
     { id: 'restaurant', label: 'Restaurant', emoji: '🍽️' },
     { id: 'cafe',       label: 'Café',       emoji: '☕' },
     { id: 'bar',        label: 'Bar',        emoji: '🍺' },
+    { id: 'restobar',   label: 'Restobar',   emoji: '🍹' },
     { id: 'bakery',     label: 'Bakery',     emoji: '🥐' },
     { id: 'other',      label: 'Other',      emoji: '📍' },
 ]
@@ -69,6 +70,7 @@ export const CUISINE_EMOJI_MAP = {
     'coffee':           '☕',
     'specialty coffee': '☕',
     'bar':              '🍸',
+    'restobar':         '🍹',
     'cafe':             '☕',
     'bakery':           '🥐',
     'sushi':            '🍱',

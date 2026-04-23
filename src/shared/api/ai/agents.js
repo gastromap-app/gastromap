@@ -12,46 +12,87 @@ import { executeTool } from './tools'
 import { MODEL_CASCADE } from './constants'
 
 /**
- * Parse XML-style tool calls emitted by models that don't support native function calling.
+ * Remove all tool-call artifacts from a model's text output so the user
+ * never sees raw XML or JSON tool-call blocks in the chat UI.
  *
- * Some free models (Gemma, GLM, Hermes…) output:
- *   <tool_call> <function=search_locations> <parameter=city> Krakow </parameter> ... </function> </tool_call>
- * instead of using the OpenAI tool_calls structured format.
- *
+ * Handles multiple formats emitted by free models:
+ *  - <tool_call>...</tool_call>   (Hermes, Nemotron, GLM…)
+ *  - {"name":"search_locations","arguments":{…}}  (some models leak JSON)
+ *  - {"matches":[...]}  (legacy GastroAI inline JSON)
+ */
+function cleanModelOutput(text) {
+    if (!text) return ''
+    return text
+        // Strip XML tool_call blocks
+        .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
+        // Strip stray <function=...> tags without tool_call wrapper
+        .replace(/<function[\s\S]*?<\/function>/gi, '')
+        // Strip inline JSON that looks like a tool call object
+        .replace(/\{\s*"name"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:[\s\S]*?\}/g, '')
+        // Strip legacy {"matches":[...]} blobs
+        .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
+        .trim()
+}
+
+/**
  * @param {string} text - Raw assistant message content
  * @returns {Array<{id:string, function:{name:string, arguments:string}}>}
  */
 function parseXmlToolCalls(text) {
     if (!text) return []
     const calls = []
+
+    // ── Format 1: <tool_call> <function=name> <parameter=key>val</parameter> </function> </tool_call>
     const blockRe = /<tool_call[^>]*>([\s\S]*?)<\/tool_call>/gi
     let m
     while ((m = blockRe.exec(text)) !== null) {
         const block = m[1]
-        // <function=search_locations> or <function name="search_locations">
-        const fnMatch = /<function[=\s]+"?([^\s">]+)"?/i.exec(block)
-        if (!fnMatch) continue
-        const name = fnMatch[1].trim()
-        const args = {}
-        const paramRe = /<parameter[=\s]+"?([^\s">]+)"?[^>]*>([\s\S]*?)<\/parameter>/gi
-        let pm
-        while ((pm = paramRe.exec(block)) !== null) {
-            const key = pm[1].trim()
-            const raw = pm[2].trim()
-            if (raw !== '' && !isNaN(raw)) {
-                args[key] = Number(raw)
-            } else if (raw === 'true') {
-                args[key] = true
-            } else if (raw === 'false') {
-                args[key] = false
-            } else {
-                args[key] = raw
+
+        // Sub-format A: <function=search_locations> or <function name="search_locations">
+        const fnMatch = /<function[=\s]+"?([^\s"<>]+)"?/i.exec(block)
+        if (fnMatch) {
+            const name = fnMatch[1].trim()
+            const args = {}
+            const paramRe = /<parameter[=\s]+"?([^\s"<>]+)"?[^>]*>([\s\S]*?)<\/parameter>/gi
+            let pm
+            while ((pm = paramRe.exec(block)) !== null) {
+                const key = pm[1].trim()
+                const raw = pm[2].trim()
+                if (raw !== '' && !isNaN(raw)) {
+                    args[key] = Number(raw)
+                } else if (raw === 'true') {
+                    args[key] = true
+                } else if (raw === 'false') {
+                    args[key] = false
+                } else {
+                    args[key] = raw
+                }
             }
+            calls.push({
+                id: `xml_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                function: { name, arguments: JSON.stringify(args) },
+            })
+            continue
         }
-        calls.push({
-            id: `xml_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            function: { name, arguments: JSON.stringify(args) },
-        })
+
+        // Sub-format B: JSON object inside <tool_call>{"name":"search_locations","arguments":{...}}</tool_call>
+        try {
+            const jsonStr = block.trim()
+            if (jsonStr.startsWith('{')) {
+                const parsed = JSON.parse(jsonStr)
+                if (parsed.name && (parsed.arguments || parsed.parameters)) {
+                    calls.push({
+                        id: `xml_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                        function: {
+                            name: parsed.name,
+                            arguments: typeof parsed.arguments === 'string'
+                                ? parsed.arguments
+                                : JSON.stringify(parsed.arguments ?? parsed.parameters ?? {}),
+                        },
+                    })
+                }
+            }
+        } catch { /* not valid JSON, skip */ }
     }
     return calls
 }
@@ -121,8 +162,8 @@ export async function runAgentPass(messages, locations = []) {
     }
 
     // ── Path C: No tool calls — return text directly ─────────────────────────
-    // Strip any stray XML artifacts the model might have left in the text
-    const cleanText = (assistantMsg.content ?? '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').trim()
+    // Strip any stray XML/JSON artifacts the model might have left in the text
+    const cleanText = cleanModelOutput(assistantMsg.content)
     return {
         text: cleanText,
         usedLocations: [],
@@ -230,7 +271,9 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
         cascade,
     })
     const finalData = await finalRes.json()
-    const finalContent = finalData.choices?.[0]?.message?.content ?? ''
+    // Clean the final response — some models still emit XML/JSON artifacts
+    // even when tools are disabled (withTools: false)
+    const finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
 
     return {
         text: finalContent,

@@ -7,25 +7,24 @@
  * - tags, vibe, best_for, dietary_options
  * - ai_keywords, ai_context
  * 
- * Uses OpenRouter API with Step 3.5 Flash Free model.
+ * Uses OpenRouter API with automatic model cascade.
  */
 
 import { config } from '@/shared/config/env'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import { fetchOpenRouter } from '@/shared/api/ai/openrouter'
 
 /**
  * Enrich location data with AI-generated fields
  * @param {Object} locationData - Basic location info
- * @param {string} apiKey - OpenRouter API key
+ * @param {string} apiKey - OpenRouter API key (optional, will use store if not provided)
  * @returns {Promise<Object>} Enriched location data
  */
 export async function enrichLocationData(locationData, apiKey = null) {
-    if (!apiKey) {
-        const appCfg = useAppConfigStore.getState()
-        apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-    }
+    const appCfg = useAppConfigStore.getState()
+    const isAiReady = appCfg.aiApiKey || config.ai.openRouterKey
 
-    if (!apiKey) {
+    if (!isAiReady && !apiKey) {
         console.warn('[enrichment] AI enrichment skipped: No API key found')
         return locationData
     }
@@ -48,21 +47,13 @@ export async function enrichLocationData(locationData, apiKey = null) {
         // Set attempt timestamp
         locationData.ai_enrichment_last_attempt = new Date().toISOString()
 
-        // Generate structured data using AI
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'X-Title': 'GastroMap',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'stepfun/step-3.5-flash:free',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a gastronomy expert AI assistant. Analyze the restaurant information and generate structured data.
+        console.log('[enrichment] Calling OpenRouter for structured data enrichment...')
+
+        // Generate structured data using AI utility with cascade
+        const { response } = await fetchOpenRouter([
+            {
+                role: 'system',
+                content: `You are a gastronomy expert AI assistant. Analyze the restaurant information and generate structured data.
 
 IMPORTANT RULES:
 1. cuisine_types MUST be an array of strings (e.g., ["Italian", "Mediterranean"])
@@ -81,15 +72,14 @@ Return ONLY valid JSON with this exact structure:
   "best_for": ["occasion1", "occasion2"],
   "dietary_options": ["option1", "option2"]
 }`
-                    },
-                    {
-                        role: 'user',
-                        content: `Analyze this restaurant and generate structured data:\n${textForAI}`
-                    }
-                ],
-                max_tokens: 500,
-                response_format: { type: 'json_object' },
-            }),
+            },
+            {
+                role: 'user',
+                content: `Analyze this restaurant and generate structured data:\n${textForAI}`
+            }
+        ], { 
+            withTools: false,
+            maxTokens: 500
         })
 
         if (response.ok) {
@@ -97,20 +87,20 @@ Return ONLY valid JSON with this exact structure:
             const content = data.choices?.[0]?.message?.content || '{}'
             
             try {
-                const parsed = JSON.parse(content)
+                // Remove markdown code blocks if AI included them
+                const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim()
+                const parsed = JSON.parse(jsonStr)
                 
-                // Validate and apply cuisine_types (must be array)
+                // Validate and apply fields
                 if (Array.isArray(parsed.cuisine_types)) {
                     locationData.cuisine_types = parsed.cuisine_types
                 }
                 
-                // Validate and apply price_range (must be one of valid values)
                 const validPrices = ['$', '$$', '$$$', '$$$$']
                 if (validPrices.includes(parsed.price_range)) {
                     locationData.price_range = parsed.price_range
                 }
                 
-                // Apply other arrays with validation
                 if (Array.isArray(parsed.tags)) {
                     locationData.tags = parsed.tags.slice(0, 8)
                 }
@@ -129,24 +119,24 @@ Return ONLY valid JSON with this exact structure:
                 locationData.ai_enrichment_error = null
 
             } catch (parseError) {
-                console.warn('[enrichment] Failed to parse AI response:', parseError.message)
+                console.warn('[enrichment] Failed to parse AI response:', parseError.message, content)
                 locationData.ai_enrichment_status = 'failed'
                 locationData.ai_enrichment_error = 'Invalid JSON response from AI'
             }
         } else {
-            console.warn('[enrichment] AI API error:', response.status, response.statusText)
+            console.warn('[enrichment] AI API error:', response.status)
             locationData.ai_enrichment_status = 'failed'
             locationData.ai_enrichment_error = `API error: ${response.status}`
         }
 
-        // Generate AI keywords separately (for search optimization)
-        await generateAIKeywords(locationData, apiKey)
-        
-        // Generate AI context (expert summary)
-        await generateAIContext(locationData, apiKey)
+        // Generate AI keywords and context in parallel for efficiency
+        await Promise.allSettled([
+            generateAIKeywords(locationData, apiKey),
+            generateAIContext(locationData, apiKey)
+        ])
 
     } catch (error) {
-        console.warn('[enrichment] AI enrichment failed (non-blocking):', error.message)
+        console.error('[enrichment] AI enrichment failure:', error)
         locationData.ai_enrichment_status = 'failed'
         locationData.ai_enrichment_error = error.message
     }
@@ -167,28 +157,16 @@ async function generateAIKeywords(locationData, apiKey) {
     ].filter(Boolean).join(', ')
 
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'Content-Type': 'application/json',
+        const { response } = await fetchOpenRouter([
+            {
+                role: 'system',
+                content: 'Generate 10-15 search keywords for a restaurant. Return ONLY a JSON array of strings.'
             },
-            body: JSON.stringify({
-                model: 'stepfun/step-3.5-flash:free',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Generate 10-15 search keywords for a restaurant. Return ONLY a JSON array of strings.'
-                    },
-                    {
-                        role: 'user',
-                        content: `Generate keywords for: ${textForAI}`
-                    }
-                ],
-                max_tokens: 300,
-            }),
-        })
+            {
+                role: 'user',
+                content: `Generate keywords for: ${textForAI}`
+            }
+        ], { withTools: false, maxTokens: 300 })
 
         if (response.ok) {
             const data = await response.json()
@@ -215,28 +193,16 @@ async function generateAIContext(locationData, apiKey) {
     ].filter(Boolean).join(', ')
 
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'Content-Type': 'application/json',
+        const { response } = await fetchOpenRouter([
+            {
+                role: 'system',
+                content: 'Write a 2-sentence expert summary of this restaurant for an AI assistant. Focus on uniqueness and target audience.'
             },
-            body: JSON.stringify({
-                model: 'stepfun/step-3.5-flash:free',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Write a 2-sentence expert summary of this restaurant for an AI assistant. Focus on uniqueness and target audience.'
-                    },
-                    {
-                        role: 'user',
-                        content: textForAI
-                    }
-                ],
-                max_tokens: 150,
-            }),
-        })
+            {
+                role: 'user',
+                content: textForAI
+            }
+        ], { withTools: false, maxTokens: 150 })
 
         if (response.ok) {
             const data = await response.json()
@@ -249,8 +215,6 @@ async function generateAIContext(locationData, apiKey) {
 
 /**
  * Validate price range value
- * @param {string} price - Price value to validate
- * @returns {string} Validated price range or default
  */
 export function validatePriceRange(price) {
     const validPrices = ['$', '$$', '$$$', '$$$$']
@@ -259,8 +223,6 @@ export function validatePriceRange(price) {
 
 /**
  * Validate cuisine types array
- * @param {any} cuisines - Value to validate
- * @returns {string[]} Validated cuisine types array
  */
 export function validateCuisineTypes(cuisines) {
     if (Array.isArray(cuisines)) {

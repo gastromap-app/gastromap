@@ -24,17 +24,6 @@ import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'
 const FREE_MODELS = [
     // ── TOP TIER — Best quality & reliability ──────────────────────────────
     {
-        id: 'openai/gpt-oss-120b:free',
-        name: 'GPT-OSS 120B',
-        provider: 'OpenAI',
-        context: '131K',
-        languages: 'EN / multilingual',
-        badge: '⭐ Best Quality',
-        badgeColor: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-        description: 'OpenAI largest open-weight model. Best JSON accuracy, strong reasoning. Apache 2.0.',
-        toolUse: true,
-    },
-    {
         id: 'nvidia/nemotron-3-super-120b-a12b:free',
         name: 'Nemotron 3 Super 120B',
         provider: 'NVIDIA',
@@ -43,6 +32,17 @@ const FREE_MODELS = [
         badge: '🧠 Best RAG',
         badgeColor: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
         description: 'NVIDIA 120B model. 262K context, best for RAG and agentic tasks.',
+        toolUse: true,
+    },
+    {
+        id: 'openai/gpt-oss-120b:free',
+        name: 'GPT-OSS 120B',
+        provider: 'OpenAI',
+        context: '131K',
+        languages: 'EN / multilingual',
+        badge: '⚠️ Unstable',
+        badgeColor: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        description: 'OpenAI largest open-weight model. Note: Can be unreliable on OpenRouter free tier.',
         toolUse: true,
     },
     {
@@ -370,7 +370,7 @@ const AdminAIPage = () => {
 
     // ── Models (MUST be declared before useEffect that uses them in dependencies)
     const [primaryModel, setPrimaryModel] = useState(
-        appConfig.aiPrimaryModel || 'nvidia/nemotron-nano-9b-v2:free'
+        appConfig.aiPrimaryModel || 'nvidia/nemotron-3-super-120b-a12b:free'
     )
     const [fallbackModel, setFallbackModel] = useState(
         appConfig.aiFallbackModel || 'z-ai/glm-4.5-air:free'

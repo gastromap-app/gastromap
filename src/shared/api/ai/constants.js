@@ -22,15 +22,14 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    // Updated 2026-04-21: reordered for best tool-calling models first
+    // Updated 2026-04-23: prioritized Nemotron 120B as per user request
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
     'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling ✅
-    'google/gemini-2.0-flash-exp:free',        // ✅ Excellent tool calling, fast
-    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality (intermittent 503)
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
     'openai/gpt-oss-20b:free',                // ✅ Faster, reliable fallback
     'z-ai/glm-4.5-air:free',                  // ✅ Multilingual, fast
     'google/gemma-4-31b-it:free',             // ✅ Vision + multilingual
     'google/gemma-3-27b-it:free',             // ✅ Stable fallback
-    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG (when available)
     'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
     'stepfun/step-3.5-flash:free',             // ✅ Lightweight last resort
 ]
@@ -50,7 +49,7 @@ export const TOOLS = [
                 properties: {
                     city: {
                         type: 'string',
-                        description: 'City name, e.g. "Krakow"',
+                        description: 'City name to search in, e.g. "Krakow". If the USER PROFILE shows a GPS-detected city, use that city here by default unless the user explicitly asks about a different city.',
                     },
                     cuisine_types: {
                         type: 'array',

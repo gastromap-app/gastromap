@@ -166,7 +166,7 @@ export default function PlacesAutocomplete({
     }, [onChange])
 
     const FOOD_ICON_MAP = {
-        restaurant: '🍽️', cafe: '☕', bar: '🍺', bakery: '🥐',
+        restaurant: '🍽️', cafe: '☕', bar: '🍺', restobar: '🍹',
         night_club: '🎵', food: '🍴',
     }
     const getIcon = (types = []) => {

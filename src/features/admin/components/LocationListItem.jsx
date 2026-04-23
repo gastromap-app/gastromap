@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
 import { Menu, Transition } from '@headlessui/react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
+import { getCategoryLabel } from '@/shared/config/filterOptions'
 
 /**
  * LocationListItem.jsx
@@ -214,6 +216,7 @@ const LocationListItem = ({
     _onToggleActionMenu,
     viewMode = 'table',
 }) => {
+    const { i18n } = useTranslation()
     if (viewMode === 'card') {
         return (
             <motion.div
@@ -238,7 +241,7 @@ const LocationListItem = ({
                         </p>
                         <div className="flex items-center gap-2 mt-3 flex-wrap">
                             <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-slate-800 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                {loc.category}
+                                {getCategoryLabel(loc.category, i18n.language)}
                             </Badge>
                             <StatusBadge status={loc.status} />
                         </div>
@@ -273,7 +276,7 @@ const LocationListItem = ({
                     <div className="min-w-0">
                         <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
                         <div className="flex items-center gap-2 mt-1.5">
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black shrink-0 leading-none">{loc.category}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
                             {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
                                 <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
                                     {loc.kg_cuisines?.length > 0

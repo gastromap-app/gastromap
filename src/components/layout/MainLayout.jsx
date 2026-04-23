@@ -13,8 +13,9 @@ export function MainLayout() {
     const [isChatOpen, setIsChatOpen] = useState(false)
     const location = useLocation()
     const isMap = location.pathname === '/map'
+    const isAIGuide = location.pathname === '/ai-guide'
     // Full-screen pages: no extra bottom padding (they handle their own layout)
-    const isFullScreen = isMap
+    const isFullScreen = isMap || isAIGuide
 
     return (
         <AuroraBackground theme={theme}>

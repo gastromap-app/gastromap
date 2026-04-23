@@ -35,14 +35,10 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
     return (
         <form
             onSubmit={handleSend}
-            className={`flex-shrink-0 px-3 py-2 ${
-                transparent
-                    ? 'bg-transparent'
-                    : 'bg-white/80 dark:bg-gray-900/80 border-t border-black/5 dark:border-white/5'
-            } ${className}`}
+            className={`px-3 py-2 ${className}`}
         >
             <div
-                className={`relative flex items-center rounded-full border transition-all shadow-lg ${
+                className={`relative flex items-center rounded-full border transition-all ${
                     transparent
                         ? isDark
                             ? 'bg-white/10 border-white/20 focus-within:border-white/40 focus-within:bg-white/15 backdrop-blur-xl'
@@ -65,7 +61,7 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
                 <Button
                     type="submit"
                     size="icon"
-                    className={`absolute right-2 w-9 h-9 rounded-full transition-all shadow-lg ${
+                    className={`absolute right-2 w-9 h-9 rounded-full transition-all ${
                         input.trim()
                             ? 'bg-gradient-to-tr from-indigo-500 to-violet-500 text-white scale-100 hover:scale-110'
                             : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 scale-90'

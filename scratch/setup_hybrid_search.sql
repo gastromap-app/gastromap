@@ -54,7 +54,7 @@ BEGIN
           AND l.embedding IS NOT NULL
           AND (p_city IS NULL OR lower(l.city) = lower(p_city))
           AND (p_category IS NULL OR lower(l.category) = lower(p_category))
-          AND (p_cuisine IS NULL OR l.cuisine_types @> ARRAY[p_cuisine]::text[] OR array_to_string(l.cuisine_types, ', ') ILIKE '%' || p_cuisine || '%')
+          AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
           AND (p_price_range IS NULL OR l.price_level = p_price_range)
           AND (
             p_lat IS NULL OR p_lng IS NULL OR 
@@ -73,7 +73,7 @@ BEGIN
           AND l.fts @@ query_parsed
           AND (p_city IS NULL OR lower(l.city) = lower(p_city))
           AND (p_category IS NULL OR lower(l.category) = lower(p_category))
-          AND (p_cuisine IS NULL OR l.cuisine_types @> ARRAY[p_cuisine]::text[] OR array_to_string(l.cuisine_types, ', ') ILIKE '%' || p_cuisine || '%')
+          AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
           AND (p_price_range IS NULL OR l.price_level = p_price_range)
           AND (
             p_lat IS NULL OR p_lng IS NULL OR 
@@ -97,9 +97,9 @@ BEGIN
         l.city,
         l.country,
         l.category,
-        array_to_string(l.cuisine_types, ', ') as cuisine,
+        l.cuisine,
         l.rating,
-        l.image_url as image,
+        l.image,
         l.price_level,
         l.tags,
         l.special_labels,
@@ -163,9 +163,9 @@ BEGIN
         l.city,
         l.country,
         l.category,
-        array_to_string(l.cuisine_types, ', ') as cuisine,
+        l.cuisine,
         l.rating,
-        l.image_url as image,
+        l.image,
         l.price_level,
         l.tags,
         l.special_labels,
@@ -185,7 +185,7 @@ BEGIN
       AND l.fts @@ websearch_to_tsquery('english', query_text)
       AND (p_city IS NULL OR lower(l.city) = lower(p_city))
       AND (p_category IS NULL OR lower(l.category) = lower(p_category))
-      AND (p_cuisine IS NULL OR l.cuisine_types @> ARRAY[p_cuisine]::text[] OR array_to_string(l.cuisine_types, ', ') ILIKE '%' || p_cuisine || '%')
+      AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
       AND (p_price_range IS NULL OR l.price_level = p_price_range)
       AND (
         p_lat IS NULL OR p_lng IS NULL OR 

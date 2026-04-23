@@ -84,6 +84,7 @@ const AdminLocationsPage = () => {
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
         isExporting, handleExport,
         toast, setToast
+    } = hook
 
     const LABEL_GROUPS = getLabelGroupsRu() // auto-synced from filterOptions.js
 

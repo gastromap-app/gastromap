@@ -1,12 +1,14 @@
--- Phase 1: Stabilization of Search Functions
--- This script fixes return types and ensures the hybrid search works as expected.
--- Includes geographic filtering (lat, lng, radius).
+-- Phase 1: Final Synchronization of Search Functions
+-- This script ensures the database RPC functions match the application's naming conventions perfectly.
+-- Run this in Supabase SQL Editor.
 
 -- 1. Drop existing functions to avoid "cannot change return type" error
 DROP FUNCTION IF EXISTS public.search_locations_hybrid(vector, text, text, text, integer, integer);
 DROP FUNCTION IF EXISTS public.search_locations_hybrid(vector, text, text, text, numeric, numeric, integer, integer, integer);
+DROP FUNCTION IF EXISTS public.search_locations_hybrid(vector, text, text, text, text, numeric, numeric, integer, integer, integer);
 DROP FUNCTION IF EXISTS public.search_locations_fulltext(text, text, text, integer);
 DROP FUNCTION IF EXISTS public.search_locations_fulltext(text, text, text, numeric, numeric, integer, integer);
+DROP FUNCTION IF EXISTS public.search_locations_fulltext(text, text, text, text, numeric, numeric, integer, integer);
 
 -- 2. Hybrid Search Function (RRF) with Geo-filtering
 CREATE OR REPLACE FUNCTION public.search_locations_hybrid(
@@ -28,6 +30,7 @@ RETURNS TABLE (
   description text,
   city text,
   country text,
+  address text,
   category text,
   cuisine text,
   rating numeric,
@@ -38,6 +41,10 @@ RETURNS TABLE (
   vibe text[],
   kg_dishes text[],
   kg_cuisines text[],
+  amenities text[],
+  dietary_options text[],
+  michelin_stars integer,
+  michelin_bib boolean,
   lat numeric,
   lng numeric,
   rrf_score float,
@@ -96,6 +103,7 @@ BEGIN
         l.description,
         l.city,
         l.country,
+        l.address,
         l.category,
         l.cuisine,
         l.rating,
@@ -103,9 +111,13 @@ BEGIN
         l.price_level,
         l.tags,
         l.special_labels,
-        (SELECT COALESCE(array_agg(v.name), '{}'::text[]) FROM public.location_vibes lv JOIN public.vibes v ON lv.vibe_id = v.id WHERE lv.location_id = l.id) as vibe,
+        COALESCE(l.vibe, '{}'::text[]) as vibe,
         l.kg_dishes,
         l.kg_cuisines,
+        l.amenities,
+        l.dietary_options,
+        COALESCE(l.michelin_stars, 0) as michelin_stars,
+        COALESCE(l.michelin_bib, false) as michelin_bib,
         l.lat,
         l.lng,
         fused.rrf_score::float,
@@ -121,7 +133,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4. Full-text Search Fallback with Geo-filtering
+-- 3. Full-text Search Fallback with Geo-filtering
 CREATE OR REPLACE FUNCTION public.search_locations_fulltext(
   query_text text,
   p_city text DEFAULT NULL,
@@ -139,6 +151,7 @@ RETURNS TABLE (
   description text,
   city text,
   country text,
+  address text,
   category text,
   cuisine text,
   rating numeric,
@@ -149,6 +162,10 @@ RETURNS TABLE (
   vibe text[],
   kg_dishes text[],
   kg_cuisines text[],
+  amenities text[],
+  dietary_options text[],
+  michelin_stars integer,
+  michelin_bib boolean,
   lat numeric,
   lng numeric,
   rrf_score float,
@@ -162,6 +179,7 @@ BEGIN
         l.description,
         l.city,
         l.country,
+        l.address,
         l.category,
         l.cuisine,
         l.rating,
@@ -169,9 +187,13 @@ BEGIN
         l.price_level,
         l.tags,
         l.special_labels,
-        (SELECT COALESCE(array_agg(v.name), '{}'::text[]) FROM public.location_vibes lv JOIN public.vibes v ON lv.vibe_id = v.id WHERE lv.location_id = l.id) as vibe,
+        COALESCE(l.vibe, '{}'::text[]) as vibe,
         l.kg_dishes,
         l.kg_cuisines,
+        l.amenities,
+        l.dietary_options,
+        COALESCE(l.michelin_stars, 0) as michelin_stars,
+        COALESCE(l.michelin_bib, false) as michelin_bib,
         l.lat,
         l.lng,
         ts_rank_cd(l.fts, websearch_to_tsquery('english', query_text))::float AS rrf_score,

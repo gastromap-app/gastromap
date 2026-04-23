@@ -103,7 +103,7 @@ function mapLocation(l) {
         kg_profile:     l.kg_profile     ?? null,
         opening_hours:  l.opening_hours ?? null,
         amenities:      l.amenities ?? [],
-        dietary:        l.dietary ?? [],
+        dietary:        l.dietary_options ?? l.dietary ?? [],
         michelin_stars: l.michelin_stars ?? 0,
         michelin_bib:   l.michelin_bib ?? false,
         distance:       l.distance_meters ?? null,

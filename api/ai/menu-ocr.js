@@ -117,7 +117,7 @@ export default async function handler(req, res) {
       let parsed
       try {
         parsed = JSON.parse(content)
-      } catch (e) {
+      } catch {
         // Try to extract JSON from content
         const jsonMatch = content.match(/\{[\s\S]*\}/)
         if (jsonMatch) {

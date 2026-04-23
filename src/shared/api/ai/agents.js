@@ -81,7 +81,7 @@ export async function runAgentPass(messages, locations = []) {
         adminCascade = cfg.aiModelCascade || []
         adminTemp = cfg.aiGuideTemp ?? 0.7
         adminMaxTokens = cfg.aiGuideMaxTokens ?? 1024
-    } catch {}
+    } catch { /* config store not available — use defaults */ }
 
     // Use admin cascade if set, otherwise fall back to MODEL_CASCADE
     const cascade = adminCascade.length > 0 ? adminCascade : MODEL_CASCADE
@@ -108,7 +108,7 @@ export async function runAgentPass(messages, locations = []) {
     // ── Path A: Native OpenAI tool_calls ────────────────────────────────────
     if (finishReason === 'tool_calls' && assistantMsg.tool_calls?.length) {
         return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, locations, modelUsed, 'native', {
-            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, adminMaxTokens,
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
         })
     }
 
@@ -116,7 +116,7 @@ export async function runAgentPass(messages, locations = []) {
     const xmlCalls = parseXmlToolCalls(assistantMsg.content)
     if (xmlCalls.length) {
         return runToolCalls(xmlCalls, assistantMsg, messages, locations, modelUsed, 'xml', {
-            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, adminMaxTokens,
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
         })
     }
 

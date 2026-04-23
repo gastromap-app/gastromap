@@ -1,82 +1,82 @@
 import React, { Fragment } from 'react'
 import { Building2, MapPin, Star, MoreHorizontal, Edit, Trash2, CheckCircle, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Menu, Transition } from '@headlessui/react'
 import { cn } from '@/lib/utils'
 
 /**
  * LocationListItem.jsx
  * Компонент отображения отдельного элемента локации в списке
- * Лимит: 150 строк
  */
 
-const LocationListItem = ({ 
-    loc, 
-    onEdit, 
-    onApprove, 
-    onReject, 
-    onToggleVisibility,
-    onDelete,
-    isOpenActionMenu,
-    onToggleActionMenu,
-    viewMode = 'table' // 'table' or 'card'
-}) => {
-    // Стиль бейджа статуса как в списке пользователей
-    const statusBadgeClass = (status) => {
-        if (status === 'approved' || status === 'active') return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600';
-        if (status === 'pending') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600';
-        if (status === 'hidden') return 'bg-slate-100 dark:bg-slate-800 text-slate-500';
-        return 'bg-rose-50 dark:bg-rose-500/10 text-rose-500';
-    };
+// ── Helpers (pure, no hooks) ──────────────────────────────────────────────────
 
-    const statusDotClass = (status) => {
-        if (status === 'approved' || status === 'active') return 'bg-emerald-500';
-        if (status === 'pending') return 'bg-amber-500';
-        if (status === 'hidden') return 'bg-slate-400';
-        return 'bg-rose-500';
-    };
+function statusBadgeClass(status) {
+    if (status === 'approved' || status === 'active') return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+    if (status === 'pending') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
+    if (status === 'hidden') return 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+    return 'bg-rose-50 dark:bg-rose-500/10 text-rose-500'
+}
 
-    const StatusBadge = ({ status }) => (
+function statusDotClass(status) {
+    if (status === 'approved' || status === 'active') return 'bg-emerald-500'
+    if (status === 'pending') return 'bg-amber-500'
+    if (status === 'hidden') return 'bg-slate-400'
+    return 'bg-rose-500'
+}
+
+// ── Sub-components (defined at module level, not inside render) ───────────────
+
+function StatusBadge({ status }) {
+    return (
         <div className={cn(
             "inline-flex items-center p-1.5 px-2 rounded-lg text-[9px] font-bold uppercase tracking-wider",
             statusBadgeClass(status)
         )}>
             <div className={cn("w-1.5 h-1.5 rounded-full mr-2", statusDotClass(status))} />
-            {(status === 'approved' || status === 'active') ? 'Активен' : status === 'pending' ? 'Ожидает' : status === 'hidden' ? 'Скрыт' : 'Отклонён'}
+            {(status === 'approved' || status === 'active')
+                ? 'Активен'
+                : status === 'pending'
+                    ? 'Ожидает'
+                    : status === 'hidden'
+                        ? 'Скрыт'
+                        : 'Отклонён'}
         </div>
     )
+}
 
-    const VisibilityToggle = () => {
-        const isVisible = loc.status === 'active' || loc.status === 'approved';
-        return (
-            <button 
-                onClick={(e) => { e.stopPropagation(); onToggleVisibility(loc.id, loc.status); }}
+function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
+    const isVisible = locStatus === 'active' || locStatus === 'approved'
+    return (
+        <button
+            onClick={(e) => { e.stopPropagation(); onToggleVisibility(locId, locStatus) }}
+            className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"
+            )}
+            title={isVisible ? "Скрыть локацию" : "Опубликовать локацию"}
+        >
+            <span className="sr-only">Toggle visibility</span>
+            <span
                 className={cn(
-                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                    isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                    isVisible ? "translate-x-4" : "translate-x-0"
                 )}
-                title={isVisible ? "Скрыть локацию" : "Опубликовать локацию"}
-            >
-                <span className="sr-only">Toggle visibility</span>
-                <span
-                    className={cn(
-                        "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                        isVisible ? "translate-x-4" : "translate-x-0"
-                    )}
-                />
-            </button>
-        )
-    }
+            />
+        </button>
+    )
+}
 
-    const ActionMenu = () => (
+function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMenu, viewMode }) {
+    return (
         <Menu as="div" className="relative">
             <Menu.Button
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
                     "p-2 rounded-xl transition-all active:scale-95",
-                    isOpenActionMenu 
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg shadow-slate-200 dark:shadow-none" 
+                    isOpenActionMenu
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg shadow-slate-200 dark:shadow-none"
                         : "text-slate-300 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
             >
@@ -95,8 +95,8 @@ const LocationListItem = ({
                 <Menu.Items
                     className={cn(
                         "z-[101] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden focus:outline-none",
-                        viewMode === 'card' 
-                            ? "fixed bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom duration-300" 
+                        viewMode === 'card'
+                            ? "fixed bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom duration-300"
                             : "absolute right-0 mt-2 min-w-[220px] rounded-2xl p-2"
                     )}
                 >
@@ -107,12 +107,12 @@ const LocationListItem = ({
                     <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-slate-800/50 mb-2">
                         Управление объектом
                     </div>
-                    
+
                     <div className="space-y-1">
                         <Menu.Item>
                             {({ active }) => (
                                 <button
-                                    onClick={() => { onEdit(loc); }}
+                                    onClick={() => onEdit(loc)}
                                     className={cn(
                                         "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
                                         active ? "bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-400"
@@ -130,7 +130,7 @@ const LocationListItem = ({
                             <Menu.Item>
                                 {({ active }) => (
                                     <button
-                                        onClick={() => { onApprove(loc.id); }}
+                                        onClick={() => onApprove(loc.id)}
                                         className={cn(
                                             "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
                                             active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" : "text-emerald-600/80"
@@ -149,7 +149,7 @@ const LocationListItem = ({
                             <Menu.Item>
                                 {({ active }) => (
                                     <button
-                                        onClick={() => { onReject(loc.id); }}
+                                        onClick={() => onReject(loc.id)}
                                         className={cn(
                                             "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
                                             active ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600" : "text-amber-600/80"
@@ -168,18 +168,18 @@ const LocationListItem = ({
 
                         <Menu.Item>
                             {({ active }) => (
-                                    <button
-                                        onClick={() => { onDelete(loc.id); }}
-                                        className={cn(
-                                            "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
-                                            active ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600" : "text-rose-600/80"
-                                        )}
-                                    >
-                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-rose-500/20 shadow-sm" : "bg-rose-50/50 dark:bg-rose-500/5")}>
-                                            <Trash2 size={16} className="stroke-[2.5]" />
-                                        </div>
-                                        <span>Удалить</span>
-                                    </button>
+                                <button
+                                    onClick={() => onDelete(loc.id)}
+                                    className={cn(
+                                        "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
+                                        active ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600" : "text-rose-600/80"
+                                    )}
+                                >
+                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-rose-500/20 shadow-sm" : "bg-rose-50/50 dark:bg-rose-500/5")}>
+                                        <Trash2 size={16} className="stroke-[2.5]" />
+                                    </div>
+                                    <span>Удалить</span>
+                                </button>
                             )}
                         </Menu.Item>
 
@@ -199,10 +199,24 @@ const LocationListItem = ({
             </Transition>
         </Menu>
     )
+}
 
+// ── Main component ─────────────────────────────────────────────────────────────
+
+const LocationListItem = ({
+    loc,
+    onEdit,
+    onApprove,
+    onReject,
+    onToggleVisibility,
+    onDelete,
+    isOpenActionMenu,
+    _onToggleActionMenu,
+    viewMode = 'table',
+}) => {
     if (viewMode === 'card') {
         return (
-            <motion.div 
+            <motion.div
                 layout
                 onClick={() => onEdit(loc)}
                 className="w-full text-left bg-white dark:bg-slate-900/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-slate-800 shadow-sm group"
@@ -230,8 +244,16 @@ const LocationListItem = ({
                         </div>
                     </div>
                     <div className="flex flex-col items-center justify-between self-stretch shrink-0">
-                        <VisibilityToggle />
-                        <ActionMenu />
+                        <VisibilityToggle locId={loc.id} locStatus={loc.status} onToggleVisibility={onToggleVisibility} />
+                        <ActionMenu
+                            loc={loc}
+                            onEdit={onEdit}
+                            onApprove={onApprove}
+                            onReject={onReject}
+                            onDelete={onDelete}
+                            isOpenActionMenu={isOpenActionMenu}
+                            viewMode={viewMode}
+                        />
                     </div>
                 </div>
             </motion.div>
@@ -239,8 +261,8 @@ const LocationListItem = ({
     }
 
     return (
-        <tr 
-            onClick={() => onEdit(loc)} 
+        <tr
+            onClick={() => onEdit(loc)}
             className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none"
         >
             <td className="px-6 py-5 pl-10 lg:pl-12">
@@ -255,7 +277,7 @@ const LocationListItem = ({
                             {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
                                 <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
                                     {loc.kg_cuisines?.length > 0
-                                        ? loc.kg_cuisines.slice(0,1).join(', ')
+                                        ? loc.kg_cuisines.slice(0, 1).join(', ')
                                         : loc.cuisine}
                                 </Badge>
                             )}
@@ -279,12 +301,20 @@ const LocationListItem = ({
             </td>
             <td className="px-6 py-5">
                 <div className="flex items-center gap-3">
-                    <VisibilityToggle />
+                    <VisibilityToggle locId={loc.id} locStatus={loc.status} onToggleVisibility={onToggleVisibility} />
                     <StatusBadge status={loc.status} />
                 </div>
             </td>
             <td className="px-6 py-5 text-right pr-10 lg:pr-12">
-                <ActionMenu />
+                <ActionMenu
+                    loc={loc}
+                    onEdit={onEdit}
+                    onApprove={onApprove}
+                    onReject={onReject}
+                    onDelete={onDelete}
+                    isOpenActionMenu={isOpenActionMenu}
+                    viewMode={viewMode}
+                />
             </td>
         </tr>
     )

@@ -73,6 +73,25 @@ function CountryCard({ country, navigate, desktop = false }) {
     )
 }
 
+// ─── Empty / No-results state ───────────────────────────────────────────────
+
+function NoResults({ searchQuery, textStyle, navigate }) {
+    return (
+        <div className="py-20 flex flex-col items-center gap-4 text-center">
+            <AlertCircle size={36} className="text-gray-500 dark:text-gray-400" />
+            <p className={`text-xl font-bold ${textStyle}`}>
+                {searchQuery ? `No countries match "${searchQuery}"` : 'No countries found'}
+            </p>
+            <button
+                onClick={() => navigate('/dashboard')}
+                className="text-blue-500 text-sm font-semibold hover:underline"
+            >
+                Back to Dashboard
+            </button>
+        </div>
+    )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const CountriesPage = () => {
@@ -119,22 +138,6 @@ const CountriesPage = () => {
     const textStyle    = isDark ? 'text-white'   : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
 
-    // ── Shared error / empty state ─────────────────────────────────────────
-    const NoResults = () => (
-        <div className="py-20 flex flex-col items-center gap-4 text-center">
-            <AlertCircle size={36} className="text-gray-500 dark:text-gray-400" />
-            <p className={`text-xl font-bold ${textStyle}`}>
-                {searchQuery ? `No countries match "${searchQuery}"` : 'No countries found'}
-            </p>
-            <button
-                onClick={() => navigate('/dashboard')}
-                className="text-blue-500 text-sm font-semibold hover:underline"
-            >
-                Back to Dashboard
-            </button>
-        </div>
-    )
-
     return (
         <div data-lenis-prevent className="bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
@@ -171,7 +174,7 @@ const CountriesPage = () => {
                         {Array.from({ length: 4 }).map((_, i) => <CityCardSkeleton key={i} />)}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <NoResults />
+                    <NoResults searchQuery={searchQuery} textStyle={textStyle} navigate={navigate} />
                 ) : (
                     <motion.div
                         initial="hidden"
@@ -235,7 +238,7 @@ const CountriesPage = () => {
                                 {Array.from({ length: 6 }).map((_, i) => <CityCardSkeleton key={i} desktop />)}
                             </div>
                         ) : filtered.length === 0 ? (
-                            <NoResults />
+                            <NoResults searchQuery={searchQuery} textStyle={textStyle} navigate={navigate} />
                         ) : (
                             <motion.div
                                 initial="hidden"

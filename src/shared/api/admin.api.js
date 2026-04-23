@@ -128,7 +128,7 @@ export async function getUserDetails(userId) {
             .eq('user_id', userId)
             .maybeSingle()
         preferences = prefs || null
-    } catch {}
+    } catch { /* preferences not available for this user */ }
 
     // Submitted locations - fetch from user_submissions table
     let submittedLocations = []
@@ -155,7 +155,7 @@ export async function getUserDetails(userId) {
             .eq('user_id', userId)
             .limit(20)
         favorites = favs || []
-    } catch {}
+    } catch { /* favorites not available for this user */ }
 
     return {
         ...profile,

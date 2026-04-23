@@ -269,7 +269,6 @@ const LocationsPage = () => {
 
     // Store
     const {
-        filteredLocations,
         activeCategory,
         searchQuery: storeQuery,
         sortBy,

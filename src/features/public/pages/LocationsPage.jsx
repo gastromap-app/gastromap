@@ -292,7 +292,7 @@ const LocationsPage = () => {
         const q = new URLSearchParams(window.location.search).get('q')
         if (q) { setLocalSearch(q); storeSetSearch(q) }
         return () => resetFilters()
-    }, [])
+    }, [resetFilters, storeSetSearch])
 
     // Fetch city-scoped locations; data used directly (NOT synced to global store)
     const { isPending: isLoading, isError, data: cityData } = useLocationsQuery(city, country)

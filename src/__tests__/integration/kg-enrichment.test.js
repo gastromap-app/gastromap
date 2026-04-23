@@ -83,7 +83,6 @@ import {
     deleteCuisine,
     getDishes,
     createDish,
-    getIngredients,
     createIngredient,
 } from '@/shared/api/knowledge-graph.api'
 

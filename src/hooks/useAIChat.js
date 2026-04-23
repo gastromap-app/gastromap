@@ -189,7 +189,7 @@ export function useAIChat() {
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, activeApiKey, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory])
+    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId])
 
     return {
         messages,

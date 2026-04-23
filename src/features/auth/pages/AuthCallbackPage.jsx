@@ -33,11 +33,9 @@ const AuthCallbackPage = () => {
         if (error) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setStatus('error')
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setErrorDesc(errorDescription?.replace(/\+/g, ' ') || 'The confirmation link is invalid or has expired.')
             // Try to retrieve email saved at signup time
             const savedEmail = sessionStorage.getItem('pending_verification_email')
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (savedEmail) setResendEmail(savedEmail)
             return
         }
@@ -55,7 +53,7 @@ const AuthCallbackPage = () => {
         }, 8000)
 
         return () => clearTimeout(timeout)
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     // When auth store confirms the user is signed in, redirect them
     useEffect(() => {

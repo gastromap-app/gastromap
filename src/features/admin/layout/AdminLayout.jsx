@@ -105,9 +105,9 @@ export default function AdminLayout() {
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
-        if (isSidebarOpen) setIsSidebarOpen(false)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsSidebarOpen(false)
     }, [location.pathname])
 
     const notifications = [

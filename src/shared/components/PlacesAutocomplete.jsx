@@ -62,7 +62,7 @@ export default function PlacesAutocomplete({
     // Sync external value
     useEffect(() => {
         if (externalValue !== inputValue) setInputValue(externalValue)
-    }, [externalValue])
+    }, [externalValue, inputValue])
 
     // Fetch suggestions when debounced query changes
     useEffect(() => {
@@ -97,7 +97,7 @@ export default function PlacesAutocomplete({
             })
 
         return () => controller.abort()
-    }, [debouncedQuery])
+    }, [debouncedQuery, sessionToken])
 
     // Close on outside click
     useEffect(() => {

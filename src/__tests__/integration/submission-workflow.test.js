@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ─── Hoisted mocks (vi.mock factories are hoisted above imports) ────────────
 
-const { chain, mockSingle, mockSelect, mockInsert, mockUpdate, mockEq, mockOrder, mockSendNotificationToUser } = vi.hoisted(() => {
+const { chain, mockSingle, mockInsert, mockUpdate, mockEq, mockOrder, mockSendNotificationToUser } = vi.hoisted(() => {
     const _mockSingle  = vi.fn()
     const _mockSelect  = vi.fn()
     const _mockInsert  = vi.fn()

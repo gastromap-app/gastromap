@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/helpers'
 import AdminSubscriptionsPage from '../pages/AdminSubscriptionsPage'
 

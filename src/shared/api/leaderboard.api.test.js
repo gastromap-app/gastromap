@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getLeaderboard, getUserRank } from './leaderboard.api'
 
 // ─── Supabase chainable mock ──────────────────────────────────────────────────
-const mockSelect = vi.fn()
-const mockIn = vi.fn()
 const mockFrom = vi.fn()
 
 // Each "from" call returns a fresh chainable for that table
@@ -54,7 +52,6 @@ describe('leaderboard.api', () => {
             ]
 
             // Call sequence: profiles → reviews → user_visits
-            let callCount = 0
             mockFrom.mockImplementation((table) => {
                 if (table === 'profiles')    return makeChainable({ data: profilesData, error: null })
                 if (table === 'reviews')     return makeChainable({ data: reviewsData,  error: null })

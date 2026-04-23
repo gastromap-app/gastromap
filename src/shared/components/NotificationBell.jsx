@@ -5,7 +5,7 @@
  * Used in app header.
  */
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check, CheckCheck, Settings, Trash2, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -54,21 +54,7 @@ const NotificationBell = ({ className }) => {
 
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen])
-
-    // Fetch notifications on mount and when dropdown opens
-    useEffect(() => {
-        if (isOpen) {
-            fetchNotifications()
-        }
-    }, [isOpen])
-
-    // Check permission status on mount
-    useEffect(() => {
-        const status = getPermissionStatus()
-        setPermissionStatus(status)
-    }, [])
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         setLoading(true)
         try {
             const history = await getNotificationHistory(20)
@@ -78,7 +64,20 @@ const NotificationBell = ({ className }) => {
         } finally {
             setLoading(false)
         }
-    }
+    }, [setLoading, setNotifications])
+
+    // Fetch notifications on mount and when dropdown opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchNotifications()
+        }
+    }, [isOpen, fetchNotifications])
+
+    // Check permission status on mount
+    useEffect(() => {
+        const status = getPermissionStatus()
+        setPermissionStatus(status)
+    }, [setPermissionStatus])
 
     const handleRequestPermission = async () => {
         const status = await requestPermission()

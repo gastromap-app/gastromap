@@ -40,7 +40,7 @@ export async function getMySubmissions(userId) {
             .from('user_submissions')
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false })
+            .order('submitted_at', { ascending: false })
     )
 }
 
@@ -54,7 +54,7 @@ export async function getPendingSubmissions() {
             .from('user_submissions')
             .select('*, profiles(name, avatar_url)')
             .eq('status', 'pending')
-            .order('created_at', { ascending: true })
+            .order('submitted_at', { ascending: true })
     )
 }
 

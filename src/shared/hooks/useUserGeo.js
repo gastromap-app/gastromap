@@ -70,24 +70,31 @@ export function useUserGeo({ autoRequest = false } = {}) {
                 } catch (err) {
                     console.warn('[GeoLocation] Reverse geocoding failed:', err.message)
                     // Don't fail the whole flow — coords are still available
-                    setLocation({ city: null, country: null, address: null })
+                    setLocation({ city: 'Current Location', country: null, address: 'Near your current position' })
                 }
             },
             (err) => {
                 const messages = {
-                    1: 'Location access denied by user',
-                    2: 'Location unavailable',
-                    3: 'Location request timed out',
+                    1: 'Location access denied by user. Please enable in browser settings.',
+                    2: 'Location unavailable. The device could not determine your position (Check GPS/Signal).',
+                    3: 'Location request timed out. Retrying with lower accuracy...',
                 }
                 const msg = messages[err.code] || 'Unknown geolocation error'
-                console.warn(`[GeoLocation] Error: ${msg}`)
-                setError(msg)
+                console.warn(`[GeoLocation] Error ${err.code}: ${msg}`)
+                
+                // Special case: If it was a timeout, we could retry once automatically
+                if (err.code === 3 && !navigator.onLine) {
+                    setError('You are offline. Geolocation requires internet.')
+                } else {
+                    setError(msg)
+                }
+                
                 setStatus('denied')
             },
             {
                 enableHighAccuracy: false,
-                timeout: 8000,
-                maximumAge: 5 * 60 * 1000, // Cache for 5 minutes
+                timeout: 10000, // Increase to 10s for better stability
+                maximumAge: 10 * 60 * 1000, // Cache for 10 minutes
             }
         )
     }, [status, setCoords, setLocation, setStatus, setError])

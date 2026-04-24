@@ -98,6 +98,9 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().apiKey || config.ai.useProxy) {
         try {
+            // Emit initial feedback immediately to avoid "hanging" impression
+            if (onChunk) onChunk('Thinking...')
+
             const historyMessages = (context.history ?? [])
                 .slice(-8)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -118,16 +121,21 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                     locations = useLocationsStore.getState().locations
                 } catch { locations = [] }
             }
+
+            // This is the heavy lifting part
             const { text, usedLocations } = await runAgentPass(messages, locations)
 
             // Simulate streaming: emit word by word
             if (onChunk && text) {
+                // Clear the "Thinking..." message first
+                onChunk('') 
+                
                 const words = text.split(' ')
                 for (let i = 0; i < words.length; i++) {
                     const chunk = (i === 0 ? '' : ' ') + words[i]
                     onChunk(chunk)
                     // Small delay between words for natural typing feel
-                    await new Promise(r => setTimeout(r, 18))
+                    await new Promise(r => setTimeout(r, 15))
                 }
             }
 

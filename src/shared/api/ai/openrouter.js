@@ -71,11 +71,18 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
         }
 
         try {
+            // Per-model timeout: 15s is enough for a fast response, prevents total hang on slow server
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 15000)
+
             const res = await fetch(url, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(body),
+                signal: controller.signal
             })
+
+            clearTimeout(timeoutId)
 
             if (res.ok) {
                 return { response: res, modelUsed: currentModel }
@@ -92,19 +99,26 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
                 console.warn(`[GastroAI] Model ${currentModel} is deprecated (404), skipping...`)
                 continue
             }
-            // Only retry on rate-limit or server errors
-            if (res.status !== 429 && res.status !== 500 && res.status !== 502 && res.status !== 503) {
-                const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
+
+            // Retry on rate-limit (429) or server errors (500, 502, 503, 504)
+            const retryableErrors = [429, 500, 502, 503, 504]
+            if (!retryableErrors.includes(res.status)) {
+                const msg = errBody?.error?.message || `OpenRouter error ${res.status}`
                 throw Object.assign(new Error(msg), { status: res.status, errorData: errBody })
             }
 
             console.warn(`[GastroAI] Model ${currentModel} returned ${res.status}, trying next model...`)
         } catch (err) {
-            // If it's a network error or non-retryable error, throw
-            if (!err.status || (err.status !== 429 && err.status !== 500 && err.status !== 502 && err.status !== 503)) {
+            // Handle timeout or other network errors
+            const isTimeout = err.name === 'AbortError'
+            const isRetryableStatus = err.status && [429, 500, 502, 503, 504].includes(err.status)
+
+            if (!isTimeout && !isRetryableStatus) {
                 throw err
             }
-            console.warn(`[GastroAI] Model ${currentModel} failed:`, err.message)
+
+            const reason = isTimeout ? 'timeout' : `status ${err.status}`
+            console.warn(`[GastroAI] Model ${currentModel} failed (${reason}), trying next model...`)
         }
     }
 

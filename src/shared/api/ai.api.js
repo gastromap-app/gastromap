@@ -31,17 +31,8 @@ import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { semanticSearch } from './ai/search'
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-
-// ─── Model cascade — tried in order on 429 ───────────────────────────────
-// ✅ Updated 2026-04-18: llama-3.3-70b moved to #1 (most stable), trinity-large removed (EOL)
-const MODEL_CASCADE = [
-    'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling
-    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best quality (intermittent 503)
-    'openai/gpt-oss-20b:free',                // ✅ Reliable, fast
-    'z-ai/glm-4.5-air:free',                  // ✅ Multilingual
-    'stepfun/step-3.5-flash:free',               // ✅ Lightweight last resort
-]
+import { fetchOpenRouter } from './ai/openrouter'
+import { OPENROUTER_URL, MODEL_CASCADE, TOOLS } from './ai/constants'
 
 /**
  * Get active AI config — admin store overrides env vars at runtime.
@@ -349,78 +340,12 @@ function buildSystemPrompt(prefs = {}) {
     return parts.join('\n')
 }
 
-// ─── fetchOpenRouter with full model cascade ──────────────────────────────
-
-/**
- * Try models in cascade order. On 429, waits 800ms then tries next model.
- * Falls back to local engine if all models are rate-limited.
- */
-async function fetchOpenRouter(messages, { stream = false, withTools = true, modelIndex = 0 } = {}) {
-    const { apiKey, model: adminModel } = getActiveAIConfig()
-
-    // Build cascade: admin-set model first, then defaults
-    const cascade = [adminModel, ...MODEL_CASCADE.filter(m => m !== adminModel)]
-    const model = cascade[modelIndex] ?? cascade[0]
-
-    const body = {
-        model,
-        messages,
-        max_tokens: config.ai.maxResponseTokens ?? 1024,
-        stream,
-    }
-    if (withTools) {
-        body.tools = TOOLS
-        body.tool_choice = 'auto'
-    }
-
-    // AbortController: 30s timeout protects against hung requests
-    const abortCtrl = new AbortController()
-    const abortTimer = setTimeout(() => abortCtrl.abort(), 30_000)
-    let res
-    try {
-        res = await fetch(OPENROUTER_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://gastromap.app',
-                'X-Title': 'GastroMap',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-            signal: abortCtrl.signal,
-        })
-    } catch (err) {
-        if (err.name === 'AbortError') throw new Error('AI request timed out (30s) — please try again')
-        throw err
-    } finally {
-        clearTimeout(abortTimer)
-    }
-
-    // Rate limited — try next model in cascade
-    if (res.status === 429) {
-        const nextIndex = modelIndex + 1
-        if (nextIndex < cascade.length) {
-            console.warn(`[GastroAI] ${model} rate limited, trying ${cascade[nextIndex]}...`)
-            await new Promise(r => setTimeout(r, 800))
-            return fetchOpenRouter(messages, { stream, withTools, modelIndex: nextIndex })
-        }
-        // All models exhausted — throw so caller falls back to local engine
-        throw Object.assign(new Error('All OpenRouter models are rate limited. Using local engine.'), { status: 429 })
-    }
-
-    if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}))
-        const msg = errBody?.error?.message ?? `OpenRouter error ${res.status}`
-        throw Object.assign(new Error(msg), { status: res.status })
-    }
-
-    return res
-}
+// fetchOpenRouter is now imported from ./ai/openrouter
 
 // ─── Agentic pass (tool calls → final response) ───────────────────────────
 
 async function runAgentPass(messages) {
-    const res = await fetchOpenRouter(messages, { stream: false, withTools: true })
+    const { response: res } = await fetchOpenRouter(messages, { stream: false, withTools: true })
     const data = await res.json()
     const choice = data.choices?.[0]
 
@@ -475,7 +400,7 @@ async function runAgentPass(messages) {
         ...toolResults,
     ]
 
-    const res2 = await fetchOpenRouter(messagesWithTools, { stream: false, withTools: false })
+    const { response: res2 } = await fetchOpenRouter(messagesWithTools, { stream: false, withTools: false })
     const data2 = await res2.json()
     const finalContent = data2.choices?.[0]?.message?.content ?? ''
 

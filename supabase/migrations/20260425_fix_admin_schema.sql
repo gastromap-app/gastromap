@@ -8,6 +8,12 @@
 --   4. Updates RLS policies and search functions
 -- ═══════════════════════════════════════════════════════════════════
 
+-- Ensure helper function exists (used by FTS generated column)
+CREATE OR REPLACE FUNCTION public.immutable_array_to_string(text[], text)
+RETURNS text AS $$
+    SELECT array_to_string($1, $2);
+$$ LANGUAGE sql IMMUTABLE;
+
 -- ─── 1. Add missing columns (code expects these) ───────────────────
 
 ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS image_url text;
@@ -293,15 +299,15 @@ ALTER TABLE public.locations ADD COLUMN fts tsvector GENERATED ALWAYS AS (
         COALESCE(category, '') || ' ' ||
         COALESCE(must_try, '') || ' ' ||
         COALESCE(ai_context, '') || ' ' ||
-        COALESCE(immutable_array_to_string(cuisine_types, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(tags, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(kg_dishes, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(kg_cuisines, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(ai_keywords, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(vibe, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(what_to_try, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(amenities, ' '), '') || ' ' ||
-        COALESCE(immutable_array_to_string(dietary_options, ' '), '')
+        COALESCE(immutable_array_to_string(cuisine_types, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(tags, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(kg_dishes, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(kg_cuisines, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(ai_keywords, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(vibe, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(what_to_try, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(amenities, ' '::text), '') || ' ' ||
+        COALESCE(immutable_array_to_string(dietary_options, ' '::text), '')
     )
 ) STORED;
 

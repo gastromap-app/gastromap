@@ -184,11 +184,20 @@ export async function getUserDetails(userId) {
 
 export async function getPendingReviews() {
     if (!supabase) return mockPendingReviews
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('reviews')
-        .select('*, profiles(full_name, name), locations(id, title, city)')
+        .select('id, user_id, location_id, rating, review_text, status, created_at, profiles(full_name, name)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
+    if (error) {
+        console.warn('[admin.api] getPendingReviews join failed, falling back:', error.message)
+        const { data: fallback } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+        return fallback || []
+    }
     // Normalise author name across schema variants
     return (data || []).map(r => ({
         ...r,
@@ -218,7 +227,7 @@ export async function getPendingLocations() {
     if (!supabase) return mockPendingLocations
     // Check both locations table (direct entries) and user_submissions
     const [locsRes, subsRes] = await Promise.all([
-        supabase.from('locations').select('id, title, category, city, created_at, status, insider_tip, what_to_try, tags, created_by, moderation_note')
+        supabase.from('locations').select('id, title, category, city, created_at, status, insider_tip, what_to_try, tags, moderation_note')
             .in('status', ['pending', 'revision_requested'])
             .order('created_at', { ascending: false }),
         supabase.from('user_submissions').select('id, title, category, city, submitted_at, status, user_id')

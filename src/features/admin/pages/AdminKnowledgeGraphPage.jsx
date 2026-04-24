@@ -817,6 +817,7 @@ const AdminKnowledgeGraphPage = () => {
 
     const handleSaveCuisine = async (data) => {
         if (isSaving) return
+        if (!data.name?.trim()) { showToast('Название не может быть пустым', 'error'); return }
         setIsSaving(true)
         try {
             if (showModal?.data?.id) {
@@ -833,6 +834,7 @@ const AdminKnowledgeGraphPage = () => {
 
     const handleSaveDish = async (data) => {
         if (isSaving) return
+        if (!data.name?.trim()) { showToast('Название не может быть пустым', 'error'); return }
         setIsSaving(true)
         try {
             if (showModal?.data?.id) {
@@ -849,6 +851,7 @@ const AdminKnowledgeGraphPage = () => {
 
     const handleSaveIngredient = async (data) => {
         if (isSaving) return
+        if (!data.name?.trim()) { showToast('Название не может быть пустым', 'error'); return }
         setIsSaving(true)
         try {
             if (showModal?.data?.id) {
@@ -865,6 +868,7 @@ const AdminKnowledgeGraphPage = () => {
 
     const handleSaveVibe = async (data) => {
         if (isSaving) return
+        if (!data.name?.trim()) { showToast('Название не может быть пустым', 'error'); return }
         setIsSaving(true)
         try {
             if (showModal?.data?.id) {

@@ -6,6 +6,7 @@ import { Menu, Transition } from '@headlessui/react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { getCategoryLabel } from '@/shared/config/filterOptions'
+import { getStatusDisplay, LOCATION_STATUSES } from '@/shared/constants/statuses'
 
 /**
  * LocationListItem.jsx
@@ -14,21 +15,9 @@ import { getCategoryLabel } from '@/shared/config/filterOptions'
 
 // ── Helpers (pure, no hooks) ──────────────────────────────────────────────────
 
-function statusBadgeClass(status) {
-    if (status === 'approved' || status === 'active') return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
-    if (status === 'pending') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
-    if (status === 'revision_requested') return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700'
-    if (status === 'hidden') return 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-    return 'bg-rose-50 dark:bg-rose-500/10 text-rose-500'
-}
-
-function statusDotClass(status) {
-    if (status === 'approved' || status === 'active') return 'bg-emerald-500'
-    if (status === 'pending') return 'bg-amber-500'
-    if (status === 'revision_requested') return 'bg-orange-500'
-    if (status === 'hidden') return 'bg-slate-400'
-    return 'bg-rose-500'
-}
+const getStatusBadge = (status) => getStatusDisplay(status).badge
+const getStatusDot = (status) => getStatusDisplay(status).dot
+const getStatusLabel = (status) => getStatusDisplay(status).label
 
 // ── Sub-components (defined at module level, not inside render) ───────────────
 
@@ -36,24 +25,16 @@ function StatusBadge({ status }) {
     return (
         <div className={cn(
             "inline-flex items-center p-1.5 px-2 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-            statusBadgeClass(status)
+            getStatusBadge(status)
         )}>
-            <div className={cn("w-1.5 h-1.5 rounded-full mr-2", statusDotClass(status))} />
-            {(status === 'approved' || status === 'active')
-                ? 'Активен'
-                : status === 'pending'
-                    ? 'Ожидает'
-                    : status === 'revision_requested'
-                        ? 'На доработку'
-                        : status === 'hidden'
-                            ? 'Скрыт'
-                            : 'Отклонён'}
+            <div className={cn("w-1.5 h-1.5 rounded-full mr-2", getStatusDot(status))} />
+            {getStatusLabel(status)}
         </div>
     )
 }
 
 function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
-    const isVisible = locStatus === 'active' || locStatus === 'approved'
+    const isVisible = locStatus === LOCATION_STATUSES.ACTIVE || locStatus === LOCATION_STATUSES.APPROVED
     return (
         <button
             onClick={(e) => { e.stopPropagation(); onToggleVisibility(locId, locStatus) }}
@@ -132,7 +113,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             )}
                         </Menu.Item>
 
-                        {loc.status === 'pending' && (
+                        {loc.status === LOCATION_STATUSES.PENDING && (
                             <Menu.Item>
                                 {({ active }) => (
                                     <button
@@ -151,7 +132,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             </Menu.Item>
                         )}
 
-                        {loc.status !== 'rejected' && (
+                        {loc.status !== LOCATION_STATUSES.REJECTED && (
                             <Menu.Item>
                                 {({ active }) => (
                                     <button

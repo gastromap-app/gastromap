@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
+import { ErrorBoundary, RouteErrorFallback } from '@/app/ErrorBoundary'
 
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
@@ -102,8 +103,18 @@ export default function AdminLayout() {
     const { theme, toggleTheme } = useTheme()
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        try { return localStorage.getItem('admin_sidebar_collapsed') === 'true' } catch { return false }
+    })
     const [showNotifications, setShowNotifications] = useState(false)
+
+    const toggleSidebar = () => {
+        setIsCollapsed(prev => {
+            const next = !prev
+            try { localStorage.setItem('admin_sidebar_collapsed', String(next)) } catch { /* ignore */ }
+            return next
+        })
+    }
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -143,7 +154,7 @@ export default function AdminLayout() {
                     toggleTheme={toggleTheme}
                     theme={theme}
                 />
-                <button onClick={() => setIsCollapsed(!isCollapsed)} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
+                <button onClick={toggleSidebar} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                 </button>
             </motion.aside>
@@ -328,7 +339,9 @@ export default function AdminLayout() {
 
                 <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
                     <div className="max-w-[1600px] mx-auto min-h-full">
+                    <ErrorBoundary fallback={RouteErrorFallback}>
                         <Outlet />
+                    </ErrorBoundary>
                     </div>
                 </main>
             </div>

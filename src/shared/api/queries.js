@@ -69,7 +69,7 @@ export function useAdminLocationsQuery(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
-        staleTime: 0,
+        staleTime: 30_000,
         refetchOnWindowFocus: true,
     })
 }
@@ -357,7 +357,7 @@ export function useAdminStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -368,7 +368,7 @@ export function useRecentLocations(limit = 5) {
             const { getRecentLocations } = await import('./admin.api')
             return getRecentLocations(limit)
         }, 
-        staleTime: 60_000 
+        staleTime: 30_000,
     })
 }
 
@@ -379,7 +379,7 @@ export function useRecentActivity(limit = 10) {
             const { getRecentActivity } = await import('./admin.api')
             return getRecentActivity(limit)
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -391,7 +391,7 @@ export function useProfiles() {
             const { getProfiles } = await import('./admin.api')
             return getProfiles()
         }, 
-        staleTime: 60_000 
+        staleTime: 30_000,
     })
 }
 
@@ -425,6 +425,7 @@ export function useUserDetails(userId) {
             return getUserDetails(userId)
         },
         enabled: !!userId,
+        staleTime: 30_000,
     })
 }
 
@@ -436,7 +437,7 @@ export function usePendingReviews() {
             const { getPendingReviews } = await import('./admin.api')
             return getPendingReviews()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -463,7 +464,7 @@ export function usePendingLocations() {
             const { getPendingLocations } = await import('./admin.api')
             return getPendingLocations()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 

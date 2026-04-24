@@ -51,8 +51,9 @@ const AdminSubscriptionsPage = () => {
                 actions={
                     <button
                         onClick={() => {
+                            const esc = (val) => String(val ?? '').replace(/"/g, '""')
                             const csv = ['User,Plan,Date,Amount,Status', ...allTransactions.map(t =>
-                                `"${t.user}","${t.plan}","${t.date}","${t.amount}","${t.status}"`
+                                `"${esc(t.user)}","${esc(t.plan)}","${esc(t.date)}","${esc(t.amount)}","${esc(t.status)}"`
                             )].join('\n')
                             const blob = new Blob([csv], { type: 'text/csv' })
                             const url = URL.createObjectURL(blob)

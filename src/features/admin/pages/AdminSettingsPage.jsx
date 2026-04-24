@@ -99,6 +99,14 @@ const AdminSettingsPage = () => {
     }
 
     const handleSave = () => {
+        if (!formData.appName?.trim()) {
+            showToast('Название приложения обязательно', 'error')
+            return
+        }
+        if (formData.appDescription && formData.appDescription.length > 500) {
+            showToast('Описание не должно превышать 500 символов', 'error')
+            return
+        }
         config.updateSettings(formData)
         showToast('Settings saved successfully.')
     }

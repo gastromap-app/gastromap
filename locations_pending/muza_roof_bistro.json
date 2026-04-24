@@ -26,8 +26,31 @@
     "sunday": "Closed"
   },
   "weekend_hours_note": "From 18.04.2026 — open on weekends 09:00–16:00",
-  "description_en": "Rooftop bistro on the 6th floor of the Academy of Music building in Kraków's Old Town. One of the best panoramic views in the city — overlooking Wawel Castle, St. Mary's Basilica and the historic centre. Serves breakfast, lunch and specialty coffee. Known as a hidden gem — recently reopened to the public.",
-  "description_pl": "Bistro na dachu Akademii Muzycznej przy ul. Św. Tomasza 43. Jeden z najlepszych widoków w Krakowie — panorama na Wawel i Stare Miasto. Śniadania, lunch, kawa. Idealne na spokojną chwilę z dala od turystów.",
+  "description_en": "Rooftop bistro on the 6th floor of the Kraków Academy of Music — right in the heart of the Old Town. Floor-to-ceiling windows and an open terrace offer one of the most breathtaking panoramas in the city: terracotta rooftops, the towers of St. Mary's Basilica, and on clear days, the Tatra Mountains on the horizon. The menu is simple and honest — breakfasts, a rotating daily lunch, and specialty coffee. No tourist markup, no pretension. Just great food, good light, and a view that most Kraków locals haven't even discovered yet.",
+  "description_pl": "Bistro na dachu Akademii Muzycznej przy ul. Św. Tomasza 43 — w samym sercu Starego Miasta. Panoramiczne widoki na Wawel, Bazylikę Mariacką i krakowskie dachy. Proste, dobre jedzenie: śniadania, zmienny lunch dnia i kawa specialty. Bez turystycznych cen, bez zbędnego przepychu.",
+  "insider_tip": "Take the elevator to the 6th floor — the entrance is easy to miss. Ask for a window table or go straight to the outdoor terrace for the full 360° view. Come on a weekday morning before 11am to have the whole place almost to yourself. On clear days you can see the Tatra Mountains from here.",
+  "what_to_try": [
+    {
+      "item": "Croque Madame",
+      "price": 36,
+      "why": "Their signature breakfast — thick rye-wheat toast loaded with béchamel, Gruyère and ham, topped with a fried egg. Rich, satisfying, and worth every złoty."
+    },
+    {
+      "item": "Asian-style Bacon Omelette",
+      "price": 38,
+      "why": "Unexpected on a rooftop in Kraków — a fluffy 3-egg omelette with sweet-soy glazed bacon, sesame and chives. The best thing on the breakfast menu."
+    },
+    {
+      "item": "Lunch Set",
+      "price": 36,
+      "why": "Rotating daily menu — soup + main course for 36 zł with a view of the entire Old Town. Arguably the best value lunch in central Kraków."
+    },
+    {
+      "item": "Matcha Owocowa",
+      "price": 21,
+      "why": "A fruity matcha drink unique to their menu. Order it, sit by the window, and just look at the city."
+    }
+  ],
   "highlights": [
     "Best rooftop panorama in Kraków Old Town",
     "Views of Wawel Castle and St. Mary's Basilica",

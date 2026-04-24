@@ -17,6 +17,7 @@ import { getCategoryLabel } from '@/shared/config/filterOptions'
 function statusBadgeClass(status) {
     if (status === 'approved' || status === 'active') return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
     if (status === 'pending') return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
+    if (status === 'revision_requested') return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700'
     if (status === 'hidden') return 'bg-slate-100 dark:bg-slate-800 text-slate-500'
     return 'bg-rose-50 dark:bg-rose-500/10 text-rose-500'
 }
@@ -24,6 +25,7 @@ function statusBadgeClass(status) {
 function statusDotClass(status) {
     if (status === 'approved' || status === 'active') return 'bg-emerald-500'
     if (status === 'pending') return 'bg-amber-500'
+    if (status === 'revision_requested') return 'bg-orange-500'
     if (status === 'hidden') return 'bg-slate-400'
     return 'bg-rose-500'
 }
@@ -41,9 +43,11 @@ function StatusBadge({ status }) {
                 ? 'Активен'
                 : status === 'pending'
                     ? 'Ожидает'
-                    : status === 'hidden'
-                        ? 'Скрыт'
-                        : 'Отклонён'}
+                    : status === 'revision_requested'
+                        ? 'На доработку'
+                        : status === 'hidden'
+                            ? 'Скрыт'
+                            : 'Отклонён'}
         </div>
     )
 }

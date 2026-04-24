@@ -20,6 +20,7 @@ export default function AdminPageHeader({
     badge,
     actions,
     className,
+    icon: Icon,
 }) {
     return (
         <motion.div
@@ -39,6 +40,7 @@ export default function AdminPageHeader({
                     </p>
                 )}
                 <div className="flex items-center gap-3 flex-wrap">
+                    {Icon && <Icon className="w-7 h-7 text-indigo-400" />}
                     <h1 className="text-xl lg:text-[28px] font-bold text-slate-900 dark:text-white leading-none tracking-tight">
                         {title}
                     </h1>

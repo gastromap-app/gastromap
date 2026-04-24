@@ -387,8 +387,16 @@ const AdminAIPage = () => {
 
     const validateKey = React.useCallback(async () => {
         setApiKeyStatus('validating')
+        setApiKeyError('')
+
+        const timeoutId = setTimeout(() => {
+            setApiKeyStatus('error')
+            setApiKeyError('Validation timeout — no response in 10s')
+        }, 10000)
+
         try {
             const result = await testAIConnection('ping', primaryModel)
+            clearTimeout(timeoutId)
             if (result.ok) {
                 setApiKeyStatus('valid')
                 setApiKeyError('')
@@ -397,8 +405,9 @@ const AdminAIPage = () => {
                 setApiKeyError(result.text || 'Invalid API Key')
             }
         } catch (err) {
+            clearTimeout(timeoutId)
             setApiKeyStatus('error')
-            setApiKeyError(err.message)
+            setApiKeyError(err.message || 'Connection failed')
         }
     }, [primaryModel])
 

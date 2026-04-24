@@ -16,6 +16,7 @@ import {
     useUpdateUserStatusMutation,
     useUserDetails
 } from '@/shared/api/queries'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const relativeTime = (date) => {
     if (!date) return '—'
@@ -50,6 +51,7 @@ const AdminUsersPage = () => {
     const { data: userDetails, isLoading: loadingUserDetails } = useUserDetails(selectedUser?.id)
     const updateProfileRole = useUpdateProfileRoleMutation()
     const updateStatus = useUpdateUserStatusMutation()
+    const { user: currentUser } = useAuthStore()
 
     const showToast = (msg) => {
         setSaveToast(msg)
@@ -84,6 +86,11 @@ const AdminUsersPage = () => {
     const handleUpdate = async () => {
         const roleChanged = editRole !== selectedUser.role
         const statusChanged = editStatus !== selectedUser.status
+
+        if (roleChanged && selectedUser.id === currentUser?.id) {
+            showToast('Невозможно изменить собственную роль')
+            return
+        }
 
         try {
             if (roleChanged) {

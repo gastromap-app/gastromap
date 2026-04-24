@@ -276,6 +276,12 @@ const mockIngredients = [
     },
 ]
 
+const mockVibes = [
+    { id: 'mock-1', name: 'Romantic', slug: 'romantic', description: 'Romantic and intimate atmosphere', icon: '\uD83D\uDC95' },
+    { id: 'mock-2', name: 'Cozy', slug: 'cozy', description: 'Warm and comfortable setting', icon: '\uD83C\uDFE0' },
+    { id: 'mock-3', name: 'Trendy', slug: 'trendy', description: 'Modern and fashionable venue', icon: '\u2728' },
+]
+
 // ─── Cuisines API ───────────────────────────────────────────────────────────
 
 export async function getCuisines() {
@@ -656,7 +662,7 @@ export async function getVibes() {
     const cached = getCachedData('vibes')
     if (cached) return cached
 
-    if (!supabase) return []
+    if (!supabase) return mockVibes
     const { data, error } = await supabase
         .from('vibes')
         .select('*')
@@ -664,7 +670,7 @@ export async function getVibes() {
     
     if (error) {
         console.error('[KG] getVibes error:', error.message)
-        return []
+        return mockVibes
     }
 
     const result = data || []

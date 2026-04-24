@@ -28,6 +28,31 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
         }
     }
 
+    // Quote-aware CSV field splitter
+    const parseCSVLine = (line) => {
+        const fields = []
+        let current = ''
+        let inQuotes = false
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i]
+            if (ch === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"'
+                    i++ // skip escaped quote
+                } else {
+                    inQuotes = !inQuotes
+                }
+            } else if (ch === ',' && !inQuotes) {
+                fields.push(current.trim())
+                current = ''
+            } else {
+                current += ch
+            }
+        }
+        fields.push(current.trim())
+        return fields
+    }
+
     const parseFile = (file) => {
         setIsParsing(true)
         const reader = new FileReader()
@@ -39,11 +64,11 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                     if (file.name.endsWith('.json')) {
                         setPreviewData(JSON.parse(content).slice(0, 5))
                     } else {
-                        // Very basic CSV parser
+                        // Quote-aware CSV parser
                         const lines = content.split('\n')
-                        const headers = lines[0].split(',')
+                        const headers = parseCSVLine(lines[0])
                         const data = lines.slice(1, 6).map(line => {
-                            const values = line.split(',')
+                            const values = parseCSVLine(line)
                             return headers.reduce((obj, header, i) => {
                                 obj[header.trim()] = values[i]?.trim()
                                 return obj

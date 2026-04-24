@@ -115,7 +115,7 @@ const AdminStatsPage = () => {
         },
         {
             label: 'Средний рейтинг',
-            value: engagement?.avg_rating ? `${engagement.avg_rating} ★` : '—',
+            value: engagement?.avg_rating != null ? `${engagement.avg_rating} ★` : '—',
             sub: `из ${fmt(engagement?.approved_reviews)} одобренных отзывов`,
             icon: Star, color: 'orange',
         },

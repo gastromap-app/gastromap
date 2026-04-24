@@ -104,6 +104,7 @@ const AdminSettingsPage = () => {
     }
 
     const handleClearCache = () => {
+        if (!window.confirm('Вы уверены? Это удалит все кешированные данные.')) return
         try {
             const keysToRemove = []
             for (let i = 0; i < localStorage.length; i++) {

@@ -188,6 +188,8 @@ export function useDeleteLocationMutation() {
         },
         onSuccess: (_data, id) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+            qc.invalidateQueries({ queryKey: ['favorites'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
             // Sync to Zustand store (user-facing pages)
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 useLocationsStore.getState().deleteLocation(id)
@@ -448,6 +450,8 @@ export function useUpdateReviewStatusMutation() {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['pending-reviews'] })
             qc.invalidateQueries({ queryKey: ['reviews'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
         },
     })
 }
@@ -475,6 +479,10 @@ export function useUpdateLocationStatusMutation() {
         onSuccess: (data, { id, status }) => {
             qc.invalidateQueries({ queryKey: ['locations'] })
             qc.invalidateQueries({ queryKey: ['pending-locations'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
+            qc.invalidateQueries({ queryKey: ['category-stats'] })
+            qc.invalidateQueries({ queryKey: ['top-locations'] })
+            qc.invalidateQueries({ queryKey: ['city-stats'] })
             // Sync to Zustand store (user-facing pages)
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 if (status === 'approved' || status === 'active') {
@@ -836,6 +844,7 @@ export function useUpdateCuisineMutation() {
         onSuccess: (_, { id }) => {
             qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
             qc.invalidateQueries({ queryKey: ['knowledge-cuisine', id] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
         },
     })
 }
@@ -847,7 +856,10 @@ export function useDeleteCuisineMutation() {
             const { deleteCuisine } = await import('./knowledge-graph.api')
             return deleteCuisine(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -882,7 +894,10 @@ export function useUpdateDishMutation() {
             const { updateDish } = await import('./knowledge-graph.api')
             return updateDish(id, updates)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-dishes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -893,7 +908,10 @@ export function useDeleteDishMutation() {
             const { deleteDish } = await import('./knowledge-graph.api')
             return deleteDish(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-dishes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -928,7 +946,10 @@ export function useUpdateIngredientMutation() {
             const { updateIngredient } = await import('./knowledge-graph.api')
             return updateIngredient(id, updates)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -939,7 +960,10 @@ export function useDeleteIngredientMutation() {
             const { deleteIngredient } = await import('./knowledge-graph.api')
             return deleteIngredient(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -976,7 +1000,10 @@ export function useUpdateVibeMutation() {
             const { updateVibe } = await import('./knowledge-graph.api')
             return updateVibe(id, updates)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-vibes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -987,7 +1014,10 @@ export function useDeleteVibeMutation() {
             const { deleteVibe } = await import('./knowledge-graph.api')
             return deleteVibe(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-vibes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 

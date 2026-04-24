@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     CheckCircle2, XCircle, Search, Filter,
@@ -49,6 +49,8 @@ export default function AdminModerationPage() {
     const [selectedItem, setSelectedItem] = useState(null)
     const [revisionNote, setRevisionNote] = useState('')
     const [toast, setToast] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const PAGE_SIZE = 20
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
@@ -60,6 +62,11 @@ export default function AdminModerationPage() {
         item.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.author.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const totalPages = Math.ceil(filteredQueue.length / PAGE_SIZE)
+    const paginatedQueue = filteredQueue.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+    useEffect(() => { setCurrentPage(1) }, [searchTerm])
 
     const handleApprove = async (item) => {
         try {
@@ -166,7 +173,7 @@ export default function AdminModerationPage() {
                             Очередь модерации пуста.
                         </div>
                     ) : (
-                        filteredQueue.map(item => (
+                        paginatedQueue.map(item => (
                             <motion.button
                                 key={`card-${item.id}`}
                                 layout
@@ -233,7 +240,7 @@ export default function AdminModerationPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredQueue.map(item => (
+                                    paginatedQueue.map(item => (
                                         <motion.tr
                                             key={item.id}
                                             layout
@@ -296,6 +303,29 @@ export default function AdminModerationPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
+                    >
+                        ← Назад
+                    </button>
+                    <span className="text-xs text-slate-400">
+                        {currentPage} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
+                    >
+                        Далее →
+                    </button>
+                </div>
+            )}
 
             {/* Review Modal */}
             <AnimatePresence>

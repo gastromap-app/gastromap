@@ -15,7 +15,7 @@ import {
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
     useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
     useVibes, useCreateVibeMutation, useUpdateVibeMutation, useDeleteVibeMutation,
-    useSyncKGToLocationsMutation, useBulkSyncKGMutation,
+    useBulkSyncKGMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
 import { 
@@ -128,7 +128,7 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
 
 // ─── MODAL BASE ───────────────────────────────────────────────────────────────
 
-const FormModalBase = ({ title, onSave, onClose, children }) => (
+const FormModalBase = ({ title, onSave, onClose, children, disabled = false }) => (
     <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -169,7 +169,8 @@ const FormModalBase = ({ title, onSave, onClose, children }) => (
                 </button>
                 <button
                     onClick={onSave}
-                    className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-all"
+                    disabled={disabled}
+                    className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Save size={15} />
                     Save
@@ -251,7 +252,7 @@ const InfoModal = ({ onClose }) => (
 
 // ─── CUISINE FORM ─────────────────────────────────────────────────────────────
 
-const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
+const CuisineFormModal = ({ cuisine, onSave, onClose, disabled = false }) => {
     const [form, setForm] = useState({
         name:           cuisine?.name || '',
         description:    cuisine?.description || '',
@@ -272,7 +273,7 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
-        <FormModalBase title={cuisine ? 'Edit Cuisine' : 'New Cuisine'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={cuisine ? 'Edit Cuisine' : 'New Cuisine'} onSave={handleSubmit} onClose={onClose} disabled={disabled}>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
@@ -307,7 +308,7 @@ const CuisineFormModal = ({ cuisine, onSave, onClose }) => {
 
 // ─── DISH FORM ────────────────────────────────────────────────────────────────
 
-const DishFormModal = ({ dish, onSave, onClose }) => {
+const DishFormModal = ({ dish, onSave, onClose, disabled = false }) => {
     const [form, setForm] = useState({
         name:               dish?.name || '',
         description:        dish?.description || '',
@@ -328,7 +329,7 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
-        <FormModalBase title={dish ? 'Edit Dish' : 'New Dish'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={dish ? 'Edit Dish' : 'New Dish'} onSave={handleSubmit} onClose={onClose} disabled={disabled}>
             <div>
                 <label className={lbl}>Dish Name</label>
                 <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Margherita Pizza" />
@@ -367,7 +368,7 @@ const DishFormModal = ({ dish, onSave, onClose }) => {
 
 // ─── INGREDIENT FORM ──────────────────────────────────────────────────────────
 
-const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
+const IngredientFormModal = ({ ingredient, onSave, onClose, disabled = false }) => {
     const [form, setForm] = useState({
         name:            ingredient?.name || '',
         category:        ingredient?.category || '',
@@ -387,7 +388,7 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
-        <FormModalBase title={ingredient ? 'Edit Ingredient' : 'New Ingredient'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={ingredient ? 'Edit Ingredient' : 'New Ingredient'} onSave={handleSubmit} onClose={onClose} disabled={disabled}>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
@@ -432,7 +433,7 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
 
 // ─── VIBE FORM ────────────────────────────────────────────────────────────────
 
-const VibeFormModal = ({ vibe, onSave, onClose }) => {
+const VibeFormModal = ({ vibe, onSave, onClose, disabled = false }) => {
     const [form, setForm] = useState({
         name:        vibe?.name || '',
         slug:        vibe?.slug || '',
@@ -451,7 +452,7 @@ const VibeFormModal = ({ vibe, onSave, onClose }) => {
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
-        <FormModalBase title={vibe ? 'Edit Vibe' : 'New Vibe'} onSave={handleSubmit} onClose={onClose}>
+        <FormModalBase title={vibe ? 'Edit Vibe' : 'New Vibe'} onSave={handleSubmit} onClose={onClose} disabled={disabled}>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
@@ -735,6 +736,7 @@ const AdminKnowledgeGraphPage = () => {
     const [toast, setToast]           = useState(null)
     const [showMergeModal, setShowMergeModal] = useState(false)
     const [duplicateGroups, setDuplicateGroups] = useState([])
+    const [isSaving, setIsSaving] = useState(false)
 
     const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
     const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()
@@ -755,7 +757,6 @@ const AdminKnowledgeGraphPage = () => {
     const createVibe       = useCreateVibeMutation()
     const updateVibe       = useUpdateVibeMutation()
     const deleteVibe       = useDeleteVibeMutation()
-    useSyncKGToLocationsMutation()
     const bulkSyncKG       = useBulkSyncKGMutation()
 
     const handleMerge = async (group, keepId) => {
@@ -815,6 +816,8 @@ const AdminKnowledgeGraphPage = () => {
     }
 
     const handleSaveCuisine = async (data) => {
+        if (isSaving) return
+        setIsSaving(true)
         try {
             if (showModal?.data?.id) {
                 await updateCuisine.mutateAsync({ id: showModal.data.id, updates: data })
@@ -825,9 +828,12 @@ const AdminKnowledgeGraphPage = () => {
             }
             setShowModal(null)
         } catch { showToast('Operation failed', 'error') }
+        finally { setIsSaving(false) }
     }
 
     const handleSaveDish = async (data) => {
+        if (isSaving) return
+        setIsSaving(true)
         try {
             if (showModal?.data?.id) {
                 await updateDish.mutateAsync({ id: showModal.data.id, updates: data })
@@ -838,9 +844,12 @@ const AdminKnowledgeGraphPage = () => {
             }
             setShowModal(null)
         } catch { showToast('Operation failed', 'error') }
+        finally { setIsSaving(false) }
     }
 
     const handleSaveIngredient = async (data) => {
+        if (isSaving) return
+        setIsSaving(true)
         try {
             if (showModal?.data?.id) {
                 await updateIngredient.mutateAsync({ id: showModal.data.id, updates: data })
@@ -851,9 +860,12 @@ const AdminKnowledgeGraphPage = () => {
             }
             setShowModal(null)
         } catch { showToast('Operation failed', 'error') }
+        finally { setIsSaving(false) }
     }
 
     const handleSaveVibe = async (data) => {
+        if (isSaving) return
+        setIsSaving(true)
         try {
             if (showModal?.data?.id) {
                 await updateVibe.mutateAsync({ id: showModal.data.id, updates: data })
@@ -864,6 +876,7 @@ const AdminKnowledgeGraphPage = () => {
             }
             setShowModal(null)
         } catch { showToast('Operation failed', 'error') }
+        finally { setIsSaving(false) }
     }
 
     // ── AI Agent save handler ─────────────────────────────────────────────────
@@ -1231,16 +1244,16 @@ const AdminKnowledgeGraphPage = () => {
             {/* ── Modals ── */}
             <AnimatePresence>
                 {showModal?.type === 'cuisine' && (
-                    <CuisineFormModal cuisine={showModal.data} onSave={handleSaveCuisine} onClose={() => setShowModal(null)} />
+                    <CuisineFormModal cuisine={showModal.data} onSave={handleSaveCuisine} onClose={() => setShowModal(null)} disabled={isSaving} />
                 )}
                 {showModal?.type === 'dish' && (
-                    <DishFormModal dish={showModal.data} onSave={handleSaveDish} onClose={() => setShowModal(null)} />
+                    <DishFormModal dish={showModal.data} onSave={handleSaveDish} onClose={() => setShowModal(null)} disabled={isSaving} />
                 )}
                 {showModal?.type === 'ingredient' && (
-                    <IngredientFormModal ingredient={showModal.data} onSave={handleSaveIngredient} onClose={() => setShowModal(null)} />
+                    <IngredientFormModal ingredient={showModal.data} onSave={handleSaveIngredient} onClose={() => setShowModal(null)} disabled={isSaving} />
                 )}
                 {showModal?.type === 'vibe' && (
-                    <VibeFormModal vibe={showModal.data} onSave={handleSaveVibe} onClose={() => setShowModal(null)} />
+                    <VibeFormModal vibe={showModal.data} onSave={handleSaveVibe} onClose={() => setShowModal(null)} disabled={isSaving} />
                 )}
                 {isInfoOpen && (
                     <InfoModal onClose={() => setIsInfoOpen(false)} />

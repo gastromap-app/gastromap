@@ -11,7 +11,7 @@ export async function getLocationReviews(locationId) {
             .from('reviews')
             .select('*, profiles(full_name, display_name, avatar_url, name)')
             .eq('location_id', locationId)
-            .in('status', ['approved', 'published'])
+            .in('status', ['published'])
             .order('created_at', { ascending: false })
 
         if (!error && data) {
@@ -27,7 +27,7 @@ export async function getLocationReviews(locationId) {
             .from('reviews')
             .select('*, user_profiles(display_name, avatar_url, name)')
             .eq('location_id', locationId)
-            .in('status', ['approved', 'published'])
+            .in('status', ['published'])
             .order('created_at', { ascending: false })
 
         if (!upError && upData) {
@@ -43,7 +43,7 @@ export async function getLocationReviews(locationId) {
             .from('reviews')
             .select('*')
             .eq('location_id', locationId)
-            .in('status', ['approved', 'published'])
+            .in('status', ['published'])
             .order('created_at', { ascending: false })
 
         if (e2) throw e2
@@ -57,12 +57,12 @@ export async function getLocationReviews(locationId) {
 
 export async function getUserReviews(userId) {
     if (!supabase) return []
-    // Exclude 'rejected' reviews — users should only see their pending/approved/published contributions
+    // Exclude 'rejected' reviews — users should only see their pending/published contributions
     const { data, error } = await supabase
         .from('reviews')
         .select('*, locations(title)')
         .eq('user_id', userId)
-        .in('status', ['pending', 'approved', 'published'])
+        .in('status', ['pending', 'published'])
         .order('created_at', { ascending: false })
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
     return data || []

@@ -2,7 +2,8 @@ import { supabase } from './client'
 
 export async function getAdminStats() {
     if (!supabase) return mockAdminStats
-    const [locations, users, engagement, payments, topLocs] = await Promise.all([
+
+    const results = await Promise.allSettled([
         supabase.rpc('get_location_stats'),
         supabase.rpc('get_user_stats'),
         supabase.rpc('get_engagement_stats'),
@@ -12,12 +13,19 @@ export async function getAdminStats() {
             .order('google_rating', { ascending: false })
             .limit(5),
     ])
+
+    const safeGet = (result, label) => {
+        if (result.status === 'fulfilled') return result.value.data
+        console.warn(`[admin.api] ${label} failed:`, result.reason)
+        return null
+    }
+
     return {
-        locations: locations.data,
-        users: users.data,
-        engagement: engagement.data,
-        payments: payments.data,
-        top_locations: topLocs.data || [],
+        locations: safeGet(results[0], 'get_location_stats'),
+        users: safeGet(results[1], 'get_user_stats'),
+        engagement: safeGet(results[2], 'get_engagement_stats'),
+        payments: safeGet(results[3], 'get_payment_stats'),
+        top_locations: safeGet(results[4], 'top_locations') || [],
     }
 }
 
@@ -33,12 +41,21 @@ export async function getRecentLocations(limit = 5) {
 
 export async function getRecentActivity(limit = 10) {
     if (!supabase) return mockRecentActivity
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('user_visits')
-        .select('id, user_id, location_id, visited_at, locations(title)')
+        .select('id, user_id, location_id, visited_at, locations(title), profiles(name, email)')
         .order('visited_at', { ascending: false })
         .limit(limit)
-    return data || []
+    if (error) {
+        console.warn('[admin.api] getRecentActivity:', error.message)
+        return []
+    }
+    // Map to the shape the UI expects
+    return (data || []).map(item => ({
+        ...item,
+        user_name: item.profiles?.name || item.profiles?.email || 'User',
+        action_text: `Visited ${item.locations?.title || 'a location'}`,
+    }))
 }
 
 export async function getProfiles() {
@@ -183,8 +200,9 @@ export async function getPendingReviews() {
 
 export async function updateReviewStatus(reviewId, status, _comment) {
     if (!supabase) return { error: 'No Supabase' }
+    // _comment parameter is intentionally unused — reviews table has no admin_comment column.
     // reviews table columns: id, user_id, location_id, rating, review_text, status, created_at, updated_at
-    // admin_comment column does NOT exist — only update status + updated_at
+    // Only update status + updated_at.
     const updates = { status, updated_at: new Date().toISOString() }
     const { data, error } = await supabase
         .from('reviews')
@@ -266,10 +284,11 @@ export async function getCategoryStats() {
 
     const map = {}
     for (const loc of data || []) {
-        if (!map[loc.category]) map[loc.category] = { category: loc.category, total: 0, active: 0, ratings: [] }
-        map[loc.category].total++
-        if (loc.status === 'active' || loc.status === 'approved') map[loc.category].active++
-        if (loc.google_rating) map[loc.category].ratings.push(Number(loc.google_rating))
+        const cat = loc.category || 'Uncategorized'
+        if (!map[cat]) map[cat] = { category: cat, total: 0, active: 0, ratings: [] }
+        map[cat].total++
+        if (loc.status === 'active' || loc.status === 'approved') map[cat].active++
+        if (loc.google_rating) map[cat].ratings.push(Number(loc.google_rating))
     }
 
     return Object.values(map)
@@ -298,8 +317,10 @@ export async function getCityStats() {
 
     const map = {}
     for (const loc of data || []) {
-        const key = `${loc.city}|${loc.country}`
-        if (!map[key]) map[key] = { city: loc.city, country: loc.country, total: 0, ratings: [] }
+        const city = loc.city || 'Unknown'
+        const country = loc.country || 'Unknown'
+        const key = `${city}|${country}`
+        if (!map[key]) map[key] = { city, country, total: 0, ratings: [] }
         map[key].total++
         if (loc.google_rating) map[key].ratings.push(Number(loc.google_rating))
     }

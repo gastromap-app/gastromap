@@ -44,8 +44,7 @@ function normalise(row) {
     const priceRange    = row.price_range ?? '$$'
     const cuisineTypes  = Array.isArray(row.cuisine_types) ? row.cuisine_types : []
 
-    // Normalise legacy 'active' → 'approved' for UI consistency
-    const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
+    const status = row.status ?? 'approved'
 
     return {
         id: row.id,
@@ -695,7 +694,7 @@ export async function getCategories() {
     const { data, error } = await supabase
         .from('locations')
         .select('category')
-        .eq('status', 'approved')
+        .in('status', ['approved', 'active'])
 
     if (error) {
         console.warn('[locations.api] Failed to fetch categories, using mocks:', error.message)

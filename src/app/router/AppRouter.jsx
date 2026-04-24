@@ -23,8 +23,8 @@ const RequireAuth = () => {
 const RequireAdmin = () => {
     const { user, isAuthenticated, isLoading } = useAuthStore()
     if (isLoading) return <AuthLoader />
-    if (!isAuthenticated) return <Navigate to="/login" replace />
-    if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
+    if (!isAuthenticated || !user) return <Navigate to="/login" replace />
+    if (user.role !== 'admin') return <Navigate to="/dashboard" replace />
     return <Outlet />
 }
 

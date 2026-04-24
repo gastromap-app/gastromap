@@ -85,7 +85,7 @@ export const useAdminLocations = () => {
         try {
             const { supabase } = await import('@/shared/api/client')
             const { data } = await supabase.from('locations')
-                .select('id,title,category,city,country,address,description,google_rating,price_level,status,created_at')
+                .select('*')
                 .order('created_at', { ascending: false })
             const json = JSON.stringify(data || [], null, 2)
             const blob = new Blob([json], { type: 'application/json' })
@@ -420,11 +420,12 @@ export const useAdminLocations = () => {
             // DO NOT delete vibe — it's a separate DB column
         }
         
-        if (typeof submissionData.must_try === 'string') {
-            submissionData.what_to_try = submissionData.must_try
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean)
+        // Handle what_to_try / must_try with both array and string sources
+        if (Array.isArray(submissionData.what_to_try) && submissionData.what_to_try.length > 0) {
+            submissionData.must_try = submissionData.what_to_try.join(', ')
+        } else if (typeof submissionData.must_try === 'string' && submissionData.must_try.trim()) {
+            submissionData.what_to_try = submissionData.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            submissionData.must_try = submissionData.must_try.trim()
         }
 
         // Clean up legacy fields to ensure strict schema adherence

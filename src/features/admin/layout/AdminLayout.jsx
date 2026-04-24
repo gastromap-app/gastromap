@@ -110,11 +110,7 @@ export default function AdminLayout() {
         setIsSidebarOpen(false)
     }, [location.pathname])
 
-    const notifications = [
-        { id: 1, text: '3 new locations pending review', time: '2m ago', unread: true },
-        { id: 2, text: 'New user registered: john@example.com', time: '15m ago', unread: true },
-        { id: 3, text: 'AI Guide processed 150 requests', time: '1h ago', unread: false },
-    ]
+    const notifications = []  // TODO: Connect to real notification API
 
     // Breadcrumbs
     const segments = location.pathname.split('/').filter(Boolean)
@@ -251,7 +247,7 @@ export default function AdminLayout() {
                                 className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all relative"
                             >
                                 <Bell size={20} />
-                                {notifications.some(n => n.unread) && (
+                                {notifications.filter(n => n.unread).length > 0 && (
                                     <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-950" />
                                 )}
                             </button>
@@ -277,16 +273,22 @@ export default function AdminLayout() {
                                                 <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Notifications</p>
                                             </div>
                                             <div className="divide-y divide-slate-50 dark:divide-slate-800">
-                                                {notifications.map(n => (
-                                                    <div key={n.id} className={cn("px-4 py-3 flex gap-3 items-start hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors", n.unread && "bg-indigo-50/50 dark:bg-indigo-500/5")}>
-                                                        {n.unread && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}
-                                                        {!n.unread && <div className="w-2 h-2 rounded-full bg-transparent mt-1.5 shrink-0" />}
-                                                        <div className="min-w-0">
-                                                            <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug">{n.text}</p>
-                                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
-                                                        </div>
+                                                {notifications.length === 0 ? (
+                                                    <div className="px-4 py-6 text-center">
+                                                        <p className="text-sm text-slate-400">Нет новых уведомлений</p>
                                                     </div>
-                                                ))}
+                                                ) : (
+                                                    notifications.map(n => (
+                                                        <div key={n.id} className={cn("px-4 py-3 flex gap-3 items-start hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors", n.unread && "bg-indigo-50/50 dark:bg-indigo-500/5")}>
+                                                            {n.unread && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}
+                                                            {!n.unread && <div className="w-2 h-2 rounded-full bg-transparent mt-1.5 shrink-0" />}
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug">{n.text}</p>
+                                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                             <div className="p-3 border-t border-slate-100 dark:border-slate-800">
                                                 <button className="w-full text-center text-xs font-bold text-indigo-500 hover:text-indigo-600 uppercase tracking-widest py-1">

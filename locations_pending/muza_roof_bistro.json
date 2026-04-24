@@ -25,10 +25,9 @@
     "saturday": "Closed",
     "sunday": "Closed"
   },
-  "weekend_hours_note": "From 18.04.2026 — open on weekends 09:00–16:00",
-  "description_en": "Rooftop bistro on the 6th floor of the Kraków Academy of Music — right in the heart of the Old Town. Floor-to-ceiling windows and an open terrace offer one of the most breathtaking panoramas in the city: terracotta rooftops, the towers of St. Mary's Basilica, and on clear days, the Tatra Mountains on the horizon. The menu is simple and honest — breakfasts, a rotating daily lunch, and specialty coffee. No tourist markup, no pretension. Just great food, good light, and a view that most Kraków locals haven't even discovered yet.",
-  "description_pl": "Bistro na dachu Akademii Muzycznej przy ul. Św. Tomasza 43 — w samym sercu Starego Miasta. Panoramiczne widoki na Wawel, Bazylikę Mariacką i krakowskie dachy. Proste, dobre jedzenie: śniadania, zmienny lunch dnia i kawa specialty. Bez turystycznych cen, bez zbędnego przepychu.",
-  "insider_tip": "Take the elevator to the 6th floor — the entrance is easy to miss. Ask for a window table or go straight to the outdoor terrace for the full 360° view. Come on a weekday morning before 11am to have the whole place almost to yourself. On clear days you can see the Tatra Mountains from here.",
+  "weekend_hours_note": "From April 18, 2026 — open on weekends 09:00–16:00",
+  "description": "Rooftop bistro on the 6th floor of the Kraków Academy of Music — right in the heart of the Old Town. Floor-to-ceiling windows and an open terrace offer one of the most breathtaking panoramas in the city: terracotta rooftops, the towers of St. Mary's Basilica, and on clear days, the Tatra Mountains on the horizon. The menu is simple and honest — breakfasts, a rotating daily lunch, and specialty coffee. No tourist markup, no pretension. Just great food, good light, and a view that most Kraków locals haven't even discovered yet.",
+  "insider_tip": "Take the elevator to the 6th floor — the entrance is easy to miss. Ask for a window table or head straight to the outdoor terrace for the full 360° view. Come on a weekday morning before 11am to have the whole place almost to yourself. On clear days you can see the Tatra Mountains from here.",
   "what_to_try": [
     {
       "item": "Croque Madame",

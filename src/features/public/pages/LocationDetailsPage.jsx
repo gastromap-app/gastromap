@@ -34,8 +34,9 @@ const LocationDetailsPage = () => {
     // Use String() coercion — URL params are always strings, DB ids may be numbers
     const storeLocations = useLocationsStore(s => s.locations)
     const storeIsLoading = useLocationsStore(s => s.isLoading)
+    // FIX: Only use MOCK_LOCATIONS in development — never in production
     const locationFromStore = storeLocations.find(loc => String(loc.id) === id)
-        ?? MOCK_LOCATIONS.find(loc => String(loc.id) === id)
+        ?? (import.meta.env.DEV ? MOCK_LOCATIONS.find(loc => String(loc.id) === id) : null)
         ?? null
 
     // BUG-5 FIX: if user lands directly on /location/:id, store may be empty.
@@ -55,6 +56,7 @@ const LocationDetailsPage = () => {
     }, [storeLocations.length, storeIsLoading])
 
     // Connect to real stores
+    // FIX: DB is the source of truth for authenticated users; localStorage only for guests
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
     const { prefs, addVisited: localAddVisited } = useUserPrefsStore()
     const { user } = useAuthStore()
@@ -63,16 +65,25 @@ const LocationDetailsPage = () => {
     const addVisitMut = useAddVisitMutation()
     const { data: dbFavs = [] } = useUserFavorites(user?.id)
     const dbFavIds = dbFavs.map(f => f.location_id)
-    const isSaved   = dbFavIds.includes(location?.id) || isLocalFav(location?.id)
+    // DB takes precedence for auth users; localStorage fallback for guests
+    const isSaved   = user?.id ? dbFavIds.includes(location?.id) : isLocalFav(location?.id)
     const isVisited = prefs.lastVisited?.includes(location?.id)
 
     const toggleFavorite = async (id) => {
-        localToggle(id)  // optimistic local
-        if (!user?.id) return
+        if (!user?.id) {
+            // Guest mode: only localStorage
+            localToggle(id)
+            return
+        }
+        // Auth user: DB is truth — toggle based on current DB state
         if (dbFavIds.includes(id)) {
             await removeFavMut.mutateAsync({ userId: user.id, locationId: id })
         } else {
             await addFavMut.mutateAsync({ userId: user.id, locationId: id })
+        }
+        // Sync localStorage to match DB state after toggle
+        if (!dbFavIds.includes(id) !== isLocalFav(id)) {
+            localToggle(id)
         }
     }
 

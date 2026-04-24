@@ -38,7 +38,7 @@ vi.mock('@/features/auth/hooks/useUserPrefsStore', () => ({
 }))
 
 // Favorites Store
-vi.mock('@/features/dashboard/hooks/useFavoritesStore', () => ({
+vi.mock('@/shared/store/useFavoritesStore', () => ({
     useFavoritesStore: () => ({
         favoriteIds: ['loc-2'],
     }),

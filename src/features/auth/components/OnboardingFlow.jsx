@@ -388,6 +388,7 @@ export function OnboardingFlow({ onComplete }) {
     const [budget, setBudget]     = useState(['$$'])
     const [allergens, setAllergens] = useState([])
     const [saving, setSaving]     = useState(false)
+    const [skipError, setSkipError] = useState(null)
 
     // Step 0–3 can-continue rules:
     //   0 (cuisines)  → at least 1
@@ -434,7 +435,8 @@ export function OnboardingFlow({ onComplete }) {
         onComplete()
     }
 
-    const handleSkip = () => {
+    const handleSkip = async () => {
+        setSkipError(null)
         // Mark cuisines as ['any'] so OnboardingGate never shows again
         updatePrefs({
             onboardingCompleted: true,
@@ -443,13 +445,21 @@ export function OnboardingFlow({ onComplete }) {
             priceRange:       budget.length > 0 ? budget : ['$$'],
             dietaryRestrictions: allergens,
         })
-        // Fire-and-forget save
-        saveDNAToSupabase({
-            cuisines: cuisines.length > 0 ? cuisines : ['any'],
-            vibes,
-            budget: budget.length > 0 ? budget : ['$$'],
-            allergens,
-        })
+        // FIX: await save + handle errors — fire-and-forget could lose data on failure
+        try {
+            await saveDNAToSupabase({
+                cuisines: cuisines.length > 0 ? cuisines : ['any'],
+                vibes,
+                budget: budget.length > 0 ? budget : ['$$'],
+                allergens,
+            })
+        } catch (err) {
+            // Still close onboarding — local prefs are saved, DB will sync later
+            console.warn('[Onboarding] Skip save failed:', err.message)
+            setSkipError('Could not save preferences to server. Your local preferences are saved.')
+            // Small delay so user sees the message before closing
+            await new Promise(r => setTimeout(r, 1500))
+        }
         onComplete()
     }
 

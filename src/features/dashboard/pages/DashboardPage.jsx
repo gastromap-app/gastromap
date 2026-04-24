@@ -191,12 +191,8 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
         }
     }, [useLocationsStore.getState().searchQuery])
 
-    useEffect(() => {
-        return () => {
-            useLocationsStore.getState().setSearchQuery('')
-            useLocationsStore.getState().setCategory('All')
-        }
-    }, [])
+    // NOTE: Do NOT reset store filters on unmount — user expects filters to persist
+    // when switching between tabs/pages. Filters are only cleared explicitly via UI.
 
     return (
         <div className="flex flex-col gap-3 w-full">
@@ -286,6 +282,8 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    // FIX: Use reactive store subscription instead of getState() in render
+    const storeSearchQuery = useLocationsStore(s => s.searchQuery)
 
     const handleSelectCountry = (country) => {
         navigate(`/explore/${country.slug}`)
@@ -314,13 +312,12 @@ const DashboardPage = () => {
         useLocationsStore.getState().setSearchQuery(debouncedSearch)
     }, [debouncedSearch])
 
-    // Sync local search with store (e.g. if reset in modal)
+    // Sync local search with store (e.g. if reset in modal) — now reactive
     useEffect(() => {
-        const storeSearch = useLocationsStore.getState().searchQuery
-        if (storeSearch !== searchQuery && !debouncedSearch) {
-            setSearchQuery(storeSearch || '')
+        if (storeSearchQuery !== searchQuery && !debouncedSearch) {
+            setSearchQuery(storeSearchQuery || '')
         }
-    }, [useLocationsStore.getState().searchQuery])
+    }, [storeSearchQuery])
 
     // DASH-3 FIX: countries are now derived from actual locations in the store
     // COUNTRY_IMAGES is defined at module level — no need to include in deps
@@ -354,9 +351,23 @@ const DashboardPage = () => {
         [filteredLocations]
     )
 
+    // FIX: Trending now uses recency (created_at / updated_at) + rating, not just rating
     const trending = useMemo(() => {
         const topIds = new Set(recommended.map(l => l.id))
-        return [...filteredLocations].filter(l => !topIds.has(l.id)).sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0)).slice(0, 5)
+        const now = Date.now()
+        const DAY = 86_400_000
+        return [...filteredLocations]
+            .filter(l => !topIds.has(l.id))
+            .map(l => {
+                const rating = l.rating ?? l.google_rating ?? 0
+                const ts = new Date(l.updated_at || l.created_at || 0).getTime()
+                const ageDays = Math.max(0, (now - ts) / DAY)
+                // Score: higher rating + newer = trending. Decay by 0.1 per day.
+                const score = rating * Math.max(0.1, 1 - ageDays * 0.02)
+                return { ...l, _trendScore: score }
+            })
+            .sort((a, b) => b._trendScore - a._trendScore)
+            .slice(0, 5)
     }, [filteredLocations, recommended])
 
     const firstName = user?.name?.split(' ')[0] || 'there'

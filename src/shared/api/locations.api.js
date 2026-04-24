@@ -158,8 +158,12 @@ export async function getLocations(filters = {}) {
     q = q.range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
+    // FIX: Accept both 'approved' and 'active' — DB migration may not have run yet
     if (!bypassStatus) {
-        q = q.eq('status', status ?? 'approved')
+        const statusVal = status ?? 'approved'
+        q = statusVal === 'approved'
+            ? q.in('status', ['approved', 'active'])
+            : q.eq('status', statusVal)
     } else if (status) {
         q = q.eq('status', status)
     }
@@ -202,8 +206,9 @@ export async function getLocation(id, { adminMode = false } = {}) {
         .eq('id', id)
 
     // Public facing: only show active (approved) locations. Admin mode: show any status.
+    // FIX: Accept both 'approved' and 'active' — DB migration may not have run yet
     if (!adminMode) {
-        q = q.eq('status', 'approved')
+        q = q.in('status', ['approved', 'active'])
     }
 
     const { data, error } = await q.single()

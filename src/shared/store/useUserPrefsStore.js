@@ -74,6 +74,15 @@ export const useUserPrefsStore = create(
                 }))
             },
 
+            removeVisited: (locationId) => {
+                set((state) => ({
+                    prefs: {
+                        ...state.prefs,
+                        lastVisited: state.prefs.lastVisited.filter(id => id !== locationId),
+                    },
+                }))
+            },
+
             addFrequentSearch: (query) => {
                 if (!query?.trim()) return
                 const q = query.trim()

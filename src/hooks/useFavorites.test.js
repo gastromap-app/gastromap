@@ -4,7 +4,7 @@ import { renderHook, act } from '@testing-library/react'
 const mockToggleFavorite = vi.fn()
 const mockIsFavorite = vi.fn()
 
-vi.mock('@/features/dashboard/hooks/useFavoritesStore', () => ({
+vi.mock('@/shared/store/useFavoritesStore', () => ({
     useFavoritesStore: (selector) => {
         const state = {
             favoriteIds: ['loc-1', 'loc-2'],

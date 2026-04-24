@@ -199,16 +199,7 @@ export const useAdminLocations = () => {
         if (loadError) console.error('[Admin] Load Error:', loadError)
     }, [locsData, loadError])
 
-    // Background tasks listener (future proofing for toasts)
-    useEffect(() => {
-        const handleBgTask = (e) => {
-            const { type, status, id } = e.detail
-            console.log(`[Admin] Background task ${type} for ${id}: ${status}`)
-            // Here we can trigger a toast notification
-        }
-        window.addEventListener('bg-task-status', handleBgTask)
-        return () => window.removeEventListener('bg-task-status', handleBgTask)
-    }, [])
+    // (Removed duplicate bg-task-status listener — the one above at line ~59 already handles toasts)
 
     const prepareFormData = (loc) => {
         if (!loc) return null
@@ -245,7 +236,11 @@ export const useAdminLocations = () => {
             prepared.price_level = loc.price_range
         }
         
-        if (loc.tags?.length) {
+        // FIX: Do NOT overwrite vibe from tags — they are separate DB columns
+        // vibe = atmosphere labels, tags = search keywords — different semantics
+        // Ensure vibe has a value from the location data (already set above)
+        if (!prepared.vibe?.length && loc.tags?.length) {
+            // Only fall back to tags if vibe is truly empty
             prepared.vibe = [...loc.tags]
         }
 
@@ -468,6 +463,9 @@ export const useAdminLocations = () => {
                     setIsSlideOverOpen(false)
                     setFormData(null)
                     setSelectedLocation(null)
+                    // FIX: Switch filter to 'pending' so newly created location is visible
+                    setStatusFilter('pending')
+                    setToast({ message: 'Локация создана! Статус: ожидает модерации.', type: 'success' })
                 },
                 onError: (err) => {
                     alert('Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'))

@@ -160,8 +160,8 @@ const VisitedPage = () => {
     const { data: visits = [], isLoading } = useUserVisitsWithLocations(user?.id)
     const deleteVisitMutation = useDeleteVisitMutation()
 
-    const handleDelete = (visitId) => {
-        deleteVisitMutation.mutate({ visitId, userId: user.id })
+    const handleDelete = (visitId, locationId) => {
+        deleteVisitMutation.mutate({ visitId, userId: user.id, locationId })
     }
 
     // Loading state
@@ -214,7 +214,7 @@ const VisitedPage = () => {
                     <VisitedStats count={visits.length} isDark={isDark} />
                     <div className="space-y-3">
                         {visits.map((visit, i) => (
-                            <VisitedCard key={visit.id} visit={visit} index={i} onDelete={handleDelete} />
+                            <VisitedCard key={visit.id} visit={visit} index={i} onDelete={(visitId) => handleDelete(visitId, visit.location_id)} />
                         ))}
                     </div>
                 </>

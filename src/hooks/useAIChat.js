@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
-import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'

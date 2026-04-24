@@ -664,13 +664,19 @@ export function useAddVisitMutation() {
 export function useDeleteVisitMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ visitId, userId: _userId }) => {
+        mutationFn: async ({ visitId, userId: _userId, locationId }) => {
             const { deleteVisit } = await import('./visits.api')
             return deleteVisit(visitId)
         },
-        onSuccess: (_, { userId }) => {
+        onSuccess: (_, { userId, locationId }) => {
             qc.invalidateQueries({ queryKey: ['visits', userId] })
             qc.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
+            // Sync local prefs store — remove from lastVisited so UI stays consistent
+            if (locationId) {
+                import('@/shared/store/useUserPrefsStore').then(({ useUserPrefsStore }) => {
+                    useUserPrefsStore.getState().removeVisited(locationId)
+                })
+            }
         },
     })
 }

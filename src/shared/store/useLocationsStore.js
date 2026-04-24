@@ -206,6 +206,11 @@ export const useLocationsStore = create((set, get) => ({
     initError: null,      // error message if last init failed (allows retry)
     filteredLocations: INITIAL_LOCATIONS,
     isLoading: false,
+    // FIX: Pagination state — load in pages to avoid huge payloads
+    currentPage: 0,
+    pageSize: 200,
+    hasMore: true,
+    isLoadingMore: false,
 
     ...DEFAULT_FILTERS,
 
@@ -349,27 +354,57 @@ export const useLocationsStore = create((set, get) => ({
         // Allow retry if initialized but empty (network fail / status mismatch)
         if (get().isLoading) return
         if (get().isInitialized && get().locations.length > 0) return
-        set({ isLoading: true })
+        set({ isLoading: true, currentPage: 0, hasMore: true })
         try {
             const { getLocations } = await import('@/shared/api/locations.api')
-            const result = await getLocations({ limit: 500 })
+            const result = await getLocations({ limit: get().pageSize, offset: 0 })
             const data = result?.data ?? result
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
                 set((state) => ({
                     locations: data,
                     filteredLocations: applyAllFilters(data, state),
                     isLoading: false,
                     isInitialized: true,
                     initError: null,
+                    currentPage: 1,
+                    hasMore: data.length >= get().pageSize,
                 }))
             } else {
                 // Empty response is still a successful init — DB may have no data yet
-                set({ isLoading: false, isInitialized: true, initError: null })
+                set({ isLoading: false, isInitialized: true, initError: null, hasMore: false })
             }
         } catch (err) {
             // On error: do NOT set isInitialized=true — allow retry on next mount
             console.error('[useLocationsStore] initialize failed:', err.message)
             set({ isLoading: false, initError: err.message })
+        }
+    },
+
+    /** Load next page of locations (pagination). */
+    loadMore: async () => {
+        const { isLoadingMore, hasMore, pageSize, currentPage, locations } = get()
+        if (isLoadingMore || !hasMore) return
+        set({ isLoadingMore: true })
+        try {
+            const { getLocations } = await import('@/shared/api/locations.api')
+            const offset = currentPage * pageSize
+            const result = await getLocations({ limit: pageSize, offset })
+            const data = result?.data ?? result
+            if (Array.isArray(data) && data.length > 0) {
+                const merged = [...locations, ...data]
+                set((state) => ({
+                    locations: merged,
+                    filteredLocations: applyAllFilters(merged, state),
+                    currentPage: currentPage + 1,
+                    hasMore: data.length >= pageSize,
+                    isLoadingMore: false,
+                }))
+            } else {
+                set({ hasMore: false, isLoadingMore: false })
+            }
+        } catch (err) {
+            console.error('[useLocationsStore] loadMore failed:', err.message)
+            set({ isLoadingMore: false })
         }
     },
 

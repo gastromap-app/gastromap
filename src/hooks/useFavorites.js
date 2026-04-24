@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 
 /**
  * useFavorites — convenince hook for favourites with haptic feedback.

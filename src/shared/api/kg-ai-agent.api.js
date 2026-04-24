@@ -730,7 +730,14 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
                 .replace(/\s*```$/,      '')
                 .trim()
 
-            const parsed = JSON.parse(clean)
+            let parsed
+            try {
+                parsed = JSON.parse(clean)
+            } catch (jsonErr) {
+                KGDebug.modelFail(model, `JSON parse error: ${jsonErr.message}`)
+                errors.push(`${model}: invalid JSON — ${jsonErr.message}`)
+                continue
+            }
 
             parsed.items             = parsed.items          || {}
             parsed.items.cuisines    = parsed.items.cuisines    || []
@@ -938,7 +945,14 @@ Return ONLY a valid JSON object containing only the requested fields. No explana
 
             // Cleanup potential markdown if response_format was ignored by model provider
             const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim()
-            const parsed = JSON.parse(clean)
+            let parsed
+            try {
+                parsed = JSON.parse(clean)
+            } catch (jsonErr) {
+                errors.push(`${model}: invalid JSON — ${jsonErr.message}`)
+                KGDebug.modelFail(model, `JSON parse: ${jsonErr.message}`)
+                continue
+            }
 
             KGDebug.modelOk(model, performance.now() - _modelStart, data.usage?.total_tokens || '?')
             KGDebug.footer(parsed)

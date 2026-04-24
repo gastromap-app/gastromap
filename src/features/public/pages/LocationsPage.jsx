@@ -299,27 +299,33 @@ const LocationsPage = () => {
 
     // REGRESSION FIX: use query data directly for city pages, not global store
     // The global store holds ALL locations — filtering here by city avoids store pollution
-        const filtered = source.filter(loc => {
-            const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
-            const catMatch = activeCategory === 'All' || loc.category === activeCategory
-            const ratingMatch = !minRating || (loc.google_rating ?? loc.rating ?? 0) >= minRating
-            const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
-            return searchMatch && catMatch && ratingMatch && priceMatch
-        })
+    const source = cityData ?? []
+    const q = localSearch?.toLowerCase()
+    const filtered = useMemo(() => source.filter(loc => {
+        const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
+        const catMatch = activeCategory === 'All' || loc.category === activeCategory
+        const ratingMatch = !minRating || (loc.google_rating ?? loc.rating ?? 0) >= minRating
+        const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
+        return searchMatch && catMatch && ratingMatch && priceMatch
+    }), [source, q, activeCategory, minRating, activePriceLevels])
 
+    const sortedFiltered = useMemo(() => {
+        const result = [...filtered]
         // Apply sorting (same logic as useLocationsStore)
         if (sortBy === 'google_rating') {
-            filtered.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
+            result.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
         } else if (sortBy === 'name') {
-            filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+            result.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
         } else if (sortBy === 'price_asc') {
-            filtered.sort((a, b) => (a.price_level || 0) - (b.price_level || 0))
+            result.sort((a, b) => (a.price_level || 0) - (b.price_level || 0))
         } else if (sortBy === 'price_desc') {
-            filtered.sort((a, b) => (b.price_level || 0) - (a.price_level || 0))
+            result.sort((a, b) => (b.price_level || 0) - (a.price_level || 0))
         }
+        return result
+    }, [filtered, sortBy])
 
-        return filtered
-    }, [cityData, localSearch, activeCategory, minRating, activePriceLevels, sortBy])
+    // Alias for template compatibility
+    const localFilteredLocations = sortedFiltered
 
     const scrollContainerRef = useRef(null)
     // eslint-disable-next-line no-unused-vars

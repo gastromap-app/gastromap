@@ -86,6 +86,21 @@ ALTER TABLE public.locations ALTER COLUMN wifi_quality SET DEFAULT 'none';
 
 -- ─── 4. Unify status values ────────────────────────────────────────
 
+-- First: fix any invalid statuses before adding CHECK constraint
+UPDATE public.locations
+SET status = CASE
+    WHEN status IS NULL OR status = '' THEN 'active'
+    WHEN status = 'draft' THEN 'pending'
+    WHEN status = 'published' THEN 'approved'
+    WHEN status = 'banned' THEN 'rejected'
+    WHEN status = 'inactive' THEN 'hidden'
+    WHEN status IN ('active', 'approved', 'pending', 'rejected', 'revision_requested', 'hidden', 'coming_soon') THEN status
+    ELSE 'active'
+END
+WHERE status NOT IN ('active', 'approved', 'pending', 'rejected', 'revision_requested', 'hidden', 'coming_soon')
+   OR status IS NULL
+   OR status = '';
+
 -- Add CHECK constraint for valid statuses (drop first if exists to be safe)
 ALTER TABLE public.locations DROP CONSTRAINT IF EXISTS locations_status_check;
 ALTER TABLE public.locations ADD CONSTRAINT locations_status_check CHECK (status IN ('active', 'approved', 'pending', 'rejected', 'revision_requested', 'hidden', 'coming_soon'));

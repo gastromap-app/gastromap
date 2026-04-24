@@ -26,6 +26,8 @@ const DEFAULT_FILTERS = {
     activeBestTime: null,
     radius: 0,
     sortBy: 'rating',
+    selectedCountry: null,
+    selectedCity: null,
 }
 
 /** Compare price levels for sort: $ < $$ < $$$ */
@@ -47,6 +49,8 @@ function applyAllFilters(locations, filters) {
         activeVibes,
         activeBestTime,
         sortBy,
+        selectedCountry,
+        selectedCity,
     } = filters
 
     let result = [...locations]
@@ -54,6 +58,18 @@ function applyAllFilters(locations, filters) {
     // ─── Category ────────────────────────────────────────────────────────────
     if (activeCategory && activeCategory !== 'All') {
         result = result.filter(loc => loc.category === activeCategory)
+    }
+
+    // ─── Country / City ──────────────────────────────────────────────────────
+    if (selectedCountry) {
+        result = result.filter(loc =>
+            loc.country?.toLowerCase() === selectedCountry.toLowerCase()
+        )
+    }
+    if (selectedCity) {
+        result = result.filter(loc =>
+            loc.city?.toLowerCase() === selectedCity.toLowerCase()
+        )
     }
 
     // ─── Search ───────────────────────────────────────────────────────────────
@@ -207,6 +223,19 @@ export const useLocationsStore = create((set, get) => ({
         set(state => ({
             sortBy,
             filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }),
+        })),
+
+    setSelectedCountry: (selectedCountry) =>
+        set(state => ({
+            selectedCountry,
+            selectedCity: null, // reset city when country changes
+            filteredLocations: applyAllFilters(state.locations, { ...state, selectedCountry, selectedCity: null }),
+        })),
+
+    setSelectedCity: (selectedCity) =>
+        set(state => ({
+            selectedCity,
+            filteredLocations: applyAllFilters(state.locations, { ...state, selectedCity }),
         })),
 
     /**

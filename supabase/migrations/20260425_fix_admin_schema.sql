@@ -23,36 +23,60 @@ ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS must_try text;
 ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS moderation_note text;
 
 -- ─── 2. Migrate existing data from old columns ─────────────────────
+-- Safe migration: only copy data if source column exists (handles schema drift)
 
--- image → image_url
-UPDATE public.locations SET image_url = image WHERE image_url IS NULL AND image IS NOT NULL;
+DO $$
+BEGIN
+    -- image → image_url
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'image') THEN
+        EXECUTE 'UPDATE public.locations SET image_url = image WHERE image_url IS NULL AND image IS NOT NULL';
+    END IF;
 
--- price_level → price_range
-UPDATE public.locations SET price_range = price_level WHERE price_range IS NULL AND price_level IS NOT NULL;
+    -- price_level → price_range
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'price_level') THEN
+        EXECUTE 'UPDATE public.locations SET price_range = price_level WHERE price_range IS NULL AND price_level IS NOT NULL';
+    END IF;
 
--- cuisine (text) → cuisine_types (text[])
-UPDATE public.locations SET cuisine_types = ARRAY[cuisine] WHERE cuisine IS NOT NULL AND cuisine <> '' AND (cuisine_types IS NULL OR cuisine_types = '{}');
+    -- cuisine (text) → cuisine_types (text[])
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'cuisine') THEN
+        EXECUTE 'UPDATE public.locations SET cuisine_types = ARRAY[cuisine] WHERE cuisine IS NOT NULL AND cuisine <> '''' AND (cuisine_types IS NULL OR cuisine_types = ''''{})';
+    END IF;
 
--- photos → google_photos
-UPDATE public.locations SET google_photos = photos WHERE google_photos IS NULL OR google_photos = '{}';
+    -- photos → google_photos
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'photos') THEN
+        EXECUTE 'UPDATE public.locations SET google_photos = photos WHERE google_photos IS NULL OR google_photos = ''''{})';
+    END IF;
 
--- features → amenities
-UPDATE public.locations SET amenities = features WHERE amenities IS NULL OR amenities = '{}';
+    -- features → amenities
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'features') THEN
+        EXECUTE 'UPDATE public.locations SET amenities = features WHERE amenities IS NULL OR amenities = ''''{})';
+    END IF;
 
--- dietary → dietary_options
-UPDATE public.locations SET dietary_options = dietary WHERE dietary_options IS NULL OR dietary_options = '{}';
+    -- dietary → dietary_options
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'dietary') THEN
+        EXECUTE 'UPDATE public.locations SET dietary_options = dietary WHERE dietary_options IS NULL OR dietary_options = ''''{})';
+    END IF;
 
--- has_wifi (boolean) → wifi_quality (text)
-UPDATE public.locations SET wifi_quality = CASE WHEN has_wifi = true THEN 'high' ELSE 'none' END WHERE wifi_quality = 'none';
+    -- has_wifi (boolean) → wifi_quality (text)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'has_wifi') THEN
+        EXECUTE 'UPDATE public.locations SET wifi_quality = CASE WHEN has_wifi = true THEN ''high'' ELSE ''none'' END WHERE wifi_quality = ''none''';
+    END IF;
 
--- has_outdoor_seating → outdoor_seating
-UPDATE public.locations SET outdoor_seating = has_outdoor_seating WHERE outdoor_seating IS NULL;
+    -- has_outdoor_seating → outdoor_seating
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'has_outdoor_seating') THEN
+        EXECUTE 'UPDATE public.locations SET outdoor_seating = has_outdoor_seating WHERE outdoor_seating IS NULL';
+    END IF;
 
--- reservations_required → reservation_required
-UPDATE public.locations SET reservation_required = reservations_required WHERE reservation_required IS NULL;
+    -- reservations_required → reservation_required
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'reservations_required') THEN
+        EXECUTE 'UPDATE public.locations SET reservation_required = reservations_required WHERE reservation_required IS NULL';
+    END IF;
 
--- what_to_try (text[]) → must_try (text) for FTS compatibility
-UPDATE public.locations SET must_try = array_to_string(what_to_try, ', ') WHERE must_try IS NULL AND what_to_try IS NOT NULL AND what_to_try <> '{}';
+    -- what_to_try (text[]) → must_try (text) for FTS compatibility
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'locations' AND column_name = 'what_to_try') THEN
+        EXECUTE 'UPDATE public.locations SET must_try = array_to_string(what_to_try, '', '') WHERE must_try IS NULL AND what_to_try IS NOT NULL AND what_to_try <> ''''{})';
+    END IF;
+END $$;
 
 -- ─── 3. Set defaults for new columns ───────────────────────────────
 

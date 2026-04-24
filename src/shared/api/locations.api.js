@@ -37,9 +37,10 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // Schema: title, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
+    // Schema: title, rating, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
     const image         = row.image_url ?? ''
-    const rating        = Number(row.google_rating ?? 0)
+    const rating        = Number(row.rating ?? 0)
+    const googleRating  = Number(row.google_rating ?? 0)
     const priceRange    = row.price_range ?? '$$'
     const cuisineTypes  = Array.isArray(row.cuisine_types) ? row.cuisine_types : []
 
@@ -72,7 +73,7 @@ function normalise(row) {
         images: Array.isArray(row.google_photos) ? row.google_photos : [],
 
         rating,
-        google_rating: rating,
+        google_rating: googleRating,
         google_user_ratings_total: row.google_user_ratings_total ?? 0,
 
         price_level: priceRange,
@@ -181,29 +182,6 @@ export async function getLocations(filters = {}) {
 
     if (error) {
         console.error('[locations.api] ❌ Supabase query FAILED:', error.message)
-        
-        // If it was a sorting error, try one more time without sorting
-        if (error.message.includes('column') && (error.message.includes('rating'))) {
-            console.warn('[locations.api] 🔄 Retrying WITHOUT sorting by rating...')
-            const retryQ = supabase
-                .from('locations')
-                .select('*', { count: 'exact' })
-                .range(offset, offset + (limit - 1))
-            
-            if (!bypassStatus) retryQ.eq('status', status ?? 'approved')
-            if (city) retryQ.ilike('city', `%${city}%`)
-            
-            const retry = await retryQ
-            if (!retry.error) {
-                console.log('[locations.api] ✅ Retry successful! Showing unsorted data.')
-                return {
-                    data: (retry.data ?? []).map(normalise),
-                    total: retry.count ?? 0,
-                    hasMore: offset + limit < (retry.count ?? 0),
-                }
-            }
-        }
-
         console.error('[locations.api] 📉 Hard fallback to mocks.')
         return _mockGetLocations(filters)
     }
@@ -282,7 +260,15 @@ export async function createLocation(data, enableTranslation = null) {
     }
 
     // Create location IMMEDIATELY (without waiting for translations)
-    const row = _toRow(locationData)
+    let row = _toRow(locationData)
+    
+    // SEED LOGIC: If this is a new location and we have a Google rating but no local rating,
+    // seed the local rating field with the Google rating.
+    if (row.google_rating && !row.rating) {
+        console.log('[locations.api] 🌱 Seeding local rating from Google rating:', row.google_rating)
+        row.rating = row.google_rating
+    }
+
     const { data: created, error } = await _smartSave('locations', null, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)
@@ -572,8 +558,8 @@ function _toRow(d) {
     else if (d.images !== undefined) row.google_photos = d.images
 
     // Rating
+    if (d.rating !== undefined) row.rating = Number(d.rating)
     if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
-    else if (d.rating !== undefined) row.google_rating = Number(d.rating)
 
     // Price
     if (d.price_range !== undefined)  row.price_range = d.price_range

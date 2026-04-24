@@ -12,12 +12,16 @@ import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTranslation } from 'react-i18next'
 import { getCategoryLabel } from '@/shared/config/filterOptions'
 import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { getDisplayRating } from '@/utils/ratingUtils'
 
 export default function LocationCard({ location }) {
     const { i18n } = useTranslation()
     const navigate = useNavigate()
     const { isFavorite, toggleFavorite } = useFavoritesStore()
     const isFav = isFavorite(location.id)
+
+    // Calculate Ground Truth Rating
+    const displayRating = getDisplayRating(location, [])
 
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
@@ -55,7 +59,7 @@ export default function LocationCard({ location }) {
                     </h3>
                     <div className="flex items-center gap-1 text-yellow-500">
                         <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-medium text-foreground">{location.rating}</span>
+                        <span className="text-sm font-medium text-foreground">{displayRating.rating}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground text-sm">

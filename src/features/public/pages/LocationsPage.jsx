@@ -26,10 +26,10 @@ import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
 const SORT_OPTIONS = [
-    { value: 'rating',     label: 'Top Rated' },
-    { value: 'price_asc',  label: 'Price ↑' },
-    { value: 'price_desc', label: 'Price ↓' },
-    { value: 'name',       label: 'A → Z' },
+    { value: 'google_rating', label: 'Top Rated' },
+    { value: 'price_asc',     label: 'Price ↑' },
+    { value: 'price_desc',    label: 'Price ↓' },
+    { value: 'name',          label: 'A → Z' },
 ]
 
 // ─── Open status badge (uses real openingHours) ───────────────────────────
@@ -119,7 +119,7 @@ const MobileCard = memo(function MobileCard({ item }) {
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
                         <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.rating}</span>
+                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.google_rating ?? item.rating}</span>
                         <span className={`text-[11px] ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>({item.reviews ?? '—'})</span>
                     </div>
                     <span className={`font-semibold text-[13px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -171,7 +171,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                 />
                 {/* Rating */}
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-black text-gray-900 flex items-center gap-1 shadow-md">
-                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {item.rating}
+                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {item.google_rating ?? item.rating}
                 </div>
                 {/* Save */}
                 <button
@@ -299,17 +299,27 @@ const LocationsPage = () => {
 
     // REGRESSION FIX: use query data directly for city pages, not global store
     // The global store holds ALL locations — filtering here by city avoids store pollution
-    const localFilteredLocations = useMemo(() => {
-        const source = cityData ?? []
-        const q = localSearch.toLowerCase()
-        return source.filter(loc => {
+        const filtered = source.filter(loc => {
             const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
             const catMatch = activeCategory === 'All' || loc.category === activeCategory
-            const ratingMatch = !minRating || (loc.rating ?? 0) >= minRating
+            const ratingMatch = !minRating || (loc.google_rating ?? loc.rating ?? 0) >= minRating
             const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
             return searchMatch && catMatch && ratingMatch && priceMatch
         })
-    }, [cityData, localSearch, activeCategory, minRating, activePriceLevels])
+
+        // Apply sorting (same logic as useLocationsStore)
+        if (sortBy === 'google_rating') {
+            filtered.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
+        } else if (sortBy === 'name') {
+            filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+        } else if (sortBy === 'price_asc') {
+            filtered.sort((a, b) => (a.price_level || 0) - (b.price_level || 0))
+        } else if (sortBy === 'price_desc') {
+            filtered.sort((a, b) => (b.price_level || 0) - (a.price_level || 0))
+        }
+
+        return filtered
+    }, [cityData, localSearch, activeCategory, minRating, activePriceLevels, sortBy])
 
     const scrollContainerRef = useRef(null)
     // eslint-disable-next-line no-unused-vars

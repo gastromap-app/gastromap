@@ -233,7 +233,7 @@ const LocationListItem = ({
                             <p className="text-[14px] font-bold text-slate-900 dark:text-white truncate">{loc.title}</p>
                             <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-md">
                                 <Star size={10} className="fill-amber-500 text-amber-500" />
-                                <span className="text-[10px] font-black text-amber-600">{loc.rating > 0 ? loc.rating : '—'}</span>
+                                <span className="text-[10px] font-black text-amber-600">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                             </div>
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate flex items-center gap-1.5 font-medium">
@@ -298,8 +298,8 @@ const LocationListItem = ({
             </td>
             <td className="px-6 py-5">
                 <div className="flex items-center gap-1.5">
-                    <Star size={12} className={cn("fill-current stroke-[2]", loc.rating > 0 ? "text-amber-500" : "text-slate-100 dark:text-slate-800")} />
-                    <span className="text-[11px] font-black text-slate-500">{loc.rating > 0 ? loc.rating : '—'}</span>
+                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-slate-100 dark:text-slate-800")} />
+                    <span className="text-[11px] font-black text-slate-500">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                 </div>
             </td>
             <td className="px-6 py-5">

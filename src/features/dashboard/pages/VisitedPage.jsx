@@ -59,7 +59,7 @@ function VisitedCard({ visit, index, onDelete }) {
 
                         <div className="flex-shrink-0 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-xl">
                             <Star size={10} className="text-emerald-500 fill-emerald-500" />
-                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.rating}</span>
+                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.google_rating || loc.rating}</span>
                         </div>
                     </div>
 

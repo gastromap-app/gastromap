@@ -53,10 +53,10 @@ async function generateEmbedding(text) {
  * @param {string} queryText - Natural language query
  * @param {number} [limit=10] - Max results
  * @param {string} [_apiKey] - Unused but kept for signature compatibility
- * @param {Object} [options] - Additional filters { city, category, lat, lng, radius }
+ * @param {Object} [options] - Additional filters { city, category, cuisine, price_range, lat, lng, radius }
  * @returns {Promise<Array>} Matched location rows
  */
-export async function semanticSearch(queryText, limit = 10, _apiKey = null, { city, category, lat, lng, radius } = {}) {
+export async function semanticSearch(queryText, limit = 10, _apiKey = null, { city, category, cuisine, price_range, lat, lng, radius } = {}) {
     if (!queryText?.trim() || !supabase) return []
 
     try {
@@ -70,6 +70,8 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
                 query_text: queryText,
                 p_city: city || null,
                 p_category: category || null,
+                p_cuisine: cuisine || null,
+                p_price_range: price_range || null,
                 p_lat: lat || null,
                 p_lng: lng || null,
                 p_radius_meters: radius || 5000,
@@ -92,6 +94,8 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
             query_text: queryText,
             p_city: city || null,
             p_category: category || null,
+            p_cuisine: cuisine || null,
+            p_price_range: price_range || null,
             p_lat: lat || null,
             p_lng: lng || null,
             p_radius_meters: radius || 5000,

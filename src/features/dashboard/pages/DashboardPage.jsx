@@ -95,7 +95,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 {/* Rating pill */}
                 <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
                     <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[11px] font-bold text-white">{loc.rating || '4.5'}</span>
+                    <span className="text-[11px] font-bold text-white">{loc.rating ?? loc.google_rating ?? '4.5'}</span>
                 </div>
 
                 {/* Trending badge */}
@@ -183,6 +183,14 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
         useLocationsStore.getState().setSearchQuery(debouncedMapSearch)
     }, [debouncedMapSearch])
 
+    // Sync local search with store (e.g. if reset in modal)
+    useEffect(() => {
+        const storeSearch = useLocationsStore.getState().searchQuery
+        if (storeSearch !== mapSearch && !debouncedMapSearch) {
+            setMapSearch(storeSearch || '')
+        }
+    }, [useLocationsStore.getState().searchQuery])
+
     useEffect(() => {
         return () => {
             useLocationsStore.getState().setSearchQuery('')
@@ -193,34 +201,13 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
     return (
         <div className="flex flex-col gap-3 w-full">
             {/* Search + filter */}
-            <div className="flex gap-2">
-                <div className={`flex-1 relative flex items-center h-12 px-4 rounded-input border transition-all ${
-                    isDark ? 'bg-white/6 border-white/10' : 'bg-white border-gray-200 shadow-sm'
-                }`}>
-                    <SearchIcon size={16} className="text-blue-500 mr-3 flex-shrink-0" />
-                    <input
-                        type="text"
-                        placeholder={t('dashboard.search_placeholder')}
-                        value={mapSearch}
-                        onChange={(e) => setMapSearch(e.target.value)}
-                        className={`bg-transparent flex-1 outline-none text-[14px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                    />
-                    {mapSearch && (
-                        <button onClick={() => setMapSearch('')} className="ml-2 text-gray-400 hover:text-gray-600 transition-colors">
-                            <X size={14} />
-                        </button>
-                    )}
-                </div>
-                <button
-                    onClick={() => setIsFilterOpen(true)}
-                    aria-label="Open filters"
-                    className={`w-12 h-12 flex-shrink-0 rounded-input flex items-center justify-center active:scale-95 transition-all ${
-                        isDark ? 'bg-blue-600/15 text-blue-400 border border-blue-500/20' : 'bg-blue-600 text-white shadow-sm'
-                    }`}
-                >
-                    <SlidersHorizontal size={18} />
-                </button>
-            </div>
+            <SmartSearchBar
+                value={mapSearch}
+                onChange={(e) => setMapSearch(e.target.value)}
+                onFilter={() => setIsFilterOpen(true)}
+                placeholder={t('dashboard.search_placeholder')}
+                className="w-full"
+            />
 
             {/* Category chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -327,6 +314,14 @@ const DashboardPage = () => {
         useLocationsStore.getState().setSearchQuery(debouncedSearch)
     }, [debouncedSearch])
 
+    // Sync local search with store (e.g. if reset in modal)
+    useEffect(() => {
+        const storeSearch = useLocationsStore.getState().searchQuery
+        if (storeSearch !== searchQuery && !debouncedSearch) {
+            setSearchQuery(storeSearch || '')
+        }
+    }, [useLocationsStore.getState().searchQuery])
+
     // DASH-3 FIX: countries are now derived from actual locations in the store
     // COUNTRY_IMAGES is defined at module level — no need to include in deps
     const countries = useMemo(() => {
@@ -355,13 +350,13 @@ const DashboardPage = () => {
     }, [locations, dbCoverMap])
 
     const recommended = useMemo(
-        () => [...filteredLocations].sort((a, b) => b.rating - a.rating).slice(0, 5),
+        () => [...filteredLocations].sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0)).slice(0, 5),
         [filteredLocations]
     )
 
     const trending = useMemo(() => {
         const topIds = new Set(recommended.map(l => l.id))
-        return [...filteredLocations].filter(l => !topIds.has(l.id)).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 5)
+        return [...filteredLocations].filter(l => !topIds.has(l.id)).sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0)).slice(0, 5)
     }, [filteredLocations, recommended])
 
     const firstName = user?.name?.split(' ')[0] || 'there'
@@ -386,35 +381,13 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Search + filter */}
-                    <div className="px-5 mb-5 flex gap-2.5">
-                        <div className={`flex-1 relative flex items-center h-[46px] px-4 rounded-[14px] transition-all ${
-                            isDark
-                                ? 'bg-white/8 border border-white/10'
-                                : 'bg-gray-100/80'
-                        }`}>
-                            <SearchIcon size={16} className="text-gray-400 mr-3 flex-shrink-0" />
-                            <input
-                                type="text"
-                                placeholder={t('dashboard.search_placeholder')}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`bg-transparent flex-1 outline-none text-[14px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            />
-                            {searchQuery && (
-                                <button onClick={() => setSearchQuery('')} className="ml-2 text-gray-400">
-                                    <X size={13} />
-                                </button>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            aria-label="Open filters"
-                            className={`w-[46px] h-[46px] flex-shrink-0 rounded-[14px] flex items-center justify-center active:scale-95 transition-all ${
-                                isDark ? 'bg-blue-600/15 text-blue-400' : 'bg-blue-600 text-white'
-                            }`}
-                        >
-                            <SlidersHorizontal size={17} />
-                        </button>
+                    <div className="px-5 mb-5">
+                        <SmartSearchBar
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFilter={() => setIsFilterOpen(true)}
+                            placeholder={t('dashboard.search_placeholder')}
+                        />
                     </div>
 
                     {/* Pull-to-refresh indicator */}
@@ -582,27 +555,14 @@ const DesktopDashboard = ({
                 </h1>
 
                 {/* Search */}
-                <div className="flex gap-3">
-                    <div className={`relative flex-1 flex items-center h-[54px] px-5 rounded-[18px] transition-all ${
-                        isDark
-                            ? 'bg-white/8 border border-white/10 focus-within:border-white/20'
-                            : 'bg-gray-100 focus-within:bg-white focus-within:border-gray-300 border border-transparent'
-                    }`}>
-                        <SearchIcon size={18} className="text-gray-400 mr-3 flex-shrink-0" />
-                        <input
-                            type="text"
-                            placeholder={t('dashboard.search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`bg-transparent flex-1 outline-none text-[15px] font-medium placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                        />
-                    </div>
-                    <button
-                        onClick={() => navigate(searchQuery ? `/explore?q=${encodeURIComponent(searchQuery)}` : '/explore')}
-                        className="h-[54px] px-7 rounded-[18px] bg-blue-600 text-white font-semibold text-[15px] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
-                    >
-                        {t('dashboard.search_btn')}
-                    </button>
+                <div className="mb-8">
+                    <SmartSearchBar
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFilter={() => setIsFilterOpen(true)}
+                        placeholder={t('dashboard.search_placeholder')}
+                        className="max-w-2xl"
+                    />
                 </div>
             </div>
 
@@ -746,7 +706,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) =
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
                 <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-[11px] font-bold text-white">{item.rating}</span>
+                <span className="text-[11px] font-bold text-white">{item.rating ?? item.google_rating}</span>
             </div>
             {isTrending && (
                 <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">

@@ -33,9 +33,9 @@ RETURNS TABLE (
   address text,
   category text,
   cuisine text,
-  rating numeric,
-  image text,
-  price_level text,
+  google_rating numeric,
+  image_url text,
+  price_range text,
   tags text[],
   special_labels text[],
   vibe text[],
@@ -62,7 +62,7 @@ BEGIN
           AND (p_city IS NULL OR lower(l.city) = lower(p_city))
           AND (p_category IS NULL OR lower(l.category) = lower(p_category))
           AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
-          AND (p_price_range IS NULL OR l.price_level = p_price_range)
+          AND (p_price_range IS NULL OR l.price_range = p_price_range)
           AND (
             p_lat IS NULL OR p_lng IS NULL OR 
             (st_distance_sphere(st_point(l.lng, l.lat), st_point(p_lng, p_lat)) <= p_radius_meters)
@@ -81,7 +81,7 @@ BEGIN
           AND (p_city IS NULL OR lower(l.city) = lower(p_city))
           AND (p_category IS NULL OR lower(l.category) = lower(p_category))
           AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
-          AND (p_price_range IS NULL OR l.price_level = p_price_range)
+          AND (p_price_range IS NULL OR l.price_range = p_price_range)
           AND (
             p_lat IS NULL OR p_lng IS NULL OR 
             (st_distance_sphere(st_point(l.lng, l.lat), st_point(p_lng, p_lat)) <= p_radius_meters)
@@ -106,9 +106,9 @@ BEGIN
         l.address,
         l.category,
         l.cuisine,
-        l.rating,
-        l.image,
-        l.price_level,
+        l.google_rating,
+        l.image_url,
+        l.price_range,
         l.tags,
         l.special_labels,
         COALESCE(l.vibe, '{}'::text[]) as vibe,
@@ -154,9 +154,9 @@ RETURNS TABLE (
   address text,
   category text,
   cuisine text,
-  rating numeric,
-  image text,
-  price_level text,
+  google_rating numeric,
+  image_url text,
+  price_range text,
   tags text[],
   special_labels text[],
   vibe text[],
@@ -182,9 +182,9 @@ BEGIN
         l.address,
         l.category,
         l.cuisine,
-        l.rating,
-        l.image,
-        l.price_level,
+        l.google_rating,
+        l.image_url,
+        l.price_range,
         l.tags,
         l.special_labels,
         COALESCE(l.vibe, '{}'::text[]) as vibe,
@@ -208,7 +208,7 @@ BEGIN
       AND (p_city IS NULL OR lower(l.city) = lower(p_city))
       AND (p_category IS NULL OR lower(l.category) = lower(p_category))
       AND (p_cuisine IS NULL OR l.kg_cuisines @> ARRAY[p_cuisine]::text[] OR l.cuisine ILIKE '%' || p_cuisine || '%')
-      AND (p_price_range IS NULL OR l.price_level = p_price_range)
+      AND (p_price_range IS NULL OR l.price_range = p_price_range)
       AND (
         p_lat IS NULL OR p_lng IS NULL OR 
         (st_distance_sphere(st_point(l.lng, l.lat), st_point(p_lng, p_lat)) <= p_radius_meters)

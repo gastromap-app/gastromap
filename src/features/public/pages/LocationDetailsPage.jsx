@@ -9,6 +9,7 @@ import {
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
 } from 'lucide-react'
+import { getDisplayRating } from '@/utils/ratingUtils'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
@@ -91,21 +92,24 @@ const LocationDetailsPage = () => {
         [allReviews]
     )
 
-    // Compute aggregate from Supabase reviews
+    // Compute aggregate using our Ground Truth utility
     const aggregate = useMemo(() => {
-        if (!reviews.length) return { average: 0, count: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }
+        const dr = getDisplayRating(location, reviews)
+        
+        // Distribution still calculated from real reviews only
         const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
         reviews.forEach((r) => {
             const rating = Math.round(r.rating)
             if (dist[rating] !== undefined) dist[rating]++
         })
-        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+
         return {
-            average: Math.round(avg * 10) / 10,
-            count: reviews.length,
+            average: dr.rating,
+            count: dr.count,
+            isInternal: dr.isInternal,
             distribution: dist,
         }
-    }, [reviews])
+    }, [reviews, location])
 
     const [activeTab, setActiveTab] = useState('Overview')
     const [showScrollHint, setShowScrollHint] = useState(true)
@@ -683,7 +687,7 @@ const LocationDetailsPage = () => {
                             </span>
                             <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 text-white text-[10px] font-black">
                                 <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                                {location.rating}
+                                {location.google_rating ?? location.rating}
                             </div>
                         </div>
                         <h1 className="text-2xl md:text-5xl font-black text-white leading-tight tracking-tight">

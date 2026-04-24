@@ -111,7 +111,8 @@ const LocationFormSlideOver = ({
             lng:           place.lng            ?? prev?.lng           ?? null,
             phone:         place.phone          || prev?.phone         || '',
             website:       place.website        || prev?.website       || '',
-            rating:        place.rating         ?? prev?.rating        ?? null,
+            google_rating: place.rating         ?? prev?.google_rating ?? null,
+            rating:        prev?.rating         ?? place.rating        ?? null,
             price_level:   place.price_level    || prev?.price_level   || '$$',
             opening_hours: place.opening_hours  || prev?.opening_hours || '',
             description:   place.description    || prev?.description   || '',
@@ -394,14 +395,26 @@ const LocationFormSlideOver = ({
                                                             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
                                                         </div>
                                                     </Field>
-                                                    <Field label="Рейтинг Google" hint="0.0 — 5.0">
-                                                        <div className="relative">
-                                                            <Star size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" />
+                                                    <Field label="Внутренний рейтинг" hint="Наш Ground Truth">
+                                                        <div className="relative group">
+                                                            <Star size={14} className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", formData.rating ? "text-indigo-500" : "text-slate-400")} />
                                                             <input
                                                                 type="number" min="0" max="5" step="0.1"
                                                                 value={formData.rating || ''}
                                                                 onChange={e => set('rating', parseFloat(e.target.value) || null)}
-                                                                className={cn(input, "pl-11")}
+                                                                className={cn(input, "pl-11 border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/10")}
+                                                                placeholder="4.5"
+                                                            />
+                                                        </div>
+                                                    </Field>
+                                                    <Field label="Рейтинг Google" hint="Справочно">
+                                                        <div className="relative opacity-80">
+                                                            <Star size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" />
+                                                            <input
+                                                                type="number" min="0" max="5" step="0.1"
+                                                                value={formData.google_rating || ''}
+                                                                onChange={e => set('google_rating', parseFloat(e.target.value) || null)}
+                                                                className={cn(input, "pl-11 bg-slate-100/50 dark:bg-slate-800/20")}
                                                                 placeholder="4.8"
                                                             />
                                                         </div>

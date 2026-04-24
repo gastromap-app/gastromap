@@ -53,7 +53,7 @@ function SavedCard({ favorite, index, onRemove }) {
                     {/* Rating pill */}
                     <div className="flex-shrink-0 flex items-center gap-1 bg-blue-600/10 px-2 py-1 rounded-xl">
                         <Star size={10} className="text-blue-600 fill-blue-600" />
-                        <span className="text-[11px] font-black text-blue-600">{loc.rating}</span>
+                        <span className="text-[11px] font-black text-blue-600">{loc.google_rating ?? loc.rating}</span>
                     </div>
                 </div>
 

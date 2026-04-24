@@ -325,7 +325,7 @@ export function ChatInterface({
                                                 <p className={`text-xs flex items-center gap-1 mt-1 ${
                                                     transparent ? 'text-gray-700 dark:text-gray-300' : 'text-muted-foreground'
                                                 }`}>
-                                                    <ChefHat className="h-3 w-3" /> {loc.category} • ⭐ {loc.rating}
+                                                    <ChefHat className="h-3 w-3" /> {loc.category} • ⭐ {loc.google_rating ?? loc.rating}
                                                 </p>
                                             </div>
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${

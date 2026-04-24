@@ -154,6 +154,7 @@ function transformElement(element) {
         cuisine: cuisine || null,
         image: getImage(id, category),
         rating,
+        google_rating: rating,
         tags: tagsList,
         special_labels,
         openingHours: parseOpeningHours(tags.opening_hours),

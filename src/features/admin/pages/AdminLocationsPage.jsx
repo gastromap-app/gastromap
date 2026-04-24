@@ -69,13 +69,17 @@ const AdminLocationsPage = () => {
     const hook = useAdminLocations()
     
     const {
-        view, setView, searchQuery, setSearchQuery,
+        statusFilter, setStatusFilter, searchQuery, setSearchQuery,
+        activeCategory, setActiveCategory, activePriceLevels, setActivePriceLevels,
+        minRating, setMinRating, activeVibes, setActiveVibes, sortBy, setSortBy,
+        activeCity, setActiveCity, activeCountry, setActiveCountry,
         selectedLocation, isSlideOverOpen, setIsSlideOverOpen,
         isImportWizardOpen, setIsImportWizardOpen, viewMode, setViewMode,
         formData, setFormData,
         culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
         locationsList, pendingLocations, loadError, filteredLocations,
+        countries, cities,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
@@ -181,14 +185,32 @@ const AdminLocationsPage = () => {
 
             <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
                 <LocationFilters
-                    view={view}
-                    onViewChange={setView}
+                    view={statusFilter}
+                    onViewChange={setStatusFilter}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     filteredCount={filteredLocations.length}
                     totalCount={locationsList.length}
+                    
+                    // Advanced Filters
+                    activeCategory={activeCategory}
+                    onCategoryChange={setActiveCategory}
+                    activePriceLevels={activePriceLevels}
+                    onPriceLevelsChange={setActivePriceLevels}
+                    minRating={minRating}
+                    onMinRatingChange={setMinRating}
+                    activeVibes={activeVibes}
+                    onVibesChange={setActiveVibes}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    activeCity={activeCity}
+                    onCityChange={setActiveCity}
+                    activeCountry={activeCountry}
+                    onCountryChange={setActiveCountry}
+                    cities={cities}
+                    countries={countries}
                 />
 
                 {/* Pagination */}
@@ -211,7 +233,7 @@ const AdminLocationsPage = () => {
                 )}
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
-                    {view === 'list' && (
+                    {viewMode === 'list' && (
                         <ListViewSection
                             filteredLocations={paginatedLocations}
                             viewMode={viewMode}

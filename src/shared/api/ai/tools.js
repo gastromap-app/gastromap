@@ -23,6 +23,7 @@
 
 import { semanticSearch } from './search.js'
 import { supabase } from '../client.js'
+import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ function mapLocation(l) {
         tags:           l.tags ?? [],
         vibe:           vibes,
         price_range:    l.price_range,
-        rating:         l.google_rating ?? null,
+        rating:         l.google_rating ?? l.rating ?? null,
         google_rating:  l.google_rating ?? null,
         description:    l.description,
         insider_tip:    l.insider_tip ?? null,
@@ -117,6 +118,17 @@ function mapLocation(l) {
     }
 }
 
+/**
+ * Get current user preferences for personalization.
+ */
+function getUserPreferences() {
+    try {
+        return useUserPrefsStore.getState().prefs
+    } catch {
+        return null
+    }
+}
+
 // ─── Tier 1: Supabase structured query ───────────────────────────────────────
 
 /**
@@ -127,7 +139,7 @@ function mapLocation(l) {
  *
  * Returns raw rows (for client-side post-filtering).
  */
-async function querySupabase({ city, category, price_range, min_rating, michelin, fetchLimit = 200, lat, lng }) {
+async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, fetchLimit = 200, lat, lng }) {
     if (!supabase) return null
 
     try {
@@ -159,6 +171,10 @@ async function querySupabase({ city, category, price_range, min_rating, michelin
         }
         if (category) {
             query = query.ilike('category', `%${category}%`)
+        }
+        if (cuisine) {
+            // Check both cuisine column and kg_cuisines array
+            query = query.or(`cuisine.ilike.%${cuisine}%,kg_cuisines.cs.{${cuisine}}`)
         }
 
         const { data, error } = await query
@@ -278,7 +294,7 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
                 const bS = semanticIds.has(b.id) ? 2 : 0
                 const aL = literalMatches.find(m => m.id === a.id) ? 1 : 0
                 const bL = literalMatches.find(m => m.id === b.id) ? 1 : 0
-                return (bS + bL) - (aS + aL) || (b.rating ?? 0) - (a.rating ?? 0)
+                return (bS + bL) - (aS + aL) || (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0)
             })
             return combined
         }
@@ -286,7 +302,7 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
         // pgvector not available or failed — use literal only
     }
 
-    return literalMatches.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
+    return literalMatches.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
 }
 
 // ─── Main executor ────────────────────────────────────────────────────────────
@@ -316,11 +332,19 @@ export async function executeTool(name, args, locations = []) {
 
         // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
         let pool = []
+        
+        // Personalization: Merge user preferences if not explicitly overridden by search
+        const userPrefs = getUserPreferences()
+        const effectiveCuisine = cuisine_types?.[0] || (keyword && !cuisine_types?.length ? null : userPrefs?.favoriteCuisines?.[0])
+        const effectivePrice = price_range?.[0] || (keyword && !price_range?.length ? null : userPrefs?.priceRange?.[0])
+
         if (keyword) {
             // Call semanticSearch (Hybrid RPC) which handles city/category/geo server-side
             const semanticResults = await semanticSearch(keyword, limit * 5, null, { 
                 city, 
                 category,
+                cuisine: effectiveCuisine,
+                price_range: effectivePrice,
                 lat: args.lat,
                 lng: args.lng,
                 radius: args.radius
@@ -346,7 +370,7 @@ export async function executeTool(name, args, locations = []) {
                 
                 // Apply remaining structured filters that RPC doesn't handle
                 if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
-                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? 0) >= min_rating)
+                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? l.rating ?? 0) >= min_rating)
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
                 
                 // Apply advanced text filters (amenities, dietary, etc.)
@@ -360,7 +384,8 @@ export async function executeTool(name, args, locations = []) {
             const dbRows = await querySupabase({ 
                 city, 
                 category, 
-                price_range, 
+                cuisine: effectiveCuisine,
+                price_range: price_range?.length ? price_range : (effectivePrice ? [effectivePrice] : null), 
                 min_rating, 
                 michelin,
                 lat: args.lat,
@@ -383,7 +408,7 @@ export async function executeTool(name, args, locations = []) {
 
                 // Apply SQL-equivalent filters in memory when DB is unavailable
                 if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
-                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? 0) >= min_rating)
+                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? l.rating ?? 0) >= min_rating)
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
             }
 
@@ -410,7 +435,7 @@ export async function executeTool(name, args, locations = []) {
             if (keyword) {
                 pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
             } else {
-                pool.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
+                pool.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
             }
         }
 

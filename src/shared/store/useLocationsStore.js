@@ -26,7 +26,9 @@ const DEFAULT_FILTERS = {
     activeBestTime: null,
     radius: 0,
     userLocation: null, // { lat, lng }
-    sortBy: 'rating',
+    sortBy: 'google_rating',
+    activeCity: 'All',
+    activeCountry: 'All',
 }
 
 /** Compare price levels for sort: $ < $$ < $$$ */
@@ -40,7 +42,7 @@ const BEST_TIME_LABELS = {
     late_night: ['Night', 'Late night', 'Bar', 'Club', 'Nightlife', 'Ночь', 'Поздний ужин'],
 }
 
-function applyAllFilters(locations, filters) {
+export function applyAllFilters(locations, filters) {
     const {
         activeCategory,
         searchQuery,
@@ -51,6 +53,8 @@ function applyAllFilters(locations, filters) {
         radius,
         userLocation,
         sortBy,
+        activeCity,
+        activeCountry,
     } = filters
 
     let result = [...locations]
@@ -58,6 +62,16 @@ function applyAllFilters(locations, filters) {
     // ─── Category ────────────────────────────────────────────────────────────
     if (activeCategory && activeCategory !== 'All') {
         result = result.filter(loc => loc.category === activeCategory)
+    }
+
+    // ─── Country ─────────────────────────────────────────────────────────────
+    if (activeCountry && activeCountry !== 'All') {
+        result = result.filter(loc => loc.country === activeCountry)
+    }
+
+    // ─── City ────────────────────────────────────────────────────────────────
+    if (activeCity && activeCity !== 'All') {
+        result = result.filter(loc => loc.city === activeCity)
     }
 
     // ─── Search ───────────────────────────────────────────────────────────────
@@ -85,7 +99,7 @@ function applyAllFilters(locations, filters) {
 
     // ─── Rating ──────────────────────────────────────────────────────────────
     if (minRating != null) {
-        result = result.filter(loc => (loc.rating ?? 0) >= minRating)
+        result = result.filter(loc => (loc.rating ?? loc.google_rating ?? 0) >= minRating)
     }
 
     // ─── Vibes / Labels ──────────────────────────────────────────────────────
@@ -141,8 +155,9 @@ function applyAllFilters(locations, filters) {
 
     // ─── Sort ────────────────────────────────────────────────────────────────
     switch (sortBy) {
-        case 'rating':
-            result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        case 'rating': // Prioritize internal rating
+        case 'google_rating':
+            result.sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0))
             break
         case 'price_asc':
             result.sort(
@@ -158,6 +173,9 @@ function applyAllFilters(locations, filters) {
             break
         case 'name':
             result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+            break
+        case 'newest':
+            result.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0))
             break
         default:
             break

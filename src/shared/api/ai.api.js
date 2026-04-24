@@ -228,7 +228,7 @@ async function executeTool(name, args) {
             results = results.filter(l => price_level.includes(l.priceLevel))
         }
         if (min_rating) {
-            results = results.filter(l => (l.rating ?? 0) >= min_rating)
+            results = results.filter(l => (l.google_rating ?? l.rating ?? 0) >= min_rating)
         }
         if (features?.length) {
             results = results.filter(l => {
@@ -270,7 +270,7 @@ async function executeTool(name, args) {
             )
         }
 
-        results.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        results.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
         results = results.slice(0, limit)
 
         return results.map(l => ({
@@ -280,7 +280,7 @@ async function executeTool(name, args) {
             cuisine: l.cuisine,
             vibe: l.vibe,
             price_level: l.priceLevel,
-            rating: l.rating,
+            rating: l.google_rating ?? l.rating,
             address: l.address,
             opening_hours: l.openingHours,
             phone: l.phone ?? null,
@@ -311,7 +311,7 @@ async function executeTool(name, args) {
             phone: loc.phone ?? null,
             website: loc.website ?? null,
             opening_hours: loc.openingHours,
-            rating: loc.rating,
+            rating: loc.google_rating ?? loc.rating,
             features: loc.features ?? [],
             best_for: loc.best_for ?? [],
             dietary: loc.dietary ?? [],

@@ -188,11 +188,11 @@ const AdminStatsPage = () => {
                                                 <span className="text-[10px] text-slate-400 font-normal shrink-0">{loc.city}</span>
                                             </div>
                                             <div className="flex items-center gap-3 shrink-0 ml-2">
-                                                {loc.rating > 0 && (
-                                                    <span className="flex items-center gap-0.5 text-amber-500">
-                                                        <Star size={10} className="fill-current" /> {loc.rating}
-                                                    </span>
-                                                )}
+                                                {(loc.google_rating ?? loc.rating) > 0 && (
+                                                     <span className="flex items-center gap-0.5 text-amber-500">
+                                                         <Star size={10} className="fill-current" /> {loc.google_rating ?? loc.rating}
+                                                     </span>
+                                                 )}
                                                 <span className="text-indigo-500">{fmt(score)}</span>
                                             </div>
                                         </div>

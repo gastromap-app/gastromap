@@ -324,7 +324,7 @@ export function DrillDownExplorer({
                                                 <p className={`text-xs mt-0.5 truncate ${subStyle}`}>{loc.category}</p>
                                                 <div className="flex items-center gap-1 mt-1.5">
                                                     <Star size={11} className="text-blue-600 fill-blue-600 flex-shrink-0" />
-                                                    <span className="text-[11px] font-bold text-blue-600">{loc.rating || '—'}</span>
+                                                    <span className="text-[11px] font-bold text-blue-600">{loc.google_rating ?? loc.rating ?? '—'}</span>
                                                     {loc.price_level && (
                                                         <span className={`ml-1.5 text-[11px] font-semibold ${subStyle}`}>{loc.price_level}</span>
                                                     )}

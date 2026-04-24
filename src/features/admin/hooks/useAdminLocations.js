@@ -8,15 +8,30 @@ import {
     useEnrichLocationFullMutation,
     useAIQueryMutation, useCulinaryContextMutation 
 } from '@/shared/api/queries'
+import { applyAllFilters } from '@/shared/store/useLocationsStore'
 
 /**
  * Custom hook for Admin Locations page business logic
  * Extracted to reduce component complexity and improve testability
  */
 export const useAdminLocations = () => {
-    const [view, setView] = useState('list')
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
+    
+    // Advanced Filters (Synchronized with Dashboard)
+    const [activeCategory, setActiveCategory] = useState('All')
+    const [activePriceLevels, setActivePriceLevels] = useState([])
+    const [minRating, setMinRating] = useState(null)
+    const [activeVibes, setActiveVibes] = useState([])
+    const [sortBy, setSortBy] = useState('newest')
+    const [activeCity, setActiveCity] = useState('All')
+    const [activeCountry, setActiveCountry] = useState('All')
+
+    // Reset city when country changes
+    useEffect(() => {
+        setActiveCity('All')
+    }, [activeCountry])
+
     const [selectedLocation, setSelectedLocation] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
     const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
@@ -133,6 +148,7 @@ export const useAdminLocations = () => {
             images: [],
             lat: 50.0647,
             lng: 19.9450,
+            google_rating: null,
             rating: null,
             tags: [],
             vibe: [],
@@ -264,6 +280,8 @@ export const useAdminLocations = () => {
                     address:       data.address        ?? prev.address,
                     lat:           data.lat            ?? prev.lat,
                     lng:           data.lng            ?? prev.lng,
+                    google_rating: data.google_rating  ?? prev.google_rating,
+                    rating:        data.rating         ?? prev.rating ?? data.google_rating,
                     // Contact
                     phone:         data.phone          ?? prev.phone,
                     website:       data.website        ?? prev.website,
@@ -414,6 +432,15 @@ export const useAdminLocations = () => {
                 .filter(Boolean)
         }
 
+        // Clean up legacy fields to ensure strict schema adherence
+        // Ensure both ratings are numbers if present
+        if (submissionData.rating !== undefined && submissionData.rating !== null) {
+            submissionData.rating = parseFloat(submissionData.rating)
+        }
+        if (submissionData.google_rating !== undefined && submissionData.google_rating !== null) {
+            submissionData.google_rating = parseFloat(submissionData.google_rating)
+        }
+
         return submissionData
     }
 
@@ -463,16 +490,25 @@ export const useAdminLocations = () => {
         }
     }
 
-    const filteredLocations = locationsList.filter(loc => {
-        const matchesSearch = !searchQuery ||
-            loc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
-        
-        const matchesStatus = statusFilter === 'all' || loc.status === statusFilter
-        
-        return matchesSearch && matchesStatus
-    })
+    const filteredLocations = applyAllFilters(locationsList, {
+        activeCategory,
+        searchQuery,
+        activePriceLevels,
+        minRating,
+        activeVibes,
+        sortBy,
+        activeCity,
+        activeCountry,
+    }).filter(loc => statusFilter === 'all' || loc.status === statusFilter)
+
+    // Derived data for filters
+    const countries = Array.from(new Set(locationsList.map(l => l.country).filter(Boolean))).sort()
+    const cities = Array.from(new Set(
+        locationsList
+            .filter(l => activeCountry === 'All' || l.country === activeCountry)
+            .map(l => l.city)
+            .filter(Boolean)
+    )).sort()
 
     // Pagination logic
     const totalPages = Math.ceil(filteredLocations.length / PAGE_SIZE)
@@ -484,7 +520,7 @@ export const useAdminLocations = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, statusFilter])
+    }, [searchQuery, statusFilter, activeCategory, activePriceLevels, minRating, activeVibes, sortBy, activeCity, activeCountry])
 
     const addImageUrl = (url) => {
         if (!url) return
@@ -512,12 +548,24 @@ export const useAdminLocations = () => {
 
     return {
         // State
-        view,
-        setView,
-        searchQuery,
-        setSearchQuery,
         statusFilter,
         setStatusFilter,
+        searchQuery,
+        setSearchQuery,
+        activeCategory,
+        setActiveCategory,
+        activePriceLevels,
+        setActivePriceLevels,
+        minRating,
+        setMinRating,
+        activeVibes,
+        setActiveVibes,
+        sortBy,
+        setSortBy,
+        activeCity,
+        setActiveCity,
+        activeCountry,
+        setActiveCountry,
         selectedLocation,
         setSelectedLocation,
         isSlideOverOpen,
@@ -547,6 +595,8 @@ export const useAdminLocations = () => {
         loadingLocations,
         loadError,
         filteredLocations,
+        countries,
+        cities,
         
         // Mutations
         createLocMutation,

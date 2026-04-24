@@ -63,6 +63,19 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
         }
     }, [geoGranted])
 
+    // Sync local state with store on open
+    useEffect(() => {
+        if (isOpen) {
+            const store = useLocationsStore.getState()
+            setSelectedCategory(store.activeCategory === 'All' ? 'all' : store.activeCategory)
+            setSelectedRating(store.minRating)
+            setSelectedPriceLevels(store.activePriceLevels || [])
+            setSelectedFeatures(store.activeVibes || [])
+            setSelectedBestTime(store.activeBestTime)
+            setRadius(store.radius || 0)
+        }
+    }, [isOpen])
+
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
     // Automatically reflects any new cuisine added via KG enrichment
     const locations = useLocationsStore(s => s.locations)

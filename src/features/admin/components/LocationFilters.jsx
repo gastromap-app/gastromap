@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { Search, List as ListIcon, Map as MapIcon, X, Clock, Zap, Globe, MapPin, ChevronDown } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown, Clock, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
- * LocationFilters — фильтры для Admin панели.
- * Поиск + вид (список/карта) + вкладки + Country/City дропдауны.
+ * LocationFilters — оптимизированный компонент фильтров для мобильных устройств.
+ * Включает в себя поиск, переключение вида (список/карта) и вкладки.
  */
 const LocationFilters = ({
     view,
@@ -15,13 +15,7 @@ const LocationFilters = ({
     searchQuery,
     onSearchChange,
     filteredCount,
-    totalCount,
-    // Country/City
-    locations = [],
-    selectedCountry,
-    onCountryChange,
-    selectedCity,
-    onCityChange,
+    totalCount
 }) => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const searchInputRef = useRef(null)
@@ -33,27 +27,12 @@ const LocationFilters = ({
         }
     }, [isSearchExpanded])
 
-    // Derive unique countries from locations list
-    const countries = useMemo(() => {
-        const set = new Set(locations.map(l => l.country).filter(Boolean))
-        return Array.from(set).sort()
-    }, [locations])
-
-    // Derive cities filtered by selected country
-    const cities = useMemo(() => {
-        const source = selectedCountry
-            ? locations.filter(l => l.country?.toLowerCase() === selectedCountry.toLowerCase())
-            : locations
-        const set = new Set(source.map(l => l.city).filter(Boolean))
-        return Array.from(set).sort()
-    }, [locations, selectedCountry])
-
     return (
         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900/50">
             {/* Верхняя панель: Поиск и Переключатель вида */}
             <div className="px-4 py-4 lg:px-10 lg:py-8 flex items-center justify-between gap-4">
                 
-                {/* Search Bar */}
+                {/* Search Bar Container */}
                 <div className="flex-1 flex items-center gap-3">
                     <div className="relative flex items-center group">
                         <AnimatePresence initial={false}>
@@ -80,7 +59,7 @@ const LocationFilters = ({
                                     <input
                                         ref={searchInputRef}
                                         type="text"
-                                        placeholder={`Search ${totalCount || 0} locations...`}
+                                        placeholder={`Поиск по ${totalCount || 0} объектам...`}
                                         value={searchQuery}
                                         onChange={(e) => onSearchChange(e.target.value)}
                                         onBlur={() => !searchQuery && setIsSearchExpanded(false)}
@@ -101,12 +80,12 @@ const LocationFilters = ({
 
                     <div className="hidden sm:block">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">
-                            {searchQuery ? `Found: ${filteredCount}` : `Total: ${totalCount}`}
+                            {searchQuery ? `Найдено: ${filteredCount}` : `Всего объектов: ${totalCount}`}
                         </p>
                     </div>
                 </div>
 
-                {/* Список/Карта */}
+                {/* Переключатель Список/Карта */}
                 <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-950/40 rounded-2xl border border-slate-200 dark:border-slate-800/50 shrink-0 shadow-inner">
                     <button
                         onClick={() => onViewModeChange('list')}
@@ -118,7 +97,7 @@ const LocationFilters = ({
                         )}
                     >
                         <ListIcon size={14} strokeWidth={2.5} />
-                        <span className="hidden xs:inline">List</span>
+                        <span className="hidden xs:inline">Список</span>
                     </button>
                     <button
                         onClick={() => onViewModeChange('map')}
@@ -130,20 +109,18 @@ const LocationFilters = ({
                         )}
                     >
                         <MapIcon size={14} strokeWidth={2.5} />
-                        <span className="hidden xs:inline">Map</span>
+                        <span className="hidden xs:inline">Карта</span>
                     </button>
                 </div>
             </div>
 
-            {/* Вкладки + Country/City дропдауны */}
-            <div className="px-4 lg:px-10 pb-5 flex flex-wrap items-center gap-3">
-
-                {/* Status tabs */}
-                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 flex-shrink-0">
+            {/* Вкладки (Категории) */}
+            <div className="px-4 lg:px-10 pb-5 flex items-center gap-3">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 pr-4 -mx-1 flex-1">
                     {[
-                        { id: 'list',    label: 'All',      icon: ListIcon },
-                        { id: 'pending', label: 'Pending',  icon: Clock },
-                        { id: 'active',  label: 'Active',   icon: Zap },
+                        { id: 'list', label: 'Все объекты', icon: ListIcon },
+                        { id: 'pending', label: 'На модерации', icon: Clock },
+                        { id: 'active', label: 'Активные', icon: Zap },
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -160,85 +137,11 @@ const LocationFilters = ({
                         </button>
                     ))}
                 </div>
-
-                {/* Divider */}
-                <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-
-                {/* Country dropdown */}
-                <div className="relative">
-                    <div className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-[0.15em] transition-all cursor-pointer
-                        bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    >
-                        <Globe size={12} strokeWidth={2.5} />
-                        <select
-                            value={selectedCountry || ''}
-                            onChange={e => onCountryChange(e.target.value || null)}
-                            className="appearance-none bg-transparent outline-none cursor-pointer pr-4 text-[10px] font-black uppercase tracking-[0.15em]"
-                        >
-                            <option value="">All Countries</option>
-                            {countries.map(c => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={10} strokeWidth={2.5} className="pointer-events-none" />
-                    </div>
-                    {selectedCountry && (
-                        <button
-                            onClick={() => { onCountryChange(null); onCityChange(null); }}
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                        >
-                            <X size={8} />
-                        </button>
-                    )}
-                </div>
-
-                {/* City dropdown */}
-                <div className="relative">
-                    <div className={cn(
-                        "flex items-center gap-1.5 px-4 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-[0.15em] transition-all",
-                        cities.length === 0
-                            ? "opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-400"
-                            : "cursor-pointer bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    )}>
-                        <MapPin size={12} strokeWidth={2.5} />
-                        <select
-                            value={selectedCity || ''}
-                            onChange={e => onCityChange(e.target.value || null)}
-                            disabled={cities.length === 0}
-                            className="appearance-none bg-transparent outline-none cursor-pointer pr-4 text-[10px] font-black uppercase tracking-[0.15em] disabled:cursor-not-allowed"
-                        >
-                            <option value="">All Cities</option>
-                            {cities.map(c => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={10} strokeWidth={2.5} className="pointer-events-none" />
-                    </div>
-                    {selectedCity && (
-                        <button
-                            onClick={() => onCityChange(null)}
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                        >
-                            <X size={8} />
-                        </button>
-                    )}
-                </div>
-
-                {/* Active filter badge */}
-                {(selectedCountry || selectedCity) && (
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest">
-                        {filteredCount} shown
-                        <button
-                            onClick={() => { onCountryChange(null); onCityChange(null); }}
-                            className="ml-1 hover:text-red-500 transition-colors"
-                        >
-                            <X size={10} />
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     )
 }
 
 export default LocationFilters
+
+

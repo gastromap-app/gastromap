@@ -76,7 +76,6 @@ const AdminLocationsPage = () => {
         culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
         locationsList, pendingLocations, loadError, filteredLocations,
-        selectedCountry, setSelectedCountry, selectedCity, setSelectedCity,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
@@ -190,11 +189,6 @@ const AdminLocationsPage = () => {
                     onSearchChange={setSearchQuery}
                     filteredCount={filteredLocations.length}
                     totalCount={locationsList.length}
-                    locations={locationsList}
-                    selectedCountry={selectedCountry}
-                    onCountryChange={setSelectedCountry}
-                    selectedCity={selectedCity}
-                    onCityChange={setSelectedCity}
                 />
 
                 {/* Pagination */}

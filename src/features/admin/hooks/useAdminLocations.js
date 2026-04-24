@@ -16,8 +16,6 @@ import {
 export const useAdminLocations = () => {
     const [view, setView] = useState('list')
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCountry, setSelectedCountry] = useState(null)
-    const [selectedCity, setSelectedCity] = useState(null)
     const [statusFilter, setStatusFilter] = useState('all')
     const [selectedLocation, setSelectedLocation] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
@@ -471,14 +469,8 @@ export const useAdminLocations = () => {
             loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
         
         const matchesStatus = statusFilter === 'all' || loc.status === statusFilter
-
-        const matchesCountry = !selectedCountry ||
-            loc.country?.toLowerCase() === selectedCountry.toLowerCase()
-
-        const matchesCity = !selectedCity ||
-            loc.city?.toLowerCase() === selectedCity.toLowerCase()
         
-        return matchesSearch && matchesStatus && matchesCountry && matchesCity
+        return matchesSearch && matchesStatus
     })
 
     // Pagination logic
@@ -491,7 +483,7 @@ export const useAdminLocations = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, statusFilter, selectedCountry, selectedCity])
+    }, [searchQuery, statusFilter])
 
     const addImageUrl = (url) => {
         if (!url) return
@@ -523,10 +515,6 @@ export const useAdminLocations = () => {
         setView,
         searchQuery,
         setSearchQuery,
-        selectedCountry,
-        setSelectedCountry,
-        selectedCity,
-        setSelectedCity,
         statusFilter,
         setStatusFilter,
         selectedLocation,

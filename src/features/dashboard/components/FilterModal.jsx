@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES } from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
+import { getLabelEmoji } from '@/shared/constants/taxonomy'
+import { translate, translateToRu } from '@/utils/translation'
 
 // Non-cuisine static labels that stay in the "Cuisine & Menu" group
 const CUISINE_MENU_LABELS = [
@@ -39,13 +41,19 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
     // Request geolocation when radius filter is activated
     const handleRadiusChange = useCallback((newRadius) => {
+        const { setUserLocation } = useLocationsStore.getState()
         if (newRadius > 0 && !geoGranted) {
             if (!navigator.geolocation) {
                 setGeoError('Geolocation not supported by this browser')
                 return
             }
             navigator.geolocation.getCurrentPosition(
-                () => { setGeoGranted(true); setGeoError(null); setRadius(newRadius) },
+                (pos) => { 
+                    setGeoGranted(true)
+                    setGeoError(null)
+                    setRadius(newRadius)
+                    setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                },
                 () => { setGeoError('Location access denied — enable it to use radius filter'); setRadius(0) },
                 { timeout: 5000 }
             )
@@ -91,16 +99,16 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }
 
     const handleApply = () => {
-        const { applyFilters, setRadius } = useLocationsStore.getState()
+        const { applyFilters } = useLocationsStore.getState()
+        
         applyFilters({
             activeCategory: selectedCategory === 'all' ? 'All' : selectedCategory,
             minRating: selectedRating,
             activePriceLevels: selectedPriceLevels,
             activeVibes: selectedFeatures,
             activeBestTime: selectedBestTime,
+            radius: radius
         })
-        // Radius stored separately (no re-filter needed — geo filter runs on server)
-        setRadius(radius)
         onClose()
     }
 
@@ -199,14 +207,16 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                         const isActive = selectedCategory === type.id
                                         const displayLabel = i18n.language === 'ru' ? type.labelRu : type.label
                                         return (
-                                            <button
+                                            <motion.button
                                                 key={type.id}
+                                                whileHover={{ scale: 1.02, y: -2 }}
+                                                whileTap={{ scale: 0.98 }}
                                                 onClick={() => setSelectedCategory(isActive ? 'all' : type.id)}
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
                                                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{type.icon}</span>
                                                 <span className="text-[11px] font-bold">{displayLabel}</span>
-                                            </button>
+                                            </motion.button>
                                         )
                                     })}
                                 </div>
@@ -219,14 +229,16 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Rating</label>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[
-                                            { val: null, label: 'Any' },
+                                            { val: null, label: t('common.all') },
                                             { val: 4,    label: '4+' },
                                             { val: 4.5,  label: '4.5+' },
                                         ].map(opt => {
                                             const isActive = selectedRating === opt.val
                                             return (
-                                                <button
+                                                <motion.button
                                                     key={String(opt.val)}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
                                                     onClick={() => setSelectedRating(isActive ? null : opt.val)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center gap-1.5 font-semibold text-sm transition-all ${isActive
                                                         ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
@@ -235,7 +247,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                 >
                                                     {opt.val != null && <Star size={14} className={isActive ? 'text-white fill-white' : 'text-yellow-500 fill-yellow-500'} />}
                                                     {opt.label}
-                                                </button>
+                                                </motion.button>
                                             )
                                         })}
                                     </div>
@@ -248,8 +260,10 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                         {['$', '$$', '$$$', '$$$$'].map(level => {
                                             const isActive = selectedPriceLevels.includes(level)
                                             return (
-                                                <button
+                                                <motion.button
                                                     key={level}
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
                                                     onClick={() => togglePriceLevel(level)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center font-bold text-sm transition-all ${isActive
                                                         ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
@@ -257,7 +271,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                     }`}
                                                 >
                                                     {level}
-                                                </button>
+                                                </motion.button>
                                             )
                                         })}
                                     </div>
@@ -268,22 +282,36 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div className="space-y-4 text-left">
                                 <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Best Time to Visit</label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { id: 'morning',    label: 'Morning', Icon: Sunrise, iconClass: 'text-orange-400' },
-                                        { id: 'day',        label: 'Day',     Icon: Sun, iconClass: 'text-yellow-500' },
-                                        { id: 'evening',    label: 'Evening', Icon: Sunset, iconClass: 'text-orange-500' },
-                                        { id: 'late_night', label: 'Night',   Icon: Sparkles, iconClass: 'text-indigo-400' },
-                                    ].map(time => {
-                                        const isActive = selectedFeatures.includes(time.id)
+                                    {BEST_TIMES.map(time => {
+                                        const isActive = selectedBestTime === time.id
+                                        const displayLabel = i18n.language === 'ru' ? time.labelRu : time.label
+                                        
+                                        // Map IDs to Lucide components for consistent UI
+                                        const IconComponent = {
+                                            morning: Sunrise,
+                                            day: Sun,
+                                            evening: Sunset,
+                                            late_night: Sparkles
+                                        }[time.id] || Sun
+
+                                        const iconClass = {
+                                            morning: 'text-orange-400',
+                                            day: 'text-yellow-500',
+                                            evening: 'text-orange-500',
+                                            late_night: 'text-indigo-400'
+                                        }[time.id] || 'text-blue-500'
+
                                         return (
-                                            <button
+                                            <motion.button
                                                 key={time.id}
-                                                onClick={() => toggleFeature(time.id)}
+                                                whileHover={{ scale: 1.02, y: -2 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => setSelectedBestTime(isActive ? null : time.id)}
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
-                                                <time.Icon size={20} className={time.iconClass} />
-                                                <span className="text-[11px] font-bold">{time.label}</span>
-                                            </button>
+                                                <IconComponent size={20} className={`${iconClass} group-hover:scale-110 transition-transform`} />
+                                                <span className="text-[11px] font-bold">{displayLabel}</span>
+                                            </motion.button>
                                         )
                                     })}
                                 </div>
@@ -304,13 +332,18 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                 {items.map(chip => {
                                                     const isActive = selectedFeatures.includes(chip)
                                                     return (
-                                                        <button
+                                                        <motion.button
                                                             key={chip}
+                                                            whileHover={{ scale: 1.03 }}
+                                                            whileTap={{ scale: 0.97 }}
                                                             onClick={() => toggleFeature(chip)}
                                                             className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
                                                         >
-                                                            {chip}
-                                                        </button>
+                                                            <span className="mr-1.5 opacity-90 group-hover:scale-125 transition-transform duration-300">
+                                                                {getLabelEmoji(chip)}
+                                                            </span>
+                                                            {i18n.language === 'ru' ? translateToRu(chip) : translate(chip)}
+                                                        </motion.button>
                                                     )
                                                 })}
                                             </div>

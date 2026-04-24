@@ -21,8 +21,8 @@
  * Our job is to execute the structured search correctly against the DB.
  */
 
-import { semanticSearch } from './search'
-import { supabase } from '@/shared/api/client'
+import { semanticSearch } from './search.js'
+import { supabase } from '../client.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -75,20 +75,27 @@ function cityMatch(loc, cityQuery) {
 
 /** Map a raw DB / store row to the rich format the AI understands. */
 function mapLocation(l) {
+    // Handle vibes join result: vibes: [{ vibe: { name: 'Cozy' } }] -> ['Cozy']
+    const vibes = Array.isArray(l.vibes) 
+        ? l.vibes.map(v => v.vibe?.name).filter(Boolean)
+        : (Array.isArray(l.vibe) ? l.vibe : [])
+
     return {
         id:             l.id,
         name:           l.title,     // for internal AI logic
         title:          l.title,     // for UI consistency
-        image:          l.image_url || l.image, // for UI cards
+        image:          l.image_url, // for UI cards
         category:       l.category,
         city:           l.city,
         country:        l.country ?? null,
         address:        l.address,
-        cuisine:        l.cuisine || l.tags?.[0] || null,
+        cuisine:        l.cuisine_types?.[0] || l.tags?.[0] || null,
+        cuisine_types:  l.cuisine_types ?? [],
         tags:           l.tags ?? [],
-        vibe:           l.vibe ?? [],
-        price_level:    l.price_level,
-        rating:         l.rating ?? l.google_rating ?? null,
+        vibe:           vibes,
+        price_range:    l.price_range,
+        rating:         l.google_rating ?? null,
+        google_rating:  l.google_rating ?? null,
         description:    l.description,
         insider_tip:    l.insider_tip ?? null,
         what_to_try:    l.what_to_try ?? [],
@@ -133,12 +140,12 @@ async function querySupabase({ city, category, price_range, min_rating, michelin
 
         // SQL-safe filters
         if (price_range?.length) {
-            // In DB it is called price_level ($, $$, etc)
-            query = query.in('price_level', price_range)
+            // In DB it is called price_range
+            query = query.in('price_range', price_range)
         }
         if (min_rating) {
-            // In DB it is called rating
-            query = query.gte('rating', min_rating)
+            // In DB it is called google_rating
+            query = query.gte('google_rating', min_rating)
         }
         if (michelin) {
             query = query.or('michelin_stars.gt.0,michelin_bib.eq.true')
@@ -155,7 +162,7 @@ async function querySupabase({ city, category, price_range, min_rating, michelin
         }
 
         const { data, error } = await query
-            .order('rating', { ascending: false, nullsFirst: false })
+            .order('google_rating', { ascending: false, nullsFirst: false })
             .limit(fetchLimit)
 
         if (error) {
@@ -189,11 +196,11 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
     }
     if (cuisine_types?.length) {
         results = results.filter(l => {
-            const locCuisine = norm(l.cuisine)
+            const locCuisines = (l.cuisine_types || []).map(norm)
             const locTags = [...(l.tags || []), ...(l.kg_cuisines || [])].map(norm)
             return cuisine_types.some(c => {
                 const cl = norm(c)
-                return locCuisine.includes(cl) || locTags.some(t => t.includes(cl))
+                return locCuisines.some(lc => lc.includes(cl)) || locTags.some(t => t.includes(cl))
             })
         })
     }
@@ -248,7 +255,7 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
         norm(l.description).includes(kw) ||
         norm(l.ai_context).includes(kw) ||
         norm(l.insider_tip).includes(kw) ||
-        norm(l.cuisine).includes(kw) ||
+        (l.cuisine_types || []).some(c => norm(c).includes(kw)) ||
         l.tags?.some(t => norm(t).includes(kw)) ||
         l.vibe?.some(v => norm(v).includes(kw)) ||
         l.ai_keywords?.some(k => norm(k).includes(kw)) ||
@@ -279,7 +286,7 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
         // pgvector not available or failed — use literal only
     }
 
-    return literalMatches.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    return literalMatches.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
 }
 
 // ─── Main executor ────────────────────────────────────────────────────────────
@@ -338,8 +345,8 @@ export async function executeTool(name, args, locations = []) {
                 })
                 
                 // Apply remaining structured filters that RPC doesn't handle
-                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_level))
-                if (min_rating)          pool = pool.filter(l => (l.rating ?? 0) >= min_rating)
+                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
+                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? 0) >= min_rating)
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
                 
                 // Apply advanced text filters (amenities, dietary, etc.)
@@ -375,8 +382,8 @@ export async function executeTool(name, args, locations = []) {
                 pool = [...(locations || [])]
 
                 // Apply SQL-equivalent filters in memory when DB is unavailable
-                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_level))
-                if (min_rating)          pool = pool.filter(l => (l.rating ?? 0) >= min_rating)
+                if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
+                if (min_rating)          pool = pool.filter(l => (l.google_rating ?? 0) >= min_rating)
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
             }
 
@@ -403,7 +410,7 @@ export async function executeTool(name, args, locations = []) {
             if (keyword) {
                 pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
             } else {
-                pool.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                pool.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
             }
         }
 

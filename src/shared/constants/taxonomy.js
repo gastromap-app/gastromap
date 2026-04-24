@@ -134,6 +134,154 @@ export const LABEL_GROUPS = {
     "Награды": ["Гид Мишлен", "Звезда Мишлен", "Кальян", "Поздний ужин"].sort(),
 }
 
+export const LABEL_EMOJI_MAP = {
+    // Кухня и Меню (RU)
+    "Авторская кухня": "👨‍🍳",
+    "Веганское меню": "🌱",
+    "Вкусные десерты": "🍰",
+    "Завтраки целый день": "🥞",
+    "Местные продукты": "🚜",
+    "Меню завтраков": "🍳",
+    "Меню ланча": "🍱",
+    "Фьюжен": "🧪",
+    "Итальянская": "🍝",
+    "Французская": "🥐",
+    "Японская": "🍣",
+    "Китайская": "🥢",
+    "Греческая": "🫒",
+    "Испанская": "🥘",
+    "Мексиканская": "🌮",
+    "Тайская": "🍜",
+    "Грузинская": "🍷",
+    "Польская": "🥟",
+    "Израильская": "🧆",
+    "Американская": "🍔",
+    "Средиземноморская": "🐟",
+    "Индийская": "🍛",
+    "Вьетнамская": "🍜",
+
+    // Кухня и Меню (EN)
+    "Signature Cuisine": "👨‍🍳",
+    "Vegan Menu": "🌱",
+    "Delicious Desserts": "🍰",
+    "All Day Breakfast": "🥞",
+    "Local Products": "🚜",
+    "Breakfast Menu": "🍳",
+    "Lunch Menu": "🍱",
+    "Fusion": "🧪",
+    "Italian": "🍝",
+    "French": "🥐",
+    "Japanese": "🍣",
+    "Chinese": "🥢",
+    "Greek": "🫒",
+    "Spanish": "🥘",
+    "Mexican": "🌮",
+    "Thai": "🍜",
+    "Georgian": "🍷",
+    "Polish": "🥟",
+    "Israeli": "🧆",
+    "American": "🍔",
+    "Mediterranean": "🐟",
+    "Indian": "🍛",
+    "Vietnamese": "🍜",
+
+    // Бар и Напитки (RU)
+    "Авторские коктейли": "🍸",
+    "Винная карта": "🍷",
+    "Гостевые смены": "🤝",
+    "Дегустация вин": "🥂",
+    "DJ сеты": "🎧",
+    "Крафтовое пиво": "🍺",
+    "Спешиалти кофе": "☕",
+    "Широкий выбор джина": "🍸",
+
+    // Бар и Напитки (EN)
+    "Signature Cocktails": "🍸",
+    "Wine List": "🍷",
+    "Guest Shifts": "🤝",
+    "Wine Tasting": "🥂",
+    "DJ Sets": "🎧",
+    "Craft Beer": "🍺",
+    "Specialty Coffee": "☕",
+    "Wide Gin Selection": "🍸",
+
+    // Атмосфера (RU)
+    "Живописный вид": "🌅",
+    "Живая музыка": "🎷",
+    "Коворкинг": "💻",
+    "Настольные игры": "🎲",
+    "Романтическая атмосфера": "🕯️",
+    "Скрытый вход (Speakeasy)": "🤫",
+    "Счастливые часы": "🕒",
+    "Тихая атмосфера": "🤫",
+    "Уютно": "🧸",
+    "Оживлённая атмосфера": "🎉",
+
+    // Атмосфера (EN)
+    "Scenic View": "🌅",
+    "Live Music": "🎷",
+    "Coworking": "💻",
+    "Board Games": "🎲",
+    "Romantic": "🕯️",
+    "Speakeasy": "🤫",
+    "Happy Hours": "🕒",
+    "Quiet Atmosphere": "🤫",
+    "Cozy": "🧸",
+    "Lively Atmosphere": "🎉",
+
+    // Удобства и Сервис (RU)
+    "Балкончики": "🪴",
+    "Детская игровая зона": "🧸",
+    "Доставка": "🚲",
+    "Инклюзивность": "♿",
+    "Любимое у местных": "🏠",
+    "Парковка": "🅿️",
+    "Pet friendly": "🐾",
+    "Самовывоз": "🛍️",
+    "Терраса во дворе": "🌿",
+    "Терраса на крыше": "🌇",
+    "WiFi": "📶",
+
+    // Удобства и Сервис (EN)
+    "Balconies": "🪴",
+    "Kids Area": "🧸",
+    "Delivery": "🚲",
+    "Inclusive": "♿",
+    "Local Favorite": "🏠",
+    "Parking": "🅿️",
+    "Takeaway": "🛍️",
+    "Courtyard Terrace": "🌿",
+    "Rooftop Terrace": "🌇",
+
+    // Награды и прочее (RU)
+    "Гид Мишлен": "⭐",
+    "Звезда Мишлен": "🌟",
+    "Кальян": "💨",
+    "Поздний ужин": "🌙",
+
+    // Награды и прочее (EN)
+    "Michelin Guide": "⭐",
+    "Michelin Star": "🌟",
+    "Hookah": "💨",
+    "Late Dinner": "🌙",
+}
+
+/**
+ * Helper to get emoji for any label (English, Russian, or Cuisine)
+ */
+export const getLabelEmoji = (label) => {
+    if (!label) return '';
+    
+    // 1. Direct match in label map (covers RU and EN labels)
+    if (LABEL_EMOJI_MAP[label]) return LABEL_EMOJI_MAP[label];
+    
+    // 2. Try cuisine map (handles lowercase English from KG)
+    const lower = label.toLowerCase();
+    if (CUISINE_EMOJI_MAP[lower]) return CUISINE_EMOJI_MAP[lower];
+    
+    return '';
+}
+
 export const VISIT_TIMES = [
     { id: 'morning',    label: 'Утро',  emoji: '🌅' },
     { id: 'day',        label: 'День',  emoji: '☀️' },

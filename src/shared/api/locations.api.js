@@ -37,11 +37,11 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // Schema: title, rating, price_level, cuisine (string), image, photos (array)
-    const image      = row.image ?? ''
-    const rating     = Number(row.rating ?? 0)
-    const priceLevel = row.price_level ?? '$$'
-    const cuisineRaw = row.cuisine ?? ''
+    // Schema: title, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
+    const image         = row.image_url ?? ''
+    const rating        = Number(row.google_rating ?? 0)
+    const priceRange    = row.price_range ?? '$$'
+    const cuisineTypes  = Array.isArray(row.cuisine_types) ? row.cuisine_types : []
 
     // Normalise legacy 'active' → 'approved' for UI consistency
     const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
@@ -63,21 +63,21 @@ function normalise(row) {
         category: CATEGORIES_FULL.find(c => c.toLowerCase() === (row.category || '').toLowerCase()) || row.category || 'Other',
         type: row.category ?? 'other',
 
-        cuisine: cuisineRaw,
-        cuisine_types: cuisineRaw ? [cuisineRaw] : [],
+        cuisine: cuisineTypes[0] || '',
+        cuisine_types: cuisineTypes,
 
         image,
         image_url: image,
-        photos: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
-        images: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
+        photos: Array.isArray(row.google_photos) ? row.google_photos : [],
+        images: Array.isArray(row.google_photos) ? row.google_photos : [],
 
         rating,
         google_rating: rating,
-        google_user_ratings_total: 0,
+        google_user_ratings_total: row.google_user_ratings_total ?? 0,
 
-        price_level: priceLevel,
-        priceLevel,
-        price_range: priceLevel,
+        price_level: priceRange,
+        priceLevel: priceRange,
+        price_range: priceRange,
 
         opening_hours: row.opening_hours ?? '',
         openingHours: row.opening_hours ?? '',
@@ -88,26 +88,22 @@ function normalise(row) {
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
         vibe: row.vibe ?? [],
-        features: row.amenities ?? row.features ?? [],
-        amenities: row.amenities ?? row.features ?? [],
+        features: row.amenities ?? [],
+        amenities: row.amenities ?? [],
         best_for: row.best_for ?? [],
-        dietary: row.dietary_options ?? row.dietary ?? [],
-        dietary_options: row.dietary_options ?? row.dietary ?? [],
+        dietary: row.dietary_options ?? [],
+        dietary_options: row.dietary_options ?? [],
 
-        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : (row.has_wifi ?? false),
-        has_outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
-        reservations_required: row.reservation_required ?? row.reservations_required ?? false,
+        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : false,
+        has_outdoor_seating: row.outdoor_seating ?? false,
+        reservations_required: row.reservation_required ?? false,
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
 
         insider_tip: row.insider_tip ?? '',
-        what_to_try: typeof row.must_try === 'string'
-            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-            : (row.must_try ?? row.what_to_try ?? []),
-        must_try: typeof row.must_try === 'string'
-            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-            : (row.must_try ?? row.what_to_try ?? []),
+        what_to_try: Array.isArray(row.what_to_try) ? row.what_to_try : (row.must_try ? [row.must_try] : []),
+        must_try: row.must_try ?? (Array.isArray(row.what_to_try) ? row.what_to_try[0] : ''),
 
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
@@ -149,39 +145,66 @@ export async function getLocations(filters = {}) {
 
     const bypassStatus = all || showAll
 
+    console.log('[locations.api] 🚀 Fetching locations with filters:', filters)
+
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('rating', { ascending: false })
-        .range(offset, offset + (limit - 1))
+
+    // Try sorting by google_rating, fall back to no sort if column missing
+    q = q.order('google_rating', { ascending: false })
+    
+    q = q.range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
     if (!bypassStatus) {
         q = q.eq('status', status ?? 'approved')
     } else if (status) {
-        // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)
     }
-    // bypass requested + no status = return everything regardless of status
 
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', `%${city}%`)
     if (country) q = q.ilike('country', `%${country}%`)
-    if (minRating != null) q = q.gte('rating', minRating)
-    if (priceLevel?.length) q = q.in('price_level', priceLevel)
+    
+    // Use google_rating for filtering if present
+    if (minRating != null) q = q.gte('google_rating', minRating)
+    
+    if (priceLevel?.length) q = q.in('price_range', priceLevel)
     if (vibe?.length) q = q.overlaps('vibe', vibe)
 
-    // Search by title or city if query exists
     if (query) {
         q = q.or(`title.ilike.%${query}%,city.ilike.%${query}%`)
     }
 
-    console.log('[locations.api] Query params:', { city, country, status: bypassStatus ? 'any' : (status ?? 'approved') })
-
     const { data, error, count } = await q
 
     if (error) {
-        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
+        console.error('[locations.api] ❌ Supabase query FAILED:', error.message)
+        
+        // If it was a sorting error, try one more time without sorting
+        if (error.message.includes('column') && (error.message.includes('rating'))) {
+            console.warn('[locations.api] 🔄 Retrying WITHOUT sorting by rating...')
+            const retryQ = supabase
+                .from('locations')
+                .select('*', { count: 'exact' })
+                .range(offset, offset + (limit - 1))
+            
+            if (!bypassStatus) retryQ.eq('status', status ?? 'approved')
+            if (city) retryQ.ilike('city', `%${city}%`)
+            
+            const retry = await retryQ
+            if (!retry.error) {
+                console.log('[locations.api] ✅ Retry successful! Showing unsorted data.')
+                return {
+                    data: (retry.data ?? []).map(normalise),
+                    total: retry.count ?? 0,
+                    hasMore: offset + limit < (retry.count ?? 0),
+                }
+            }
+        }
+
+        console.error('[locations.api] 📉 Hard fallback to mocks.')
         return _mockGetLocations(filters)
     }
 
@@ -536,28 +559,26 @@ function _toRow(d) {
     if (d.lng !== undefined) row.lng = Number(d.lng)
     else if (d.longitude !== undefined) row.lng = Number(d.longitude)
 
-    // Category
-    if (d.category !== undefined) row.category = d.category
-    else if (d.type !== undefined) row.category = d.type
-
-    if (d.cuisine !== undefined)     row.cuisine = Array.isArray(d.cuisine) ? d.cuisine[0] ?? '' : (d.cuisine ?? '')
-    if (d.cuisine_types !== undefined) row.cuisine = Array.isArray(d.cuisine_types) ? d.cuisine_types[0] ?? '' : (d.cuisine_types ?? '')
+    // Cuisine
+    if (d.cuisine_types !== undefined) row.cuisine_types = d.cuisine_types
+    else if (d.cuisine !== undefined) row.cuisine_types = Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine]
 
     // Images
-    if (d.image_url !== undefined) row.image = d.image_url
-    else if (d.image !== undefined) row.image = d.image
+    if (d.image_url !== undefined) row.image_url = d.image_url
+    else if (d.image !== undefined) row.image_url = d.image
 
-    if (d.google_photos !== undefined) row.photos = d.google_photos
-    else if (d.photos !== undefined) row.photos = d.photos
-    else if (d.images !== undefined) row.photos = d.images
+    if (d.google_photos !== undefined) row.google_photos = d.google_photos
+    else if (d.photos !== undefined) row.google_photos = d.photos
+    else if (d.images !== undefined) row.google_photos = d.images
 
-    if (d.rating !== undefined)         row.rating = Number(d.rating)
-    if (d.google_rating !== undefined)  row.rating = Number(d.google_rating)
+    // Rating
+    if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
+    else if (d.rating !== undefined) row.google_rating = Number(d.rating)
 
     // Price
-    if (d.price_range !== undefined)  row.price_level = d.price_range
-    else if (d.price_level !== undefined) row.price_level = d.price_level
-    else if (d.priceLevel !== undefined) row.price_level = d.priceLevel
+    if (d.price_range !== undefined)  row.price_range = d.price_range
+    else if (d.price_level !== undefined) row.price_range = d.price_level
+    else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
 
     // Hours
     if (d.opening_hours !== undefined) row.opening_hours = d.opening_hours
@@ -568,7 +589,7 @@ function _toRow(d) {
     if (d.booking_url !== undefined) row.booking_url = d.booking_url
 
     if (d.tags !== undefined)        row.tags = d.tags
-    // if (d.vibe !== undefined)     // vibe not in schema, use tags?
+    if (d.vibe !== undefined)        row.vibe = d.vibe
     
     if (d.amenities !== undefined)   row.amenities = d.amenities
     else if (d.features !== undefined) row.amenities = d.features
@@ -580,23 +601,20 @@ function _toRow(d) {
 
     if (d.special_labels !== undefined) row.special_labels = d.special_labels
     
-    if (d.has_wifi !== undefined)    row.wifi_quality = d.has_wifi ? 'high' : 'none'
+    if (d.wifi_quality !== undefined)    row.wifi_quality = d.wifi_quality
+    else if (d.has_wifi !== undefined)   row.wifi_quality = d.has_wifi ? 'high' : 'none'
     
-    if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
-    else if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
+    if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
+    else if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
 
-    if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
-    else if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
+    if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
+    else if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
 
     if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
 
-    // What to try (stored as text in DB, but treated as list in UI)
-    const whatToTry = d.must_try ?? d.what_to_try
-    if (whatToTry !== undefined) {
-        row.must_try = Array.isArray(whatToTry)
-            ? whatToTry.join(', ')
-            : String(whatToTry)
-    }
+    // What to try
+    if (d.what_to_try !== undefined) row.what_to_try = d.what_to_try
+    if (d.must_try !== undefined) row.must_try = d.must_try
 
     if (d.ai_keywords !== undefined)  row.ai_keywords = d.ai_keywords
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
@@ -608,36 +626,11 @@ function _toRow(d) {
     if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
 
-    // ── Fields with canonical column names in Supabase ───────────────────────
-    // vibe — separate column (was incorrectly merged into tags)
-    if (d.vibe !== undefined) row.vibe = d.vibe
-
-    // features — canonical column name (not amenities)
-    if (d.features !== undefined) row.features = d.features
-    else if (d.amenities !== undefined) row.features = d.amenities
-
-    // Boolean fields — use canonical column names
-    if (d.has_wifi !== undefined) row.has_wifi = d.has_wifi
-    if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
-    if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
-
     // Michelin
     if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
     if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
 
-    // what_to_try — canonical array column
-    const whatToTryArr = d.what_to_try ?? d.must_try
-    if (whatToTryArr !== undefined) {
-        row.what_to_try = Array.isArray(whatToTryArr)
-            ? whatToTryArr
-            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
-    }
-
-    // dietary — canonical column name
-    if (d.dietary !== undefined) row.dietary = d.dietary
-    else if (d.dietary_options !== undefined) row.dietary = d.dietary_options
-
-    // ── KG fields — Knowledge Graph enrichment ───────────────────────────────
+    // KG fields
     if (d.kg_cuisines !== undefined)   row.kg_cuisines = d.kg_cuisines
     if (d.kg_dishes !== undefined)     row.kg_dishes = d.kg_dishes
     if (d.kg_ingredients !== undefined) row.kg_ingredients = d.kg_ingredients

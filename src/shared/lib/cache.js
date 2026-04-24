@@ -27,6 +27,7 @@ export const TTL = {
     cuisines:       24 * 60 * 60 * 1000,  // 24 hours
     dishes:         24 * 60 * 60 * 1000,  // 24 hours
     ingredients:    24 * 60 * 60 * 1000,  // 24 hours
+    vibes:          24 * 60 * 60 * 1000,  // 24 hours
     locations:      10 * 60 * 1000,        // 10 minutes
     categories:     60 * 60 * 1000,        // 1 hour
     semanticSearch: 10 * 60 * 1000,        // 10 minutes — same query shouldn't hit API again

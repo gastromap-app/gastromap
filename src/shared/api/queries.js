@@ -935,6 +935,54 @@ export function useDeleteIngredientMutation() {
     })
 }
 
+// ─── Vibes API Hooks ────────────────────────────────────────────────────────
+
+export function useVibes() {
+    return useQuery({
+        queryKey: ['knowledge-vibes'],
+        queryFn: async () => {
+            const { getVibes } = await import('./knowledge-graph.api')
+            return getVibes()
+        },
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
+        retry: 2,
+    })
+}
+
+export function useCreateVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (vibe) => {
+            const { createVibe } = await import('./knowledge-graph.api')
+            return createVibe(vibe)
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+    })
+}
+
+export function useUpdateVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, updates }) => {
+            const { updateVibe } = await import('./knowledge-graph.api')
+            return updateVibe(id, updates)
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+    })
+}
+
+export function useDeleteVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (id) => {
+            const { deleteVibe } = await import('./knowledge-graph.api')
+            return deleteVibe(id)
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+    })
+}
+
 export function useKnowledgeStats() {
     return useQuery({ 
         queryKey: ['knowledge-stats'], 

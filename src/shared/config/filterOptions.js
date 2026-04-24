@@ -33,8 +33,10 @@ export const ESTABLISHMENT_TYPES = [
     { id: 'Market',      label: 'Market',     labelRu: 'Маркет',       icon: '🛒' },
     { id: 'Bakery',      label: 'Bakery',     labelRu: 'Пекарня',      icon: '🥐' },
     { id: 'Winery',      label: 'Winery',     labelRu: 'Винодельня',   icon: '🍷' },
+    { id: 'Wine Bar',    label: 'Wine Bar',   labelRu: 'Винный бар',   icon: '🍷' },
     { id: 'Coffee',      label: 'Coffee',     labelRu: 'Кофе',         icon: '☕' },
     { id: 'Pastry',      label: 'Pastry',     labelRu: 'Кондитерская', icon: '🍰' },
+    { id: 'Fine Dining', label: 'Fine Dining',labelRu: 'Fine Dining',  icon: '🎩' },
 ]
 
 // ─── Время визита ────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ export const ESTABLISHMENT_TYPES = [
 // id совпадает со значением в best_for (e.g. 'morning', 'evening').
 export const BEST_TIMES = [
     { id: 'morning',    label: 'Morning',    labelRu: 'Утро',          icon: '🌅' },
-    { id: 'day',        label: 'Day',        labelRu: 'День',          icon: '☀️' },
+    { id: 'day',        label: 'Lunch',      labelRu: 'Ланч',          icon: '🍲' },
     { id: 'evening',    label: 'Evening',    labelRu: 'Вечер',         icon: '🌆' },
     { id: 'late_night', label: 'Night',      labelRu: 'Поздняя ночь',  icon: '🌙' },
 ]

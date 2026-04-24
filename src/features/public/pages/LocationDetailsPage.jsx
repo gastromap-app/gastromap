@@ -21,6 +21,7 @@ import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
+import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -234,7 +235,7 @@ const LocationDetailsPage = () => {
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
                         {location.special_labels?.map(label => (
                             <span key={label} className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${isDark ? 'bg-blue-500/12 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
-                                {translate(label)}
+                                {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
                             </span>
                         ))}
                     </div>

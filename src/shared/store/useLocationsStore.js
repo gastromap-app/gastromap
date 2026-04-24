@@ -25,6 +25,7 @@ const DEFAULT_FILTERS = {
     activeVibes: [],
     activeBestTime: null,
     radius: 0,
+    userLocation: null, // { lat, lng }
     sortBy: 'rating',
 }
 
@@ -33,9 +34,10 @@ const PRICE_ORDER = { '$': 1, '$$': 2, '$$$': 3 }
 
 // Best-time label groups for matching against location data
 const BEST_TIME_LABELS = {
-    morning: ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee'],
-    lunch:   ['Lunch', 'Business lunch', 'Midday'],
-    evening: ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining'],
+    morning:    ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee', 'Завтрак', 'Утро'],
+    day:        ['Lunch', 'Business lunch', 'Midday', 'Ланч', 'Обед', 'День'],
+    evening:    ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining', 'Ужин', 'Вечер'],
+    late_night: ['Night', 'Late night', 'Bar', 'Club', 'Nightlife', 'Ночь', 'Поздний ужин'],
 }
 
 function applyAllFilters(locations, filters) {
@@ -46,6 +48,8 @@ function applyAllFilters(locations, filters) {
         minRating,
         activeVibes,
         activeBestTime,
+        radius,
+        userLocation,
         sortBy,
     } = filters
 
@@ -95,13 +99,16 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.kg_cuisines) ? loc.kg_cuisines : []),
                 ...(Array.isArray(loc.kg_dishes) ? loc.kg_dishes : []),
                 ...(loc.cuisine ? [loc.cuisine] : []),
-            ]
-            return activeVibes.some(v => labels.includes(v))
+            ].map(l => String(l || '').toLowerCase().trim())
+
+            return activeVibes.some(v => {
+                const searchVal = String(v || '').toLowerCase().trim()
+                return labels.includes(searchVal)
+            })
         })
     }
 
     // ─── Best Time ───────────────────────────────────────────────────────────
-    // FIX: now actually applied (was UI-only before)
     if (activeBestTime) {
         const timeLabels = BEST_TIME_LABELS[activeBestTime] ?? []
         result = result.filter(loc => {
@@ -110,10 +117,25 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.best_for) ? loc.best_for : []),
                 ...(Array.isArray(loc.features) ? loc.features : []),
                 ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
-            ]
-            return timeLabels.some(tl =>
-                labels.some(l => l?.toLowerCase().includes(tl.toLowerCase()))
+            ].map(l => String(l || '').toLowerCase().trim())
+
+            // Match by ID directly in best_for or by associated keywords
+            const hasIdMatch = Array.isArray(loc.best_for) && loc.best_for.includes(activeBestTime)
+            const hasKeywordMatch = timeLabels.some(tl =>
+                labels.some(l => l.includes(tl.toLowerCase()))
             )
+            return hasIdMatch || hasKeywordMatch
+        })
+    }
+
+    // ─── Radius (Distance) ──────────────────────────────────────────────────
+    if (radius > 0 && userLocation?.lat && userLocation?.lng) {
+        result = result.filter(loc => {
+            const lat = loc.latitude ?? loc.coordinates?.lat
+            const lng = loc.longitude ?? loc.coordinates?.lng
+            if (!lat || !lng) return false
+            const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
+            return d <= radius
         })
     }
 
@@ -142,6 +164,18 @@ function applyAllFilters(locations, filters) {
     }
 
     return result
+}
+
+/** Haversine formula to calculate distance in km */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371 // Earth's radius
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
 }
 
 // FIX ARCH-2: Do NOT seed with mocks in production — causes stale data flash
@@ -196,11 +230,18 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, activeBestTime }),
         })),
 
-    // FIX BUG-4: Radius setter — also re-apply filters to trigger UI update
+    // Set radius and re-filter
     setRadius: (radius) =>
         set(state => ({
             radius,
             filteredLocations: applyAllFilters(state.locations, { ...state, radius }),
+        })),
+
+    // Set user location and re-filter
+    setUserLocation: (userLocation) =>
+        set(state => ({
+            userLocation,
+            filteredLocations: applyAllFilters(state.locations, { ...state, userLocation }),
         })),
 
     setSortBy: (sortBy) =>

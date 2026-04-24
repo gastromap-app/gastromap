@@ -11,6 +11,7 @@ import LazyImage from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTranslation } from 'react-i18next'
 import { getCategoryLabel } from '@/shared/config/filterOptions'
+import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
 
 export default function LocationCard({ location }) {
     const { i18n } = useTranslation()
@@ -88,7 +89,7 @@ export default function LocationCard({ location }) {
                     {/* Special Labels */}
                     {location.special_labels?.slice(0, 2).map(label => (
                         <span key={label} className="text-[9px] font-black uppercase tracking-wider text-blue-500/80 dark:text-blue-400/60">
-                            • {translate(label)}
+                            • {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
                         </span>
                     ))}
                 </div>

@@ -12,6 +12,7 @@ import {
     CATEGORIES_FULL as CATEGORIES,
     PRICE_LEVELS,
     LABEL_GROUPS,
+    LABEL_EMOJI_MAP,
     VISIT_TIMES,
 } from '@/shared/constants/taxonomy'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
@@ -738,12 +739,13 @@ const LocationFormSlideOver = ({
                                                                         key={label}
                                                                         onClick={() => toggleLabel(label)}
                                                                         className={cn(
-                                                                            "px-4 py-2 rounded-xl text-[11px] font-bold border-2 transition-all",
+                                                                            "px-4 py-2 rounded-xl text-[11px] font-bold border-2 transition-all flex items-center gap-2",
                                                                             active
                                                                                 ? "bg-indigo-500 text-white border-indigo-500 shadow-md shadow-indigo-500/20"
                                                                                 : "bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                                                                         )}
                                                                     >
+                                                                        {LABEL_EMOJI_MAP[label] && <span>{LABEL_EMOJI_MAP[label]}</span>}
                                                                         {label}
                                                                     </button>
                                                                 )

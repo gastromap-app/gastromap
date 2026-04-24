@@ -8,8 +8,8 @@ export async function getAdminStats() {
         supabase.rpc('get_engagement_stats'),
         supabase.rpc('get_payment_stats'),
         supabase.from('locations')
-            .select('id, title, city, category, rating')
-            .order('rating', { ascending: false })
+            .select('id, title, city, category, google_rating')
+            .order('google_rating', { ascending: false })
             .limit(5),
     ])
     return {
@@ -236,9 +236,9 @@ export async function getTopLocations(limit = 5) {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('id, title, city, category, rating, reviews(count), user_visits(count)')
+        .select('id, title, city, category, google_rating, reviews(count), user_visits(count)')
         .in('status', ['active', 'approved'])
-        .order('rating', { ascending: false })
+        .order('google_rating', { ascending: false })
         .limit(limit * 3) // fetch more, sort in JS
 
     if (error) { console.error('[admin.api] getTopLocations:', error.message); return [] }
@@ -249,7 +249,7 @@ export async function getTopLocations(limit = 5) {
             const visit_count  = loc.user_visits?.[0]?.count ?? 0
             return { ...loc, review_count, visit_count, score: review_count + visit_count }
         })
-        .sort((a, b) => b.score - a.score || b.rating - a.rating)
+        .sort((a, b) => b.score - a.score || (b.google_rating ?? 0) - (a.google_rating ?? 0))
         .slice(0, limit)
 }
 
@@ -260,7 +260,7 @@ export async function getCategoryStats() {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('category, status, rating')
+        .select('category, status, google_rating')
 
     if (error) { console.error('[admin.api] getCategoryStats:', error.message); return [] }
 
@@ -269,7 +269,7 @@ export async function getCategoryStats() {
         if (!map[loc.category]) map[loc.category] = { category: loc.category, total: 0, active: 0, ratings: [] }
         map[loc.category].total++
         if (loc.status === 'active' || loc.status === 'approved') map[loc.category].active++
-        if (loc.rating) map[loc.category].ratings.push(Number(loc.rating))
+        if (loc.google_rating) map[loc.category].ratings.push(Number(loc.google_rating))
     }
 
     return Object.values(map)
@@ -291,7 +291,7 @@ export async function getCityStats() {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('city, country, rating')
+        .select('city, country, google_rating')
         .in('status', ['active', 'approved'])
 
     if (error) { console.error('[admin.api] getCityStats:', error.message); return [] }
@@ -301,7 +301,7 @@ export async function getCityStats() {
         const key = `${loc.city}|${loc.country}`
         if (!map[key]) map[key] = { city: loc.city, country: loc.country, total: 0, ratings: [] }
         map[key].total++
-        if (loc.rating) map[key].ratings.push(Number(loc.rating))
+        if (loc.google_rating) map[key].ratings.push(Number(loc.google_rating))
     }
 
     return Object.values(map)

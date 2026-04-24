@@ -231,7 +231,7 @@ export async function enrichAllLocationsKGProfile({ force = false, onProgress = 
         .from('locations')
         .select('*')
         .eq('status', 'approved')
-        .order('rating', { ascending: false, nullsFirst: false })
+        .order('google_rating', { ascending: false, nullsFirst: false })
 
     if (error) throw new Error(`Failed to fetch locations: ${error.message}`)
 

@@ -130,6 +130,10 @@ const SCHEMA_WHITELIST = {
         'is_vegan', 'origin', 'season', 'flavor_profile', 'common_pairings', 
         'dietary_info', 'description', 'origin_region', 'health_notes', 
         'substitutes', 'storage_tip'
+    ],
+    vibes: [
+        'name', 'slug', 'description', 'synonyms', 'category', 'is_negative',
+        'is_premium', 'priority'
     ]
 }
 
@@ -646,6 +650,79 @@ export async function deleteIngredient(id) {
     invalidateCacheGroup('ingredients')
     return { success: true }
 }
+// ─── Vibes API ──────────────────────────────────────────────────────────────
+
+export async function getVibes() {
+    const cached = getCachedData('vibes')
+    if (cached) return cached
+
+    if (!supabase) return []
+    const { data, error } = await supabase
+        .from('vibes')
+        .select('*')
+        .order('name', { ascending: true })
+    
+    if (error) {
+        console.error('[KG] getVibes error:', error.message)
+        return []
+    }
+
+    const result = data || []
+    setCachedData('vibes', result, TTL.vibes)
+    return result
+}
+
+export async function createVibe(vibe) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...vibe, id: Date.now().toString(), created_at: new Date().toISOString() }
+    }
+    const proxyResult = await saveViaProxy('vibe', vibe)
+    if (proxyResult) {
+        invalidateCacheGroup('vibes')
+        return proxyResult
+    }
+    const cleanData = sanitizeForDB('vibes', vibe)
+    const { data, error } = await supabase
+        .from('vibes')
+        .insert([cleanData])
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    invalidateCacheGroup('vibes')
+    return data
+}
+
+export async function updateVibe(id, updates) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...updates, id }
+    }
+    const cleanData = sanitizeForDB('vibes', updates)
+    const { data, error } = await supabase
+        .from('vibes')
+        .update(cleanData)
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    invalidateCacheGroup('vibes')
+    return data
+}
+
+export async function deleteVibe(id) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { success: true }
+    }
+    const { error } = await supabase
+        .from('vibes')
+        .delete()
+        .eq('id', id)
+    if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    invalidateCacheGroup('vibes')
+    return { success: true }
+}
 
 // ─── Semantic Search (requires pgvector) ─────────────────────────────────────
 
@@ -787,20 +864,31 @@ export async function matchLocationWithKG(location, preloaded = {}) {
         location.description,
         location.cuisine,
         ...(location.tags || []),
+        ...(location.special_labels || []),
         ...(location.what_to_try || [])
     ].join(' ').toLowerCase()
 
-    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+    const [allCuisines, allDishes, allIngredients, allVibes] = await Promise.all([
         preloaded.allCuisines ?? getCuisines(),
         preloaded.allDishes   ?? getDishes(),
         preloaded.allIngredients ?? getIngredients(),
+        preloaded.allVibes ?? getVibes(),
     ])
 
     const matches = {
         cuisines: [],
         dishes: [],
-        ingredients: []
+        ingredients: [],
+        vibes: []
     }
+
+    // Match Vibes
+    allVibes.forEach(v => {
+        const keywords = [v.name, ...(v.synonyms || [])].map(k => k.toLowerCase())
+        if (keywords.some(k => textToMatch.includes(k))) {
+            matches.vibes.push(v)
+        }
+    })
 
     // Match Cuisines
     allCuisines.forEach(c => {
@@ -876,7 +964,37 @@ export async function syncKGForLocation(locationId) {
         return null
     }
 
-    return { cuisines: kgMatches.cuisines, dishes: kgMatches.dishes, ingredients: kgMatches.ingredients }
+    // Update location_vibes join table
+    if (kgMatches.vibes.length > 0) {
+        try {
+            // 1. Remove existing vibes to prevent duplicates (or use upsert if available)
+            await supabase
+                .from('location_vibes')
+                .delete()
+                .eq('location_id', locationId)
+
+            // 2. Insert new matches
+            const vibeInserts = kgMatches.vibes.map(v => ({
+                location_id: locationId,
+                vibe_id: v.id
+            }))
+
+            const { error: vibeErr } = await supabase
+                .from('location_vibes')
+                .insert(vibeInserts)
+
+            if (vibeErr) console.warn('[KG] Could not sync vibes to join table:', vibeErr.message)
+        } catch (err) {
+            console.warn('[KG] Vibes sync error:', err.message)
+        }
+    }
+
+    return { 
+        cuisines: kgMatches.cuisines, 
+        dishes: kgMatches.dishes, 
+        ingredients: kgMatches.ingredients,
+        vibes: kgMatches.vibes.map(v => v.name)
+    }
 }
 
 export async function syncKGToLocations(onProgress) {
@@ -888,13 +1006,14 @@ export async function syncKGToLocations(onProgress) {
     
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
 
-    // Fetch KG reference data ONCE before the loop — avoids N×3 DB queries
-    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+    // Fetch KG reference data ONCE before the loop — avoids N×4 DB queries
+    const [allCuisines, allDishes, allIngredients, allVibes] = await Promise.all([
         getCuisines(),
         getDishes(),
         getIngredients(),
+        getVibes(),
     ])
-    const preloaded = { allCuisines, allDishes, allIngredients }
+    const preloaded = { allCuisines, allDishes, allIngredients, allVibes }
 
     let updatedCount = 0
     for (let i = 0; i < locations.length; i++) {
@@ -906,7 +1025,8 @@ export async function syncKGToLocations(onProgress) {
             ...(loc.ai_keywords || []),
             ...kgMatches.cuisines,
             ...kgMatches.dishes,
-            ...kgMatches.ingredients
+            ...kgMatches.ingredients,
+            ...kgMatches.vibes.map(v => v.name)
         ]))
 
         // Also write to kg_* columns (additive merge)
@@ -931,6 +1051,16 @@ export async function syncKGToLocations(onProgress) {
                 .eq('id', loc.id)
             
             if (!upError) updatedCount++
+        }
+
+        // Sync vibes to join table
+        if (kgMatches.vibes.length > 0) {
+            try {
+                await supabase.from('location_vibes').delete().eq('location_id', loc.id)
+                await supabase.from('location_vibes').insert(
+                    kgMatches.vibes.map(v => ({ location_id: loc.id, vibe_id: v.id }))
+                )
+            } catch (e) { /* ignore individual sync errors in batch */ }
         }
 
         if (onProgress) onProgress(i + 1, locations.length)

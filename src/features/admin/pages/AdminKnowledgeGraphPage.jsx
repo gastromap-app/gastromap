@@ -14,6 +14,7 @@ import {
     useCuisines, useCreateCuisineMutation, useUpdateCuisineMutation, useDeleteCuisineMutation,
     useDishes, useCreateDishMutation, useUpdateDishMutation, useDeleteDishMutation,
     useIngredients, useCreateIngredientMutation, useUpdateIngredientMutation, useDeleteIngredientMutation,
+    useVibes, useCreateVibeMutation, useUpdateVibeMutation, useDeleteVibeMutation,
     useSyncKGToLocationsMutation, useBulkSyncKGMutation,
     useSpoonacularSearchMutation
 } from '@/shared/api/queries'
@@ -21,6 +22,7 @@ import {
     createCuisine as createCuisineApi, 
     createDish as createDishApi, 
     createIngredient as createIngredientApi,
+    createVibe as createVibeApi,
     mergeEntities
 } from '@/shared/api/knowledge-graph.api'
 import { invalidateCacheGroup } from '@/shared/lib/cache'
@@ -659,6 +661,7 @@ const TABS = [
     { id: 'cuisines',    label: 'Cuisines',    icon: Globe,          accent: 'indigo' },
     { id: 'dishes',      label: 'Dishes',      icon: UtensilsCrossed, accent: 'emerald' },
     { id: 'ingredients', label: 'Ingredients', icon: Carrot,          accent: 'amber' },
+    { id: 'vibes',       label: 'Vibes',       icon: Sparkles,        accent: 'rose' },
 ]
 
 const AdminKnowledgeGraphPage = () => {
@@ -677,8 +680,9 @@ const AdminKnowledgeGraphPage = () => {
     const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
     const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()
     const { data: ingredients  = [], isLoading: loadingIngredients, error: ingredientsError, refetch: refetchIngredients } = useIngredients()
+    const { data: vibes        = [], isLoading: loadingVibes,       error: vibesError,       refetch: refetchVibes       } = useVibes()
 
-    const combinedError = cuisinesError || dishesError || ingredientsError
+    const combinedError = cuisinesError || dishesError || ingredientsError || vibesError
 
     const createCuisine    = useCreateCuisineMutation()
     const updateCuisine    = useUpdateCuisineMutation()
@@ -689,6 +693,9 @@ const AdminKnowledgeGraphPage = () => {
     const createIngredient = useCreateIngredientMutation()
     const updateIngredient = useUpdateIngredientMutation()
     const deleteIngredient = useDeleteIngredientMutation()
+    const createVibe       = useCreateVibeMutation()
+    const updateVibe       = useUpdateVibeMutation()
+    const deleteVibe       = useDeleteVibeMutation()
     useSyncKGToLocationsMutation()
     const bulkSyncKG       = useBulkSyncKGMutation()
 
@@ -714,7 +721,7 @@ const AdminKnowledgeGraphPage = () => {
     }
 
     const checkForDuplicates = () => {
-        const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients
+        const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : activeTab === 'ingredients' ? ingredients : vibes
         if (!source || source.length === 0) return
 
         // Simple normalization for grouping
@@ -787,6 +794,19 @@ const AdminKnowledgeGraphPage = () => {
         } catch { showToast('Operation failed', 'error') }
     }
 
+    const handleSaveVibe = async (data) => {
+        try {
+            if (showModal?.data?.id) {
+                await updateVibe.mutateAsync({ id: showModal.data.id, updates: data })
+                showToast('Vibe updated')
+            } else {
+                await createVibe.mutateAsync(data)
+                showToast('Vibe added')
+            }
+            setShowModal(null)
+        } catch { showToast('Operation failed', 'error') }
+    }
+
     // ── AI Agent save handler ─────────────────────────────────────────────────
     const handleAgentSave = useCallback(async (type, data) => {
         // Используем прямые API функции вместо мутаций React Query
@@ -795,6 +815,7 @@ const AdminKnowledgeGraphPage = () => {
         if (type === 'cuisine')         return await createCuisineApi(data)
         else if (type === 'dish')       return await createDishApi(data)
         else if (type === 'ingredient') return await createIngredientApi(data)
+        else if (type === 'vibe')       return await createVibeApi(data)
         else throw new Error(`Unknown type: ${type}`)
     }, [])
 
@@ -813,21 +834,24 @@ const AdminKnowledgeGraphPage = () => {
         invalidateCacheGroup('cuisines')
         invalidateCacheGroup('dishes')
         invalidateCacheGroup('ingredients')
+        invalidateCacheGroup('vibes')
         // 2. Force React Query to re-fetch from Supabase (not from cache)
         queryClient.removeQueries({ queryKey: ['knowledge-cuisines'] })
         queryClient.removeQueries({ queryKey: ['knowledge-dishes'] })
         queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
+        queryClient.removeQueries({ queryKey: ['knowledge-vibes'] })
         queryClient.removeQueries({ queryKey: ['knowledge-stats'] })
         // 3. Trigger immediate refetch
         setTimeout(() => {
             refetchCuisines()
             refetchDishes()
             refetchIngredients()
+            refetchVibes()
         }, 300)
     }
 
     const filteredItems = useMemo(() => {
-        const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : ingredients
+        const source = activeTab === 'cuisines' ? cuisines : activeTab === 'dishes' ? dishes : activeTab === 'ingredients' ? ingredients : vibes
         const items  = Array.isArray(source) ? source : []
         const q      = searchTerm.toLowerCase()
         return items.filter(item => {
@@ -842,9 +866,10 @@ const AdminKnowledgeGraphPage = () => {
     const isCurrentTabLoading =
         (activeTab === 'cuisines'     && loadingCuisines)     ||
         (activeTab === 'dishes'       && loadingDishes)       ||
-        (activeTab === 'ingredients'  && loadingIngredients)
+        (activeTab === 'ingredients'  && loadingIngredients)  ||
+        (activeTab === 'vibes'        && loadingVibes)
 
-    const counts = { cuisines: cuisines.length, dishes: dishes.length, ingredients: ingredients.length }
+    const counts = { cuisines: cuisines.length, dishes: dishes.length, ingredients: ingredients.length, vibes: vibes.length }
 
     const stats = [
         { label: 'Cuisines',     val: cuisines.length,     Icon: Globe,           bg: 'bg-indigo-50 dark:bg-indigo-500/10',  color: 'text-indigo-600' },

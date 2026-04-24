@@ -29,6 +29,7 @@ export const useAdminLocations = () => {
     const [isImproving, setIsImproving] = useState(null)
     const [isExporting, setIsExporting] = useState(false)
     const [toast, setToast] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
     const PAGE_SIZE = 20
 
     // Auto-hide toast
@@ -69,7 +70,7 @@ export const useAdminLocations = () => {
         try {
             const { supabase } = await import('@/shared/api/client')
             const { data } = await supabase.from('locations')
-                .select('id,title,category,city,country,address,description,rating,price_level,status,created_at')
+                .select('id,title,category,city,country,address,description,google_rating,price_level,status,created_at')
                 .order('created_at', { ascending: false })
             const json = JSON.stringify(data || [], null, 2)
             const blob = new Blob([json], { type: 'application/json' })

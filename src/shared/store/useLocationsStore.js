@@ -268,6 +268,18 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }),
         })),
 
+    setCity: (activeCity) =>
+        set(state => ({
+            activeCity,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCity }),
+        })),
+
+    setCountry: (activeCountry) =>
+        set(state => ({
+            activeCountry,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCountry }),
+        })),
+
     /**
      * Apply multiple filter changes at once — single set() call, one re-render.
      * @param {Partial<LocationFiltersState>} updates
@@ -284,6 +296,21 @@ export const useLocationsStore = create((set, get) => ({
             ...DEFAULT_FILTERS,
             filteredLocations: state.locations,
         })),
+
+    getActiveFiltersCount: () => {
+        const state = get()
+        let count = 0
+        if (state.activeCategory !== 'All') count++
+        if (state.searchQuery) count++
+        if (state.activePriceLevels?.length > 0) count++
+        if (state.minRating !== null) count++
+        if (state.activeVibes?.length > 0) count++
+        if (state.activeBestTime !== null) count++
+        if (state.radius > 0) count++
+        if (state.activeCity !== 'All') count++
+        if (state.activeCountry !== 'All') count++
+        return count
+    },
 
     // ─── Data mutations ──────────────────────────────────────────────────
 

@@ -34,12 +34,13 @@ export default function AdminModerationPage() {
             queueType: 'location',
             name: l.title || l.name || 'Unknown',
             type: l.category || 'Location',
-            city: l.city || '\u2014',
+            city: l.city || '—',
             author: l.created_by || 'System',
             date: l.created_at,
-            insiderTip: l.insider_tip || '\u2014',
-            mustTry: l.must_try || '\u2014',
+            insiderTip: l.insider_tip || '—',
+            mustTry: l.what_to_try ? (Array.isArray(l.what_to_try) ? l.what_to_try.join(', ') : l.what_to_try) : '—',
             tags: l.tags || [],
+            adminComment: l.moderation_note || null,
             status: 'PENDING_MODERATION'
         }))
     ]
@@ -93,7 +94,8 @@ export default function AdminModerationPage() {
             } else {
                 await updateLocationStatus.mutateAsync({
                     id: item.id,
-                    status: 'revision_requested'
+                    status: 'revision_requested',
+                    moderationNote: revisionNote
                 })
             }
             setSelectedItem(null)

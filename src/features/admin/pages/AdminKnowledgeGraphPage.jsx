@@ -34,17 +34,21 @@ import KGEnrichmentAgent from '../components/KGEnrichmentAgent'
 const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) => {
     const isCuisine = type === 'cuisines'
     const isDish    = type === 'dishes'
+    const isVibe    = type === 'vibes'
 
-    const Icon     = isCuisine ? Globe : isDish ? UtensilsCrossed : Leaf
+    const Icon     = isCuisine ? Globe : isDish ? UtensilsCrossed : isVibe ? Sparkles : Leaf
     const accent   = isCuisine ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10'
                    : isDish    ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                   : isVibe    ? 'text-rose-500 bg-rose-50 dark:bg-rose-500/10'
                                : 'text-amber-500 bg-amber-50 dark:bg-amber-500/10'
     const badge    = isCuisine ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
                    : isDish    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+                   : isVibe    ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
                                : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
 
     const meta = isCuisine ? item.region
                : isDish    ? (item.preparation_style || item.flavor_notes)
+               : isVibe    ? (item.category || item.description)
                            : (item.category || item.description)
 
     return (
@@ -89,7 +93,12 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
                         {t}
                     </span>
                 ))}
-                {!isCuisine && !isDish && item.flavor_profile && (
+                {isVibe && (item.synonyms || []).slice(0, 3).map((s, i) => (
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
+                        {s}
+                    </span>
+                ))}
+                {!isCuisine && !isDish && !isVibe && item.flavor_profile && (
                     <span className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
                         {item.flavor_profile}
                     </span>
@@ -421,6 +430,58 @@ const IngredientFormModal = ({ ingredient, onSave, onClose }) => {
     )
 }
 
+// ─── VIBE FORM ────────────────────────────────────────────────────────────────
+
+const VibeFormModal = ({ vibe, onSave, onClose }) => {
+    const [form, setForm] = useState({
+        name:        vibe?.name || '',
+        slug:        vibe?.slug || '',
+        category:    vibe?.category || 'atmosphere',
+        description: vibe?.description || '',
+        synonyms:    (vibe?.synonyms || []).join(', '),
+    })
+
+    const handleSubmit = () => onSave({
+        ...form,
+        slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        synonyms: form.synonyms.split(',').map(s => s.trim()).filter(Boolean),
+    })
+
+    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-rose-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+    const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
+
+    return (
+        <FormModalBase title={vibe ? 'Edit Vibe' : 'New Vibe'} onSave={handleSubmit} onClose={onClose}>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className={lbl}>Name</label>
+                    <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Romantic" />
+                </div>
+                <div>
+                    <label className={lbl}>Slug</label>
+                    <input className={inp} value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="auto-generated from name" />
+                </div>
+            </div>
+            <div>
+                <label className={lbl}>Category</label>
+                <select className={cn(inp, "appearance-none cursor-pointer")} value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                    <option value="atmosphere">Atmosphere</option>
+                    <option value="occasion">Occasion</option>
+                    <option value="crowd">Crowd</option>
+                </select>
+            </div>
+            <div>
+                <label className={lbl}>Description</label>
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Describe the vibe..." />
+            </div>
+            <div>
+                <label className={lbl}>Synonyms</label>
+                <input className={inp} value={form.synonyms} onChange={e => setForm({...form, synonyms: e.target.value})} placeholder="Comma separated alternate names..." />
+            </div>
+        </FormModalBase>
+    )
+}
+
 // ─── SPOONACULAR ENRICHER ─────────────────────────────────────────────────────
 
 function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredients = [] }) {
@@ -672,10 +733,8 @@ const AdminKnowledgeGraphPage = () => {
     const [showModal, setShowModal]   = useState(null)
     const [isInfoOpen, setIsInfoOpen] = useState(false)
     const [toast, setToast]           = useState(null)
-    const [syncStatus] = useState(null)
     const [showMergeModal, setShowMergeModal] = useState(false)
     const [duplicateGroups, setDuplicateGroups] = useState([])
-    const [_isCreateOpen, setIsCreateOpen] = useState(false)
 
     const { data: cuisines     = [], isLoading: loadingCuisines,    error: cuisinesError,    refetch: refetchCuisines    } = useCuisines()
     const { data: dishes       = [], isLoading: loadingDishes,      error: dishesError,      refetch: refetchDishes      } = useDishes()
@@ -925,8 +984,8 @@ const AdminKnowledgeGraphPage = () => {
                                 : <RefreshCw size={13} />}
                             Bulk Sync
                         </button>
-                        <button onClick={() => setIsCreateOpen(true)} className={adminBtnPrimary}>
-                            <Plus size={13} /> Add Entity
+                        <button onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })} className={adminBtnPrimary}>
+                            <Plus size={13} /> Add {activeTab.slice(0, -1)}
                         </button>
                     </div>
                 }
@@ -952,33 +1011,6 @@ const AdminKnowledgeGraphPage = () => {
                     </motion.div>
                 ))}
             </div>
-
-            {/* ── Sync progress ── */}
-            <AnimatePresence>
-                {syncStatus && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-5"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400">
-                                <RefreshCw size={14} className="animate-spin" />
-                                Syncing locations… {syncStatus.current}/{syncStatus.total}
-                            </div>
-                            <span className="text-sm font-bold text-indigo-600">{syncStatus.progress}%</span>
-                        </div>
-                        <div className="h-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-full overflow-hidden">
-                            <motion.div
-                                className="h-full bg-indigo-500 rounded-full"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${syncStatus.progress}%` }}
-                            />
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* ── Error UI ── */}
             {combinedError && (
@@ -1152,6 +1184,7 @@ const AdminKnowledgeGraphPage = () => {
                                         if (confirm('Delete this entry? This cannot be undone.')) {
                                             if (activeTab === 'cuisines')     await deleteCuisine.mutateAsync(id)
                                             else if (activeTab === 'dishes')  await deleteDish.mutateAsync(id)
+                                            else if (activeTab === 'vibes')   await deleteVibe.mutateAsync(id)
                                             else                              await deleteIngredient.mutateAsync(id)
                                             showToast('Entry deleted')
                                         }
@@ -1205,6 +1238,9 @@ const AdminKnowledgeGraphPage = () => {
                 )}
                 {showModal?.type === 'ingredient' && (
                     <IngredientFormModal ingredient={showModal.data} onSave={handleSaveIngredient} onClose={() => setShowModal(null)} />
+                )}
+                {showModal?.type === 'vibe' && (
+                    <VibeFormModal vibe={showModal.data} onSave={handleSaveVibe} onClose={() => setShowModal(null)} />
                 )}
                 {isInfoOpen && (
                     <InfoModal onClose={() => setIsInfoOpen(false)} />

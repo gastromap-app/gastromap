@@ -488,41 +488,38 @@ export async function getLocationTranslated(id, lang = 'en') {
 
 // ─── Smart Sanitizer ───────────────────────────────────────────────────────
 /**
- * Executes a save (insert or update) but smartly catches missing column errors.
- * If a column is missing in the DB schema, it strips it and retries.
+ * Executes a save (insert or update).
+ * Previously this silently stripped missing columns, causing data loss.
+ * Now it fails fast with a clear error so developers know to fix the schema.
  */
 async function _smartSave(table, id, row) {
-    let payload = { ...row }
-    let maxRetries = 10 // Prevent infinite loops
+    const payload = { ...row }
 
-    while (maxRetries > 0) {
-        const req = id 
-            ? supabase.from(table).update(payload).eq('id', id).select().single()
-            : supabase.from(table).insert(payload).select().single()
-            
-        const { data, error } = await req
+    const req = id
+        ? supabase.from(table).update(payload).eq('id', id).select().single()
+        : supabase.from(table).insert(payload).select().single()
 
-        if (error) {
-            // Check if it's a missing column error (PostgREST PGRST200)
-            if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
-                // Parse missing column name: "Could not find the 'xyz' column of 'table'..."
-                const match = error.message.match(/find the '([^']+)' column/)
-                if (match && match[1]) {
-                    const missingCol = match[1]
-                    console.warn(`[smartSave] Column '${missingCol}' missing in DB schema. Stripping it and retrying...`)
-                    delete payload[missingCol]
-                    maxRetries--
-                    continue // retry request without this column
+    const { data, error } = await req
+
+    if (error) {
+        // Detect missing column error (PostgREST PGRST200) and surface a clear message
+        if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
+            const match = error.message.match(/find the '([^']+)' column/)
+            const missingCol = match?.[1] || 'unknown'
+            console.error(`[smartSave] CRITICAL: Column '${missingCol}' is missing in DB table '${table}'.`)
+            console.error(`[smartSave] Data was NOT saved. Run the missing migration or add the column manually.`)
+            return {
+                data: null,
+                error: {
+                    ...error,
+                    message: `Database schema mismatch: column '${missingCol}' does not exist in table '${table}'. Please run migrations or contact admin.`,
                 }
             }
-            // Other error
-            return { data: null, error }
         }
-
-        return { data, error: null }
+        return { data: null, error }
     }
-    
-    return { data: null, error: { message: 'Exceeded max retries for smartSave missing columns', code: '500' } }
+
+    return { data, error: null }
 }
 
 // ─── Shape converter (app → DB) ────────────────────────────────────────────
@@ -611,6 +608,7 @@ function _toRow(d) {
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
+    if (d.moderation_note !== undefined) row.moderation_note = d.moderation_note
 
     // AI Enrichment status
     if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status

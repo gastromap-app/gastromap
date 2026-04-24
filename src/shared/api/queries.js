@@ -466,9 +466,11 @@ export function usePendingLocations() {
 export function useUpdateLocationStatusMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ id, status }) => {
+        mutationFn: async ({ id, status, moderationNote }) => {
             const { updateLocation } = await import('./locations.api')
-            return updateLocation(id, { status })
+            const payload = { status }
+            if (moderationNote !== undefined) payload.moderation_note = moderationNote
+            return updateLocation(id, payload)
         },
         onSuccess: (data, { id, status }) => {
             qc.invalidateQueries({ queryKey: ['locations'] })

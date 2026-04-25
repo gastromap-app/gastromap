@@ -119,12 +119,12 @@ function ProgressBar({ step }) {
                         w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0
                         ${i < step   ? 'bg-indigo-600 text-white'
                         : i === step ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/25'
-                                     : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}
+                                     : 'bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-400 dark:text-[hsl(220,10%,55%)]'}
                     `}>
                         {i < step ? <CheckCircle2 size={14} /> : i + 1}
                     </div>
                     {i < STEPS.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-1 transition-colors duration-500 ${i < step ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                        <div className={`flex-1 h-0.5 mx-1 transition-colors duration-500 ${i < step ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-[hsl(220,20%,12%)]'}`} />
                     )}
                 </React.Fragment>
             ))}
@@ -135,8 +135,8 @@ function ProgressBar({ step }) {
 function Toggle({ label, value, onChange }) {
     return (
         <label className="flex items-center justify-between cursor-pointer py-1">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
-            <div onClick={onChange} className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
+            <span className="text-sm font-medium text-slate-700 dark:text-[hsl(220,10%,55%)]">{label}</span>
+            <div onClick={onChange} className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-[hsl(220,20%,12%)]'}`}>
                 <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${value ? 'translate-x-5' : ''}`} />
             </div>
         </label>
@@ -162,7 +162,7 @@ function AutocompleteInput({
         setOpen(suggestions.length > 0 && value.length >= minLength)
     }, [suggestions, value, minLength])
 
-    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-input focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
+    const inputCls = 'w-full h-12 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-200 dark:border-white/[0.08] rounded-input focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
 
     return (
         <div ref={ref} className="relative">
@@ -195,7 +195,7 @@ function AutocompleteInput({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.12 }}
-                        className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden max-h-52 overflow-y-auto"
+                        className="absolute z-50 w-full mt-1 bg-white dark:bg-[hsl(220,20%,9%)] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-xl overflow-hidden max-h-52 overflow-y-auto"
                     >
                         {suggestions.map((s, i) => (
                             <li key={s.id || i}>
@@ -206,7 +206,7 @@ function AutocompleteInput({
                                         onSelect(s)
                                         setOpen(false)
                                     }}
-                                    className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                                    className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,15%)] transition-colors border-b border-slate-100 dark:border-white/[0.08]/50 last:border-0"
                                 >
                                     <span className="font-semibold">{s.name || s.street}</span>
                                     {s.displayName && (
@@ -229,13 +229,13 @@ function SuccessScreen({ onAddAnother, onHome }) {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', duration: 0.5 }}
-                className="bg-white dark:bg-slate-900 rounded-[40px] p-10 border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/5"
+                className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-[40px] p-10 border border-slate-100 dark:border-white/[0.06] shadow-2xl shadow-indigo-500/5"
             >
                 <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-8">
                     <CheckCircle2 size={40} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Submitted!</h2>
-                <p className="text-slate-500 dark:text-slate-400 mb-5">Our team reviews submissions within 48 hours.</p>
+                <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mb-5">Our team reviews submissions within 48 hours.</p>
                 <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl px-4 py-2.5 mb-8">
                     <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">🏆 +100 points</span>
                     <span className="text-indigo-400 text-sm">credited on approval</span>
@@ -244,7 +244,7 @@ function SuccessScreen({ onAddAnother, onHome }) {
                     <button onClick={onAddAnother} className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black transition-all shadow-lg active:scale-95">
                         Add Another Place
                     </button>
-                    <button onClick={onHome} className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all active:scale-95">
+                    <button onClick={onHome} className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-700 dark:text-[hsl(220,20%,90%)] font-bold transition-all active:scale-95">
                         Back to Home
                     </button>
                 </div>
@@ -508,7 +508,7 @@ export default function AddPlacePage() {
 
     if (done) return <SuccessScreen onAddAnother={reset} onHome={() => navigate('/dashboard')} />
 
-    const inputBase = 'w-full h-12 px-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
+    const inputBase = 'w-full h-12 px-4 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-200 dark:border-white/[0.08] rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm'
     const labelCls  = 'block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5'
 
     return (
@@ -538,7 +538,7 @@ export default function AddPlacePage() {
             <div className="flex items-center gap-4 mb-8">
                 <button
                     onClick={() => (step > 0 ? setStep((s) => s - 1) : navigate(-1))}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-[hsl(220,20%,90%)] hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] transition-all"
                     aria-label="Go back"
                 >
                     <ChevronLeft size={20} />
@@ -551,7 +551,7 @@ export default function AddPlacePage() {
 
             <div className="mb-8"><ProgressBar step={step} /></div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
                 <AnimatePresence mode="wait">
 
                     {/* ════════════════════ STEP 1: Location ════════════════════ */}
@@ -635,7 +635,7 @@ export default function AddPlacePage() {
                                             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-bold border transition-all ${
                                                 form.category === c.id
                                                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                                                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'
+                                                    : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)] border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[hsl(220,10%,55%)] hover:border-indigo-400'
                                             }`}>
                                             {c.emoji} {c.label}
                                         </button>
@@ -675,7 +675,7 @@ export default function AddPlacePage() {
                                     onChange={(e) => setField('description')(e.target.value)}
                                     placeholder="Write something about this place… or leave empty and let AI fill it"
                                     rows={4}
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm resize-none"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-200 dark:border-white/[0.08] rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white text-sm resize-none"
                                 />
                             </div>
 
@@ -699,7 +699,7 @@ export default function AddPlacePage() {
                                                 : 'Fill with AI — generate description & details automatically'}
                                         </p>
                                         {!aiDone && (
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-0.5">
                                                 {hasDescription
                                                     ? 'Your description is preserved and enriched with factual details'
                                                     : 'AI will search for info about this place and write a description'}
@@ -738,7 +738,7 @@ export default function AddPlacePage() {
                                             className={`flex flex-col items-center py-3 rounded-2xl border text-sm transition-all ${
                                                 form.price_range === p.id
                                                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                                                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'
+                                                    : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)] border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[hsl(220,10%,55%)] hover:border-indigo-400'
                                             }`}>
                                             <span className="font-black text-base">{p.label}</span>
                                             <span className="text-[11px] font-semibold opacity-80 mt-0.5">{p.sub}</span>
@@ -749,10 +749,10 @@ export default function AddPlacePage() {
                             </div>
 
                             {/* Features toggles */}
-                            <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-3">
+                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5 space-y-3">
                                 <p className={labelCls}>Features</p>
                                 <Toggle label="🌿 Outdoor seating" value={form.outdoor_seating} onChange={() => setForm((f) => ({ ...f, outdoor_seating: !f.outdoor_seating }))} />
-                                <div className="border-t border-slate-200 dark:border-slate-700" />
+                                <div className="border-t border-slate-200 dark:border-white/[0.08]" />
                                 <Toggle label="🐾 Pet friendly" value={form.pet_friendly} onChange={() => setForm((f) => ({ ...f, pet_friendly: !f.pet_friendly }))} />
                             </div>
 
@@ -776,7 +776,7 @@ export default function AddPlacePage() {
                                     <input value={form.must_try}
                                         onChange={(e) => setField('must_try')(e.target.value)}
                                         placeholder="The dish or drink everyone must order…"
-                                        className="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white" />
+                                        className="w-full h-11 px-4 bg-white dark:bg-[hsl(220,20%,9%)] border border-amber-200 dark:border-amber-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-bold text-amber-700 dark:text-amber-400/80 uppercase tracking-wider">
@@ -785,7 +785,7 @@ export default function AddPlacePage() {
                                     <input value={form.insider_tip}
                                         onChange={(e) => setField('insider_tip')(e.target.value)}
                                         placeholder="A secret tip only regulars know…"
-                                        className="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white" />
+                                        className="w-full h-11 px-4 bg-white dark:bg-[hsl(220,20%,9%)] border border-amber-200 dark:border-amber-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white" />
                                 </div>
                             </div>
 
@@ -811,14 +811,14 @@ export default function AddPlacePage() {
                             className="p-6 md:p-8 space-y-6"
                         >
                             {/* ── Preview card ── */}
-                            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
                                 {/* Main photo */}
                                 <div className="relative h-48 bg-gradient-to-br from-indigo-100 dark:from-indigo-900/40 to-slate-200 dark:to-slate-800 overflow-hidden">
                                     {displayedPhotos[0] ? (
                                         <img src={displayedPhotos[0]} alt="Cover" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <ImageIcon size={32} className="text-slate-300 dark:text-slate-600" />
+                                            <ImageIcon size={32} className="text-slate-300 dark:text-[hsl(220,10%,55%)]" />
                                         </div>
                                     )}
                                     {isAiPhotoShowing && (
@@ -841,21 +841,21 @@ export default function AddPlacePage() {
                                         <span>{[form.address, form.city, form.country].filter(Boolean).join(', ')}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 capitalize font-semibold">{form.category}</span>
-                                        {form.outdoor_seating && <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 font-semibold">🌿 Outdoor</span>}
-                                        {form.pet_friendly    && <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 font-semibold">🐾 Pets OK</span>}
+                                        <span className="text-xs bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-600 dark:text-[hsl(220,10%,55%)] rounded-lg px-2.5 py-1 capitalize font-semibold">{form.category}</span>
+                                        {form.outdoor_seating && <span className="text-xs bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-600 dark:text-[hsl(220,10%,55%)] rounded-lg px-2.5 py-1 font-semibold">🌿 Outdoor</span>}
+                                        {form.pet_friendly    && <span className="text-xs bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-600 dark:text-[hsl(220,10%,55%)] rounded-lg px-2.5 py-1 font-semibold">🐾 Pets OK</span>}
                                     </div>
                                     {form.description && <p className="text-slate-500 text-xs line-clamp-3 pt-1">{form.description}</p>}
                                     {form.must_try && (
                                         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-3 py-2 mt-2 space-y-1">
                                             <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Must try</p>
-                                            <p className="text-xs text-slate-600 dark:text-slate-400">{form.must_try}</p>
+                                            <p className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)]">{form.must_try}</p>
                                         </div>
                                     )}
                                     {form.insider_tip && (
                                         <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3 py-2 space-y-1">
                                             <p className="text-xs font-bold text-blue-700 dark:text-blue-400">Insider tip</p>
-                                            <p className="text-xs text-slate-600 dark:text-slate-400">{form.insider_tip}</p>
+                                            <p className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)]">{form.insider_tip}</p>
                                         </div>
                                     )}
                                 </div>
@@ -895,7 +895,7 @@ export default function AddPlacePage() {
                                     <div className="grid grid-cols-3 gap-2">
                                         {/* AI photo (if no user photos) */}
                                         {isAiPhotoShowing && (
-                                            <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                                            <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
                                                 <img src={aiPhoto} alt="AI suggested" className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/20 flex items-end p-1.5">
                                                     <span className="text-[9px] font-bold text-white bg-black/40 backdrop-blur-sm rounded px-1.5 py-0.5">AI photo</span>
@@ -904,7 +904,7 @@ export default function AddPlacePage() {
                                         )}
                                         {/* User photos */}
                                         {userPhotos.map((p, i) => (
-                                            <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 group">
+                                            <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08] group">
                                                 <img src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"
@@ -922,7 +922,7 @@ export default function AddPlacePage() {
                                         {/* Upload more slot */}
                                         {userPhotos.length < MAX_PHOTOS && userPhotos.length > 0 && (
                                             <button type="button" onClick={() => fileInputRef.current?.click()}
-                                                className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-all">
+                                                className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-white/[0.08] flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-all">
                                                 <Upload size={20} />
                                                 <span className="text-[10px] font-semibold">Add</span>
                                             </button>
@@ -933,7 +933,7 @@ export default function AddPlacePage() {
                                 {/* Empty state */}
                                 {!aiPhoto && userPhotos.length === 0 && (
                                     <button type="button" onClick={() => fileInputRef.current?.click()}
-                                        className="w-full h-24 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-all">
+                                        className="w-full h-24 rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/[0.08] flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-all">
                                         <Upload size={22} />
                                         <span className="text-sm font-semibold">Upload photos (optional)</span>
                                         <span className="text-xs">JPG, PNG · max {MAX_PHOTOS} · auto-compressed</span>
@@ -948,14 +948,14 @@ export default function AddPlacePage() {
                             </div>
 
                             {/* ── Confirmation ── */}
-                            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] transition-colors">
                                 <div className="relative mt-0.5 shrink-0">
                                     <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="sr-only" />
-                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${confirmed ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'}`}>
+                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${confirmed ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,9%)]'}`}>
                                         {confirmed && <CheckCircle2 size={12} className="text-white" />}
                                     </div>
                                 </div>
-                                <span className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                <span className="text-sm text-slate-600 dark:text-[hsl(220,10%,55%)] leading-relaxed">
                                     I confirm this is a real place and the information provided is accurate.
                                 </span>
                             </label>

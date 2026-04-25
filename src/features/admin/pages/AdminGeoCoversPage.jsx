@@ -77,10 +77,10 @@ function GeoCoverCard({ item, cover, geoType }) {
     const isDirty = !!(selectedFile || urlInput)
 
     return (
-        <div className="bg-white dark:bg-slate-900/60 rounded-[24px] border border-slate-100 dark:border-slate-800/50 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/60 rounded-[24px] border border-slate-100 dark:border-white/[0.06]/50 overflow-hidden shadow-sm">
             {/* Image area */}
             <div
-                className="relative h-40 bg-slate-100 dark:bg-slate-800 cursor-pointer group"
+                className="relative h-40 bg-slate-100 dark:bg-[hsl(220,20%,9%)] cursor-pointer group"
                 onClick={() => !urlMode && inputRef.current?.click()}
             >
                 {currentImage ? (
@@ -148,7 +148,7 @@ function GeoCoverCard({ item, cover, geoType }) {
                                 value={urlInput}
                                 onChange={e => { setUrlInput(e.target.value); setPreview(e.target.value || null); setSelectedFile(null) }}
                                 placeholder="https://images.unsplash.com/..."
-                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[12px] text-slate-800 dark:text-white outline-none focus:border-indigo-400 transition-colors"
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-[12px] text-slate-800 dark:text-white outline-none focus:border-indigo-400 transition-colors"
                             />
                         </motion.div>
                     )}
@@ -165,7 +165,7 @@ function GeoCoverCard({ item, cover, geoType }) {
                         </button>
                         <button
                             onClick={() => { setPreview(null); setSelectedFile(null); setUrlInput(''); setUrlMode(false) }}
-                            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors"
                         >
                             <X size={14} />
                         </button>
@@ -240,13 +240,13 @@ export default function AdminGeoCoversPage() {
             />
 
             {/* Tab toggle */}
-            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit">
+            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-2xl w-fit">
                 <button
                     onClick={() => setActiveTab('country')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
                         activeTab === 'country'
-                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                            ? 'bg-white dark:bg-[hsl(220,20%,12%)] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-[hsl(220,20%,90%)]'
                     }`}
                 >
                     <Globe size={15} />
@@ -256,8 +256,8 @@ export default function AdminGeoCoversPage() {
                     onClick={() => setActiveTab('city')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
                         activeTab === 'city'
-                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                            ? 'bg-white dark:bg-[hsl(220,20%,12%)] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-[hsl(220,20%,90%)]'
                     }`}
                 >
                     <MapPin size={15} />
@@ -273,7 +273,7 @@ export default function AdminGeoCoversPage() {
             {isLoading ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="h-52 rounded-[24px] bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                        <div key={i} className="h-52 rounded-[24px] bg-slate-100 dark:bg-[hsl(220,20%,9%)] animate-pulse" />
                     ))}
                 </div>
             ) : items.length === 0 ? (

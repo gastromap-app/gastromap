@@ -36,7 +36,7 @@ const NAV_ITEMS = [
 
 function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme, theme }) {
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50 transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
+        <div className="flex flex-col h-full bg-white dark:bg-[hsl(220,20%,6%)] border-r border-slate-100 dark:border-white/[0.06]/50 transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
             <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
             {/* Logo Section */}
@@ -62,7 +62,7 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
                                 "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
                                 isActive
                                     ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30"
-                                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
+                                    : "text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/50 hover:text-slate-900 dark:hover:text-white"
                             )}>
                                 <item.icon size={18} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-white" : "text-slate-400 group-hover:text-indigo-500")} />
                                 {!collapsed && <span className="text-sm font-black tracking-tight">{item.label}</span>}
@@ -76,12 +76,12 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
             </nav>
 
             {/* Footer Actions */}
-            <div className="p-6 bg-slate-50/30 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/50 space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
+            <div className="p-6 bg-slate-50/30 dark:bg-[hsl(220,20%,6%)]/30 border-t border-slate-100 dark:border-white/[0.06]/50 space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
                 <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     <ArrowLeft size={18} />
                     {!collapsed && <span>Back to App</span>}
                 </Link>
-                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-white dark:hover:bg-[hsl(220,20%,12%)] transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     {theme === 'dark' ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-indigo-600" />}
                     {!collapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
                 </button>
@@ -145,7 +145,7 @@ export default function AdminLayout() {
         : 'AD'
 
     return (
-        <div className="flex h-screen bg-[#FDFDFD] dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-200 safe-bottom">
+        <div className="flex h-screen bg-[#FDFDFD] dark:bg-[hsl(220,20%,3%)] overflow-hidden font-sans text-slate-900 dark:text-[hsl(220,20%,90%)] safe-bottom">
             {/* Desktop Sidebar */}
             <motion.aside animate={{ width: isCollapsed ? 80 : 280 }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="hidden lg:flex flex-col h-screen relative z-30 flex-shrink-0">
                 <SidebarContent
@@ -155,7 +155,7 @@ export default function AdminLayout() {
                     toggleTheme={toggleTheme}
                     theme={theme}
                 />
-                <button onClick={toggleSidebar} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
+                <button onClick={toggleSidebar} className="absolute -right-3.5 top-12 w-7 h-7 bg-white dark:bg-[hsl(220,20%,9%)] border border-slate-100 dark:border-white/[0.08] rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 shadow-sm transition-all z-40">
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                 </button>
             </motion.aside>
@@ -185,7 +185,7 @@ export default function AdminLayout() {
                             leaveFrom="translate-x-0"
                             leaveTo="-translate-x-full"
                         >
-                            <Dialog.Panel className="relative flex w-full max-w-[300px] flex-1 flex-col bg-white dark:bg-slate-900 shadow-2xl">
+                            <Dialog.Panel className="relative flex w-full max-w-[300px] flex-1 flex-col bg-white dark:bg-[hsl(220,20%,6%)] shadow-2xl">
                                 <SidebarContent
                                     location={location}
                                     handleLogout={handleLogout}
@@ -195,7 +195,7 @@ export default function AdminLayout() {
                                 <div className="absolute top-4 right-4 pt-[env(safe-area-inset-top)]">
                                     <button
                                         type="button"
-                                        className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl"
+                                        className="p-2 text-slate-400 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-xl"
                                         onClick={() => setIsSidebarOpen(false)}
                                     >
                                         <X size={18} />
@@ -212,15 +212,15 @@ export default function AdminLayout() {
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
                 {/* Top Header */}
-                <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
+                <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-[hsl(220,20%,3%)]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/[0.06]/50 flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
                     <div className="flex items-center gap-3 md:gap-6">
-                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm" aria-label="Open menu">
+                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl shadow-sm" aria-label="Open menu">
                             <Menu size={20} />
                         </button>
 
                         {/* Breadcrumbs */}
                         <nav className="hidden md:flex items-center gap-2">
-                            <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-400">
+                            <div className="p-1.5 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-lg text-slate-400">
                                 <Shield size={14} />
                             </div>
                             {breadcrumbs.map((crumb, i) => (
@@ -236,7 +236,7 @@ export default function AdminLayout() {
 
                     <div className="flex items-center gap-3 lg:gap-6">
                         {/* Search */}
-                        <div className="hidden md:flex items-center gap-2 px-4 h-11 bg-slate-100/50 dark:bg-slate-900/50 rounded-xl border border-transparent focus-within:border-indigo-500/30 transition-all group w-48 xl:w-64">
+                        <div className="hidden md:flex items-center gap-2 px-4 h-11 bg-slate-100/50 dark:bg-[hsl(220,20%,6%)]/50 rounded-xl border border-transparent focus-within:border-indigo-500/30 transition-all group w-48 xl:w-64">
                             <Search size={16} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
                             <input
                                 type="text"
@@ -252,7 +252,7 @@ export default function AdminLayout() {
                         </div>
 
                         {/* Action Tools */}
-                        <div className="flex items-center gap-2 border-l border-slate-200/50 dark:border-slate-800/50 pl-3 lg:pl-6 relative">
+                        <div className="flex items-center gap-2 border-l border-slate-200/50 dark:border-white/[0.06]/50 pl-3 lg:pl-6 relative">
                             <button
                                 aria-label="Notifications"
                                 onClick={() => setShowNotifications(!showNotifications)}
@@ -260,7 +260,7 @@ export default function AdminLayout() {
                             >
                                 <Bell size={20} />
                                 {notifications.filter(n => n.unread).length > 0 && (
-                                    <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-950" />
+                                    <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-white/[0.06]" />
                                 )}
                             </button>
 
@@ -279,9 +279,9 @@ export default function AdminLayout() {
                                             initial={{ opacity: 0, y: -8, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                                            className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100]"
+                                            className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-100 dark:border-white/[0.06] overflow-hidden z-[100]"
                                         >
-                                            <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                                            <div className="p-4 border-b border-slate-100 dark:border-white/[0.06]">
                                                 <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Notifications</p>
                                             </div>
                                             <div className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -291,18 +291,18 @@ export default function AdminLayout() {
                                                     </div>
                                                 ) : (
                                                     notifications.map(n => (
-                                                        <div key={n.id} className={cn("px-4 py-3 flex gap-3 items-start hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors", n.unread && "bg-indigo-50/50 dark:bg-indigo-500/5")}>
+                                                        <div key={n.id} className={cn("px-4 py-3 flex gap-3 items-start hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-colors", n.unread && "bg-indigo-50/50 dark:bg-indigo-500/5")}>
                                                             {n.unread && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}
                                                             {!n.unread && <div className="w-2 h-2 rounded-full bg-transparent mt-1.5 shrink-0" />}
                                                             <div className="min-w-0">
-                                                                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-snug">{n.text}</p>
+                                                                <p className="text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] font-medium leading-snug">{n.text}</p>
                                                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
                                                             </div>
                                                         </div>
                                                     ))
                                                 )}
                                             </div>
-                                            <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+                                            <div className="p-3 border-t border-slate-100 dark:border-white/[0.06]">
                                                 <button className="w-full text-center text-xs font-bold text-indigo-500 hover:text-indigo-600 uppercase tracking-widest py-1">
                                                     Mark all as read
                                                 </button>
@@ -321,7 +321,7 @@ export default function AdminLayout() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-4 pl-3 lg:pl-6 border-l border-slate-200/50 dark:border-slate-800/50">
+                        <div className="flex items-center gap-4 pl-3 lg:pl-6 border-l border-slate-200/50 dark:border-white/[0.06]/50">
                             <div className="hidden xl:flex flex-col items-end min-w-0">
                                 <p className="text-sm font-bold text-slate-900 dark:text-white leading-none truncate w-28 text-right">
                                     {user?.name || 'Admin'}
@@ -331,14 +331,14 @@ export default function AdminLayout() {
                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Online</span>
                                 </div>
                             </div>
-                            <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-slate-900 font-bold text-sm shadow-xl active:scale-95 transition-transform cursor-pointer border-2 border-slate-50 dark:border-slate-800 overflow-hidden">
+                            <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-slate-900 font-bold text-sm shadow-xl active:scale-95 transition-transform cursor-pointer border-2 border-slate-50 dark:border-white/[0.06] overflow-hidden">
                                 {userInitials}
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-10 bg-[#FDFDFD] dark:bg-slate-950">
+                <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-10 bg-[#FDFDFD] dark:bg-[hsl(220,20%,3%)]">
                     <div className="max-w-[1600px] mx-auto min-h-full">
                     <ErrorBoundary fallback={RouteErrorFallback}>
                         <Outlet />

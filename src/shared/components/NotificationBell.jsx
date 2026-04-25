@@ -120,8 +120,8 @@ const NotificationBell = ({ className }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     'relative p-2 rounded-xl transition-all',
-                    'hover:bg-slate-100 dark:hover:bg-slate-800',
-                    isOpen && 'bg-slate-100 dark:bg-slate-800'
+                    'hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)]',
+                    isOpen && 'bg-slate-100 dark:bg-[hsl(220,20%,9%)]'
                 )}
                 aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
             >
@@ -131,7 +131,7 @@ const NotificationBell = ({ className }) => {
                         'transition-colors',
                         unreadCount > 0
                             ? 'text-indigo-500'
-                            : 'text-slate-500 dark:text-slate-400'
+                            : 'text-slate-500 dark:text-[hsl(220,10%,55%)]'
                     )}
                 />
 
@@ -160,13 +160,13 @@ const NotificationBell = ({ className }) => {
                         transition={{ duration: 0.15 }}
                         className={cn(
                             'absolute right-0 top-full mt-2 w-80 sm:w-96',
-                            'bg-white dark:bg-slate-900 rounded-2xl shadow-xl',
-                            'border border-slate-200 dark:border-slate-700',
+                            'bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-xl',
+                            'border border-slate-200 dark:border-white/[0.08]',
                             'overflow-hidden z-50'
                         )}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/[0.08]">
                             <h3 className="font-bold text-slate-900 dark:text-white">
                                 Notifications
                             </h3>
@@ -174,7 +174,7 @@ const NotificationBell = ({ className }) => {
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={handleMarkAllRead}
-                                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] text-slate-500 hover:text-slate-700 dark:hover:text-[hsl(220,20%,90%)]"
                                         title="Mark all as read"
                                     >
                                         <CheckCheck size={16} />
@@ -182,7 +182,7 @@ const NotificationBell = ({ className }) => {
                                 )}
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] text-slate-500"
                                 >
                                     <X size={16} />
                                 </button>
@@ -222,7 +222,7 @@ const NotificationBell = ({ className }) => {
                                         <div
                                             key={notification.id}
                                             className={cn(
-                                                'p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
+                                                'p-3 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-colors cursor-pointer',
                                                 !notification.read && 'bg-indigo-50/50 dark:bg-indigo-500/5'
                                             )}
                                             onClick={() => handleMarkRead(notification.id)}
@@ -235,7 +235,7 @@ const NotificationBell = ({ className }) => {
                                                     <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                                                         {notification.title}
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] line-clamp-2">
                                                         {notification.body}
                                                     </p>
                                                     <p className="text-[10px] text-slate-400 mt-1">
@@ -253,8 +253,8 @@ const NotificationBell = ({ className }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                            <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50">
+                            <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-[hsl(220,10%,55%)] cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={pushEnabled}

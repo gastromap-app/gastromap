@@ -9,7 +9,7 @@ export function Skeleton({ className }) {
     return (
         <div
             className={cn(
-                'relative overflow-hidden bg-slate-200 dark:bg-slate-800 rounded-2xl',
+                'relative overflow-hidden bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-2xl',
                 'before:absolute before:inset-0',
                 'before:bg-gradient-to-r before:from-transparent before:via-white/40 dark:before:via-white/10 before:to-transparent',
                 'before:animate-[shimmer_1.5s_infinite]',

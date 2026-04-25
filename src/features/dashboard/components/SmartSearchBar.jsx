@@ -83,7 +83,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
             <div
                 className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${
                     isDark
-                        ? `bg-white/[0.03] border-white/[0.06] ${focused ? 'border-[hsl(232,55%,60%)]/40 shadow-lg shadow-[hsl(232,55%,60%)]/10' : ''}`
+                        ? `bg-white/[0.03] border-white/[0.06] ${focused ? 'border-[hsl(217,91%,60%)]/40 shadow-lg shadow-[hsl(217,91%,60%)]/10' : ''}`
                         : `bg-white border-gray-100 shadow-xl shadow-blue-500/5 ${focused ? 'border-blue-200' : ''}`
                 }`}
             >
@@ -95,7 +95,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                     onChange={(e) => { onChange(e); setOpen(true) }}
                     onFocus={() => { setFocused(true); setOpen(true) }}
                     onBlur={() => setTimeout(() => setFocused(false), 150)}
-                    className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-[hsl(240,10%,96%)]' : 'text-gray-900'}`}
+                    className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-[hsl(220,20%,96%)]' : 'text-gray-900'}`}
                 />
                 <AnimatePresence>
                     {value && (
@@ -105,7 +105,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                             exit={{ opacity: 0, scale: 0.7 }}
                             transition={{ duration: 0.15 }}
                             onMouseDown={handleClear}
-                            className={`ml-2 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isDark ? 'bg-white/[0.06] text-[hsl(220,6%,57%)]' : 'bg-gray-100 text-gray-500'}`}
+                            className={`ml-2 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isDark ? 'bg-white/[0.06] text-[hsl(220,10%,55%)]' : 'bg-gray-100 text-gray-500'}`}
                         >
                             <X size={11} />
                         </motion.button>
@@ -119,7 +119,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                 aria-label="Open filters"
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-95 border flex-shrink-0 relative ${
                     isDark
-                        ? 'bg-[hsl(232,55%,60%)]/10 border-[hsl(232,55%,60%)]/20 text-[hsl(232,55%,60%)]'
+                        ? 'bg-[hsl(217,91%,60%)]/10 border-[hsl(217,91%,60%)]/20 text-[hsl(217,91%,60%)]'
                         : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-transparent'
                 }`}
             >
@@ -129,7 +129,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                 
                 {/* Active filters badge */}
                 {useLocationsStore.getState().getActiveFiltersCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[hsl(222,14%,7%)] animate-in fade-in zoom-in duration-300">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[hsl(220,20%,3%)] animate-in fade-in zoom-in duration-300">
                         {useLocationsStore.getState().getActiveFiltersCount()}
                     </span>
                 )}
@@ -145,7 +145,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                         transition={{ duration: 0.15, ease: 'easeOut' }}
                         className={`absolute top-[calc(100%+8px)] left-0 right-12 z-50 rounded-2xl overflow-hidden shadow-2xl border ${
                             isDark
-                                ? 'bg-[hsl(222,14%,11%)] border-white/[0.06]'
+                                ? 'bg-[hsl(220,20%,6%)] border-white/[0.06]'
                                 : 'bg-white border-gray-100'
                         }`}
                         style={{ boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.6)' : '0 16px 48px rgba(0,0,0,0.12)' }}
@@ -172,7 +172,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                     </div>
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-bold truncate ${isDark ? 'text-[hsl(240,10%,96%)]' : 'text-gray-900'}`}>
+                                        <p className={`text-sm font-bold truncate ${isDark ? 'text-[hsl(220,20%,96%)]' : 'text-gray-900'}`}>
                                             {highlight(loc.title, value)}
                                         </p>
                                         <div className="flex items-center gap-1.5 mt-0.5">
@@ -183,8 +183,8 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                             {loc.rating && (
                                                 <>
                                                     <span className="text-gray-300">·</span>
-                                                    <Star size={10} className="text-[hsl(232,55%,60%)] fill-[hsl(232,55%,60%)] flex-shrink-0" />
-                                                    <span className="text-xs font-semibold text-[hsl(232,55%,60%)]">{loc.rating}</span>
+                                                    <Star size={10} className="text-[hsl(217,91%,60%)] fill-[hsl(217,91%,60%)] flex-shrink-0" />
+                                                    <span className="text-xs font-semibold text-[hsl(217,91%,60%)]">{loc.rating}</span>
                                                 </>
                                             )}
                                         </div>
@@ -192,7 +192,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                     {/* Category pill */}
                                     {loc.category && (
                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                            isDark ? 'bg-white/[0.06] text-[hsl(220,6%,57%)]' : 'bg-gray-100 text-gray-500'
+                                            isDark ? 'bg-white/[0.06] text-[hsl(220,10%,55%)]' : 'bg-gray-100 text-gray-500'
                                         }`}>
                                             {loc.category}
                                         </span>

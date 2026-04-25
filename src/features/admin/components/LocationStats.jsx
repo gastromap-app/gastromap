@@ -42,7 +42,7 @@ const LocationStats = ({ locationsList = [], pendingLocations = [] }) => {
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ delay: i * 0.1, duration: 0.4 }} 
                     key={i} 
-                    className="bg-white dark:bg-slate-900/40 p-4 lg:p-6 rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/20 transition-all relative overflow-hidden"
+                    className="bg-white dark:bg-[hsl(220,20%,6%)]/40 p-4 lg:p-6 rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/20 transition-all relative overflow-hidden"
                 >
                     <div className={cn(
                         "w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner overflow-hidden relative transition-transform group-hover:scale-105", 
@@ -51,7 +51,7 @@ const LocationStats = ({ locationsList = [], pendingLocations = [] }) => {
                         <s.icon size={20} className="lg:w-6 lg:h-6 stroke-[2.5]" />
                     </div>
                     <div className="text-center sm:text-left min-w-0">
-                        <p className="text-[9px] lg:text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.15em] mb-1 leading-none">{s.label}</p>
+                        <p className="text-[9px] lg:text-[10px] font-black uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-[0.15em] mb-1 leading-none">{s.label}</p>
                         <p className="text-lg lg:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight truncate">{s.val}</p>
                     </div>
                     <div className="absolute top-0 right-0 p-2 opacity-5">

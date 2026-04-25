@@ -10,7 +10,7 @@ import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
-    <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-6 lg:p-8 shadow-sm">
+    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 p-6 lg:p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
                 <Icon size={18} />
@@ -29,11 +29,11 @@ const StatusOption = ({ status, currentStatus, title, description, icon: Icon, c
             className={cn(
                 "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left",
                 isActive
-                    ? cn("bg-white dark:bg-slate-800 shadow-xl scale-[1.02]", color.replace('text-', 'border-'))
-                    : "bg-slate-50 dark:bg-slate-800/30 border-transparent hover:bg-white dark:hover:bg-slate-800"
+                    ? cn("bg-white dark:bg-[hsl(220,20%,9%)] shadow-xl scale-[1.02]", color.replace('text-', 'border-'))
+                    : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 border-transparent hover:bg-white dark:hover:bg-[hsl(220,20%,12%)]"
             )}
         >
-            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", isActive ? color : "bg-slate-200 dark:bg-slate-700 text-slate-400")}>
+            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", isActive ? color : "bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-400")}>
                 <Icon size={24} />
             </div>
             <div className="flex-1 min-w-0">
@@ -56,7 +56,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
                 aria-label={`Upload ${label}`}
                 onClick={() => inputRef.current?.click()}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
-                className="h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 hover:border-indigo-400 transition-all group overflow-hidden relative"
+                className="h-32 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/[0.08] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 hover:border-indigo-400 transition-all group overflow-hidden relative"
             >
                 {value ? (
                     <img src={value} alt="Logo preview" className="w-full h-full object-contain p-4" />
@@ -168,7 +168,7 @@ const AdminSettingsPage = () => {
                                     type="text"
                                     value={formData.appName}
                                     onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
-                                    className="w-full h-14 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    className="w-full h-14 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                                     placeholder="GastroMap"
                                 />
                             </div>
@@ -195,7 +195,7 @@ const AdminSettingsPage = () => {
                                     value={formData.appDescription}
                                     onChange={(e) => setFormData({ ...formData, appDescription: e.target.value })}
                                     rows={4}
-                                    className="w-full bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
+                                    className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -204,7 +204,7 @@ const AdminSettingsPage = () => {
                                     type="text"
                                     value={formData.seoKeywords}
                                     onChange={(e) => setFormData({ ...formData, seoKeywords: e.target.value })}
-                                    className="w-full h-14 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    className="w-full h-14 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                                 />
                             </div>
                         </div>
@@ -250,7 +250,7 @@ const AdminSettingsPage = () => {
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: 'auto', opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
-                                    className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-800/50 space-y-4 overflow-hidden"
+                                    className="mt-8 pt-8 border-t border-slate-50 dark:border-white/[0.06]/50 space-y-4 overflow-hidden"
                                 >
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Message shown to users</label>
@@ -258,12 +258,12 @@ const AdminSettingsPage = () => {
                                             value={formData.maintenanceMessage}
                                             onChange={(e) => setFormData({ ...formData, maintenanceMessage: e.target.value })}
                                             rows={3}
-                                            className="w-full bg-slate-50/50 dark:bg-slate-800/50 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
+                                            className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
                                         />
                                     </div>
                                     <div className="bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl p-6 flex gap-4">
                                         <Info className="text-indigo-500 shrink-0" size={20} />
-                                        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                                        <p className="text-[11px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed italic">
                                             Admins and staff will continue to see the app normally.
                                             Only external users will see this notice.
                                         </p>
@@ -276,7 +276,7 @@ const AdminSettingsPage = () => {
                     <SettingSection title="Security" icon={Shield}>
                         <div className="bg-rose-50 dark:bg-rose-500/10 rounded-3xl p-8 border border-rose-100 dark:border-rose-500/20">
                             <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-4">Danger Zone</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-6 leading-relaxed">
                                 Clears the app's geo-cache (Nominatim responses stored in localStorage).
                                 API calls will be made fresh on next visit.
                             </p>

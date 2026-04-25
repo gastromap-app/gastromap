@@ -68,7 +68,7 @@ const LocationFilters = ({
     ).sort((a, b) => a.label.localeCompare(b.label))
 
     return (
-        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900/50">
+        <div className="flex flex-col border-b border-slate-100 dark:border-white/[0.06]/50 bg-white dark:bg-[hsl(220,20%,6%)]/50">
             {/* Верхняя панель: Поиск и Переключатель вида */}
             <div className="px-4 py-4 lg:px-10 lg:py-6 flex flex-wrap items-center justify-between gap-4">
                 
@@ -83,7 +83,7 @@ const LocationFilters = ({
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.8 }}
                                     onClick={() => setIsSearchExpanded(true)}
-                                    className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all border border-slate-100 dark:border-slate-800"
+                                    className="p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-2xl text-slate-400 hover:text-indigo-600 transition-all border border-slate-100 dark:border-white/[0.06]"
                                 >
                                     <Search size={20} strokeWidth={2.5} />
                                 </motion.button>
@@ -95,7 +95,7 @@ const LocationFilters = ({
                                     exit={{ width: 40, opacity: 0 }}
                                     className="relative flex items-center"
                                 >
-                                    <Search className="absolute left-4 text-slate-300 dark:text-slate-600" size={16} />
+                                    <Search className="absolute left-4 text-slate-300 dark:text-[hsl(220,10%,55%)]" size={16} />
                                     <input
                                         ref={searchInputRef}
                                         type="text"
@@ -103,12 +103,12 @@ const LocationFilters = ({
                                         value={searchQuery}
                                         onChange={(e) => onSearchChange(e.target.value)}
                                         onBlur={() => !searchQuery && setIsSearchExpanded(false)}
-                                        className="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800 rounded-2xl text-[13px] font-black uppercase tracking-widest outline-none ring-2 ring-transparent focus:ring-indigo-500/10 transition-all shadow-inner dark:text-white"
+                                        className="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-100 dark:border-white/[0.06] rounded-2xl text-[13px] font-black uppercase tracking-widest outline-none ring-2 ring-transparent focus:ring-indigo-500/10 transition-all shadow-inner dark:text-white"
                                     />
                                     {searchQuery && (
                                         <button 
                                             onClick={() => { onSearchChange(''); setIsSearchExpanded(false); }}
-                                            className="absolute right-3 p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
+                                            className="absolute right-3 p-1.5 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,12%)] rounded-lg text-slate-400 transition-colors"
                                         >
                                             <X size={14} />
                                         </button>
@@ -119,7 +119,7 @@ const LocationFilters = ({
                     </div>
 
                     <div className="hidden md:block">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none">
                             {searchQuery ? `Найдено: ${filteredCount}` : `Всего объектов: ${totalCount}`}
                         </p>
                     </div>
@@ -133,7 +133,7 @@ const LocationFilters = ({
                             "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border",
                             isAdvancedExpanded 
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-400' 
-                                : 'bg-slate-50 border-slate-100 text-slate-400 dark:bg-slate-800 dark:border-slate-800'
+                                : 'bg-slate-50 border-slate-100 text-slate-400 dark:bg-[hsl(220,20%,9%)] dark:border-white/[0.06]'
                         )}
                     >
                         <SlidersHorizontal size={14} strokeWidth={2.5} />
@@ -145,13 +145,13 @@ const LocationFilters = ({
                         )}
                     </button>
 
-                    <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-950/40 rounded-2xl border border-slate-200 dark:border-slate-800/50 shrink-0 shadow-inner">
+                    <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[hsl(220,20%,3%)]/40 rounded-2xl border border-slate-200 dark:border-white/[0.06]/50 shrink-0 shadow-inner">
                         <button
                             onClick={() => onViewModeChange('list')}
                             className={cn(
                                 "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2",
                                 viewMode === 'list' 
-                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                                    ? 'bg-white dark:bg-[hsl(220,20%,9%)] text-indigo-600 dark:text-indigo-400 shadow-sm' 
                                     : 'text-slate-400 hover:text-slate-600'
                             )}
                         >
@@ -163,7 +163,7 @@ const LocationFilters = ({
                             className={cn(
                                 "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2",
                                 viewMode === 'map' 
-                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                                    ? 'bg-white dark:bg-[hsl(220,20%,9%)] text-indigo-600 dark:text-indigo-400 shadow-sm' 
                                     : 'text-slate-400 hover:text-slate-600'
                             )}
                         >
@@ -181,7 +181,7 @@ const LocationFilters = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden bg-slate-50/50 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/50"
+                        className="overflow-hidden bg-slate-50/50 dark:bg-[hsl(220,20%,3%)]/10 border-t border-slate-100 dark:border-white/[0.06]/50"
                     >
                         <div className="px-4 py-6 lg:px-10 lg:py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                             
@@ -194,7 +194,7 @@ const LocationFilters = ({
                                     <select 
                                         value={sortBy}
                                         onChange={(e) => onSortChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="newest">Сначала новые</option>
                                         <option value="rating">По рейтингу (наш)</option>
@@ -211,7 +211,7 @@ const LocationFilters = ({
                                     <select 
                                         value={activeCategory}
                                         onChange={(e) => onCategoryChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">Все категории</option>
                                         {ESTABLISHMENT_TYPES.filter(t => t.id !== 'all').map(type => (
@@ -230,7 +230,7 @@ const LocationFilters = ({
                                     <select 
                                         value={activeCountry}
                                         onChange={(e) => onCountryChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">Все страны</option>
                                         {countries.map(country => (
@@ -245,7 +245,7 @@ const LocationFilters = ({
                                     <select 
                                         value={activeCity}
                                         onChange={(e) => onCityChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">Все города</option>
                                         {cities.map(city => (
@@ -270,7 +270,7 @@ const LocationFilters = ({
                                                     "flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all border",
                                                     activePriceLevels.includes(level)
                                                         ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                                                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-300"
+                                                        : "bg-white dark:bg-[hsl(220,20%,6%)] border-slate-200 dark:border-white/[0.06] text-slate-400 hover:border-slate-300"
                                                 )}
                                             >
                                                 {level}
@@ -291,7 +291,7 @@ const LocationFilters = ({
                                                     "flex-1 py-2 rounded-lg text-[10px] font-bold transition-all border",
                                                     minRating === val
                                                         ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20"
-                                                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-300"
+                                                        : "bg-white dark:bg-[hsl(220,20%,6%)] border-slate-200 dark:border-white/[0.06] text-slate-400 hover:border-slate-300"
                                                 )}
                                             >
                                                 {val}+
@@ -315,7 +315,7 @@ const LocationFilters = ({
                                                 "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap",
                                                 activeVibes.includes(vibe.id)
                                                     ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                                                    : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-50"
+                                                    : "bg-white dark:bg-[hsl(220,20%,6%)] border-slate-100 dark:border-white/[0.06] text-slate-500 hover:bg-slate-50"
                                             )}
                                         >
                                             {vibe.label}
@@ -325,7 +325,7 @@ const LocationFilters = ({
                             </div>
                         </div>
                         
-                        <div className="px-4 py-3 lg:px-10 bg-slate-100/50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800/50 flex justify-end">
+                        <div className="px-4 py-3 lg:px-10 bg-slate-100/50 dark:bg-[hsl(220,20%,3%)]/20 border-t border-slate-100 dark:border-white/[0.06]/50 flex justify-end">
                             <button 
                                 onClick={() => {
                                     onCategoryChange('All')
@@ -361,7 +361,7 @@ const LocationFilters = ({
                                 "flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap border shrink-0",
                                 view === tab.id
                                     ? 'bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-900/20 dark:bg-indigo-600 dark:border-indigo-600'
-                                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                    : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.06] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)]'
                             )}
                         >
                             <tab.icon size={12} strokeWidth={2.5} />

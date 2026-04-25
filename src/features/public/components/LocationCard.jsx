@@ -85,7 +85,7 @@ export default function LocationCard({ location }) {
 
                     {/* Tags */}
                     {location.tags?.slice(0, 2).map(tag => (
-                        <Badge key={tag} variant="outline" className="text-[9px] font-bold h-5 px-2 bg-slate-50 dark:bg-slate-800/50 border-none">
+                        <Badge key={tag} variant="outline" className="text-[9px] font-bold h-5 px-2 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-none">
                             {translate(tag)}
                         </Badge>
                     ))}

@@ -47,14 +47,14 @@ export default function AdminPageHeader({
                     {badge && (
                         <span className={cn(
                             'inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest leading-none',
-                            badge.color ?? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                            badge.color ?? 'bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 dark:text-[hsl(220,10%,55%)]'
                         )}>
                             {badge.label}
                         </span>
                     )}
                 </div>
                 {subtitle && (
-                    <p className="text-slate-400 dark:text-slate-500 font-medium mt-1.5 text-xs lg:text-sm leading-snug truncate max-w-lg">
+                    <p className="text-slate-400 dark:text-[hsl(220,10%,55%)] font-medium mt-1.5 text-xs lg:text-sm leading-snug truncate max-w-lg">
                         {subtitle}
                     </p>
                 )}
@@ -75,4 +75,4 @@ export const adminBtnPrimary =
     'inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all'
 
 export const adminBtnSecondary =
-    'inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-xs uppercase tracking-widest shadow-sm backdrop-blur-md transition-all'
+    'inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.08]/60 text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-xs uppercase tracking-widest shadow-sm backdrop-blur-md transition-all'

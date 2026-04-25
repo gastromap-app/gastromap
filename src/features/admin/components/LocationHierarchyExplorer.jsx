@@ -111,19 +111,19 @@ const LocationHierarchyExplorer = ({ className }) => {
     const { items, type, parentId } = getCurrentItems()
 
     if (isLoading) return (
-        <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
             <Loader2 size={18} className="animate-spin" />
             <span className="text-sm font-medium">Loading locations...</span>
         </div>
     )
 
     return (
-        <div className={cn("bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
+        <div className={cn("bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
             {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.06]/50">
                 <div className="flex items-center gap-2">
                     {level !== 'countries' && (
-                        <button onClick={handleBack} className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400 mr-1">
+                        <button onClick={handleBack} className="p-1.5 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-all text-slate-400 mr-1">
                             <ArrowLeft size={16} />
                         </button>
                     )}
@@ -150,7 +150,7 @@ const LocationHierarchyExplorer = ({ className }) => {
                                 <p className="text-xs text-slate-400 mt-1">{selectedLocation.category} · {selectedLocation.address}</p>
                                 <div className="flex items-center gap-1 mt-2">
                                     <Star size={12} className="text-amber-400 fill-amber-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedLocation.rating || '—'}</span>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-[hsl(220,10%,55%)]">{selectedLocation.rating || '—'}</span>
                                 </div>
                             </div>
                         </div>
@@ -184,7 +184,7 @@ const LocationHierarchyExplorer = ({ className }) => {
                                     {img ? (
                                         <img src={img} alt={item.name || item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                                     ) : (
-                                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <div className="w-full h-full bg-slate-100 dark:bg-[hsl(220,20%,9%)] flex items-center justify-center">
                                             <MapPin size={24} className="text-slate-300" />
                                         </div>
                                     )}

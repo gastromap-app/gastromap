@@ -18,7 +18,7 @@ import {
 const fmt = (n, fallback = '—') => (n == null ? fallback : Number(n).toLocaleString())
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const Skeleton = ({ className }) => (
-    <div className={cn('animate-pulse bg-slate-100 dark:bg-slate-800 rounded-xl', className)} />
+    <div className={cn('animate-pulse bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-xl', className)} />
 )
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ const StatCard = ({ label, value, sub, icon: Icon, color = 'indigo', delay = 0 }
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: delay * 0.1 }}
-        className="bg-white dark:bg-slate-900 p-4 lg:p-6 rounded-[20px] lg:rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-colors"
+        className="bg-white dark:bg-[hsl(220,20%,6%)] p-4 lg:p-6 rounded-[20px] lg:rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-colors"
     >
         <div className={cn(
             'absolute -top-4 -right-4 w-24 h-24 rounded-full blur-[50px] opacity-10 group-hover:opacity-20 transition-opacity',
@@ -45,7 +45,7 @@ const StatCard = ({ label, value, sub, icon: Icon, color = 'indigo', delay = 0 }
             </div>
         </div>
         <div className="relative z-10">
-            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1">{label}</p>
+            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-wider mb-1">{label}</p>
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">{value}</h3>
             {sub && <p className="text-[11px] text-slate-400 mt-1 font-medium">{sub}</p>}
         </div>
@@ -141,7 +141,7 @@ const AdminStatsPage = () => {
                                     'h-9 px-3 rounded-[12px] text-[10px] font-bold uppercase tracking-widest transition-all',
                                     period === d
                                         ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                                        : 'bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:border-slate-300'
+                                        : 'bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.08]/60 text-slate-500 dark:text-[hsl(220,10%,55%)] hover:border-slate-300'
                                 )}
                             >{d}д</button>
                         ))}
@@ -161,7 +161,7 @@ const AdminStatsPage = () => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
                 {/* Top Locations */}
-                <div className="xl:col-span-2 bg-white dark:bg-slate-900 p-6 lg:p-8 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="xl:col-span-2 bg-white dark:bg-[hsl(220,20%,6%)] p-6 lg:p-8 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-base font-bold text-slate-900 dark:text-white">Топ локаций</h2>
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">по отзывам + посещениям</span>
@@ -183,8 +183,8 @@ const AdminStatsPage = () => {
                                     <div key={loc.id || i}>
                                         <div className="flex justify-between items-center text-xs font-bold mb-1.5">
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <span className="text-slate-300 dark:text-slate-600 shrink-0">#{i + 1}</span>
-                                                <span className="text-slate-700 dark:text-slate-300 truncate">{loc.title}</span>
+                                                <span className="text-slate-300 dark:text-[hsl(220,10%,55%)] shrink-0">#{i + 1}</span>
+                                                <span className="text-slate-700 dark:text-[hsl(220,10%,55%)] truncate">{loc.title}</span>
                                                 <span className="text-[10px] text-slate-400 font-normal shrink-0">{loc.city}</span>
                                             </div>
                                             <div className="flex items-center gap-3 shrink-0 ml-2">
@@ -196,7 +196,7 @@ const AdminStatsPage = () => {
                                                 <span className="text-indigo-500">{fmt(score)}</span>
                                             </div>
                                         </div>
-                                        <div className="h-2 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-2 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${Math.max(pct, 2)}%` }}
@@ -212,7 +212,7 @@ const AdminStatsPage = () => {
                 </div>
 
                 {/* Engagement Panel */}
-                <div className="bg-white dark:bg-slate-900/50 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800/50 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm space-y-3">
                     <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Активность</h2>
 
                     {loadingEng ? (
@@ -225,7 +225,7 @@ const AdminStatsPage = () => {
                             { label: 'Ожидают модерации', value: fmt(engagement?.pending_reviews), icon: Activity, color: 'bg-orange-500/10 text-orange-500' },
                             { label: 'Одобрено', value: fmt(engagement?.approved_reviews), icon: Star, color: 'bg-emerald-500/10 text-emerald-500' },
                         ].map(({ label, value, icon: Icon, color }, i) => (
-                            <div key={i} className="flex items-center gap-3 p-3 rounded-[16px] bg-slate-50 dark:bg-slate-800/30">
+                            <div key={i} className="flex items-center gap-3 p-3 rounded-[16px] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30">
                                 <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0', color)}>
                                     <Icon size={15} />
                                 </div>
@@ -243,7 +243,7 @@ const AdminStatsPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Categories */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                     <div className="flex items-center gap-2 mb-5">
                         <Utensils size={15} className="text-indigo-400" />
                         <h2 className="text-sm font-bold text-slate-900 dark:text-white">По категориям</h2>
@@ -256,7 +256,7 @@ const AdminStatsPage = () => {
                                 <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <div className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
-                                        <span className="text-xs text-slate-600 dark:text-slate-400 truncate">{cat.category}</span>
+                                        <span className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)] truncate">{cat.category}</span>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         {cat.avg_rating && (
@@ -271,7 +271,7 @@ const AdminStatsPage = () => {
                 </div>
 
                 {/* Cities */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                     <div className="flex items-center gap-2 mb-5">
                         <Globe size={15} className="text-emerald-400" />
                         <h2 className="text-sm font-bold text-slate-900 dark:text-white">По городам</h2>
@@ -286,10 +286,10 @@ const AdminStatsPage = () => {
                                 return (
                                     <div key={i}>
                                         <div className="flex justify-between items-center text-xs mb-1">
-                                            <span className="text-slate-600 dark:text-slate-400 font-medium">{city.city}</span>
+                                            <span className="text-slate-600 dark:text-[hsl(220,10%,55%)] font-medium">{city.city}</span>
                                             <span className="font-bold text-slate-900 dark:text-white">{city.total}</span>
                                         </div>
-                                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                                        <div className="h-1.5 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-full">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${pct}%` }}
@@ -305,7 +305,7 @@ const AdminStatsPage = () => {
                 </div>
 
                 {/* Reviews Timeline */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                         <BarChart3 size={15} className="text-amber-400" />
                         <h2 className="text-sm font-bold text-slate-900 dark:text-white">Отзывы за {period}д</h2>
@@ -319,7 +319,7 @@ const AdminStatsPage = () => {
                         <MiniBarChart data={reviewsTimeline} valueKey="review_count" labelKey="day" colorClass="bg-amber-400" />
                     )}
 
-                    <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
                         <p className="text-[10px] text-slate-400 mb-3">Новые пользователи</p>
                         {loadingGrowth ? (
                             <Skeleton className="h-16" />
@@ -333,7 +333,7 @@ const AdminStatsPage = () => {
             </div>
 
             {/* Users breakdown */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                 <div className="flex items-center gap-2 mb-5">
                     <Users size={15} className="text-indigo-400" />
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white">Пользователи</h2>
@@ -345,7 +345,7 @@ const AdminStatsPage = () => {
                         { label: 'Модераторы', value: fmt(engagement?.moderator_users), color: 'text-emerald-500' },
                         { label: 'Администраторы', value: fmt(engagement?.admin_users), color: 'text-orange-500' },
                     ].map(({ label, value, color }, i) => (
-                        <div key={i} className="p-4 rounded-[18px] bg-slate-50 dark:bg-slate-800/30 text-center">
+                        <div key={i} className="p-4 rounded-[18px] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 text-center">
                             <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-1">{label}</p>
                             <p className={cn('text-2xl font-bold', color)}>{value}</p>
                         </div>

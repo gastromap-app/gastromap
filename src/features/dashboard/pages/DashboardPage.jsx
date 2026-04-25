@@ -543,11 +543,11 @@ const DesktopDashboard = ({
     const greeting = getGreeting(t)
     const firstName = authUser?.name?.split(' ')[0] || 'there'
 
-    const text = isDark ? 'text-[hsl(240,10%,96%)]' : 'text-gray-900'
-    const sub  = isDark ? 'text-[hsl(220,6%,57%)]' : 'text-gray-500'
+    const text = isDark ? 'text-[hsl(220,20%,96%)]' : 'text-gray-900'
+    const sub  = isDark ? 'text-[hsl(220,10%,55%)]' : 'text-gray-500'
 
     const cardClass = isDark
-        ? 'bg-[hsl(222,14%,11%)] border border-white/[0.06] rounded-sheet'
+        ? 'bg-[hsl(220,20%,6%)] border border-white/[0.06] rounded-sheet'
         : 'bg-white border border-gray-100 rounded-sheet shadow-[0_2px_20px_rgba(0,0,0,0.06)]'
 
     const itemVariants = {
@@ -559,10 +559,14 @@ const DesktopDashboard = ({
         <div className="pb-20 max-w-6xl mx-auto w-full">
 
             {/* Hero */}
-            <div className="mt-10 mb-8">
-                <p className={`text-[15px] font-medium ${sub} mb-1`}>{greeting}</p>
-                <h1 className={`text-[42px] font-bold tracking-tight leading-none mb-6 ${text}`}>
-                    {firstName} <span className="text-blue-600">✦</span>
+            <div className="mt-10 mb-8 relative">
+                {/* Blue glow behind hero */}
+                {isDark && (
+                    <div className="absolute -top-10 -left-10 w-[300px] h-[200px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
+                )}
+                <p className={`text-[15px] font-medium ${sub} mb-1 relative`}>{greeting}</p>
+                <h1 className={`text-[42px] font-bold tracking-tight leading-none mb-6 ${text} relative`}>
+                    {firstName} <span className="text-blue-500">✦</span>
                 </h1>
 
                 {/* Search */}
@@ -587,10 +591,10 @@ const DesktopDashboard = ({
                             className={`relative px-6 py-2 rounded-[9px] text-[14px] font-semibold capitalize transition-all ${
                                 activeTab === tab
                                     ? isDark
-                                        ? 'bg-white/[0.08] text-[hsl(240,10%,96%)] shadow-sm'
+                                        ? 'bg-white/[0.08] text-[hsl(220,20%,96%)] shadow-sm'
                                         : 'bg-white text-gray-900 shadow-sm'
                                     : isDark
-                                        ? 'text-[hsl(220,6%,57%)] hover:text-[hsl(240,10%,96%)]'
+                                        ? 'text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]'
                                         : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
@@ -602,7 +606,7 @@ const DesktopDashboard = ({
                 <button
                     onClick={() => setIsFilterOpen(true)}
                     className={`flex items-center gap-2 px-4 h-9 rounded-[10px] text-[13px] font-semibold transition-all active:scale-95 ${
-                        isDark ? 'bg-white/[0.04] text-[hsl(220,6%,57%)] hover:bg-white/[0.08] hover:text-[hsl(240,10%,96%)]' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:bg-white/[0.08] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                     <SlidersHorizontal size={15} />

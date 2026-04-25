@@ -36,7 +36,7 @@ const AdminSubscriptionsPage = () => {
     if (loadingPayments) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">Loading...</p>
+                <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] font-medium text-lg">Loading...</p>
             </div>
         )
     }
@@ -77,8 +77,8 @@ const AdminSubscriptionsPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         className={cn(
-                            "bg-white dark:bg-slate-900/50 p-3 lg:p-10 rounded-[20px] lg:rounded-[44px] border relative overflow-hidden group hover:shadow-2xl transition-all h-full flex flex-col",
-                            plan.popular ? 'border-indigo-500/20 ring-1 ring-indigo-500/10' : 'border-slate-100 dark:border-slate-800/50'
+                            "bg-white dark:bg-[hsl(220,20%,6%)]/50 p-3 lg:p-10 rounded-[20px] lg:rounded-[44px] border relative overflow-hidden group hover:shadow-2xl transition-all h-full flex flex-col",
+                            plan.popular ? 'border-indigo-500/20 ring-1 ring-indigo-500/10' : 'border-slate-100 dark:border-white/[0.06]/50'
                         )}
                     >
                         {plan.popular && (
@@ -93,7 +93,7 @@ const AdminSubscriptionsPage = () => {
                             <span className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">/ {plan.period}</span>
                         </div>
 
-                        <div className="mt-auto pt-2 lg:pt-8 border-t border-slate-50 dark:border-slate-800/50 flex items-center justify-between">
+                        <div className="mt-auto pt-2 lg:pt-8 border-t border-slate-50 dark:border-white/[0.06]/50 flex items-center justify-between">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Users</span>
                             <span className="text-sm lg:text-lg font-bold text-slate-900 dark:text-white">{plan.users}</span>
                         </div>
@@ -102,8 +102,8 @@ const AdminSubscriptionsPage = () => {
             </div>
 
             {/* Donation History */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col flex-1">
-                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-slate-800/50 flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden flex flex-col flex-1">
+                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-white/[0.06]/50 flex flex-col lg:flex-row justify-between items-center gap-6">
                     <h2 className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white pl-2 leading-none">Donation History</h2>
                     <div className="flex gap-2 w-full lg:w-auto">
                         <div className="relative flex-1 lg:w-72 leading-none group">
@@ -114,30 +114,30 @@ const AdminSubscriptionsPage = () => {
                                 aria-label="Search donations"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[12px] font-medium outline-none focus:ring-2 ring-indigo-500/10 shadow-inner"
+                                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border-none rounded-2xl text-[12px] font-medium outline-none focus:ring-2 ring-indigo-500/10 shadow-inner"
                             />
                         </div>
-                        <button aria-label="Filter donations" className="p-2.5 dark:bg-slate-800 rounded-2xl text-slate-400 hover:text-indigo-500 transition-all font-black leading-none"><Filter size={18} /></button>
+                        <button aria-label="Filter donations" className="p-2.5 dark:bg-[hsl(220,20%,9%)] rounded-2xl text-slate-400 hover:text-indigo-500 transition-all font-black leading-none"><Filter size={18} /></button>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto custom-scrollbar font-black leading-none">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-900/50">
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest pl-10 lg:pl-12">Donor</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Tier</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Date</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Amount</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Status</th>
+                            <tr className="bg-slate-50/50 dark:bg-[hsl(220,20%,6%)]/50">
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest pl-10 lg:pl-12">Donor</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">Tier</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">Date</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">Amount</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                             {transactions.map((tx, i) => (
-                                <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all border-none leading-none">
+                                <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-[hsl(220,20%,12%)]/40 transition-all border-none leading-none">
                                     <td className="px-6 py-5 pl-10 lg:pl-12 font-bold text-[13px] text-slate-900 dark:text-white truncate leading-tight">{tx.user}</td>
                                     <td className="px-6 py-5">
-                                        <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-slate-800/50 text-slate-400 font-bold text-[9px] px-2 py-0.5 rounded-lg uppercase tracking-wider">{tx.plan}</Badge>
+                                        <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-white/[0.06]/50 text-slate-400 font-bold text-[9px] px-2 py-0.5 rounded-lg uppercase tracking-wider">{tx.plan}</Badge>
                                     </td>
                                     <td className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate leading-none">{tx.date}</td>
                                     <td className="px-6 py-5 text-sm lg:text-lg font-bold text-slate-900 dark:text-white tracking-tighter leading-none">{tx.amount}</td>

@@ -196,7 +196,7 @@ export default function PlacesAutocomplete({
                     disabled={disabled || isFetching}
                     placeholder={isFetching ? 'Загружаю данные…' : placeholder}
                     className={cn(
-                        "w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700",
+                        "w-full pl-10 pr-10 py-3 bg-white dark:bg-[hsl(220,20%,9%)] rounded-xl border border-slate-200 dark:border-white/[0.08]",
                         "text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400",
                         "outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/15 transition-all",
                         "disabled:opacity-60 disabled:cursor-not-allowed",
@@ -206,7 +206,7 @@ export default function PlacesAutocomplete({
                 {inputValue && !disabled && !isFetching && (
                     <button
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,15%)] transition-all"
                     >
                         <X size={13} />
                     </button>
@@ -220,7 +220,7 @@ export default function PlacesAutocomplete({
 
             {/* Dropdown */}
             {isOpen && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1.5 z-[200] bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-[200] bg-white dark:bg-[hsl(220,20%,9%)] rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-xl overflow-hidden">
                     <div className="py-1.5">
                         {suggestions.map((s, idx) => (
                             <button
@@ -230,7 +230,7 @@ export default function PlacesAutocomplete({
                                     "w-full text-left px-3.5 py-2.5 flex items-start gap-3 transition-colors",
                                     idx === activeIdx
                                         ? "bg-indigo-50 dark:bg-indigo-500/15"
-                                        : "hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                                        : "hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,15%)]/50"
                                 )}
                             >
                                 <span className="text-base leading-none mt-0.5 shrink-0">
@@ -250,7 +250,7 @@ export default function PlacesAutocomplete({
                             </button>
                         ))}
                     </div>
-                    <div className="px-3.5 py-2 border-t border-slate-100 dark:border-slate-700/50 flex items-center gap-1.5">
+                    <div className="px-3.5 py-2 border-t border-slate-100 dark:border-white/[0.08]/50 flex items-center gap-1.5">
                         <span className="text-[10px] text-slate-400">Powered by</span>
                         <span className="text-[10px] font-bold text-slate-500">Google Places</span>
                     </div>

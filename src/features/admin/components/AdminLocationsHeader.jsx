@@ -30,7 +30,7 @@ const AdminLocationsHeader = ({
     }, [isSearchExpanded])
 
     const btnBase = "flex items-center gap-2 h-11 px-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shrink-0"
-    const btnSecondary = `${btnBase} bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm backdrop-blur-md`
+    const btnSecondary = `${btnBase} bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-200 dark:border-white/[0.08]/50 text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 shadow-sm backdrop-blur-md`
 
     const actions = [
         { label: 'Импорт данных', icon: Upload, onClick: onImport },
@@ -39,7 +39,7 @@ const AdminLocationsHeader = ({
     ]
 
     return (
-        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-slate-100 dark:border-slate-800/50 gap-3 relative min-h-[80px] lg:min-h-[auto]">
+        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-slate-100 dark:border-white/[0.06]/50 gap-3 relative min-h-[80px] lg:min-h-[auto]">
             <AnimatePresence>
                 {isSearchExpanded ? (
                     <motion.div 
@@ -47,7 +47,7 @@ const AdminLocationsHeader = ({
                         animate={{ width: '100%', opacity: 1 }}
                         exit={{ width: 40, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="absolute inset-y-0 left-0 right-0 z-50 bg-white dark:bg-slate-950 flex items-center px-4 lg:px-8 gap-3"
+                        className="absolute inset-y-0 left-0 right-0 z-50 bg-white dark:bg-[hsl(220,20%,3%)] flex items-center px-4 lg:px-8 gap-3"
                     >
                         <div className="flex-1 relative">
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -57,7 +57,7 @@ const AdminLocationsHeader = ({
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange?.(e.target.value)}
                                 placeholder="Поиск объектов..."
-                                className="w-full h-11 pl-12 pr-10 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
+                                className="w-full h-11 pl-12 pr-10 bg-slate-100 dark:bg-[hsl(220,20%,6%)] border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
                             />
                             {searchQuery && (
                                 <button 
@@ -141,8 +141,8 @@ const AdminLocationsHeader = ({
                                     leaveFrom="transform opacity-100 scale-100"
                                     leaveTo="transform opacity-0 scale-95"
                                 >
-                                    <Menu.Items className="absolute right-0 top-full mt-3 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-100 dark:border-slate-800 rounded-[32px] shadow-2xl overflow-hidden min-w-[240px] p-2.5 focus:outline-none">
-                                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 mb-1.5">Действия</div>
+                                    <Menu.Items className="absolute right-0 top-full mt-3 z-50 bg-white/95 dark:bg-[hsl(220,20%,6%)]/95 backdrop-blur-2xl border border-slate-100 dark:border-white/[0.06] rounded-[32px] shadow-2xl overflow-hidden min-w-[240px] p-2.5 focus:outline-none">
+                                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-5 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 mb-1.5">Действия</div>
                                         {actions.map((action, idx) => (
                                             <Menu.Item key={idx}>
                                                 {({ active }) => (
@@ -151,12 +151,12 @@ const AdminLocationsHeader = ({
                                                         disabled={action.disabled}
                                                         className={cn(
                                                             "w-full flex items-center gap-3.5 px-4 py-3.5 text-xs font-bold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40",
-                                                            active ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                            active ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]"
                                                         )}
                                                     >
                                                         <div className={cn(
                                                             "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                                                            active ? "bg-white/20" : "bg-slate-100 dark:bg-slate-800"
+                                                            active ? "bg-white/20" : "bg-slate-100 dark:bg-[hsl(220,20%,9%)]"
                                                         )}>
                                                             <action.icon size={16} className={cn(active ? "text-white" : "text-slate-500")} />
                                                         </div>

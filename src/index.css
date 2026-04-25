@@ -43,41 +43,42 @@
   }
 
   [data-theme='dark'] {
-    /* Premium Dark — Linear-inspired palette */
-    --background: 222 14% 7%;
-    /* #0f1115 deep ink */
-    --foreground: 240 10% 96%;
-    /* #f5f5f7 soft white */
+    /* Black & Blue — premium dark theme */
+    --background: 220 20% 3%;
+    /* #06080a pure black with blue undertone */
+    --foreground: 220 20% 96%;
+    /* #f0f2f5 soft white */
 
-    --card: 222 14% 11%;
-    /* #161921 subtle lift */
-    --card-foreground: 240 10% 96%;
+    --card: 220 20% 6%;
+    /* #0c0f14 lifted black */
+    --card-foreground: 220 20% 96%;
 
-    --popover: 222 14% 11%;
-    --popover-foreground: 240 10% 96%;
+    --popover: 220 20% 6%;
+    --popover-foreground: 220 20% 96%;
 
-    --primary: 232 55% 60%;
-    /* #5e6ad2 vivid indigo */
+    --primary: 217 91% 60%;
+    /* #3b82f6 electric blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 12% 16%;
-    /* #1c1f27 muted surface */
-    --secondary-foreground: 240 10% 96%;
+    --secondary: 220 20% 9%;
+    /* #12161d dark blue-grey */
+    --secondary-foreground: 220 20% 96%;
 
-    --muted: 222 12% 16%;
-    --muted-foreground: 220 6% 57%;
-    /* #8a8f98 calm grey */
+    --muted: 220 15% 12%;
+    /* #1a1d24 muted surface */
+    --muted-foreground: 220 10% 55%;
+    /* #7a8194 calm blue-grey */
 
-    --accent: 222 12% 16%;
-    --accent-foreground: 240 10% 96%;
+    --accent: 220 20% 9%;
+    --accent-foreground: 220 20% 96%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 10% 18%;
-    /* #272a33 hairline borders */
-    --input: 222 10% 18%;
-    --ring: 232 55% 60%;
+    --border: 220 20% 14%;
+    /* #1c2029 subtle blue border */
+    --input: 220 20% 14%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -122,7 +123,7 @@
   }
 
   [data-theme='dark'] .surface {
-    @apply bg-[hsl(222,14%,11%)] rounded-[28px] border border-white/[0.06] shadow-none;
+    @apply bg-[hsl(220,20%,6%)] rounded-[28px] border border-white/[0.06] shadow-none;
   }
 
   /* Premium Elevated — hovered/selected cards */
@@ -131,19 +132,39 @@
   }
 
   [data-theme='dark'] .surface-elevated {
-    @apply bg-[hsl(222,12%,13%)] rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
+    @apply bg-[hsl(220,20%,9%)] rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
   }
 
   /* Aurora Gradients */
   .bg-aurora {
     background:
-      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(220, 60%, 15%, 0.6) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(217, 90%, 25%, 0.4) 0, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(220, 40%, 10%, 0.5) 0, transparent 50%);
+  }
+
+  /* Black & Blue Glow — premium dark background */
+  [data-theme='dark'] .bg-glow {
+    background-color: hsl(220, 20%, 3%);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59, 130, 246, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(37, 99, 235, 0.08), transparent);
+  }
+
+  [data-theme='dark'] .bg-glow-strong {
+    background-color: hsl(220, 20%, 3%);
+    background-image:
+      radial-gradient(ellipse 70% 50% at 30% 20%, rgba(59, 130, 246, 0.18), transparent),
+      radial-gradient(ellipse 50% 60% at 80% 0%, rgba(37, 99, 235, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(29, 78, 216, 0.08), transparent);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-indigo-500 to-pink-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400;
+  }
+
+  [data-theme='dark'] .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-300;
   }
 
   /* Typography utilities */
@@ -152,7 +173,7 @@
   }
 
   [data-theme='dark'] .text-primary-dark {
-    @apply text-[hsl(240,10%,96%)];
+    @apply text-[hsl(220,20%,96%)];
   }
 
   .text-secondary-dark {
@@ -160,7 +181,7 @@
   }
 
   [data-theme='dark'] .text-secondary-dark {
-    @apply text-[hsl(220,6%,57%)];
+    @apply text-[hsl(220,10%,55%)];
   }
 }
 

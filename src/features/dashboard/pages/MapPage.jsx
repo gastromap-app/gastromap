@@ -71,9 +71,9 @@ const MapPage = () => {
                                     onClick={() => setCategory(active && cat.name !== 'All' ? 'All' : cat.name)}
                                     className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 min-h-11 rounded-pill text-[12px] font-semibold whitespace-nowrap transition-all backdrop-blur-md ${
                                         active
-                                            ? 'bg-[hsl(232,55%,60%)] text-white'
+                                            ? 'bg-[hsl(217,91%,60%)] text-white'
                                             : isDark
-                                                ? 'bg-white/[0.04] text-[hsl(220,6%,57%)] border border-white/[0.06] hover:bg-white/[0.08] hover:text-[hsl(240,10%,96%)]'
+                                                ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] border border-white/[0.06] hover:bg-white/[0.08] hover:text-[hsl(220,20%,96%)]'
                                                 : 'bg-white/80 text-gray-700 border border-white/60 hover:bg-white'
                                     }`}
                                 >

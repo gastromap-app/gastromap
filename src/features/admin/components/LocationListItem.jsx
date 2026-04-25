@@ -40,7 +40,7 @@ function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
             onClick={(e) => { e.stopPropagation(); onToggleVisibility(locId, locStatus) }}
             className={cn(
                 "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"
+                isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-[hsl(220,20%,12%)]"
             )}
             title={isVisible ? "Скрыть локацию" : "Опубликовать локацию"}
         >
@@ -64,7 +64,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                     "p-2 rounded-xl transition-all active:scale-95",
                     isOpenActionMenu
                         ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg shadow-slate-200 dark:shadow-none"
-                        : "text-slate-300 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        : "text-slate-300 hover:text-slate-600 dark:text-[hsl(220,10%,55%)] dark:hover:text-[hsl(220,20%,90%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]"
                 )}
             >
                 <MoreHorizontal size={16} className="stroke-[2.5]" />
@@ -81,17 +81,17 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
             >
                 <Menu.Items
                     className={cn(
-                        "z-[101] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden focus:outline-none",
+                        "z-[101] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06] shadow-2xl overflow-hidden focus:outline-none",
                         viewMode === 'card'
                             ? "fixed bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom duration-300"
                             : "absolute right-0 mt-2 min-w-[220px] rounded-2xl p-2"
                     )}
                 >
                     {viewMode === 'card' && (
-                        <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" />
+                        <div className="w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mb-6" />
                     )}
 
-                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-slate-800/50 mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 mb-2">
                         Управление объектом
                     </div>
 
@@ -102,10 +102,10 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     onClick={() => onEdit(loc)}
                                     className={cn(
                                         "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
-                                        active ? "bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-400"
+                                        active ? "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white" : "text-slate-600 dark:text-[hsl(220,10%,55%)]"
                                     )}
                                 >
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-slate-800 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50")}>
+                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-[hsl(220,20%,9%)] shadow-sm" : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50")}>
                                         <Edit size={16} className="stroke-[2.5]" />
                                     </div>
                                     <span>Редактировать</span>
@@ -151,7 +151,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             </Menu.Item>
                         )}
 
-                        <div className="h-px bg-slate-50 dark:bg-slate-800/50 my-2 mx-2" />
+                        <div className="h-px bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 my-2 mx-2" />
 
                         <Menu.Item>
                             {({ active }) => (
@@ -174,7 +174,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             <div className="pt-4">
                                 <Menu.Item>
                                     <button
-                                        className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
+                                        className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
                                     >
                                         Закрыть
                                     </button>
@@ -207,7 +207,7 @@ const LocationListItem = ({
             <motion.div
                 layout
                 onClick={() => onEdit(loc)}
-                className="w-full text-left bg-white dark:bg-slate-900/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-slate-800 shadow-sm group"
+                className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-white/[0.06] shadow-sm group"
             >
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-[18px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-all shadow-inner shrink-0">
@@ -221,11 +221,11 @@ const LocationListItem = ({
                                 <span className="text-[10px] font-black text-amber-600">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                             </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate flex items-center gap-1.5 font-medium">
+                        <p className="text-[11px] text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1 truncate flex items-center gap-1.5 font-medium">
                             <MapPin size={10} className="opacity-50" />{loc.city}, {loc.country}
                         </p>
                         <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-slate-800 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400">
+                            <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-white/[0.06] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400">
                                 {getCategoryLabel(loc.category, i18n.language)}
                             </Badge>
                             <StatusBadge status={loc.status} />
@@ -251,7 +251,7 @@ const LocationListItem = ({
     return (
         <tr
             onClick={() => onEdit(loc)}
-            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all group cursor-pointer border-none leading-none"
+            className="hover:bg-slate-50/80 dark:hover:bg-[hsl(220,20%,12%)]/40 transition-all group cursor-pointer border-none leading-none"
         >
             <td className="px-6 py-5 pl-10 lg:pl-12">
                 <div className="flex items-center gap-4">
@@ -261,7 +261,7 @@ const LocationListItem = ({
                     <div className="min-w-0">
                         <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
                         <div className="flex items-center gap-2 mt-1.5">
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-[hsl(220,10%,55%)] uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
                             {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
                                 <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
                                     {loc.kg_cuisines?.length > 0
@@ -274,8 +274,8 @@ const LocationListItem = ({
                 </div>
             </td>
             <td className="px-6 py-5">
-                <div className="text-[11px] font-bold flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <MapPin size={10} className="text-slate-300 dark:text-slate-600 stroke-[2.5]" />
+                <div className="text-[11px] font-bold flex items-center gap-2 text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                    <MapPin size={10} className="text-slate-300 dark:text-[hsl(220,10%,55%)] stroke-[2.5]" />
                     <span className="truncate">{loc.city}</span>
                     <span className="text-[10px] opacity-30 font-black">/</span>
                     <span className="opacity-60 truncate">{loc.country}</span>
@@ -283,7 +283,7 @@ const LocationListItem = ({
             </td>
             <td className="px-6 py-5">
                 <div className="flex items-center gap-1.5">
-                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-slate-100 dark:text-slate-800")} />
+                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-slate-100 dark:text-[hsl(220,20%,9%)]")} />
                     <span className="text-[11px] font-black text-slate-500">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                 </div>
             </td>

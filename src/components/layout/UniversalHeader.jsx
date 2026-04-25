@@ -45,14 +45,14 @@ export function UniversalHeader() {
     }, [isMenuOpen])
 
     const glassStyle = isDark
-        ? "bg-white/[0.04] border-white/[0.06] text-[hsl(240,10%,96%)] hover:bg-white/[0.08]"
+        ? "bg-white/[0.04] border-white/[0.06] text-[hsl(220,20%,96%)] hover:bg-white/[0.08]"
         : "bg-white/20 border-white/20 text-gray-900 hover:bg-gray-100/50"
 
-    const textStyle = isDark ? "text-[hsl(240,10%,96%)]" : "text-gray-900"
+    const textStyle = isDark ? "text-[hsl(220,20%,96%)]" : "text-gray-900"
 
     // Premium header background — subtle lift on scroll
     const headerBgClass = isScrolled
-        ? (isDark ? 'bg-[hsl(222,14%,7%)]/80 backdrop-blur-xl border-b border-white/[0.04]' : 'bg-white/20 backdrop-blur-md')
+        ? (isDark ? 'bg-[hsl(220,20%,3%)]/80 backdrop-blur-xl border-b border-white/[0.04]' : 'bg-white/20 backdrop-blur-md')
         : ''
 
     return (
@@ -76,7 +76,7 @@ export function UniversalHeader() {
                     >
                             {/* Logo Capsule */}
                             <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all px-3 py-1.5 rounded-full border shadow-sm ${isDark ? 'bg-white/[0.04] border-white/[0.06]' : 'bg-white/40 border-white/40'}`}>
-                                <div className="w-7 h-7 bg-[hsl(232,55%,60%)] rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
+                                <div className="w-7 h-7 bg-[hsl(217,91%,60%)] rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
                                 <span className={`font-bold text-xs md:text-sm tracking-tight ${textStyle}`}>GastroMap</span>
                             </Link>
 

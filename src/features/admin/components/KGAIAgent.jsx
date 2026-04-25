@@ -89,7 +89,7 @@ const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => 
                         config.glow,
                         'scale-[1.005]',
                       ].join(' ')
-                    : 'border-l-transparent border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/20 opacity-50 hover:opacity-70 hover:border-slate-200 dark:hover:border-slate-700',
+                    : 'border-l-transparent border-slate-100 dark:border-white/[0.06]/50 bg-white/50 dark:bg-[hsl(220,20%,6%)]/20 opacity-50 hover:opacity-70 hover:border-slate-200 dark:hover:border-slate-700',
             )}
             onClick={onToggle}
         >
@@ -99,7 +99,7 @@ const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => 
                     'w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5 transition-all duration-200',
                     selected
                         ? config.checkBg
-                        : 'border-2 border-slate-200 dark:border-slate-600 bg-transparent'
+                        : 'border-2 border-slate-200 dark:border-white/[0.08] bg-transparent'
                 )}>
                     {selected && <Check size={10} className="text-white" strokeWidth={3} />}
                 </div>
@@ -115,10 +115,10 @@ const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => 
                         <div className="min-w-0">
                             <span className={cn(
                                 'font-semibold text-sm truncate block transition-colors',
-                                selected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'
+                                selected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-[hsl(220,10%,55%)]'
                             )}>{item.name}</span>
                             {status === 'exists' && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded-full mt-0.5">
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-[hsl(220,20%,12%)] text-slate-400 px-1.5 py-0.5 rounded-full mt-0.5">
                                     Already in KG
                                 </span>
                             )}
@@ -172,24 +172,24 @@ const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => 
                                 <div className="mt-3 space-y-1.5 text-[11px] text-slate-500">
                                     {type === 'cuisines' && (
                                         <>
-                                            {item.flavor_profile && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Flavors:</span> {item.flavor_profile}</p>}
-                                            {item.key_ingredients?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Key ingredients:</span> {item.key_ingredients.join(', ')}</p>}
-                                            {item.aliases?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Also known as:</span> {item.aliases.join(', ')}</p>}
+                                            {item.flavor_profile && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Flavors:</span> {item.flavor_profile}</p>}
+                                            {item.key_ingredients?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Key ingredients:</span> {item.key_ingredients.join(', ')}</p>}
+                                            {item.aliases?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Also known as:</span> {item.aliases.join(', ')}</p>}
                                         </>
                                     )}
                                     {type === 'dishes' && (
                                         <>
-                                            {item.cuisine_name && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Cuisine:</span> {item.cuisine_name}</p>}
-                                            {item.ingredients?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Ingredients:</span> {item.ingredients.join(', ')}</p>}
-                                            {item.flavor_notes && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Flavors:</span> {item.flavor_notes}</p>}
-                                            {item.best_pairing && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Pairs with:</span> {item.best_pairing}</p>}
+                                            {item.cuisine_name && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Cuisine:</span> {item.cuisine_name}</p>}
+                                            {item.ingredients?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Ingredients:</span> {item.ingredients.join(', ')}</p>}
+                                            {item.flavor_notes && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Flavors:</span> {item.flavor_notes}</p>}
+                                            {item.best_pairing && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Pairs with:</span> {item.best_pairing}</p>}
                                         </>
                                     )}
                                     {type === 'ingredients' && (
                                         <>
-                                            {item.flavor_profile && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Flavors:</span> {item.flavor_profile}</p>}
-                                            {item.common_pairings?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Pairs with:</span> {item.common_pairings.join(', ')}</p>}
-                                            {item.season && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Season:</span> {item.season}</p>}
+                                            {item.flavor_profile && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Flavors:</span> {item.flavor_profile}</p>}
+                                            {item.common_pairings?.length > 0 && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Pairs with:</span> {item.common_pairings.join(', ')}</p>}
+                                            {item.season && <p><span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Season:</span> {item.season}</p>}
                                         </>
                                     )}
                                 </div>
@@ -208,7 +208,7 @@ const SaveStatus = ({ label, icon: Icon, status }) => (
     <div className="flex items-center gap-2 py-1">
         <div className={cn(
             'w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0',
-            status === 'pending'  ? 'bg-slate-100 dark:bg-slate-800' :
+            status === 'pending'  ? 'bg-slate-100 dark:bg-[hsl(220,20%,9%)]' :
             status === 'saving'   ? 'bg-indigo-50 dark:bg-indigo-500/10' :
             status === 'done'     ? 'bg-emerald-50 dark:bg-emerald-500/10' :
             'bg-rose-50 dark:bg-rose-500/10'
@@ -644,11 +644,11 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
     )
 
     return (
-        <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
 
             {/* ── Header ── */}
             <div
-                className="flex items-center justify-between px-5 lg:px-7 py-4 lg:py-5 border-b border-slate-50 dark:border-slate-800/50 cursor-pointer"
+                className="flex items-center justify-between px-5 lg:px-7 py-4 lg:py-5 border-b border-slate-50 dark:border-white/[0.06]/50 cursor-pointer"
                 onClick={() => setIsCollapsed(v => !v)}
             >
                 <div className="flex items-center gap-3">
@@ -729,7 +729,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                     ? (msg.success
                                                         ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold rounded-tl-md'
                                                         : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded-tl-md')
-                                                    : 'bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-tl-md'
+                                                    : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 text-slate-700 dark:text-[hsl(220,10%,55%)] rounded-tl-md'
                                             )}>
                                                 {msg.content}
                                                 {msg.role === 'agent' && msg.counts && (
@@ -752,8 +752,8 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                     </div>
                                                 )}
                                                 {msg.role === 'agent' && msg.skipped && ((msg.skipped.cuisines?.length || 0) + (msg.skipped.dishes?.length || 0) + (msg.skipped.ingredients?.length || 0)) > 0 && (
-                                                    <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-100 dark:border-slate-700/50 pt-2 space-y-0.5">
-                                                        <p className="font-semibold text-slate-500 dark:text-slate-400">Already in KG (skipped):</p>
+                                                    <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-100 dark:border-white/[0.08]/50 pt-2 space-y-0.5">
+                                                        <p className="font-semibold text-slate-500 dark:text-[hsl(220,10%,55%)]">Already in KG (skipped):</p>
                                                         {msg.skipped.cuisines?.length > 0 && <p>• {msg.skipped.cuisines.length} cuisine{msg.skipped.cuisines.length > 1 ? 's' : ''}: {msg.skipped.cuisines.join(', ')}</p>}
                                                         {msg.skipped.dishes?.length > 0 && <p>• {msg.skipped.dishes.length} dish{msg.skipped.dishes.length > 1 ? 'es' : ''}: {msg.skipped.dishes.slice(0,5).join(', ')}{msg.skipped.dishes.length > 5 ? ` +${msg.skipped.dishes.length - 5} more` : ''}</p>}
                                                         {msg.skipped.ingredients?.length > 0 && <p>• {msg.skipped.ingredients.length} ingredient{msg.skipped.ingredients.length > 1 ? 's' : ''}: {msg.skipped.ingredients.slice(0,5).join(', ')}{msg.skipped.ingredients.length > 5 ? ` +${msg.skipped.ingredients.length - 5} more` : ''}</p>}
@@ -869,13 +869,13 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50"
+                                        className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 rounded-2xl p-4 border border-slate-100 dark:border-white/[0.08]/50"
                                     >
                                         <div className="flex items-center justify-between mb-3">
                                             <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
                                                 <Loader2 size={10} className="animate-spin" />
                                                 Saving to Knowledge Graph…&nbsp;
-                                                <span className="text-slate-300 dark:text-slate-600 font-semibold normal-case tracking-normal">
+                                                <span className="text-slate-300 dark:text-[hsl(220,10%,55%)] font-semibold normal-case tracking-normal">
                                                     {saveProgress.filter(s => s.status === 'done' || s.status === 'error').length}
                                                     /{saveProgress.length}
                                                 </span>
@@ -885,7 +885,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                             </span>
                                         </div>
                                         {/* Progress bar */}
-                                        <div className="h-1 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden mb-3">
+                                        <div className="h-1 bg-slate-100 dark:bg-[hsl(220,20%,12%)]/50 rounded-full overflow-hidden mb-3">
                                             <motion.div
                                                 className="h-full bg-indigo-400 rounded-full"
                                                 animate={{
@@ -915,14 +915,14 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                                     >
                                         <p className="text-xs text-slate-400">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedCount}</span> of{' '}
+                                            <span className="font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">{selectedCount}</span> of{' '}
                                             {(agentResult?.items.cuisines.length || 0) + (agentResult?.items.dishes.length || 0) + (agentResult?.items.ingredients.length || 0)} items selected
                                             <span className="hidden sm:inline text-slate-300 ml-1">· Click to toggle</span>
                                         </p>
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <button
                                                 onClick={handleReset}
-                                                className="h-9 px-4 flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-medium hover:border-slate-300 transition-all"
+                                                className="h-9 px-4 flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-white/[0.08] text-slate-500 text-xs font-medium hover:border-slate-300 transition-all"
                                             >
                                                 <X size={13} />
                                                 Discard
@@ -954,7 +954,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                         </p>
                                         <button
                                             onClick={handleReset}
-                                            className="h-8 px-4 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-medium hover:border-indigo-300 hover:text-indigo-500 transition-all"
+                                            className="h-8 px-4 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-500 text-xs font-medium hover:border-indigo-300 hover:text-indigo-500 transition-all"
                                         >
                                             <RotateCcw size={12} />
                                             New request
@@ -988,7 +988,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                     {/* Suggestion chips */}
                                     {phase === 'idle' && messages.length === 0 && (
                                         <div>
-                                            <p className="text-[10px] font-bold uppercase text-slate-300 dark:text-slate-600 tracking-widest mb-2 flex items-center gap-1.5">
+                                            <p className="text-[10px] font-bold uppercase text-slate-300 dark:text-[hsl(220,10%,55%)] tracking-widest mb-2 flex items-center gap-1.5">
                                                 <Zap size={9} />
                                                 Quick prompts
                                             </p>
@@ -997,7 +997,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                     <button
                                                         key={i}
                                                         onClick={() => handleSend(p)}
-                                                        className="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 px-3 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all text-left max-w-[180px] truncate"
+                                                        className="text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 border border-slate-100 dark:border-white/[0.08]/50 px-3 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all text-left max-w-[180px] truncate"
                                                         title={p}
                                                     >
                                                         {p}
@@ -1017,10 +1017,10 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                 onKeyDown={handleKeyDown}
                                                 placeholder="Add Italian cuisine with pasta dishes… or Enrich KG with Thai spices…"
                                                 rows={1}
-                                                className="w-full resize-none bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-700/50 rounded-2xl px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-700 transition-all leading-relaxed overflow-hidden"
+                                                className="w-full resize-none bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.08]/50 rounded-2xl px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-700 transition-all leading-relaxed overflow-hidden"
                                                 style={{ minHeight: 46, maxHeight: 120 }}
                                             />
-                                            <span className="absolute right-3 bottom-2.5 text-[9px] text-slate-300 dark:text-slate-600 pointer-events-none hidden sm:block">
+                                            <span className="absolute right-3 bottom-2.5 text-[9px] text-slate-300 dark:text-[hsl(220,10%,55%)] pointer-events-none hidden sm:block">
                                                 ⌘↵
                                             </span>
                                         </div>
@@ -1039,7 +1039,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                             {phase === 'thinking' && (
                                 <div className="relative flex items-end gap-2 opacity-40 pointer-events-none">
                                     <div className="flex-1">
-                                        <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-700/50 rounded-2xl px-4 py-3 text-sm text-slate-300 h-11">
+                                        <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.08]/50 rounded-2xl px-4 py-3 text-sm text-slate-300 h-11">
                                             Generating…
                                         </div>
                                     </div>

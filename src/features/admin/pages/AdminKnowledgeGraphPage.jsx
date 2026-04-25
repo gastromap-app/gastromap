@@ -59,7 +59,7 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ delay: (idx % 15) * 0.03 }}
-            className="group flex items-center gap-4 px-5 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 rounded-2xl hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all"
+            className="group flex items-center gap-4 px-5 py-3.5 bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/60 rounded-2xl hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all"
         >
             {/* Icon */}
             <div className={cn('w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center', accent)}>
@@ -84,22 +84,22 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
             {/* Tags preview */}
             <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
                 {isCuisine && (item.typical_dishes || []).slice(0, 3).map((d, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
                         {d}
                     </span>
                 ))}
                 {isDish && (item.dietary_tags || []).slice(0, 2).map((t, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
                         {t}
                     </span>
                 ))}
                 {isVibe && (item.synonyms || []).slice(0, 3).map((s, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
                         {s}
                     </span>
                 ))}
                 {!isCuisine && !isDish && !isVibe && item.flavor_profile && (
-                    <span className="px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700/50">
+                    <span className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
                         {item.flavor_profile}
                     </span>
                 )}
@@ -141,15 +141,15 @@ const FormModalBase = ({ title, onSave, onClose, children, disabled = false }) =
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 12 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-[32px] shadow-xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-xl rounded-[32px] shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[90vh] overflow-hidden flex flex-col"
         >
             {/* Header */}
-            <div className="px-7 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="px-7 py-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
                 <div>
                     <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
                     <p className="text-xs text-slate-400 mt-0.5">Knowledge Graph</p>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all">
+                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] text-slate-400 transition-all">
                     <X size={18} />
                 </button>
             </div>
@@ -160,10 +160,10 @@ const FormModalBase = ({ title, onSave, onClose, children, disabled = false }) =
             </div>
 
             {/* Footer */}
-            <div className="px-7 py-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="px-7 py-5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-end gap-3 bg-slate-50/50 dark:bg-[hsl(220,20%,6%)]/30">
                 <button
                     onClick={onClose}
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] transition-all"
                 >
                     Cancel
                 </button>
@@ -195,9 +195,9 @@ const InfoModal = ({ onClose }) => (
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-slate-950 w-full max-w-2xl rounded-[32px] shadow-xl border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-2xl rounded-[32px] shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[85vh] overflow-hidden flex flex-col"
         >
-            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="px-8 py-6 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
                         <Brain size={18} />
@@ -207,7 +207,7 @@ const InfoModal = ({ onClose }) => (
                         <p className="text-xs text-slate-400">System mechanics & logic flow</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all">
+                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] text-slate-400 transition-all">
                     <X size={18} />
                 </button>
             </div>
@@ -225,23 +225,23 @@ const InfoModal = ({ onClose }) => (
                         </div>
                         <div>
                             <h4 className="font-semibold text-sm text-slate-900 dark:text-white mb-1">{title}</h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{text}</p>
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">{text}</p>
                         </div>
                     </div>
                 ))}
 
-                <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="p-5 bg-slate-50 dark:bg-[hsl(220,20%,6%)] rounded-2xl border border-slate-100 dark:border-white/[0.06]">
                     <div className="flex items-center gap-2 mb-2">
                         <Zap size={16} className="text-yellow-500" />
                         <span className="text-sm font-semibold text-slate-900 dark:text-white">Pro Tip</span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Используйте <strong className="text-slate-700 dark:text-slate-300">Seed Engine</strong> для инициализации новых регионов. После добавления данных нажмите <strong className="text-slate-700 dark:text-slate-300">Sync Graph</strong> — это обновит теги всех ресторанов и сделает поиск точнее.
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">
+                        Используйте <strong className="text-slate-700 dark:text-[hsl(220,10%,55%)]">Seed Engine</strong> для инициализации новых регионов. После добавления данных нажмите <strong className="text-slate-700 dark:text-[hsl(220,10%,55%)]">Sync Graph</strong> — это обновит теги всех ресторанов и сделает поиск точнее.
                     </p>
                 </div>
             </div>
 
-            <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <div className="px-8 py-5 border-t border-slate-100 dark:border-white/[0.06] flex justify-end">
                 <button onClick={onClose} className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                     Got it
                 </button>
@@ -269,7 +269,7 @@ const CuisineFormModal = ({ cuisine, onSave, onClose, disabled = false }) => {
         key_ingredients: form.key_ingredients.split(',').map(s => s.trim()).filter(Boolean),
     })
 
-    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[hsl(220,20%,6%)] text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-[hsl(220,10%,35%)]"
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
@@ -325,7 +325,7 @@ const DishFormModal = ({ dish, onSave, onClose, disabled = false }) => {
         dietary_tags:    form.dietary_tags.split(',').map(s => s.trim()).filter(Boolean),
     })
 
-    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[hsl(220,20%,6%)] text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-[hsl(220,10%,35%)]"
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
@@ -384,7 +384,7 @@ const IngredientFormModal = ({ ingredient, onSave, onClose, disabled = false }) 
         dietary_info:    form.dietary_info.split(',').map(s => s.trim()).filter(Boolean),
     })
 
-    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[hsl(220,20%,6%)] text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-[hsl(220,10%,35%)]"
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
@@ -448,7 +448,7 @@ const VibeFormModal = ({ vibe, onSave, onClose, disabled = false }) => {
         synonyms: form.synonyms.split(',').map(s => s.trim()).filter(Boolean),
     })
 
-    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-medium focus:ring-2 focus:ring-rose-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+    const inp = "w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[hsl(220,20%,6%)] text-sm font-medium focus:ring-2 focus:ring-rose-500/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-[hsl(220,10%,35%)]"
     const lbl = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block"
 
     return (
@@ -507,11 +507,11 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
             {/* Header row */}
             <button
                 onClick={() => setOpen(v => !v)}
-                className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all"
+                className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/30 transition-all"
             >
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
@@ -535,7 +535,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                     >
-                        <div className="px-6 pb-6 space-y-5 border-t border-slate-100 dark:border-slate-800 pt-5">
+                        <div className="px-6 pb-6 space-y-5 border-t border-slate-100 dark:border-white/[0.06] pt-5">
                             {/* Search */}
                             <div className="flex gap-3">
                                 <div className="relative flex-1">
@@ -545,7 +545,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                         onChange={e => setQuery(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleSearch()}
                                         placeholder="Search Spoonacular database..."
-                                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-200 dark:border-white/[0.08] rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
                                     />
                                 </div>
                                 <button
@@ -571,12 +571,12 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                 {results.dishes.map(dish => {
                                                     const already = isDuplicate(dish.name, 'dish')
                                                     return (
-                                                        <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-700/30 opacity-60' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50')}>
+                                                        <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.08]/30 opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.08]/50')}>
                                                             <div className="flex items-center gap-3">
                                                                 {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
                                                                 <div>
-                                                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{dish.name}</span>
-                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">Already in KG</span>}
+                                                                    <span className="text-sm font-medium text-slate-800 dark:text-[hsl(220,20%,90%)]">{dish.name}</span>
+                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-[hsl(220,20%,12%)] px-1.5 py-0.5 rounded-full">Already in KG</span>}
                                                                 </div>
                                                             </div>
                                                             {!already && (
@@ -605,12 +605,12 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                 {results.ingredients.map(ing => {
                                                     const already = isDuplicate(ing.name, 'ingredient')
                                                     return (
-                                                        <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-700/30 opacity-60' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50')}>
+                                                        <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.08]/30 opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.08]/50')}>
                                                             <div className="flex items-center gap-3">
                                                                 {ing.image && <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
                                                                 <div>
-                                                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{ing.name}</span>
-                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">Already in KG</span>}
+                                                                    <span className="text-sm font-medium text-slate-800 dark:text-[hsl(220,20%,90%)]">{ing.name}</span>
+                                                                    {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-[hsl(220,20%,12%)] px-1.5 py-0.5 rounded-full">Already in KG</span>}
                                                                 </div>
                                                             </div>
                                                             {!already && (
@@ -665,7 +665,7 @@ const MergeModal = ({ groups, type, onMerge, onClose }) => {
                                 "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border",
                                 selectedGroupIdx === idx 
                                     ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400"
+                                    : "bg-white dark:bg-[hsl(220,20%,6%)] border-slate-200 dark:border-white/[0.06] text-slate-500 dark:text-[hsl(220,10%,55%)]"
                             )}
                         >
                             Group {idx + 1} ({group[0]?.name})
@@ -673,7 +673,7 @@ const MergeModal = ({ groups, type, onMerge, onClose }) => {
                     ))}
                 </div>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="p-4 bg-slate-50 dark:bg-[hsl(220,20%,6%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.06]">
                     <p className="text-xs text-slate-500 mb-4">
                         Select WHICH entry to keep. Others in this group will be <span className="text-rose-500 font-bold uppercase">deleted</span>.
                     </p>
@@ -686,8 +686,8 @@ const MergeModal = ({ groups, type, onMerge, onClose }) => {
                                 className={cn(
                                     "p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between",
                                     masterId === item.id 
-                                        ? "border-indigo-500 bg-white dark:bg-slate-900 shadow-sm"
-                                        : "border-transparent bg-white/50 dark:bg-slate-900/30 hover:border-slate-200 dark:hover:border-slate-700"
+                                        ? "border-indigo-500 bg-white dark:bg-[hsl(220,20%,6%)] shadow-sm"
+                                        : "border-transparent bg-white/50 dark:bg-[hsl(220,20%,6%)]/30 hover:border-slate-200 dark:hover:border-slate-700"
                                 )}
                             >
                                 <div className="flex-1 min-w-0">
@@ -697,7 +697,7 @@ const MergeModal = ({ groups, type, onMerge, onClose }) => {
                                 </div>
                                 <div className={cn(
                                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                    masterId === item.id ? "bg-indigo-600 border-indigo-600" : "border-slate-300 dark:border-slate-700"
+                                    masterId === item.id ? "bg-indigo-600 border-indigo-600" : "border-slate-300 dark:border-white/[0.08]"
                                 )}>
                                     {masterId === item.id && <CheckCircle2 size={12} className="text-white" />}
                                 </div>
@@ -952,7 +952,7 @@ const AdminKnowledgeGraphPage = () => {
         { label: 'Dishes',       val: dishes.length,       Icon: UtensilsCrossed, bg: 'bg-emerald-50 dark:bg-emerald-500/10', color: 'text-emerald-600' },
         { label: 'Ingredients',  val: ingredients.length,  Icon: Carrot,          bg: 'bg-amber-50 dark:bg-amber-500/10',    color: 'text-amber-600' },
         { label: 'Total Nodes',  val: cuisines.length + dishes.length + ingredients.length,
-          Icon: Brain,  bg: 'bg-slate-100 dark:bg-slate-800', color: 'text-slate-600 dark:text-slate-400' },
+          Icon: Brain,  bg: 'bg-slate-100 dark:bg-[hsl(220,20%,9%)]', color: 'text-slate-600 dark:text-[hsl(220,10%,55%)]' },
     ]
 
     return (
@@ -1016,13 +1016,13 @@ const AdminKnowledgeGraphPage = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.06 }}
-                        className="bg-white dark:bg-slate-900/50 p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm flex items-center gap-4"
+                        className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm flex items-center gap-4"
                     >
                         <div className={cn('w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center flex-shrink-0', s.bg)}>
                             <s.Icon size={18} className={s.color} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">{s.label}</p>
+                            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">{s.label}</p>
                             <p className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-none mt-0.5">{s.val}</p>
                         </div>
                     </motion.div>
@@ -1105,12 +1105,12 @@ const AdminKnowledgeGraphPage = () => {
             />
 
             {/* ── Main list card ── */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden flex flex-col">
 
                 {/* Toolbar */}
-                <div className="p-4 lg:p-6 border-b border-slate-50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="p-4 lg:p-6 border-b border-slate-50 dark:border-white/[0.06]/50 flex flex-col sm:flex-row sm:items-center gap-4">
                     {/* Tabs */}
-                    <div className="flex gap-1 bg-slate-50 dark:bg-slate-950/50 p-1 rounded-2xl border border-slate-100 dark:border-slate-800/50 flex-shrink-0">
+                    <div className="flex gap-1 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/50 p-1 rounded-2xl border border-slate-100 dark:border-white/[0.06]/50 flex-shrink-0">
                         {TABS.map(tab => {
                             const active = activeTab === tab.id
                             return (
@@ -1120,15 +1120,15 @@ const AdminKnowledgeGraphPage = () => {
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all",
                                         active
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-slate-700"
-                                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                            ? "bg-white dark:bg-[hsl(220,20%,9%)] text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-white/[0.08]"
+                                            : "text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)]"
                                     )}
                                 >
                                     <tab.icon size={13} />
                                     {tab.label}
                                     <span className={cn(
                                         "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-                                        active ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                                        active ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" : "bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-400"
                                     )}>
                                         {counts[tab.id]}
                                     </span>
@@ -1154,7 +1154,7 @@ const AdminKnowledgeGraphPage = () => {
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             placeholder={`Search ${activeTab}…`}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all shadow-inner"
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all shadow-inner"
                         />
                     </div>
 
@@ -1170,12 +1170,12 @@ const AdminKnowledgeGraphPage = () => {
                             queryClient.removeQueries({ queryKey: ['knowledge-ingredients'] })
                             setTimeout(() => { refetchCuisines(); refetchDishes(); refetchIngredients() }, 100)
                         }}
-                        className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors text-xs font-medium"
+                        className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-500 dark:text-[hsl(220,10%,55%)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors text-xs font-medium"
                         title="Clear cache and reload from database"
                     >
                         ↺
                     </button>
-                    <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all flex-shrink-0">
+                    <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all flex-shrink-0">
                         <Filter size={14} />
                         <span className="text-xs font-medium hidden sm:inline">Filter</span>
                     </button>
@@ -1186,8 +1186,8 @@ const AdminKnowledgeGraphPage = () => {
                     <AnimatePresence mode="popLayout" initial={false}>
                         {isCurrentTabLoading ? (
                             <div className="flex flex-col items-center justify-center py-16 gap-4">
-                                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
-                                <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
+                                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] animate-pulse" />
+                                <div className="h-3 w-32 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-full animate-pulse" />
                             </div>
                         ) : filteredItems.length > 0 ? (
                             filteredItems.map((item, idx) => (
@@ -1212,12 +1212,12 @@ const AdminKnowledgeGraphPage = () => {
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl"
+                                className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-100 dark:border-white/[0.06] rounded-2xl"
                             >
-                                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3 text-slate-300">
+                                <div className="w-12 h-12 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-2xl flex items-center justify-center mb-3 text-slate-300">
                                     <Search size={22} />
                                 </div>
-                                <p className="font-semibold text-slate-500 dark:text-slate-400">
+                                <p className="font-semibold text-slate-500 dark:text-[hsl(220,10%,55%)]">
                                     {searchTerm ? 'No matches found' : `No ${activeTab} yet`}
                                 </p>
                                 <p className="text-xs text-slate-400 mt-1">
@@ -1230,7 +1230,7 @@ const AdminKnowledgeGraphPage = () => {
 
                 {/* Footer count */}
                 {filteredItems.length > 0 && (
-                    <div className="px-6 py-3 border-t border-slate-50 dark:border-slate-800/50 flex items-center justify-between">
+                    <div className="px-6 py-3 border-t border-slate-50 dark:border-white/[0.06]/50 flex items-center justify-between">
                         <p className="text-xs text-slate-400 font-medium">
                             Showing {filteredItems.length} of {counts[activeTab]} {activeTab}
                         </p>

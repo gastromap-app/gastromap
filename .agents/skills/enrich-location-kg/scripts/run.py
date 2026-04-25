@@ -23,17 +23,18 @@ def get_weak_locations():
     
     headers = {
         "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "apikey": SUPABASE_SERVICE_KEY,
         "Content-Type": "application/json",
         "Prefer": "return=representation"
     }
     
     # Query: select all locations with their kg_dishes
-    url = f"{SUPABASE_URL}/rest/v1/locations?select=id,name,kg_dishes"
+    url = f"{SUPABASE_URL}/rest/v1/locations?select=id,title,kg_dishes"
     
     try:
         resp = requests.get(url, headers=headers, timeout=30)
         if resp.status_code != 200:
-            return {"error": f"Supabase query failed: {resp.status_code}"}
+            return {"error": f"Supabase query failed: {resp.status_code}", "detail": resp.text}
         
         locations = resp.json()
         # Filter for weak locations (null or < 3 dishes)
@@ -65,6 +66,7 @@ def update_location_kg(location_id, dishes):
     
     headers = {
         "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "apikey": SUPABASE_SERVICE_KEY,
         "Content-Type": "application/json",
         "Prefer": "return=representation"
     }
@@ -104,7 +106,7 @@ def main():
     enriched = []
     for loc in weak_locs[:10]:  # Limit to 10 per run to avoid timeouts
         location_id = loc["id"]
-        location_name = loc["name"]
+        location_name = loc["title"]
         
         # Enrich with KG data
         new_dishes = enrich_location_kg(location_id, location_name)

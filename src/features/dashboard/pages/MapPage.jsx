@@ -48,7 +48,10 @@ const MapPage = () => {
     return (
         <div className="fixed inset-0 z-0">
             {/* Search + Categories Overlay */}
-            <div className="absolute top-0 left-0 right-0 z-[600] p-4 pointer-events-none">
+            <div
+                className="absolute top-0 left-0 right-0 z-[600] px-4 pb-4 pointer-events-none"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4.5rem)' }}
+            >
                 <div className="max-w-md mx-auto pointer-events-auto flex flex-col gap-3">
                     <SmartSearchBar
                         value={mapSearch}

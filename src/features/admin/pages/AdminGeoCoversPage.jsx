@@ -210,7 +210,7 @@ export default function AdminGeoCoversPage() {
             const { data } = await supabase
                 .from('locations')
                 .select('city, country')
-                .eq('status', 'approved')
+                .in('status', ['active', 'approved'])
                 .not('city', 'is', null)
 
             const cityMap = {}

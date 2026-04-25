@@ -9,7 +9,7 @@ export async function getLocationReviews(locationId) {
     try {
         const { data, error } = await supabase
             .from('reviews')
-            .select('*, profiles(full_name, display_name, avatar_url, name)')
+            .select('*, profiles(name, avatar_url)')
             .eq('location_id', locationId)
             .in('status', ['published'])
             .order('created_at', { ascending: false })
@@ -17,7 +17,7 @@ export async function getLocationReviews(locationId) {
         if (!error && data) {
             return data.map(r => ({
                 ...r,
-                author_name: r.profiles?.display_name || r.profiles?.full_name || r.profiles?.name || 'User',
+                author_name: r.profiles?.name || 'User',
                 author_avatar: r.profiles?.avatar_url || null
             }))
         }
@@ -25,7 +25,7 @@ export async function getLocationReviews(locationId) {
         // Fallback 1: user_profiles (common in some clones)
         const { data: upData, error: upError } = await supabase
             .from('reviews')
-            .select('*, user_profiles(display_name, avatar_url, name)')
+            .select('*, user_profiles(name, avatar_url)')
             .eq('location_id', locationId)
             .in('status', ['published'])
             .order('created_at', { ascending: false })
@@ -33,7 +33,7 @@ export async function getLocationReviews(locationId) {
         if (!upError && upData) {
             return upData.map(r => ({
                 ...r,
-                author_name: r.user_profiles?.display_name || r.user_profiles?.name || 'User',
+                author_name: r.user_profiles?.name || 'User',
                 author_avatar: r.user_profiles?.avatar_url || null
             }))
         }

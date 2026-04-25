@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { 
     Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown, Clock, Zap,
-    Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal
+    Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal, MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -352,6 +352,7 @@ const LocationFilters = ({
                         { id: 'all', label: 'Все объекты', icon: ListIcon },
                         { id: 'pending', label: 'На модерации', icon: Clock },
                         { id: 'active', label: 'Активные', icon: Zap },
+                        { id: 'reviews', label: 'Отзывы', icon: MessageSquare },
                     ].map(tab => (
                         <button
                             key={tab.id}

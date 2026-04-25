@@ -727,6 +727,182 @@ export async function getLocationsNearby(coords, radiusKm = 2) {
     return { data: filtered, total: filtered.length, hasMore: false }
 }
 
+// ─── Menu persistence ──────────────────────────────────────────────────────
+
+export async function getLocationMenu(locationId) {
+    if (!supabase) {
+        console.warn('[locations.api] Supabase not configured, returning empty menu')
+        return []
+    }
+
+    const { data, error } = await supabase
+        .from('location_dishes')
+        .select('*, dishes(*)')
+        .eq('location_id', locationId)
+
+    if (error) {
+        console.warn('[locations.api] Failed to fetch menu:', error.message)
+        return []
+    }
+
+    return (data ?? []).map(ld => {
+        const dish = ld.dishes || {}
+        return {
+            id: dish.id,
+            name: dish.name,
+            description: dish.description,
+            price: ld.price,
+            category: dish.category,
+            is_signature: ld.is_signature,
+            available: ld.available,
+            vegetarian: dish.vegetarian,
+            vegan: dish.vegan,
+            gluten_free: dish.gluten_free,
+        }
+    })
+}
+
+export async function saveScannedMenu(locationId, dishes) {
+    if (!supabase) {
+        console.warn('[locations.api] Supabase not configured, cannot save scanned menu')
+        return { saved: 0, duplicates: 0 }
+    }
+
+    const CATEGORY_MAP = {
+        appetizer: 'appetizer',
+        starters: 'appetizer',
+        starter: 'appetizer',
+        main: 'main',
+        mains: 'main',
+        'main course': 'main',
+        'main courses': 'main',
+        entree: 'main',
+        entrees: 'main',
+        dessert: 'dessert',
+        desserts: 'dessert',
+        drink: 'drink',
+        drinks: 'drink',
+        beverage: 'drink',
+        beverages: 'drink',
+        snack: 'snack',
+        snacks: 'snack',
+    }
+
+    let saved = 0
+    let duplicates = 0
+
+    try {
+        for (const dish of dishes) {
+            const rawCategory = (dish.category || '').toLowerCase().trim()
+            const category = CATEGORY_MAP[rawCategory] || 'main'
+            const dishName = (dish.name || '').trim()
+
+            if (!dishName) continue
+
+            // Try to find existing dish by name (case-insensitive)
+            const { data: existing, error: findError } = await supabase
+                .from('dishes')
+                .select('id')
+                .ilike('name', dishName)
+                .maybeSingle()
+
+            if (findError) {
+                console.warn('[locations.api] Error finding dish:', findError.message)
+                continue
+            }
+
+            let dishId
+            if (existing?.id) {
+                dishId = existing.id
+                duplicates++
+            } else {
+                const { data: inserted, error: insertError } = await supabase
+                    .from('dishes')
+                    .insert({
+                        name: dishName,
+                        description: dish.description || '',
+                        category,
+                    })
+                    .select('id')
+                    .single()
+
+                if (insertError) {
+                    console.warn('[locations.api] Error inserting dish:', insertError.message)
+                    continue
+                }
+                dishId = inserted.id
+                saved++
+            }
+
+            // Upsert into location_dishes
+            const { error: linkError } = await supabase
+                .from('location_dishes')
+                .upsert({
+                    location_id: locationId,
+                    dish_id: dishId,
+                    price: dish.price || '',
+                }, { onConflict: 'location_id,dish_id' })
+
+            if (linkError) {
+                console.warn('[locations.api] Error linking dish to location:', linkError.message)
+            }
+        }
+    } catch (err) {
+        console.warn('[locations.api] saveScannedMenu failed:', err.message)
+    }
+
+    return { saved, duplicates }
+}
+
+export async function deleteLocationDish(locationId, dishId) {
+    if (!supabase) {
+        console.warn('[locations.api] Supabase not configured, cannot delete location dish')
+        return { success: false }
+    }
+
+    const { error } = await supabase
+        .from('location_dishes')
+        .delete()
+        .eq('location_id', locationId)
+        .eq('dish_id', dishId)
+
+    if (error) {
+        console.warn('[locations.api] Failed to delete location dish:', error.message)
+        return { success: false }
+    }
+
+    return { success: true }
+}
+
+export async function updateLocationDish(locationId, dishId, updates) {
+    if (!supabase) {
+        console.warn('[locations.api] Supabase not configured, cannot update location dish')
+        return { success: false }
+    }
+
+    const payload = {}
+    if (updates.price !== undefined) payload.price = updates.price
+    if (updates.is_signature !== undefined) payload.is_signature = updates.is_signature
+    if (updates.available !== undefined) payload.available = updates.available
+
+    if (Object.keys(payload).length === 0) {
+        return { success: true }
+    }
+
+    const { error } = await supabase
+        .from('location_dishes')
+        .update(payload)
+        .eq('location_id', locationId)
+        .eq('dish_id', dishId)
+
+    if (error) {
+        console.warn('[locations.api] Failed to update location dish:', error.message)
+        return { success: false }
+    }
+
+    return { success: true }
+}
+
 export { normalise }
 
 export default {
@@ -739,4 +915,8 @@ export default {
     createLocation,
     updateLocation,
     deleteLocation,
+    getLocationMenu,
+    saveScannedMenu,
+    deleteLocationDish,
+    updateLocationDish,
 }

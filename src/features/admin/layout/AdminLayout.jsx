@@ -4,7 +4,7 @@ import {
     MapPin, Users, BarChart3, ArrowLeft, LogOut,
     LayoutDashboard, Heart, Bot, ChevronRight,
     Menu, X, Bell, Search, Sun, Moon,
-    ChevronLeft, Settings, Shield, ShieldCheck, Brain, Image
+    ChevronLeft, Settings, Shield, ShieldCheck, Brain, Image, ScanLine
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,7 @@ const NAV_ITEMS = [
     { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
     { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
     { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
+    { icon: ScanLine,        label: 'Menu Scanner',   path: '/admin/menu-scanner' },
     { icon: ShieldCheck,     label: 'Moderation',     path: '/admin/moderation' },
     { icon: Bell,            label: 'Notifications',  path: '/admin/notifications' },
     { icon: Image,           label: 'Geo Covers',     path: '/admin/geo-covers' },

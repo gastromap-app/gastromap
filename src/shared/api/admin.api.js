@@ -186,7 +186,7 @@ export async function getPendingReviews() {
     if (!supabase) return mockPendingReviews
     const { data, error } = await supabase
         .from('reviews')
-        .select('id, user_id, location_id, rating, review_text, status, created_at, profiles(full_name, name)')
+        .select('id, user_id, location_id, rating, review_text, status, created_at, profiles(name, avatar_url), locations(title, city)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
     if (error) {
@@ -202,7 +202,7 @@ export async function getPendingReviews() {
     return (data || []).map(r => ({
         ...r,
         profiles: r.profiles
-            ? { ...r.profiles, name: r.profiles.full_name || r.profiles.name || '—' }
+            ? { ...r.profiles, name: r.profiles.name || '—' }
             : null,
     }))
 }

@@ -266,5 +266,23 @@
   },
   "map": {
     "you_are_here": "Jesteś tutaj"
+  },
+  "menuScanner": {
+    "title": "Skaner menu",
+    "scanMenu": "Skanuj menu",
+    "scanning": "Skanowanie menu...",
+    "saving": "Zapisywanie menu...",
+    "showMore": "Pokaż więcej dań",
+    "noMenu": "Menu niedostępne",
+    "totalDishes": "Łącznie dań",
+    "signature": "Firmowe",
+    "available": "Dostępne",
+    "unavailable": "Niedostępne",
+    "scanSuccess": "Menu zeskanowane i zapisane pomyślnie",
+    "scanError": "Nie udało się zeskanować menu",
+    "deleteConfirm": "Usunąć to danie?",
+    "accessDenied": "Brak dostępu. Tylko dla administratorów.",
+    "selectLocation": "Wybierz lokal",
+    "searchLocations": "Szukaj lokali..."
   }
 }

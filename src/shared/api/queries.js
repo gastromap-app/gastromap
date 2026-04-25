@@ -726,6 +726,8 @@ export function useCreateReviewMutation() {
         },
         onSuccess: (_, { locationId }) => {
             qc.invalidateQueries({ queryKey: ['reviews', locationId] })
+            qc.invalidateQueries({ queryKey: ['pending-reviews'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
         },
     })
 }

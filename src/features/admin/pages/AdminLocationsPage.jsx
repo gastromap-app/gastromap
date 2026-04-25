@@ -4,7 +4,8 @@ import {
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
     CheckCircle, Clock, AlertCircle, Star, ChevronDown, ArrowRight,
     X, LayoutGrid, List as ListIcon, Activity, Zap, Phone, Link as LinkIcon, Tag, Sparkles,
-    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save
+    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save,
+    MessageSquare, User, Calendar
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { AnimatePresence } from 'framer-motion'
@@ -78,7 +79,7 @@ const AdminLocationsPage = () => {
         formData, setFormData,
         culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
-        locationsList, pendingLocations, loadError, filteredLocations,
+        locationsList, pendingLocations, pendingReviews, loadError, filteredLocations,
         countries, cities,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
@@ -86,6 +87,7 @@ const AdminLocationsPage = () => {
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
+        handleApproveReview, handleRejectReview,
         isExporting, handleExport,
         toast, setToast
     } = hook
@@ -214,7 +216,7 @@ const AdminLocationsPage = () => {
                 />
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {statusFilter !== 'reviews' && totalPages > 1 && (
                     <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-slate-800/50">
                         <button
                             disabled={currentPage === 1}
@@ -233,18 +235,76 @@ const AdminLocationsPage = () => {
                 )}
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
-                    {viewMode === 'list' && (
-                        <ListViewSection
-                            filteredLocations={paginatedLocations}
-                            viewMode={viewMode}
-                            onEditLocation={handleEdit}
-                            onDelete={handleDelete}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
-                            onToggleVisibility={handleToggleVisibility}
-                            openActionMenuId={openActionMenuId}
-                            onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
-                        />
+                    {statusFilter === 'reviews' ? (
+                        <div className="p-4 lg:p-10">
+                            {pendingReviews.length === 0 ? (
+                                <div className="text-center py-20">
+                                    <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                                    <p className="text-lg font-bold text-slate-400">Нет отзывов на модерации</p>
+                                    <p className="text-sm text-slate-400 mt-1">Все отзывы проверены</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {pendingReviews.map((rev) => (
+                                        <div
+                                            key={rev.id}
+                                            className="bg-white dark:bg-slate-900/50 rounded-[24px] border border-slate-100 dark:border-slate-800/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                                        >
+                                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                    <User size={22} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{rev.profiles?.name || 'Anonymous'}</p>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                            <MapPin size={10} /> {rev.locations?.title || rev.location_id}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        {[1,2,3,4,5].map(s => (
+                                                            <Star key={s} size={12} className={s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'} />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">{rev.review_text}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                                                        <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString('ru-RU')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <button
+                                                    onClick={() => handleRejectReview(rev.id)}
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all"
+                                                >
+                                                    Отклонить
+                                                </button>
+                                                <button
+                                                    onClick={() => handleApproveReview(rev.id)}
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
+                                                >
+                                                    Одобрить
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        viewMode === 'list' && (
+                            <ListViewSection
+                                filteredLocations={paginatedLocations}
+                                viewMode={viewMode}
+                                onEditLocation={handleEdit}
+                                onDelete={handleDelete}
+                                onApprove={handleApprove}
+                                onReject={handleReject}
+                                onToggleVisibility={handleToggleVisibility}
+                                openActionMenuId={openActionMenuId}
+                                onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
+                            />
+                        )
                     )}
                 </div>
             </div>

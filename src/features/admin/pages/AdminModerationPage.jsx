@@ -73,7 +73,7 @@ export default function AdminModerationPage() {
             if (item.queueType === 'review') {
                 await updateReviewStatus.mutateAsync({
                     reviewId: item.id,
-                    status: 'approved'
+                    status: 'published'
                 })
             } else {
                 await updateLocationStatus.mutateAsync({
@@ -95,7 +95,7 @@ export default function AdminModerationPage() {
             if (item.queueType === 'review') {
                 await updateReviewStatus.mutateAsync({
                     reviewId: item.id,
-                    status: 'revision_requested',
+                    status: 'rejected',
                     comment: revisionNote
                 })
             } else {

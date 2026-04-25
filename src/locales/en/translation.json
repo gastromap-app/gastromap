@@ -241,5 +241,23 @@
   },
   "map": {
     "you_are_here": "You are here"
+  },
+  "menuScanner": {
+    "title": "Menu Scanner",
+    "scanMenu": "Scan Menu",
+    "scanning": "Scanning menu...",
+    "saving": "Saving menu...",
+    "showMore": "Show more dishes",
+    "noMenu": "No menu available",
+    "totalDishes": "Total dishes",
+    "signature": "Signature",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "scanSuccess": "Menu scanned and saved successfully",
+    "scanError": "Failed to scan menu",
+    "deleteConfirm": "Remove this dish?",
+    "accessDenied": "Access denied. Admins only.",
+    "selectLocation": "Select a location",
+    "searchLocations": "Search locations..."
   }
 }

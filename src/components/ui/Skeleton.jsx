@@ -44,13 +44,14 @@ export function LocationCardDesktopSkeleton({ isDark }) {
 export function LocationCardMobileSkeleton({ isDark }) {
     return (
         <div className={cn(
-            'flex flex-col p-3 rounded-[32px] border',
+            'flex flex-row items-center p-2.5 rounded-2xl gap-3 border animate-pulse',
             isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'
         )}>
-            <Skeleton className="h-48 w-full rounded-[24px] mb-3" />
-            <div className="px-1 pb-1 space-y-2.5">
-                <Skeleton className="h-4 w-2/3 rounded-xl" />
-                <Skeleton className="h-3 w-1/3 rounded-xl" />
+            <Skeleton className="w-24 h-24 rounded-xl flex-shrink-0" />
+            <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+                <Skeleton className="h-4 w-3/4 rounded-xl" />
+                <Skeleton className="h-3 w-1/2 rounded-xl" />
+                <Skeleton className="h-3 w-2/3 rounded-xl" />
             </div>
         </div>
     )

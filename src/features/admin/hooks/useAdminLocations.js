@@ -6,7 +6,8 @@ import {
     useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
     useUpdateLocationEmbeddingMutation, useBulkUpdateEmbeddingsMutation,
     useEnrichLocationFullMutation,
-    useAIQueryMutation, useCulinaryContextMutation 
+    useAIQueryMutation, useCulinaryContextMutation,
+    usePendingReviews, useUpdateReviewStatusMutation
 } from '@/shared/api/queries'
 import { applyAllFilters } from '@/shared/store/useLocationsStore'
 
@@ -114,6 +115,8 @@ export const useAdminLocations = () => {
     const deleteLocMutation = useDeleteLocationMutation()
     const updateLocStatusMutation = useUpdateLocationStatusMutation()
     const { data: pendingLocations = [] } = usePendingLocations()
+    const { data: pendingReviews = [] } = usePendingReviews()
+    const updateReviewStatusMutation = useUpdateReviewStatusMutation()
     const extractMutation = useExtractLocationMutation()
     const reindexMutation = useReindexLocationSemanticMutation()
     const bulkReindexMutation = useBulkReindexLocationsMutation()
@@ -363,6 +366,26 @@ export const useAdminLocations = () => {
         }
     }
 
+    const handleApproveReview = async (reviewId) => {
+        try {
+            await updateReviewStatusMutation.mutateAsync({ reviewId, status: 'published' })
+            setToast({ message: 'Отзыв одобрен и опубликован.', type: 'success' })
+        } catch (error) {
+            console.error('Approve review failed:', error)
+            setToast({ message: 'Ошибка при одобрении отзыва.', type: 'error' })
+        }
+    }
+
+    const handleRejectReview = async (reviewId) => {
+        try {
+            await updateReviewStatusMutation.mutateAsync({ reviewId, status: 'rejected' })
+            setToast({ message: 'Отзыв отклонён.', type: 'success' })
+        } catch (error) {
+            console.error('Reject review failed:', error)
+            setToast({ message: 'Ошибка при отклонении отзыва.', type: 'error' })
+        }
+    }
+
     const handleDelete = (id) => {
         if (confirm('Вы уверены, что хотите удалить этот объект? Это действие нельзя отменить.')) {
             deleteLocMutation.mutate(id)
@@ -591,6 +614,7 @@ export const useAdminLocations = () => {
         // Data
         locationsList,
         pendingLocations,
+        pendingReviews,
         loadingLocations,
         loadError,
         filteredLocations,
@@ -602,6 +626,7 @@ export const useAdminLocations = () => {
         updateLocMutation,
         deleteLocMutation,
         updateLocStatusMutation,
+        updateReviewStatusMutation,
         extractMutation,
         reindexMutation,
         embeddingMutation,
@@ -635,6 +660,8 @@ export const useAdminLocations = () => {
         removeImage,
         prepareFormData,
         isExporting,
-        handleExport
+        handleExport,
+        handleApproveReview,
+        handleRejectReview
     }
 }

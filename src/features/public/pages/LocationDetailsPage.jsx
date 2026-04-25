@@ -7,6 +7,7 @@ import {
     Calendar, Users, Sparkles, Lightbulb,
     UtensilsCrossed, Camera, User, ChevronRight, CheckCircle2,
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
+    AlertCircle,
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
 } from 'lucide-react'
 import { getDisplayRating } from '@/utils/ratingUtils'
@@ -20,9 +21,11 @@ import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { getLocationMenu, saveScannedMenu } from '@/shared/api/locations.api'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
 import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
@@ -60,6 +63,7 @@ const LocationDetailsPage = () => {
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
     const { prefs, addVisited: localAddVisited } = useUserPrefsStore()
     const { user } = useAuthStore()
+    const canScanMenu = user?.role === 'admin' || user?.role === 'moderator'
     const addFavMut   = useAddFavoriteMutation()
     const removeFavMut = useRemoveFavoriteMutation()
     const addVisitMut = useAddVisitMutation()
@@ -99,7 +103,7 @@ const LocationDetailsPage = () => {
     const { data: allReviews = [] } = useLocationReviews(location?.id)
     const createReview = useCreateReviewMutation()
     const reviews = useMemo(
-        () => allReviews.filter((r) => r.status === 'approved' || r.status === 'published'),
+        () => allReviews.filter((r) => r.status === REVIEW_STATUSES.PUBLISHED),
         [allReviews]
     )
 
@@ -129,6 +133,22 @@ const LocationDetailsPage = () => {
     const [userNote, setUserNote] = useState("")
     const [isWritingReview, setIsWritingReview] = useState(false)
     const [newReview, setNewReview] = useState({ rating: 5, text: "" })
+
+    // Menu persistence state
+    const [menuDishes, setMenuDishes] = useState([])
+    const [menuLoading, setMenuLoading] = useState(false)
+    const [menuSaving, setMenuSaving] = useState(false)
+    const [menuToast, setMenuToast] = useState(null)
+
+    useEffect(() => {
+        if (location?.id) {
+            setMenuLoading(true)
+            getLocationMenu(location.id)
+                .then(dishes => setMenuDishes(dishes))
+                .catch(() => setMenuDishes([]))
+                .finally(() => setMenuLoading(false))
+        }
+    }, [location?.id])
 
     // Show skeleton while loading — avoids premature "not found" flash
     if (isPageLoading) return (
@@ -374,40 +394,140 @@ const LocationDetailsPage = () => {
     )
 
     const renderMenu = () => {
-        const _hasRealMenu = location?.menu_url || (location?.kg_dishes?.length > 0)
+        // Merge persisted menu dishes with KG dishes (deduplicate by name)
+        const kgDishNames = new Set((location?.kg_dishes || []).map(d => typeof d === 'string' ? d.toLowerCase() : (d.name || '').toLowerCase()))
+        const allDishes = [
+            ...menuDishes.filter(d => !kgDishNames.has((d.name || '').toLowerCase())),
+            ...(location?.kg_dishes || []).map(d =>
+                typeof d === 'string'
+                    ? { name: d, category: 'Other', vegetarian: false, vegan: false, gluten_free: false }
+                    : { category: 'Other', vegetarian: false, vegan: false, gluten_free: false, ...d }
+            ),
+        ]
+
+        // Group by category
+        const grouped = allDishes.reduce((acc, dish) => {
+            const cat = dish.category || 'Other'
+            if (!acc[cat]) acc[cat] = []
+            acc[cat].push(dish)
+            return acc
+        }, {})
+
+        const hasRealMenu = allDishes.length > 0
+
+        // Dietary badge helper
+        const DietaryBadge = ({ label, active, colorClass }) => {
+            if (!active) return null
+            return (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${colorClass}`}>
+                    {label}
+                </span>
+            )
+        }
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                {/* ── AI Menu Scanner ──────────────────────────────────────── */}
-                <div className={`p-6 rounded-[32px] border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
-                            <Camera size={20} />
-                        </div>
-                        <div>
-                            <p className={`font-black text-sm ${textStyle}`}>AI Menu Scanner</p>
-                            <p className={`text-xs ${subTextStyle}`}>Photo a menu → AI extracts dishes &amp; prices</p>
-                        </div>
-                    </div>
-                    <MenuScanner onDishesExtracted={(dishes) => console.log('[MenuScanner] extracted:', dishes)} />
-                </div>
-
-                {/* ── KG Dishes (from database) ─────────────────────────── */}
-                {location?.kg_dishes?.length > 0 && (
-                    <div className="space-y-3">
-                        <h4 className={`text-sm font-black uppercase tracking-wider ${subTextStyle}`}>Known dishes</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {location.kg_dishes.map((dish, i) => (
-                                <span key={i} className={`px-4 py-2 rounded-2xl text-sm font-bold border ${isDark ? 'border-white/10 bg-white/5 text-white/80' : 'border-gray-200 bg-white text-gray-700'}`}>
-                                    {dish}
-                                </span>
-                            ))}
-                        </div>
+                {/* ── Toast notification ──────────────────────────────────── */}
+                {menuToast && (
+                    <div className={`flex items-center gap-3 p-4 rounded-2xl border text-sm font-bold transition-all ${
+                        menuToast.type === 'error'
+                            ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                            : 'bg-green-500/10 border-green-500/20 text-green-500'
+                    }`}>
+                        {menuToast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+                        {menuToast.msg}
                     </div>
                 )}
 
-                {/* ── Static sample sections (visible when no real menu) ── */}
-                {[
+                {/* ── AI Menu Scanner (admin/moderator only) ──────────────── */}
+                {canScanMenu && (
+                    <div className={`p-6 rounded-[32px] border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                                <Camera size={20} />
+                            </div>
+                            <div>
+                                <p className={`font-black text-sm ${textStyle}`}>AI Menu Scanner</p>
+                                <p className={`text-xs ${subTextStyle}`}>Photo a menu → AI extracts dishes &amp; prices</p>
+                            </div>
+                            {menuSaving && (
+                                <span className={`ml-auto text-xs font-bold ${subTextStyle} animate-pulse`}>Saving…</span>
+                            )}
+                        </div>
+                        <MenuScanner onDishesExtracted={async (dishes) => {
+                            setMenuSaving(true)
+                            try {
+                                await saveScannedMenu(location.id, dishes)
+                                const updated = await getLocationMenu(location.id)
+                                setMenuDishes(updated)
+                                setMenuToast({ msg: `Menu saved — ${dishes.length} item${dishes.length === 1 ? '' : 's'} added`, type: 'success' })
+                            } catch (err) {
+                                console.error('Failed to save menu:', err)
+                                setMenuToast({ msg: 'Failed to save menu', type: 'error' })
+                            } finally {
+                                setMenuSaving(false)
+                                setTimeout(() => setMenuToast(null), 4000)
+                            }
+                        }} />
+                    </div>
+                )}
+
+                {/* ── Loading state ───────────────────────────────────────── */}
+                {menuLoading && (
+                    <div className="flex items-center justify-center gap-3 py-12">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <p className={`text-sm font-bold ${subTextStyle}`}>Loading menu…</p>
+                    </div>
+                )}
+
+                {/* ── Real menu dishes (grouped by category) ──────────────── */}
+                {!menuLoading && hasRealMenu && Object.entries(grouped).map(([category, items]) => (
+                    <div key={category} className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <h4 className={`text-lg font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{category}</h4>
+                            <span className={`px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isDark ? 'bg-white/10 text-white/50' : 'bg-gray-100 text-gray-500'}`}>
+                                {items.length} {items.length === 1 ? 'item' : 'items'}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {items.map((dish, i) => (
+                                <div key={dish.id || i} className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-start group hover:border-blue-500/50 transition-colors`}>
+                                    <div className="space-y-1.5 min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className={`font-black group-hover:text-blue-500 transition-colors ${textStyle}`}>{dish.name}</p>
+                                            {dish.is_signature && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">Signature</span>
+                                            )}
+                                        </div>
+                                        {dish.description && (
+                                            <p className={`text-xs ${subTextStyle} line-clamp-2`}>{dish.description}</p>
+                                        )}
+                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                            <DietaryBadge label="Vegetarian" active={dish.vegetarian} colorClass="bg-green-500/10 text-green-500 border border-green-500/20" />
+                                            <DietaryBadge label="Vegan" active={dish.vegan} colorClass="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" />
+                                            <DietaryBadge label="Gluten-free" active={dish.gluten_free} colorClass="bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" />
+                                        </div>
+                                    </div>
+                                    {dish.price && (
+                                        <span className="text-blue-500 font-black ml-3 flex-shrink-0">{dish.price}</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+
+                {/* ── Empty state for non-admin users ────────────────────── */}
+                {!menuLoading && !hasRealMenu && !canScanMenu && (
+                    <div className={`p-10 rounded-[32px] border text-center ${cardBg}`}>
+                        <UtensilsCrossed size={32} className={`mx-auto mb-3 ${subTextStyle}`} />
+                        <p className={`font-bold ${textStyle}`}>No menu available</p>
+                        <p className={`text-xs mt-1 ${subTextStyle}`}>Menu information has not been added yet.</p>
+                    </div>
+                )}
+
+                {/* ── Static sample sections (fallback when no real menu) ── */}
+                {!menuLoading && !hasRealMenu && canScanMenu && [
                     {
                         title: "Signature Mains", items: [
                             { name: "Truffle Pasta", desc: "Fresh house-made pasta with black truffle cream", price: "$28" },
@@ -421,7 +541,10 @@ const LocationDetailsPage = () => {
                     }
                 ].map((section, idx) => (
                     <div key={idx} className="space-y-4">
-                        <h4 className={`text-lg font-black border-b pb-3 ${isDark ? 'border-white/10 text-white' : 'border-gray-100 text-gray-900'}`}>{section.title}</h4>
+                        <div className="flex items-center gap-2">
+                            <h4 className={`text-lg font-black border-b pb-3 flex-1 ${isDark ? 'border-white/10 text-white' : 'border-gray-100 text-gray-900'}`}>{section.title}</h4>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${isDark ? 'bg-white/10 text-white/40' : 'bg-gray-100 text-gray-400'}`}>Sample</span>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {section.items.map((item, i) => (
                                 <div key={i} className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-start group hover:border-blue-500/50 transition-colors`}>
@@ -446,9 +569,16 @@ const LocationDetailsPage = () => {
             locationId: location.id,
             rating: newReview.rating,
             reviewText: newReview.text,
+        }, {
+            onSuccess: () => {
+                setNewReview({ rating: 5, text: '' })
+                setIsWritingReview(false)
+                alert('Thank you! Your review has been submitted and is awaiting moderation.')
+            },
+            onError: (err) => {
+                alert('Failed to submit review: ' + (err?.message || 'Please try again.'))
+            }
         })
-        setNewReview({ rating: 5, text: '' })
-        setIsWritingReview(false)
     }
 
     const renderReviews = () => {

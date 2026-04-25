@@ -43,33 +43,41 @@
   }
 
   [data-theme='dark'] {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Premium Dark — Linear-inspired palette */
+    --background: 222 14% 7%;
+    /* #0f1115 deep ink */
+    --foreground: 240 10% 96%;
+    /* #f5f5f7 soft white */
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 14% 11%;
+    /* #161921 subtle lift */
+    --card-foreground: 240 10% 96%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 14% 11%;
+    --popover-foreground: 240 10% 96%;
 
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 232 55% 60%;
+    /* #5e6ad2 vivid indigo */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 222 12% 16%;
+    /* #1c1f27 muted surface */
+    --secondary-foreground: 240 10% 96%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 222 12% 16%;
+    --muted-foreground: 220 6% 57%;
+    /* #8a8f98 calm grey */
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 222 12% 16%;
+    --accent-foreground: 240 10% 96%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 70% 50.4%;
+    --border: 222 10% 18%;
+    /* #272a33 hairline borders */
+    --input: 222 10% 18%;
+    --ring: 232 55% 60%;
   }
 }
 
@@ -96,8 +104,34 @@
     @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all;
   }
 
+  [data-theme='dark'] .glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] shadow-none;
+  }
+
   .glass-hover {
     @apply hover:bg-white/90 hover:shadow-md hover:-translate-y-1 transition-all duration-300;
+  }
+
+  [data-theme='dark'] .glass-hover {
+    @apply hover:bg-white/[0.06] hover:shadow-none;
+  }
+
+  /* Premium Surface — card backgrounds */
+  .surface {
+    @apply bg-white rounded-[28px] border border-slate-100 shadow-sm;
+  }
+
+  [data-theme='dark'] .surface {
+    @apply bg-[hsl(222,14%,11%)] rounded-[28px] border border-white/[0.06] shadow-none;
+  }
+
+  /* Premium Elevated — hovered/selected cards */
+  .surface-elevated {
+    @apply bg-white rounded-[28px] border border-slate-100 shadow-md;
+  }
+
+  [data-theme='dark'] .surface-elevated {
+    @apply bg-[hsl(222,12%,13%)] rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
   }
 
   /* Aurora Gradients */
@@ -110,6 +144,23 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-indigo-500 to-pink-500;
+  }
+
+  /* Typography utilities */
+  .text-primary-dark {
+    @apply text-slate-900;
+  }
+
+  [data-theme='dark'] .text-primary-dark {
+    @apply text-[hsl(240,10%,96%)];
+  }
+
+  .text-secondary-dark {
+    @apply text-slate-500;
+  }
+
+  [data-theme='dark'] .text-secondary-dark {
+    @apply text-[hsl(220,6%,57%)];
   }
 }
 

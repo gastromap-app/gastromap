@@ -543,11 +543,11 @@ const DesktopDashboard = ({
     const greeting = getGreeting(t)
     const firstName = authUser?.name?.split(' ')[0] || 'there'
 
-    const text = isDark ? 'text-white' : 'text-gray-900'
-    const sub  = 'text-gray-500'
+    const text = isDark ? 'text-[hsl(240,10%,96%)]' : 'text-gray-900'
+    const sub  = isDark ? 'text-[hsl(220,6%,57%)]' : 'text-gray-500'
 
     const cardClass = isDark
-        ? 'bg-[#1c1c1e] border border-white/8 rounded-sheet'
+        ? 'bg-[hsl(222,14%,11%)] border border-white/[0.06] rounded-sheet'
         : 'bg-white border border-gray-100 rounded-sheet shadow-[0_2px_20px_rgba(0,0,0,0.06)]'
 
     const itemVariants = {
@@ -579,7 +579,7 @@ const DesktopDashboard = ({
 
             {/* Tab bar + filter */}
             <div className="flex items-center justify-between mb-6">
-                <div className={`flex items-center p-1 rounded-[12px] gap-0.5 ${isDark ? 'bg-white/6' : 'bg-gray-100'}`}>
+                <div className={`flex items-center p-1 rounded-[12px] gap-0.5 ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
                     {['overview', 'map'].map((tab) => (
                         <button
                             key={tab}
@@ -587,10 +587,10 @@ const DesktopDashboard = ({
                             className={`relative px-6 py-2 rounded-[9px] text-[14px] font-semibold capitalize transition-all ${
                                 activeTab === tab
                                     ? isDark
-                                        ? 'bg-white/12 text-white shadow-sm'
+                                        ? 'bg-white/[0.08] text-[hsl(240,10%,96%)] shadow-sm'
                                         : 'bg-white text-gray-900 shadow-sm'
                                     : isDark
-                                        ? 'text-white/40 hover:text-white/70'
+                                        ? 'text-[hsl(220,6%,57%)] hover:text-[hsl(240,10%,96%)]'
                                         : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
@@ -602,7 +602,7 @@ const DesktopDashboard = ({
                 <button
                     onClick={() => setIsFilterOpen(true)}
                     className={`flex items-center gap-2 px-4 h-9 rounded-[10px] text-[13px] font-semibold transition-all active:scale-95 ${
-                        isDark ? 'bg-white/8 text-white/70 hover:bg-white/12' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        isDark ? 'bg-white/[0.04] text-[hsl(220,6%,57%)] hover:bg-white/[0.08] hover:text-[hsl(240,10%,96%)]' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                     <SlidersHorizontal size={15} />

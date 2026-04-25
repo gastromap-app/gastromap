@@ -178,7 +178,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         animate="visible"
                         exit="hidden"
                         className={`relative w-full md:max-w-2xl overflow-hidden shadow-2xl border transition-colors duration-300
-                            ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}
+                            ${isDark ? 'bg-[hsl(222,14%,11%)] border-white/[0.06] text-[hsl(240,10%,96%)]' : 'bg-white border-gray-200 text-gray-900'}
                             rounded-t-sheet md:rounded-sheet`}
                         style={{ maxHeight: '90vh' }}
                     >
@@ -194,7 +194,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 {activeCount > 0 && (
                                     <button
                                         onClick={handleReset}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-[hsl(220,6%,57%)] hover:text-[hsl(240,10%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                     >
                                         <RotateCcw size={12} />
                                         {t('filter.reset')}
@@ -202,7 +202,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/[0.04] text-[hsl(220,6%,57%)] hover:text-[hsl(240,10%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                 >
                                     <X size={24} />
                                 </button>
@@ -254,8 +254,8 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                     whileTap={{ scale: 0.98 }}
                                                     onClick={() => setSelectedRating(isActive ? null : opt.val)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center gap-1.5 font-semibold text-sm transition-all ${isActive
-                                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                        : isDark ? 'bg-white/5 border-white/5 text-white hover:bg-white/10' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
+                                                        ? 'bg-[hsl(232,55%,60%)] border-[hsl(232,55%,60%)] text-white shadow-lg shadow-[hsl(232,55%,60%)]/20'
+                                                        : isDark ? 'bg-white/[0.03] border-white/[0.04] text-[hsl(240,10%,96%)] hover:bg-white/[0.06]' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
                                                     }`}
                                                 >
                                                     {opt.val != null && <Star size={14} className={isActive ? 'text-white fill-white' : 'text-yellow-500 fill-yellow-500'} />}
@@ -279,8 +279,8 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => togglePriceLevel(level)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center font-bold text-sm transition-all ${isActive
-                                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                        : isDark ? 'bg-white/5 border-white/5 text-white hover:bg-white/10' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
+                                                        ? 'bg-[hsl(232,55%,60%)] border-[hsl(232,55%,60%)] text-white shadow-lg shadow-[hsl(232,55%,60%)]/20'
+                                                        : isDark ? 'bg-white/[0.03] border-white/[0.04] text-[hsl(240,10%,96%)] hover:bg-white/[0.06]' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
                                                     }`}
                                                 >
                                                     {level}
@@ -393,7 +393,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className={`absolute bottom-0 left-0 right-0 p-6 pb-8 md:p-8 backdrop-blur-md border-t ${isDark ? 'bg-[#1a1a1a]/80 border-white/5' : 'bg-white/80 border-gray-100'}`}>
+                        <div className={`absolute bottom-0 left-0 right-0 p-6 pb-8 md:p-8 backdrop-blur-md border-t ${isDark ? 'bg-[hsl(222,14%,11%)]/80 border-white/[0.04]' : 'bg-white/80 border-gray-100'}`}>
                             <button
                                 onClick={handleApply}
                                 className="w-full h-16 bg-blue-600 text-white font-bold rounded-[20px] shadow-xl shadow-blue-500/30 active:scale-[0.98] hover:bg-blue-700 transition-all text-base"

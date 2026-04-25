@@ -45,15 +45,14 @@ export function UniversalHeader() {
     }, [isMenuOpen])
 
     const glassStyle = isDark
-        ? "bg-black/20 border-white/5 text-white hover:bg-white/10"
+        ? "bg-white/[0.04] border-white/[0.06] text-[hsl(240,10%,96%)] hover:bg-white/[0.08]"
         : "bg-white/20 border-white/20 text-gray-900 hover:bg-gray-100/50"
 
-    const textStyle = isDark ? "text-white" : "text-gray-900"
+    const textStyle = isDark ? "text-[hsl(240,10%,96%)]" : "text-gray-900"
 
-    // No header background — items have their own floating glass styling.
-    // On scroll: very subtle fade so content behind header is readable.
+    // Premium header background — subtle lift on scroll
     const headerBgClass = isScrolled
-        ? (isDark ? 'bg-black/20 backdrop-blur-md' : 'bg-white/20 backdrop-blur-md')
+        ? (isDark ? 'bg-[hsl(222,14%,7%)]/80 backdrop-blur-xl border-b border-white/[0.04]' : 'bg-white/20 backdrop-blur-md')
         : ''
 
     return (
@@ -76,8 +75,8 @@ export function UniversalHeader() {
                         className="flex justify-between items-center w-full h-10"
                     >
                             {/* Logo Capsule */}
-                            <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all backdrop-blur-md px-3 py-1.5 rounded-full border shadow-sm ${isDark ? 'bg-white/10 border-white/10' : 'bg-white/40 border-white/40'}`}>
-                                <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
+                            <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all px-3 py-1.5 rounded-full border shadow-sm ${isDark ? 'bg-white/[0.04] border-white/[0.06]' : 'bg-white/40 border-white/40'}`}>
+                                <div className="w-7 h-7 bg-[hsl(232,55%,60%)] rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
                                 <span className={`font-bold text-xs md:text-sm tracking-tight ${textStyle}`}>GastroMap</span>
                             </Link>
 
@@ -122,7 +121,7 @@ export function UniversalHeader() {
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
                                                 transition={{ duration: 0.15 }}
-                                                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden border backdrop-blur-xl shadow-xl ${isDark ? 'bg-black/80 border-white/10' : 'bg-white/90 border-gray-200'}`}
+                                                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden border backdrop-blur-xl shadow-xl ${isDark ? 'bg-[hsl(222,14%,11%)] border-white/[0.06]' : 'bg-white/90 border-gray-200'}`}
                                             >
                                                 <button
                                                     onClick={() => { toggleTheme(); setIsMenuOpen(false) }}

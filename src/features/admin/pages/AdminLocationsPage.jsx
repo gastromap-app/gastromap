@@ -202,7 +202,7 @@ const AdminLocationsPage = () => {
 
             <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
+            <div className="bg-white dark:bg-[hsl(222,14%,11%)] rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
                 <LocationFilters
                     view={statusFilter}
                     onViewChange={setStatusFilter}
@@ -234,7 +234,7 @@ const AdminLocationsPage = () => {
 
                 {/* Pagination */}
                 {statusFilter !== 'reviews' && totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-slate-800/50">
+                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-white/[0.04]">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => p - 1)}
@@ -265,25 +265,25 @@ const AdminLocationsPage = () => {
                                     {pendingReviews.map((rev) => (
                                         <div
                                             key={rev.id}
-                                            className="bg-white dark:bg-slate-900/50 rounded-[24px] border border-slate-100 dark:border-slate-800/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                                            className="bg-white dark:bg-[hsl(222,14%,11%)] rounded-[24px] border border-slate-100 dark:border-white/[0.06] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                                         >
                                             <div className="flex items-start gap-4 flex-1 min-w-0">
-                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-[hsl(232,55%,60%)]/10 flex items-center justify-center text-indigo-600 dark:text-[hsl(232,55%,60%)] shrink-0">
                                                     <User size={22} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{rev.profiles?.name || 'Anonymous'}</p>
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-[hsl(240,10%,96%)]">{rev.profiles?.name || 'Anonymous'}</p>
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
                                                             <MapPin size={10} /> {rev.locations?.title || rev.location_id}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-1 mt-1">
                                                         {[1,2,3,4,5].map(s => (
-                                                            <Star key={s} size={12} className={s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'} />
+                                                            <Star key={s} size={12} className={s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 dark:text-[hsl(220,6%,30%)] fill-slate-200 dark:fill-[hsl(220,6%,30%)]'} />
                                                         ))}
                                                     </div>
-                                                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">{rev.review_text}</p>
+                                                    <p className="text-sm text-slate-600 dark:text-[hsl(220,6%,57%)] mt-2 line-clamp-2">{rev.review_text}</p>
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
                                                         <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString('ru-RU')}
                                                     </p>
@@ -292,7 +292,7 @@ const AdminLocationsPage = () => {
                                             <div className="flex gap-2 w-full sm:w-auto">
                                                 <button
                                                     onClick={() => handleRejectReview(rev.id)}
-                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 active:scale-95 transition-all"
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(222,12%,16%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
                                                 >
                                                     Отклонить
                                                 </button>

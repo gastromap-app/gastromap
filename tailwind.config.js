@@ -15,7 +15,7 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['Inter', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
             },
             borderRadius: {
                 lg: 'var(--radius)',
@@ -72,6 +72,11 @@ export default {
                     '3': 'hsl(var(--chart-3))',
                     '4': 'hsl(var(--chart-4))',
                     '5': 'hsl(var(--chart-5))'
+                },
+                surface: {
+                    DEFAULT: 'hsl(222 14% 11%)',
+                    elevated: 'hsl(222 12% 13%)',
+                    foreground: 'hsl(240 10% 96%)'
                 },
                 sidebar: {
                     DEFAULT: 'hsl(var(--sidebar-background))',

@@ -59,7 +59,7 @@ const Field = ({ label, required, hint, children, className }) => (
     </div>
 )
 
-const input = "w-full px-4 py-4 sm:py-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 rounded-xl border border-slate-200/80 dark:border-white/[0.08]/50 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all"
+const input = "w-full px-4 py-4 sm:py-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 rounded-xl border border-slate-200/80 dark:border-white/[0.04] text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all"
 const textarea = cn(input, "resize-none min-h-[120px]")
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -254,13 +254,13 @@ const LocationFormSlideOver = ({
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: '100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-                    className="w-full sm:max-w-[95vw] lg:aspect-video h-[100dvh] sm:h-auto sm:max-h-[95vh] bg-white dark:bg-[hsl(220,20%,3%)] pointer-events-auto flex flex-col shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] rounded-t-[32px] sm:rounded-[40px] overflow-hidden border-t sm:border border-white/40 dark:border-white/[0.06]/50"
+                    className="w-full sm:max-w-[95vw] lg:aspect-video h-[100dvh] sm:h-auto sm:max-h-[95vh] bg-white dark:bg-[hsl(220,20%,3%)] pointer-events-auto flex flex-col shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] rounded-t-[32px] sm:rounded-[40px] overflow-hidden border-t sm:border border-white/40 dark:border-white/[0.03]"
                 >
                     {/* ── Drag Handle (Mobile Only) ── */}
                     <div className="sm:hidden w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
                     {/* ── Header ── */}
-                    <div className="px-5 sm:px-12 py-4 sm:py-8 border-b border-slate-100/50 dark:border-white/[0.06]/50 flex items-center gap-4 sm:gap-8 shrink-0 bg-white/90 dark:bg-[hsl(220,20%,6%)]/90 backdrop-blur-2xl z-20 sticky top-0 sm:relative">
+                    <div className="px-5 sm:px-12 py-4 sm:py-8 border-b border-slate-100/50 dark:border-white/[0.03] flex items-center gap-4 sm:gap-8 shrink-0 bg-white/90 dark:bg-[hsl(220,20%,6%)]/90 backdrop-blur-2xl z-20 sticky top-0 sm:relative">
                         {/* Safe area padding for mobile notches */}
                         <div className="absolute top-0 left-0 right-0 h-[env(safe-area-inset-top)] bg-white/90 dark:bg-[hsl(220,20%,6%)]/90 pointer-events-none" />
                         
@@ -299,7 +299,7 @@ const LocationFormSlideOver = ({
                                 {/* ── Left Column: Core Info & Location ── */}
                                     <div className="space-y-6 sm:space-y-10">
                                         {/* Google Places Autocomplete */}
-                                        <div className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 p-5 sm:p-6 rounded-2xl sm:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 space-y-4">
+                                        <div className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 p-5 sm:p-6 rounded-2xl sm:rounded-[32px] border border-slate-100 dark:border-white/[0.03] space-y-4">
                                             <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-indigo-600 dark:text-indigo-400">
                                                 <Wand2 size={14} className="sm:w-3.5 sm:h-3.5" />
                                                 Автозаполнение Google
@@ -470,7 +470,7 @@ const LocationFormSlideOver = ({
                                             />
                                         </Field>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-5 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl sm:rounded-[24px] border border-slate-100 dark:border-white/[0.06]/50">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-5 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl sm:rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
                                             <Field label="Широта">
                                                 <input
                                                     type="number" step="any"
@@ -563,7 +563,7 @@ const LocationFormSlideOver = ({
 
                                         <Field label="Хиты меню" hint="Enter для добавления">
                                             <div className="space-y-3">
-                                                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl border border-slate-100 dark:border-white/[0.06]/50">
+                                                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
                                                     {whatToTry.length === 0 && <span className="text-[11px] text-slate-400 italic">Список пуст...</span>}
                                                     {whatToTry.map((dish, i) => (
                                                         <motion.span
@@ -596,7 +596,7 @@ const LocationFormSlideOver = ({
                                     </div>
 
                                     {/* Фотографии */}
-                                        <div className="p-4 sm:p-6 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[24px] sm:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 space-y-6">
+                                        <div className="p-4 sm:p-6 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[24px] sm:rounded-[32px] border border-slate-100 dark:border-white/[0.03] space-y-6">
                                             {photos.length > 0 ? (
                                                 <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-3">
                                                     {photos.map((url, idx) => (
@@ -771,7 +771,7 @@ const LocationFormSlideOver = ({
                                     </div>
 
                                     {/* AI & Semantics */}
-                                    <div className="bg-slate-50 dark:bg-[hsl(220,20%,6%)]/40 rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 overflow-hidden transition-all shadow-sm">
+                                    <div className="bg-slate-50 dark:bg-[hsl(220,20%,6%)]/40 rounded-[32px] border border-slate-100 dark:border-white/[0.03] overflow-hidden transition-all shadow-sm">
                                         <button
                                             onClick={() => setShowAdvanced(v => !v)}
                                             className="w-full flex items-center justify-between px-6 py-5 text-slate-900 dark:text-white group"
@@ -810,7 +810,7 @@ const LocationFormSlideOver = ({
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                                                                     <p className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">AI Context</p>
                                                                 </div>
-                                                                <div className="bg-white dark:bg-[hsl(220,20%,3%)]/40 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.06]/50">
+                                                                <div className="bg-white dark:bg-[hsl(220,20%,3%)]/40 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
                                                                     <p className="text-[12px] text-slate-600 dark:text-[hsl(220,10%,55%)] leading-relaxed italic">
                                                                         "{formData.ai_context}"
                                                                     </p>

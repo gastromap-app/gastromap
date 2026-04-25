@@ -28,7 +28,7 @@ const ModerationQueueView = ({
             {pendingLocations.map(loc => (
                 <div
                     key={loc.id}
-                    className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-indigo-500/10 transition-all"
+                    className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[32px] border border-slate-100 dark:border-white/[0.03] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-indigo-500/10 transition-all"
                 >
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 rounded-[24px] bg-white dark:bg-[hsl(220,20%,9%)] flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform">

@@ -77,7 +77,7 @@ function GeoCoverCard({ item, cover, geoType }) {
     const isDirty = !!(selectedFile || urlInput)
 
     return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/60 rounded-[24px] border border-slate-100 dark:border-white/[0.06]/50 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/60 rounded-[24px] border border-slate-100 dark:border-white/[0.03] overflow-hidden shadow-sm">
             {/* Image area */}
             <div
                 className="relative h-40 bg-slate-100 dark:bg-[hsl(220,20%,9%)] cursor-pointer group"

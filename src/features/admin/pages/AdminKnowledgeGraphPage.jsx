@@ -59,7 +59,7 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ delay: (idx % 15) * 0.03 }}
-            className="group flex items-center gap-4 px-5 py-3.5 bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/60 rounded-2xl hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all"
+            className="group flex items-center gap-4 px-5 py-3.5 bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.04] rounded-2xl hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all"
         >
             {/* Icon */}
             <div className={cn('w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center', accent)}>
@@ -84,22 +84,22 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
             {/* Tags preview */}
             <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
                 {isCuisine && (item.typical_dishes || []).slice(0, 3).map((d, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.04]">
                         {d}
                     </span>
                 ))}
                 {isDish && (item.dietary_tags || []).slice(0, 2).map((t, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.04]">
                         {t}
                     </span>
                 ))}
                 {isVibe && (item.synonyms || []).slice(0, 3).map((s, i) => (
-                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
+                    <span key={i} className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.04]">
                         {s}
                     </span>
                 ))}
                 {!isCuisine && !isDish && !isVibe && item.flavor_profile && (
-                    <span className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.08]/50">
+                    <span className="px-2 py-1 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-lg text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] border border-slate-100 dark:border-white/[0.04]">
                         {item.flavor_profile}
                     </span>
                 )}
@@ -507,7 +507,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
     }
 
     return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
             {/* Header row */}
             <button
                 onClick={() => setOpen(v => !v)}
@@ -571,7 +571,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                 {results.dishes.map(dish => {
                                                     const already = isDuplicate(dish.name, 'dish')
                                                     return (
-                                                        <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.08]/30 opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.08]/50')}>
+                                                        <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.02] opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.04]')}>
                                                             <div className="flex items-center gap-3">
                                                                 {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
                                                                 <div>
@@ -605,7 +605,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                 {results.ingredients.map(ing => {
                                                     const already = isDuplicate(ing.name, 'ingredient')
                                                     return (
-                                                        <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.08]/30 opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.08]/50')}>
+                                                        <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.02] opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.04]')}>
                                                             <div className="flex items-center gap-3">
                                                                 {ing.image && <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
                                                                 <div>
@@ -1016,7 +1016,7 @@ const AdminKnowledgeGraphPage = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.06 }}
-                        className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm flex items-center gap-4"
+                        className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm flex items-center gap-4"
                     >
                         <div className={cn('w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center flex-shrink-0', s.bg)}>
                             <s.Icon size={18} className={s.color} />
@@ -1105,12 +1105,12 @@ const AdminKnowledgeGraphPage = () => {
             />
 
             {/* ── Main list card ── */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col">
 
                 {/* Toolbar */}
-                <div className="p-4 lg:p-6 border-b border-slate-50 dark:border-white/[0.06]/50 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="p-4 lg:p-6 border-b border-slate-50 dark:border-white/[0.03] flex flex-col sm:flex-row sm:items-center gap-4">
                     {/* Tabs */}
-                    <div className="flex gap-1 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/50 p-1 rounded-2xl border border-slate-100 dark:border-white/[0.06]/50 flex-shrink-0">
+                    <div className="flex gap-1 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/50 p-1 rounded-2xl border border-slate-100 dark:border-white/[0.03] flex-shrink-0">
                         {TABS.map(tab => {
                             const active = activeTab === tab.id
                             return (
@@ -1230,7 +1230,7 @@ const AdminKnowledgeGraphPage = () => {
 
                 {/* Footer count */}
                 {filteredItems.length > 0 && (
-                    <div className="px-6 py-3 border-t border-slate-50 dark:border-white/[0.06]/50 flex items-center justify-between">
+                    <div className="px-6 py-3 border-t border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
                         <p className="text-xs text-slate-400 font-medium">
                             Showing {filteredItems.length} of {counts[activeTab]} {activeTab}
                         </p>

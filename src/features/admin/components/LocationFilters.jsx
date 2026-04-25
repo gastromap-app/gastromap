@@ -68,7 +68,7 @@ const LocationFilters = ({
     ).sort((a, b) => a.label.localeCompare(b.label))
 
     return (
-        <div className="flex flex-col border-b border-slate-100 dark:border-white/[0.06]/50 bg-white dark:bg-[hsl(220,20%,6%)]/50">
+        <div className="flex flex-col border-b border-slate-100 dark:border-white/[0.03] bg-white dark:bg-[hsl(220,20%,6%)]/50">
             {/* Верхняя панель: Поиск и Переключатель вида */}
             <div className="px-4 py-4 lg:px-10 lg:py-6 flex flex-wrap items-center justify-between gap-4">
                 
@@ -145,7 +145,7 @@ const LocationFilters = ({
                         )}
                     </button>
 
-                    <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[hsl(220,20%,3%)]/40 rounded-2xl border border-slate-200 dark:border-white/[0.06]/50 shrink-0 shadow-inner">
+                    <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[hsl(220,20%,3%)]/40 rounded-2xl border border-slate-200 dark:border-white/[0.03] shrink-0 shadow-inner">
                         <button
                             onClick={() => onViewModeChange('list')}
                             className={cn(
@@ -181,7 +181,7 @@ const LocationFilters = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden bg-slate-50/50 dark:bg-[hsl(220,20%,3%)]/10 border-t border-slate-100 dark:border-white/[0.06]/50"
+                        className="overflow-hidden bg-slate-50/50 dark:bg-[hsl(220,20%,3%)]/10 border-t border-slate-100 dark:border-white/[0.03]"
                     >
                         <div className="px-4 py-6 lg:px-10 lg:py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                             
@@ -325,7 +325,7 @@ const LocationFilters = ({
                             </div>
                         </div>
                         
-                        <div className="px-4 py-3 lg:px-10 bg-slate-100/50 dark:bg-[hsl(220,20%,3%)]/20 border-t border-slate-100 dark:border-white/[0.06]/50 flex justify-end">
+                        <div className="px-4 py-3 lg:px-10 bg-slate-100/50 dark:bg-[hsl(220,20%,3%)]/20 border-t border-slate-100 dark:border-white/[0.03] flex justify-end">
                             <button 
                                 onClick={() => {
                                     onCategoryChange('All')

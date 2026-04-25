@@ -91,7 +91,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                         <div className="w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mb-6" />
                     )}
 
-                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-white/[0.03] mb-2">
                         Управление объектом
                     </div>
 

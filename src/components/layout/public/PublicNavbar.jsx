@@ -30,7 +30,7 @@ const PublicNavbar = () => {
             style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
         >
             <div className="w-full pointer-events-auto">
-                <div className="bg-white/80 dark:bg-[hsl(220,20%,6%)]/80 backdrop-blur-xl border border-white/20 dark:border-white/[0.06]/50 p-2 rounded-[20px] md:rounded-full flex items-center justify-between gap-4 shadow-sm">
+                <div className="bg-white/80 dark:bg-[hsl(220,20%,6%)]/80 backdrop-blur-xl border border-white/20 dark:border-white/[0.03] p-2 rounded-[20px] md:rounded-full flex items-center justify-between gap-4 shadow-sm">
                     <Link to="/" className="flex items-center gap-3 hover:scale-105 transition-transform text-base-content group">
                         <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-8 h-8 md:w-10 md:h-10 object-cover rounded-full" />
                         <span className="font-bold text-sm md:text-lg tracking-tight">GastroMap</span>

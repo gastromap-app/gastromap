@@ -36,7 +36,7 @@ const NAV_ITEMS = [
 
 function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme, theme }) {
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-[hsl(220,20%,6%)] border-r border-slate-100 dark:border-white/[0.06]/50 transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
+        <div className="flex flex-col h-full bg-white dark:bg-[hsl(220,20%,6%)] border-r border-slate-100 dark:border-white/[0.03] transition-all duration-300 relative pt-[env(safe-area-inset-top)]">
             <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
             {/* Logo Section */}
@@ -76,7 +76,7 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
             </nav>
 
             {/* Footer Actions */}
-            <div className="p-6 bg-slate-50/30 dark:bg-[hsl(220,20%,6%)]/30 border-t border-slate-100 dark:border-white/[0.06]/50 space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
+            <div className="p-6 bg-slate-50/30 dark:bg-[hsl(220,20%,6%)]/30 border-t border-slate-100 dark:border-white/[0.03] space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
                 <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
                     <ArrowLeft size={18} />
                     {!collapsed && <span>Back to App</span>}
@@ -212,7 +212,7 @@ export default function AdminLayout() {
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
                 {/* Top Header */}
-                <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-[hsl(220,20%,3%)]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/[0.06]/50 flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
+                <header className="flex-none min-h-[64px] md:min-h-[80px] bg-white/80 dark:bg-[hsl(220,20%,3%)]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/[0.03] flex items-center justify-between px-4 md:px-10 z-20 transition-all relative pt-[env(safe-area-inset-top)] pb-2">
                     <div className="flex items-center gap-3 md:gap-6">
                         <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl shadow-sm" aria-label="Open menu">
                             <Menu size={20} />
@@ -252,7 +252,7 @@ export default function AdminLayout() {
                         </div>
 
                         {/* Action Tools */}
-                        <div className="flex items-center gap-2 border-l border-slate-200/50 dark:border-white/[0.06]/50 pl-3 lg:pl-6 relative">
+                        <div className="flex items-center gap-2 border-l border-slate-200/50 dark:border-white/[0.03] pl-3 lg:pl-6 relative">
                             <button
                                 aria-label="Notifications"
                                 onClick={() => setShowNotifications(!showNotifications)}
@@ -321,7 +321,7 @@ export default function AdminLayout() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-4 pl-3 lg:pl-6 border-l border-slate-200/50 dark:border-white/[0.06]/50">
+                        <div className="flex items-center gap-4 pl-3 lg:pl-6 border-l border-slate-200/50 dark:border-white/[0.03]">
                             <div className="hidden xl:flex flex-col items-end min-w-0">
                                 <p className="text-sm font-bold text-slate-900 dark:text-white leading-none truncate w-28 text-right">
                                     {user?.name || 'Admin'}

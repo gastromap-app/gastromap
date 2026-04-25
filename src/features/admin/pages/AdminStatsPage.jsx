@@ -141,7 +141,7 @@ const AdminStatsPage = () => {
                                     'h-9 px-3 rounded-[12px] text-[10px] font-bold uppercase tracking-widest transition-all',
                                     period === d
                                         ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                                        : 'bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.08]/60 text-slate-500 dark:text-[hsl(220,10%,55%)] hover:border-slate-300'
+                                        : 'bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.04] text-slate-500 dark:text-[hsl(220,10%,55%)] hover:border-slate-300'
                                 )}
                             >{d}д</button>
                         ))}
@@ -212,7 +212,7 @@ const AdminStatsPage = () => {
                 </div>
 
                 {/* Engagement Panel */}
-                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.03] shadow-sm space-y-3">
                     <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Активность</h2>
 
                     {loadingEng ? (

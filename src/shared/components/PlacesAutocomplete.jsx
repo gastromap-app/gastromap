@@ -250,7 +250,7 @@ export default function PlacesAutocomplete({
                             </button>
                         ))}
                     </div>
-                    <div className="px-3.5 py-2 border-t border-slate-100 dark:border-white/[0.08]/50 flex items-center gap-1.5">
+                    <div className="px-3.5 py-2 border-t border-slate-100 dark:border-white/[0.04] flex items-center gap-1.5">
                         <span className="text-[10px] text-slate-400">Powered by</span>
                         <span className="text-[10px] font-bold text-slate-500">Google Places</span>
                     </div>

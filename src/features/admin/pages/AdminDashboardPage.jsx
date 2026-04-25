@@ -43,7 +43,7 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
 const ActivityRow = ({ item }) => (
     <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-all">
         <div className="flex items-center gap-4 min-w-0">
-            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06]/50 flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
+            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
                 {item.user_name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div className="min-w-0">
@@ -61,7 +61,7 @@ const ActivityRow = ({ item }) => (
 
 const EmptyRow = () => (
     <div className="flex items-center gap-4 p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px]">
-        <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06]/50 flex items-center justify-center text-slate-300 shrink-0">
+        <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center text-slate-300 shrink-0">
             <Activity size={16} />
         </div>
         <div>
@@ -113,8 +113,8 @@ const AdminDashboardPage = () => {
                 <div className="lg:col-span-1 space-y-5">
 
                     {/* Analytics Card */}
-                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.06]/50">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <BarChart3 size={16} className="text-indigo-500" />
                                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Аналитика</h2>
@@ -146,7 +146,7 @@ const AdminDashboardPage = () => {
                     </div>
 
                     {/* AI Insight Card */}
-                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 p-5 shadow-sm relative overflow-hidden">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm relative overflow-hidden">
                         <div className="absolute -right-3 -bottom-3 opacity-[0.04] dark:opacity-[0.06] pointer-events-none">
                             <Bot size={88} />
                         </div>
@@ -178,8 +178,8 @@ const AdminDashboardPage = () => {
                     <LocationHierarchyExplorer />
 
                     {/* Recent Activity Card */}
-                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.06]/50">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <Clock size={16} className="text-slate-400" />
                                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Последние действия</h2>

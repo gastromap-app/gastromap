@@ -42,7 +42,7 @@ const LocationStats = ({ locationsList = [], pendingLocations = [] }) => {
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ delay: i * 0.1, duration: 0.4 }} 
                     key={i} 
-                    className="bg-white dark:bg-[hsl(220,20%,6%)]/40 p-4 lg:p-6 rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/20 transition-all relative overflow-hidden"
+                    className="bg-white dark:bg-[hsl(220,20%,6%)]/40 p-4 lg:p-6 rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm flex flex-col sm:flex-row items-center gap-3 lg:gap-5 group hover:border-indigo-500/20 transition-all relative overflow-hidden"
                 >
                     <div className={cn(
                         "w-10 h-10 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner overflow-hidden relative transition-transform group-hover:scale-105", 

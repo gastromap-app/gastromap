@@ -111,16 +111,16 @@ const LocationHierarchyExplorer = ({ className }) => {
     const { items, type, parentId } = getCurrentItems()
 
     if (isLoading) return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
             <Loader2 size={18} className="animate-spin" />
             <span className="text-sm font-medium">Loading locations...</span>
         </div>
     )
 
     return (
-        <div className={cn("bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.06]/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
+        <div className={cn("bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
             {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.06]/50">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                 <div className="flex items-center gap-2">
                     {level !== 'countries' && (
                         <button onClick={handleBack} className="p-1.5 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-all text-slate-400 mr-1">

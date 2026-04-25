@@ -206,7 +206,7 @@ function AutocompleteInput({
                                         onSelect(s)
                                         setOpen(false)
                                     }}
-                                    className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,15%)] transition-colors border-b border-slate-100 dark:border-white/[0.08]/50 last:border-0"
+                                    className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,15%)] transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-0"
                                 >
                                     <span className="font-semibold">{s.name || s.street}</span>
                                     {s.displayName && (

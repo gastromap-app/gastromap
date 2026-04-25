@@ -40,7 +40,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
             <div className="hidden lg:block overflow-x-auto custom-scrollbar font-black leading-none">
                 <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
-                        <tr className="bg-slate-50/50 dark:bg-[hsl(220,20%,6%)]/50 border-b border-slate-50 dark:border-white/[0.06]/50">
+                        <tr className="bg-slate-50/50 dark:bg-[hsl(220,20%,6%)]/50 border-b border-slate-50 dark:border-white/[0.03]">
                             <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-[0.2em] pl-10 lg:pl-12">Объект</th>
                             <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-[0.2em]">Локация</th>
                             <th className="px-6 py-5 text-[10px] font-black uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-[0.2em]">Рейтинг</th>

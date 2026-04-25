@@ -75,4 +75,4 @@ export const adminBtnPrimary =
     'inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all'
 
 export const adminBtnSecondary =
-    'inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.08]/60 text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-xs uppercase tracking-widest shadow-sm backdrop-blur-md transition-all'
+    'inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white dark:bg-[hsl(220,20%,6%)]/60 border border-slate-200 dark:border-white/[0.04] text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 font-bold text-xs uppercase tracking-widest shadow-sm backdrop-blur-md transition-all'

@@ -169,8 +169,8 @@ const AdminNotificationsPage = () => {
             />
 
             {/* Permission Status */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Bell size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Permission Status</h2>
                 </div>
@@ -242,8 +242,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* Test Notification */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <TestTube size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Notifications</h2>
                 </div>
@@ -284,8 +284,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* User Notification Types */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Users size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">User Notification Types</h2>
                 </div>
@@ -304,8 +304,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* Admin Notification Types */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Shield size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Admin Notification Types</h2>
                 </div>

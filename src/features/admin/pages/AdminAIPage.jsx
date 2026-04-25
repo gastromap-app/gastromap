@@ -283,7 +283,7 @@ const ToolCard = ({ tool }) => {
     const fn = tool.function
     const params = fn.parameters?.properties || {}
     return (
-        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <Code size={16} className="text-indigo-500" />
@@ -318,10 +318,10 @@ const ToolCard = ({ tool }) => {
 const CollapsibleSection = ({ title, icon: Icon, iconColor = 'text-indigo-500', defaultOpen = false, children }) => {
     const [open, setOpen] = useState(defaultOpen)
     return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2 hover:bg-slate-50/50 dark:hover:bg-[hsl(220,20%,12%)]/20 transition-colors"
+                className="w-full px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2 hover:bg-slate-50/50 dark:hover:bg-[hsl(220,20%,12%)]/20 transition-colors"
             >
                 <Icon size={16} className={iconColor} />
                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white flex-1 text-left">{title}</h2>
@@ -604,8 +604,8 @@ const AdminAIPage = () => {
             />
 
             {/* 2. Active Agents */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Bot size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Active Agents</h2>
                 </div>
@@ -649,7 +649,7 @@ const AdminAIPage = () => {
                             { icon: UserCheck, label: 'User Profile', desc: 'Preferences, Foodie DNA, visit history, favorites', color: 'text-rose-500 bg-rose-100 dark:bg-rose-500/20' },
                         ].map((step, i) => (
                             <div key={step.label} className="relative">
-                                <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50 h-full">
+                                <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.04] h-full">
                                     <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-3', step.color)}>
                                         <step.icon size={18} />
                                     </div>
@@ -673,15 +673,15 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 4. AI Models */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Cpu size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter Free)</h2>
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Primary Model */}
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">Primary Model</h3>
                                 <button
@@ -726,7 +726,7 @@ const AdminAIPage = () => {
                         </div>
 
                         {/* Fallback Model */}
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">Fallback Model</h3>
                                 <button
@@ -795,8 +795,8 @@ const AdminAIPage = () => {
                                     className={cn(
                                         'flex items-center gap-3 p-3 rounded-xl border transition-all',
                                         enabled
-                                            ? 'bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border-slate-100 dark:border-white/[0.08]/50'
-                                            : 'bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/10 border-slate-200/50 dark:border-white/[0.08]/30 opacity-50'
+                                            ? 'bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border-slate-100 dark:border-white/[0.04]'
+                                            : 'bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/10 border-slate-200/50 dark:border-white/[0.02] opacity-50'
                                     )}
                                 >
                                     <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex-shrink-0">
@@ -849,8 +849,8 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 6. API Key */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Shield size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter API Key</h2>
                 </div>
@@ -886,7 +886,7 @@ const AdminAIPage = () => {
                                 {apiKeyStatus === 'validating' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                                 <span className="ml-2">Test Key</span>
                             </button>
-                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border border-slate-100 dark:border-white/[0.08]/50">
+                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border border-slate-100 dark:border-white/[0.04]">
                                 <div className={cn(
                                     "w-2 h-2 rounded-full",
                                     apiKeyStatus === 'valid' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
@@ -918,7 +918,7 @@ const AdminAIPage = () => {
                 <div className="p-6 space-y-6">
                     {/* Temperature */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Thermometer size={14} className="text-indigo-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Temperature</h3>
@@ -937,7 +937,7 @@ const AdminAIPage = () => {
                             </div>
                             <p className="text-xs text-slate-400">Higher = more creative, Lower = more focused</p>
                         </div>
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Thermometer size={14} className="text-emerald-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant Temperature</h3>
@@ -960,7 +960,7 @@ const AdminAIPage = () => {
 
                     {/* Max Tokens */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Hash size={14} className="text-indigo-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Max Tokens</h3>
@@ -976,7 +976,7 @@ const AdminAIPage = () => {
                             />
                             <p className="text-xs text-slate-400 mt-1.5">256 – 4096 tokens</p>
                         </div>
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Hash size={14} className="text-emerald-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant Max Tokens</h3>
@@ -995,7 +995,7 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* Tone */}
-                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={14} className="text-indigo-500" />
                             <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Tone</h3>
@@ -1025,8 +1025,8 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 8. System Prompts (with Live Preview) */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <FileText size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">System Prompts</h2>
                 </div>
@@ -1035,7 +1035,7 @@ const AdminAIPage = () => {
                         Customize AI behavior. Leave empty to use default prompts. Changes take effect immediately after saving.
                     </p>
                     {/* GastroGuide Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
@@ -1077,7 +1077,7 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* GastroAssistant Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
@@ -1109,7 +1109,7 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* KG Agent Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
@@ -1184,7 +1184,7 @@ const AdminAIPage = () => {
                         <motion.div
                             initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.08]/50"
+                            className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]"
                         >
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
@@ -1222,8 +1222,8 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 10. Enhanced Test Panel */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Play size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Model</h2>
                 </div>

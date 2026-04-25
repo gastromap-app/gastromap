@@ -89,7 +89,7 @@ const ItemPreviewCard = ({ type, item, selected, onToggle, status = 'new' }) => 
                         config.glow,
                         'scale-[1.005]',
                       ].join(' ')
-                    : 'border-l-transparent border-slate-100 dark:border-white/[0.06]/50 bg-white/50 dark:bg-[hsl(220,20%,6%)]/20 opacity-50 hover:opacity-70 hover:border-slate-200 dark:hover:border-slate-700',
+                    : 'border-l-transparent border-slate-100 dark:border-white/[0.03] bg-white/50 dark:bg-[hsl(220,20%,6%)]/20 opacity-50 hover:opacity-70 hover:border-slate-200 dark:hover:border-slate-700',
             )}
             onClick={onToggle}
         >
@@ -644,11 +644,11 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
     )
 
     return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
 
             {/* ── Header ── */}
             <div
-                className="flex items-center justify-between px-5 lg:px-7 py-4 lg:py-5 border-b border-slate-50 dark:border-white/[0.06]/50 cursor-pointer"
+                className="flex items-center justify-between px-5 lg:px-7 py-4 lg:py-5 border-b border-slate-50 dark:border-white/[0.03] cursor-pointer"
                 onClick={() => setIsCollapsed(v => !v)}
             >
                 <div className="flex items-center gap-3">
@@ -752,7 +752,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                     </div>
                                                 )}
                                                 {msg.role === 'agent' && msg.skipped && ((msg.skipped.cuisines?.length || 0) + (msg.skipped.dishes?.length || 0) + (msg.skipped.ingredients?.length || 0)) > 0 && (
-                                                    <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-100 dark:border-white/[0.08]/50 pt-2 space-y-0.5">
+                                                    <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-100 dark:border-white/[0.04] pt-2 space-y-0.5">
                                                         <p className="font-semibold text-slate-500 dark:text-[hsl(220,10%,55%)]">Already in KG (skipped):</p>
                                                         {msg.skipped.cuisines?.length > 0 && <p>• {msg.skipped.cuisines.length} cuisine{msg.skipped.cuisines.length > 1 ? 's' : ''}: {msg.skipped.cuisines.join(', ')}</p>}
                                                         {msg.skipped.dishes?.length > 0 && <p>• {msg.skipped.dishes.length} dish{msg.skipped.dishes.length > 1 ? 'es' : ''}: {msg.skipped.dishes.slice(0,5).join(', ')}{msg.skipped.dishes.length > 5 ? ` +${msg.skipped.dishes.length - 5} more` : ''}</p>}
@@ -869,7 +869,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 rounded-2xl p-4 border border-slate-100 dark:border-white/[0.08]/50"
+                                        className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 rounded-2xl p-4 border border-slate-100 dark:border-white/[0.04]"
                                     >
                                         <div className="flex items-center justify-between mb-3">
                                             <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-1.5">
@@ -997,7 +997,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                     <button
                                                         key={i}
                                                         onClick={() => handleSend(p)}
-                                                        className="text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 border border-slate-100 dark:border-white/[0.08]/50 px-3 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all text-left max-w-[180px] truncate"
+                                                        className="text-[10px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 border border-slate-100 dark:border-white/[0.04] px-3 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all text-left max-w-[180px] truncate"
                                                         title={p}
                                                     >
                                                         {p}
@@ -1017,7 +1017,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                                                 onKeyDown={handleKeyDown}
                                                 placeholder="Add Italian cuisine with pasta dishes… or Enrich KG with Thai spices…"
                                                 rows={1}
-                                                className="w-full resize-none bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.08]/50 rounded-2xl px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-700 transition-all leading-relaxed overflow-hidden"
+                                                className="w-full resize-none bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.04] rounded-2xl px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-700 transition-all leading-relaxed overflow-hidden"
                                                 style={{ minHeight: 46, maxHeight: 120 }}
                                             />
                                             <span className="absolute right-3 bottom-2.5 text-[9px] text-slate-300 dark:text-[hsl(220,10%,55%)] pointer-events-none hidden sm:block">
@@ -1039,7 +1039,7 @@ const KGAIAgent = ({ cuisines = [], dishes = [], ingredients = [], onSaved, onBa
                             {phase === 'thinking' && (
                                 <div className="relative flex items-end gap-2 opacity-40 pointer-events-none">
                                     <div className="flex-1">
-                                        <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.08]/50 rounded-2xl px-4 py-3 text-sm text-slate-300 h-11">
+                                        <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border border-slate-200 dark:border-white/[0.04] rounded-2xl px-4 py-3 text-sm text-slate-300 h-11">
                                             Generating…
                                         </div>
                                     </div>

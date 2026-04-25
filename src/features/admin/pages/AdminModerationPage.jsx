@@ -169,7 +169,7 @@ export default function AdminModerationPage() {
             <div className="md:hidden space-y-3">
                 <AnimatePresence>
                     {filteredQueue.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.06]/50">
+                        <div className="p-8 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
                             Очередь модерации пуста.
                         </div>
                     ) : (
@@ -181,7 +181,7 @@ export default function AdminModerationPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                                 onClick={() => setSelectedItem(item)}
-                                className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[20px] border border-slate-100 dark:border-white/[0.06]/50 p-4 active:scale-[0.99] transition-transform"
+                                className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[20px] border border-slate-100 dark:border-white/[0.03] p-4 active:scale-[0.99] transition-transform"
                             >
                                 <div className="flex items-start gap-3">
                                     <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
@@ -219,7 +219,7 @@ export default function AdminModerationPage() {
             </div>
 
             {/* Queue List — desktop table */}
-            <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden">
+            <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -383,7 +383,7 @@ export default function AdminModerationPage() {
                                                 <span className="italic">"{selectedItem.insiderTip}"</span>
                                             </p>
                                         </div>
-                                        <div className="pt-4 border-t border-slate-200 dark:border-white/[0.08]/50">
+                                        <div className="pt-4 border-t border-slate-200 dark:border-white/[0.04]">
                                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Must Try</h4>
                                             <p className="text-slate-800 dark:text-[hsl(220,10%,55%)] font-medium">{selectedItem.mustTry}</p>
                                         </div>

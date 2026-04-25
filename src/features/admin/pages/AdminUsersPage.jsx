@@ -184,7 +184,7 @@ const AdminUsersPage = () => {
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-8">
                 {stats.map((s, i) => (
-                    <div key={i} className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-3 lg:p-7 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm flex flex-col sm:flex-row items-center gap-2 lg:gap-5 group hover:border-indigo-500/10 transition-all overflow-hidden relative">
+                    <div key={i} className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-3 lg:p-7 rounded-[28px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm flex flex-col sm:flex-row items-center gap-2 lg:gap-5 group hover:border-indigo-500/10 transition-all overflow-hidden relative">
                         <div className={cn("w-10 h-10 lg:w-16 lg:h-16 rounded-[18px] lg:rounded-[24px] flex items-center justify-center relative z-10 shrink-0 shadow-inner", s.bg, s.color)}>
                             <s.icon size={18} className="lg:w-7 lg:h-7" />
                         </div>
@@ -216,8 +216,8 @@ const AdminUsersPage = () => {
             )}
 
             {/* Table */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.06]/50 shadow-sm overflow-hidden flex flex-col flex-1">
-                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-white/[0.06]/50 flex flex-col gap-4">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col flex-1">
+                <div className="p-4 lg:p-10 border-b border-slate-50 dark:border-white/[0.03] flex flex-col gap-4">
                     <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
                         <div className="relative flex-1 lg:max-w-md group leading-none">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
@@ -401,7 +401,7 @@ const AdminUsersPage = () => {
                                         </td>
                                         <td className="px-6 py-5">
                                             <Badge variant="outline" className={cn(
-                                                "bg-transparent border border-slate-100 dark:border-white/[0.06]/50 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest",
+                                                "bg-transparent border border-slate-100 dark:border-white/[0.03] px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest",
                                                 roleBadgeClass(user.role)
                                             )}>
                                                 {user.role}
@@ -457,7 +457,7 @@ const AdminUsersPage = () => {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSlideOverOpen(false)} className="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-md" />
                         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 250 }} className="fixed top-0 right-0 w-full sm:w-[540px] bg-white dark:bg-[hsl(220,20%,6%)] h-full z-[110] flex flex-col shadow-2xl">
 
-                            <div className="p-8 lg:p-10 border-b border-slate-100 dark:border-white/[0.06]/50 flex justify-between items-center bg-white/50 dark:bg-[hsl(220,20%,6%)]/50 backdrop-blur-xl">
+                            <div className="p-8 lg:p-10 border-b border-slate-100 dark:border-white/[0.03] flex justify-between items-center bg-white/50 dark:bg-[hsl(220,20%,6%)]/50 backdrop-blur-xl">
                                 <div>
                                     <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-none mb-1.5">User Profile</h2>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">ID: #USER-{selectedUser.id}</p>
@@ -467,7 +467,7 @@ const AdminUsersPage = () => {
 
                             <div className="flex-1 overflow-y-auto p-8 lg:p-10 space-y-10 custom-scrollbar">
                                 {/* Profile Header */}
-                                <div className="flex flex-col items-center py-8 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[36px] border border-slate-100 dark:border-white/[0.06]/50 shadow-inner group">
+                                <div className="flex flex-col items-center py-8 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[36px] border border-slate-100 dark:border-white/[0.03] shadow-inner group">
                                     <div className="w-24 h-24 rounded-[32px] bg-indigo-600 text-white flex items-center justify-center text-3xl font-bold shadow-2xl shadow-indigo-500/20 mb-5 group-hover:scale-105 transition-transform">
                                         {(selectedUser.name || selectedUser.email || 'U').charAt(0)}
                                     </div>
@@ -540,11 +540,11 @@ const AdminUsersPage = () => {
                                                 <UtensilsCrossed size={12} /> DNA Preferences
                                             </h4>
                                             {(!preferences.favorite_cuisines?.length && !preferences.vibe_preference?.length && !preferences.price_range?.length && !preferences.dietary_restrictions?.length) ? (
-                                                <div className="text-[13px] font-medium text-slate-400 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.06]/50">
+                                                <div className="text-[13px] font-medium text-slate-400 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                     No preferences configured
                                                 </div>
                                             ) : (
-                                                <div className="space-y-4 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.06]/50">
+                                                <div className="space-y-4 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                     {preferences.favorite_cuisines?.length > 0 && (
                                                         <div>
                                                             <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Favorite Cuisines</p>
@@ -594,7 +594,7 @@ const AdminUsersPage = () => {
                                             <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
                                                 <MapPin size={12} /> Contributions
                                             </h4>
-                                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.06]/50">
+                                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{submittedLocations.length}</p>
                                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Submitted Locations</p>
                                                 {submittedLocations.length === 0 ? (
@@ -630,7 +630,7 @@ const AdminUsersPage = () => {
                                             <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
                                                 <Heart size={12} /> Favorites
                                             </h4>
-                                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.06]/50">
+                                            <div className="bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{favorites.length}</p>
                                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Saved Places</p>
                                                 {favorites.length === 0 && (

@@ -30,7 +30,7 @@ const AdminLocationsHeader = ({
     }, [isSearchExpanded])
 
     const btnBase = "flex items-center gap-2 h-11 px-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shrink-0"
-    const btnSecondary = `${btnBase} bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-200 dark:border-white/[0.08]/50 text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 shadow-sm backdrop-blur-md`
+    const btnSecondary = `${btnBase} bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-200 dark:border-white/[0.04] text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 shadow-sm backdrop-blur-md`
 
     const actions = [
         { label: 'Импорт данных', icon: Upload, onClick: onImport },
@@ -39,7 +39,7 @@ const AdminLocationsHeader = ({
     ]
 
     return (
-        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-slate-100 dark:border-white/[0.06]/50 gap-3 relative min-h-[80px] lg:min-h-[auto]">
+        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-slate-100 dark:border-white/[0.03] gap-3 relative min-h-[80px] lg:min-h-[auto]">
             <AnimatePresence>
                 {isSearchExpanded ? (
                     <motion.div 
@@ -142,7 +142,7 @@ const AdminLocationsHeader = ({
                                     leaveTo="transform opacity-0 scale-95"
                                 >
                                     <Menu.Items className="absolute right-0 top-full mt-3 z-50 bg-white/95 dark:bg-[hsl(220,20%,6%)]/95 backdrop-blur-2xl border border-slate-100 dark:border-white/[0.06] rounded-[32px] shadow-2xl overflow-hidden min-w-[240px] p-2.5 focus:outline-none">
-                                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-5 py-4 border-b border-slate-50 dark:border-white/[0.06]/50 mb-1.5">Действия</div>
+                                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-5 py-4 border-b border-slate-50 dark:border-white/[0.03] mb-1.5">Действия</div>
                                         {actions.map((action, idx) => (
                                             <Menu.Item key={idx}>
                                                 {({ active }) => (

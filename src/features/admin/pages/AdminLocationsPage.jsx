@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import {
     Plus, Search, Filter, MoreHorizontal, Edit, Trash2,
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
@@ -10,9 +10,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { useTheme } from '@/hooks/useTheme'
 import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
@@ -92,7 +93,23 @@ const AdminLocationsPage = () => {
         toast, setToast
     } = hook
 
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
     const LABEL_GROUPS = getLabelGroupsRu() // auto-synced from filterOptions.js
+
+    const mapLocations = useMemo(() =>
+        filteredLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng),
+        [filteredLocations]
+    )
+
+    const mapCenter = useMemo(() => {
+        if (!mapLocations.length) return [50.0647, 19.9450]
+        return [
+            mapLocations.reduce((s, l) => s + l.coordinates.lat, 0) / mapLocations.length,
+            mapLocations.reduce((s, l) => s + l.coordinates.lng, 0) / mapLocations.length,
+        ]
+    }, [mapLocations])
 
     const BEST_TIMES = [
         { id: 'morning', label: 'Утро', icon: Clock },
@@ -291,21 +308,68 @@ const AdminLocationsPage = () => {
                                 </div>
                             )}
                         </div>
-                    ) : (
-                        viewMode === 'list' && (
-                            <ListViewSection
-                                filteredLocations={paginatedLocations}
-                                viewMode={viewMode}
-                                onEditLocation={handleEdit}
-                                onDelete={handleDelete}
-                                onApprove={handleApprove}
-                                onReject={handleReject}
-                                onToggleVisibility={handleToggleVisibility}
-                                openActionMenuId={openActionMenuId}
-                                onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
-                            />
-                        )
-                    )}
+                    ) : viewMode === 'list' ? (
+                        <ListViewSection
+                            filteredLocations={paginatedLocations}
+                            viewMode={viewMode}
+                            onEditLocation={handleEdit}
+                            onDelete={handleDelete}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onToggleVisibility={handleToggleVisibility}
+                            openActionMenuId={openActionMenuId}
+                            onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
+                        />
+                    ) : viewMode === 'map' ? (
+                        <div className="flex-1 relative min-h-[500px]">
+                            {mapLocations.length === 0 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                    <MapPin size={48} className="mb-3 opacity-30" />
+                                    <p className="text-sm font-bold">Нет локаций с координатами</p>
+                                </div>
+                            ) : (
+                                <MapContainer
+                                    center={mapCenter}
+                                    zoom={5}
+                                    scrollWheelZoom={false}
+                                    className="w-full h-full absolute inset-0"
+                                >
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                                        url={isDark
+                                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                                            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'}
+                                    />
+                                    {mapLocations.map(loc => (
+                                        <Marker
+                                            key={loc.id}
+                                            position={[loc.coordinates.lat, loc.coordinates.lng]}
+                                        >
+                                            <Popup>
+                                                <div className="font-sans p-1 min-w-[160px]">
+                                                    <p className="font-bold text-sm text-slate-900">{loc.title}</p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">{loc.city}{loc.country ? `, ${loc.country}` : ''}</p>
+                                                    {(loc.google_rating ?? loc.rating) && (
+                                                        <p className="text-xs text-amber-600 font-bold mt-1">★ {loc.google_rating ?? loc.rating}</p>
+                                                    )}
+                                                    <span className={cn(
+                                                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-2",
+                                                        loc.status === 'active' || loc.status === 'approved'
+                                                            ? "bg-emerald-50 text-emerald-600"
+                                                            : loc.status === 'pending'
+                                                                ? "bg-amber-50 text-amber-600"
+                                                                : "bg-rose-50 text-rose-500"
+                                                    )}>
+                                                        {loc.status}
+                                                    </span>
+                                                </div>
+                                            </Popup>
+                                        </Marker>
+                                    ))}
+                                </MapContainer>
+                            )}
+                        </div>
+                    ) : null}
                 </div>
             </div>
 

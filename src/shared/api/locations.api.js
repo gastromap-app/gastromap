@@ -266,14 +266,10 @@ export async function createLocation(data, enableTranslation = null) {
 
     // Create location IMMEDIATELY (without waiting for translations)
     let row = _toRow(locationData)
-    
-    // SEED LOGIC: If this is a new location and we have a Google rating but no local rating,
-    // seed the local rating field with the Google rating.
-    if (row.google_rating && !row.rating) {
-        console.log('[locations.api] 🌱 Seeding local rating from Google rating:', row.google_rating)
-        row.rating = row.google_rating
-    }
-
+        
+    // Note: 'rating' column does not exist in DB - only google_rating exists.
+    // sanitizePayload() in _smartSave filters out any 'rating' field.
+        
     const { data: created, error } = await _smartSave('locations', null, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)

@@ -7,7 +7,7 @@
  * what was discussed earlier.
  *
  * This file provides:
- *   - summarizeSession(sessionId, messages): Generate + upsert summary
+ *   - summarizeSession(sessionId, messages, userId): Generate + upsert summary
  *   - fetchSessionSummary(sessionId): Read existing summary
  */
 
@@ -94,23 +94,22 @@ function extractLocationIds(messages) {
  * @param {Array} messages - Full message objects from the store
  * @returns {Promise<{ summary: string|null, skipped: boolean }>}
  */
-export async function summarizeSession(sessionId, messages) {
+export async function summarizeSession(sessionId, messages, userId = null) {
     if (!supabase || !sessionId) return { summary: null, skipped: true }
     if (!messages || messages.length < SUMMARIZE_THRESHOLD) return { summary: null, skipped: true }
 
     const summaryText = await generateSummary(messages)
     if (!summaryText) return { summary: null, skipped: false }
 
-    const locationIds = extractLocationIds(messages)
-
     try {
         const { error } = await supabase
             .from('conversation_summaries')
             .upsert({
                 session_id: sessionId,
+                user_id: userId,
                 summary: summaryText,
-                mentioned_location_ids: locationIds,
-                message_count: messages.length,
+                covers_up_to: new Date().toISOString(),
+                messages_covered: messages.length,
                 updated_at: new Date().toISOString(),
             }, { onConflict: 'session_id' })
 

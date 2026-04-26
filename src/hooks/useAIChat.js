@@ -249,7 +249,7 @@ export function useAIChat() {
             const currentMessages = useAIChatStore.getState().messages
             const activeSessionId = useAIChatStore.getState().sessionId
             if (activeSessionId && currentMessages.length >= 15) {
-                summarizeSession(activeSessionId, currentMessages).catch(() => {})
+                summarizeSession(activeSessionId, currentMessages, user?.id || null).catch(() => {})
             }
         } catch (err) {
             setError(err.message ?? 'GastroGuide не отвечает. Попробуйте ещё раз.')

@@ -13,6 +13,7 @@
 import { config } from '@/shared/config/env'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { fetchOpenRouter } from '@/shared/api/ai/openrouter'
+import { log as safeLog, warn as safeWarn, error as safeError } from '@/shared/lib/safe-console.js'
 
 /**
  * Enrich location data with AI-generated fields
@@ -25,7 +26,7 @@ export async function enrichLocationData(locationData, apiKey = null) {
     const isAiReady = appCfg.aiApiKey || config.ai.openRouterKey
 
     if (!isAiReady && !apiKey) {
-        console.warn('[enrichment] AI enrichment skipped: No API key found')
+        safeWarn('[enrichment] AI enrichment skipped: No API key found')
         return locationData
     }
 
@@ -50,7 +51,7 @@ export async function enrichLocationData(locationData, apiKey = null) {
         // Set attempt timestamp
         enriched.ai_enrichment_last_attempt = new Date().toISOString()
 
-        console.log('[enrichment] Calling OpenRouter for structured data enrichment...')
+        safeLog('[enrichment] Calling OpenRouter for structured data enrichment...')
 
         // Generate structured data using AI utility with cascade
         const { response } = await fetchOpenRouter([
@@ -123,12 +124,12 @@ Return ONLY valid JSON with this exact structure:
 
                 return enriched
             } catch (parseError) {
-                console.warn('[enrichment] Failed to parse AI response:', parseError.message, content)
+                safeWarn('[enrichment] Failed to parse AI response:', parseError.message, content)
                 enriched.ai_enrichment_status = 'failed'
                 enriched.ai_enrichment_error = 'Invalid JSON response from AI'
             }
         } else {
-            console.warn('[enrichment] AI API error:', response.status)
+            safeWarn('[enrichment] AI API error:', response.status)
             enriched.ai_enrichment_status = 'failed'
             enriched.ai_enrichment_error = `API error: ${response.status}`
         }
@@ -140,7 +141,7 @@ Return ONLY valid JSON with this exact structure:
         ])
 
     } catch (error) {
-        console.error('[enrichment] AI enrichment failure:', error)
+        safeError('[enrichment] AI enrichment failure:', error)
         const errorEnriched = { ...locationData }
         errorEnriched.ai_enrichment_status = 'failed'
         errorEnriched.ai_enrichment_error = error.message
@@ -181,7 +182,7 @@ async function generateAIKeywords(locationData, apiKey) {
             }
         }
     } catch (error) {
-        console.warn('[enrichment] Keyword generation failed:', error.message)
+        safeWarn('[enrichment] Keyword generation failed:', error.message)
     }
 }
 
@@ -213,7 +214,7 @@ async function generateAIContext(locationData, apiKey) {
             locationData.ai_context = data.choices?.[0]?.message?.content || ''
         }
     } catch (error) {
-        console.warn('[enrichment] Context generation failed:', error.message)
+        safeWarn('[enrichment] Context generation failed:', error.message)
     }
 }
 

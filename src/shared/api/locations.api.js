@@ -14,6 +14,7 @@ import { enrichLocationData } from '@/features/admin/components/LocationForm/enr
 import { config } from '@/shared/config/env'
 import { CATEGORIES_FULL } from '../constants/taxonomy'
 import { sanitizePayload } from '../lib/schema-validator.js'
+import { log as safeLog, warn as safeWarn, error as safeError } from '../lib/safe-console.js'
 // import { 
 //     processLocationTranslations, 
 //     saveTranslations,
@@ -23,9 +24,9 @@ import { sanitizePayload } from '../lib/schema-validator.js'
 // import { getActiveAIConfig } from './ai-config.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
-console.log('[locations.api] 🔌 Database Mode:', USE_SUPABASE ? 'SUPABASE' : 'MOCKS fall-back')
+safeLog('[locations.api] 🔌 Database Mode:', USE_SUPABASE ? 'SUPABASE' : 'MOCKS fall-back')
 if (USE_SUPABASE) {
-    console.log('[locations.api] 🌐 Supabase URL:', config.supabase.url)
+    safeLog('[locations.api] 🌐 Supabase URL:', config.supabase.url)
 }
 
 // ─── Shape normaliser ──────────────────────────────────────────────────────
@@ -146,7 +147,7 @@ export async function getLocations(filters = {}) {
 
     const bypassStatus = all || showAll
 
-    console.log('[locations.api] 🚀 Fetching locations with filters:', filters)
+    safeLog('[locations.api] 🚀 Fetching locations with filters:', filters)
 
     let q = supabase
         .from('locations')
@@ -185,8 +186,8 @@ export async function getLocations(filters = {}) {
     const { data, error, count } = await q
 
     if (error) {
-        console.error('[locations.api] ❌ Supabase query FAILED:', error.message)
-        console.error('[locations.api] 📉 Hard fallback to mocks.')
+        safeError('[locations.api] ❌ Supabase query FAILED:', error.message)
+        safeError('[locations.api] 📉 Hard fallback to mocks.')
         return _mockGetLocations(filters)
     }
 
@@ -214,7 +215,7 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data, error } = await q.single()
 
     if (error) {
-        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
+        safeError('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocation(id)
     }
 
@@ -238,7 +239,7 @@ async function enrichLocationWithAI(locationData) {
     try {
         return await enrichLocationData(locationData)
     } catch (err) {
-        console.warn('[locations.api] AI enrichment failed, continuing without it:', err.message)
+        safeWarn('[locations.api] AI enrichment failed, continuing without it:', err.message)
         return locationData
     }
 }
@@ -260,7 +261,7 @@ export async function createLocation(data, enableTranslation = null) {
 
     // Enrich with AI keywords and embeddings if enabled
     if (isAiReady) {
-        console.log('[locations.api] Enriching location with AI keywords + embedding...')
+        safeLog('[locations.api] Enriching location with AI keywords + embedding...')
         locationData = await enrichLocationWithAI(locationData)
     }
 
@@ -277,20 +278,20 @@ export async function createLocation(data, enableTranslation = null) {
     // Auto-translate IN BACKGROUND (non-blocking, fire-and-forget)
     // This allows the UI to return immediately while translations happen in the background
     if (shouldTranslate) {
-        console.log('[locations.api] Starting background translation for location:', created.id)
+        safeLog('[locations.api] Starting background translation for location:', created.id)
 
         const { processLocationTranslations, saveTranslations } = await import('./translation.api')
         // Don't await this - let it run in the background
         processLocationTranslations(data, true)
             .then(result => {
-                console.log('[locations.api] Auto-translation completed, saving translations...')
+                safeLog('[locations.api] Auto-translation completed, saving translations...')
                 return saveTranslations(created.id, result.translations)
             })
             .then(() => {
-                console.log('[locations.api] Translations saved successfully')
+                safeLog('[locations.api] Translations saved successfully')
             })
             .catch(error => {
-                console.error('[locations.api] Background translation failed (non-blocking):', error)
+                safeError('[locations.api] Background translation failed (non-blocking):', error)
                 // Silently fail - translations are optional enhancement
             })
     }
@@ -323,7 +324,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     
     // 1. AI Enrichment & Translation
     if (shouldTranslate) {
-        console.log('[locations.api] Starting background enrichment/translation for updated location:', id)
+        safeLog('[locations.api] Starting background enrichment/translation for updated location:', id)
         
         // Use a self-executing async function for background work
         (async () => {
@@ -374,7 +375,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                             dispatchStatus('ai-enrichment', 'error')
                         }
                     } catch (aiErr) {
-                        console.warn('[locations.api] Background AI enrichment failed:', aiErr.message)
+                        safeWarn('[locations.api] Background AI enrichment failed:', aiErr.message)
                         dispatchStatus('ai-enrichment', 'error')
                     }
                 }
@@ -392,7 +393,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                             dispatchStatus('translation', 'success')
                         }
                     } catch (transErr) {
-                        console.warn('[locations.api] Background translation failed:', transErr.message)
+                        safeWarn('[locations.api] Background translation failed:', transErr.message)
                         dispatchStatus('translation', 'error')
                     }
                 }
@@ -401,10 +402,10 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                 if (Object.keys(bgUpdates).length > 0) {
                     const bgRow = _toRow(bgUpdates)
                     await _smartSave('locations', id, bgRow)
-                    console.log('[locations.api] Background updates saved for:', id)
+                    safeLog('[locations.api] Background updates saved for:', id)
                 }
             } catch (err) {
-                console.error('[locations.api] Critical failure in background tasks:', err.message)
+                safeError('[locations.api] Critical failure in background tasks:', err.message)
             }
         })()
     }
@@ -424,7 +425,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                     }))
                 })
                 .catch(e => {
-                    console.warn('[locations.api] Background KG sync failed:', e.message)
+                    safeWarn('[locations.api] Background KG sync failed:', e.message)
                     window.dispatchEvent(new CustomEvent('bg-task-status', { 
                         detail: { id: updated.id, type: 'kg-sync', status: 'error' } 
                     }))
@@ -502,8 +503,8 @@ async function _smartSave(table, id, row) {
         if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
             const match = error.message.match(/find the '([^']+)' column/)
             const missingCol = match?.[1] || 'unknown'
-            console.error(`[smartSave] CRITICAL: Column '${missingCol}' is missing in DB table '${table}'.`)
-            console.error(`[smartSave] Data was NOT saved. Run the missing migration or add the column manually.`)
+            safeError(`[smartSave] CRITICAL: Column '${missingCol}' is missing in DB table '${table}'.`)
+            safeError(`[smartSave] Data was NOT saved. Run the missing migration or add the column manually.`)
             return {
                 data: null,
                 error: {
@@ -693,8 +694,7 @@ export async function getCategories() {
         .in('status', ['approved', 'active'])
 
     if (error) {
-        console.warn('[locations.api] Failed to fetch categories, using mocks:', error.message)
-        return MOCK_CATEGORIES
+        safeWarn('[locations.api] Failed to fetch categories, using mocks:', error.message)
     }
 
     const unique = [...new Set((data ?? []).map(r => r.category).filter(Boolean))]
@@ -727,8 +727,7 @@ export async function getLocationsNearby(coords, radiusKm = 2) {
 
 export async function getLocationMenu(locationId) {
     if (!supabase) {
-        console.warn('[locations.api] Supabase not configured, returning empty menu')
-        return []
+        safeWarn('[locations.api] Supabase not configured, returning empty menu')
     }
 
     const { data, error } = await supabase
@@ -737,7 +736,7 @@ export async function getLocationMenu(locationId) {
         .eq('location_id', locationId)
 
     if (error) {
-        console.warn('[locations.api] Failed to fetch menu:', error.message)
+        safeWarn('[locations.api] Failed to fetch menu:', error.message)
         return []
     }
 
@@ -760,8 +759,7 @@ export async function getLocationMenu(locationId) {
 
 export async function saveScannedMenu(locationId, dishes) {
     if (!supabase) {
-        console.warn('[locations.api] Supabase not configured, cannot save scanned menu')
-        return { saved: 0, duplicates: 0 }
+        safeWarn('[locations.api] Supabase not configured, cannot save scanned menu')
     }
 
     const CATEGORY_MAP = {
@@ -803,7 +801,7 @@ export async function saveScannedMenu(locationId, dishes) {
                 .maybeSingle()
 
             if (findError) {
-                console.warn('[locations.api] Error finding dish:', findError.message)
+                safeWarn('[locations.api] Error finding dish:', findError.message)
                 continue
             }
 
@@ -823,7 +821,7 @@ export async function saveScannedMenu(locationId, dishes) {
                     .single()
 
                 if (insertError) {
-                    console.warn('[locations.api] Error inserting dish:', insertError.message)
+                    safeWarn('[locations.api] Error inserting dish:', insertError.message)
                     continue
                 }
                 dishId = inserted.id
@@ -840,11 +838,11 @@ export async function saveScannedMenu(locationId, dishes) {
                 }, { onConflict: 'location_id,dish_id' })
 
             if (linkError) {
-                console.warn('[locations.api] Error linking dish to location:', linkError.message)
+                safeWarn('[locations.api] Error linking dish to location:', linkError.message)
             }
         }
     } catch (err) {
-        console.warn('[locations.api] saveScannedMenu failed:', err.message)
+        safeWarn('[locations.api] saveScannedMenu failed:', err.message)
     }
 
     return { saved, duplicates }
@@ -852,7 +850,7 @@ export async function saveScannedMenu(locationId, dishes) {
 
 export async function deleteLocationDish(locationId, dishId) {
     if (!supabase) {
-        console.warn('[locations.api] Supabase not configured, cannot delete location dish')
+        safeWarn('[locations.api] Supabase not configured, cannot delete location dish')
         return { success: false }
     }
 
@@ -863,7 +861,7 @@ export async function deleteLocationDish(locationId, dishId) {
         .eq('dish_id', dishId)
 
     if (error) {
-        console.warn('[locations.api] Failed to delete location dish:', error.message)
+        safeWarn('[locations.api] Failed to delete location dish:', error.message)
         return { success: false }
     }
 
@@ -872,7 +870,7 @@ export async function deleteLocationDish(locationId, dishId) {
 
 export async function updateLocationDish(locationId, dishId, updates) {
     if (!supabase) {
-        console.warn('[locations.api] Supabase not configured, cannot update location dish')
+        safeWarn('[locations.api] Supabase not configured, cannot update location dish')
         return { success: false }
     }
 
@@ -892,7 +890,7 @@ export async function updateLocationDish(locationId, dishId, updates) {
         .eq('dish_id', dishId)
 
     if (error) {
-        console.warn('[locations.api] Failed to update location dish:', error.message)
+        safeWarn('[locations.api] Failed to update location dish:', error.message)
         return { success: false }
     }
 

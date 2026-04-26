@@ -232,3 +232,7 @@ $function$;
 GRANT EXECUTE ON FUNCTION public.search_locations_nearby(
     double precision, double precision, integer, text, text, text, integer
 ) TO anon, authenticated, service_role;
+
+-- ─── 6. Reload PostgREST schema cache ────────────────────────────────
+-- Makes new columns immediately available for API (fixes schema cache errors)
+NOTIFY pgrst, 'reload';

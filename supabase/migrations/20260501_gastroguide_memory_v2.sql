@@ -181,7 +181,7 @@ AS $function$
             ''
         ) AS cuisine,
         l.google_rating AS rating,
-        l.price_level AS price_range,
+        l.price_range AS price_range,
         l.city,
         l.country,
         l.tags,
@@ -209,7 +209,7 @@ AS $function$
       AND (p_cuisine   IS NULL OR lower(COALESCE(array_to_string(l.cuisine_types, ' '), '')) LIKE '%' || lower(p_cuisine) || '%')
       AND (
             p_price_max IS NULL
-            OR CASE l.price_level
+            OR CASE l.price_range
                    WHEN '$'    THEN 1
                    WHEN '$$'   THEN 2
                    WHEN '$$$'  THEN 3

@@ -90,7 +90,7 @@ function mapLocation(l) {
         city:           l.city,
         country:        l.country ?? null,
         address:        l.address,
-        cuisine:        l.cuisine_types?.[0] || l.tags?.[0] || null,
+        cuisine:        Array.isArray(l.cuisine_types) ? l.cuisine_types[0] : (typeof l.cuisine_types === 'string' ? l.cuisine_types : (Array.isArray(l.tags) ? l.tags[0] : null)),
         cuisine_types:  l.cuisine_types ?? [],
         tags:           l.tags ?? [],
         vibe:           vibes,

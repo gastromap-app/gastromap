@@ -13,6 +13,7 @@ import { supabase, ApiError } from './client'
 import { enrichLocationData } from '@/features/admin/components/LocationForm/enrichment'
 import { config } from '@/shared/config/env'
 import { CATEGORIES_FULL } from '../constants/taxonomy'
+import { sanitizePayload } from '../lib/schema-validator.js'
 // import { 
 //     processLocationTranslations, 
 //     saveTranslations,
@@ -492,8 +493,8 @@ export async function getLocationTranslated(id, lang = 'en') {
  * Now it fails fast with a clear error so developers know to fix the schema.
  */
 async function _smartSave(table, id, row) {
-    const payload = { ...row }
-
+    const payload = sanitizePayload({ ...row });
+    
     const req = id
         ? supabase.from(table).update(payload).eq('id', id).select().single()
         : supabase.from(table).insert(payload).select().single()
@@ -558,8 +559,7 @@ function _toRow(d) {
     else if (d.photos !== undefined) row.google_photos = d.photos
     else if (d.images !== undefined) row.google_photos = d.images
 
-    // Rating
-    if (d.rating !== undefined) row.rating = Number(d.rating)
+    // Rating (only google_rating exists in DB, no 'rating' column)
     if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
 
     // Price

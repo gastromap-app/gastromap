@@ -54,6 +54,11 @@ export const DEPRECATED_COLUMNS = {
     'price_level': 'price_range',         // Renamed for clarity
     'images': 'google_photos',            // Renamed
     'image_url': null,                     // Still valid, no mapping needed
+    // Legacy UI fields that should be removed from form data
+    'cuisine': 'cuisine_types',           // Legacy single-value field
+    'photos': 'google_photos',            // Legacy field name
+    'features': 'amenities',              // Renamed
+    'dietary': 'dietary_options',         // Renamed
 };
 
 /**

@@ -44,8 +44,11 @@ export async function enrichLocationData(locationData, apiKey = null) {
             locationData.insider_tip,
         ].filter(Boolean).join(', ')
 
+        // Create a shallow copy to avoid mutating the input
+        const enriched = { ...locationData }
+        
         // Set attempt timestamp
-        locationData.ai_enrichment_last_attempt = new Date().toISOString()
+        enriched.ai_enrichment_last_attempt = new Date().toISOString()
 
         console.log('[enrichment] Calling OpenRouter for structured data enrichment...')
 
@@ -93,40 +96,41 @@ Return ONLY valid JSON with this exact structure:
                 
                 // Validate and apply fields
                 if (Array.isArray(parsed.cuisine_types)) {
-                    locationData.cuisine_types = parsed.cuisine_types
+                    enriched.cuisine_types = parsed.cuisine_types
                 }
                 
                 const validPrices = ['$', '$$', '$$$', '$$$$']
                 if (validPrices.includes(parsed.price_range)) {
-                    locationData.price_range = parsed.price_range
+                    enriched.price_range = parsed.price_range
                 }
                 
                 if (Array.isArray(parsed.tags)) {
-                    locationData.tags = parsed.tags.slice(0, 8)
+                    enriched.tags = parsed.tags.slice(0, 8)
                 }
                 if (Array.isArray(parsed.vibe)) {
-                    locationData.vibe = parsed.vibe
+                    enriched.vibe = parsed.vibe
                 }
                 if (Array.isArray(parsed.best_for)) {
-                    locationData.best_for = parsed.best_for
+                    enriched.best_for = parsed.best_for
                 }
                 if (Array.isArray(parsed.dietary_options)) {
-                    locationData.dietary_options = parsed.dietary_options
+                    enriched.dietary_options = parsed.dietary_options
                 }
 
                 // Mark success
-                locationData.ai_enrichment_status = 'success'
-                locationData.ai_enrichment_error = null
+                enriched.ai_enrichment_status = 'success'
+                enriched.ai_enrichment_error = null
 
+                return enriched
             } catch (parseError) {
                 console.warn('[enrichment] Failed to parse AI response:', parseError.message, content)
-                locationData.ai_enrichment_status = 'failed'
-                locationData.ai_enrichment_error = 'Invalid JSON response from AI'
+                enriched.ai_enrichment_status = 'failed'
+                enriched.ai_enrichment_error = 'Invalid JSON response from AI'
             }
         } else {
             console.warn('[enrichment] AI API error:', response.status)
-            locationData.ai_enrichment_status = 'failed'
-            locationData.ai_enrichment_error = `API error: ${response.status}`
+            enriched.ai_enrichment_status = 'failed'
+            enriched.ai_enrichment_error = `API error: ${response.status}`
         }
 
         // Generate AI keywords and context in parallel for efficiency
@@ -137,11 +141,11 @@ Return ONLY valid JSON with this exact structure:
 
     } catch (error) {
         console.error('[enrichment] AI enrichment failure:', error)
-        locationData.ai_enrichment_status = 'failed'
-        locationData.ai_enrichment_error = error.message
+        const errorEnriched = { ...locationData }
+        errorEnriched.ai_enrichment_status = 'failed'
+        errorEnriched.ai_enrichment_error = error.message
+        return errorEnriched
     }
-
-    return locationData
 }
 
 /**

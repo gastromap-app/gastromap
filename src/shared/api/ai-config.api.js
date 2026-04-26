@@ -7,11 +7,11 @@ import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
  */
 export function getActiveAIConfig() {
     const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
+    const apiKey = appCfg.aiApiKey || config.ai?.openRouterKey || ''
     return {
         apiKey,
-        model:         appCfg.aiPrimaryModel  || config.ai.model,
-        fallbackModel: appCfg.aiFallbackModel || config.ai.modelFallback,
+        model:         appCfg.aiPrimaryModel  || config.ai?.model || 'openai/gpt-oss-120b:free',
+        fallbackModel: appCfg.aiFallbackModel || config.ai?.modelFallback || 'meta-llama/llama-3.3-70b-instruct:free',
         isConfigured:  !!apiKey && apiKey !== '',
         /** 
          * Use proxy only if NO key is provided (Store or Env) 

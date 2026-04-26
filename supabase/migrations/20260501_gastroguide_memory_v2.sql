@@ -172,7 +172,7 @@ AS $function$
         l.id,
         l.title,
         l.description,
-        COALESCE(l.image_url, l.image) AS image,
+        l.image_url AS image,
         l.category,
         COALESCE(
             CASE WHEN l.cuisine_types IS NOT NULL

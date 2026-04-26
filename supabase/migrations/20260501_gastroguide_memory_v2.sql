@@ -167,7 +167,7 @@ RETURNS TABLE (
     distance_m   double precision
 )
 LANGUAGE sql STABLE
-AS $$
+AS $function$
     SELECT
         l.id,
         l.title,
@@ -177,8 +177,8 @@ AS $$
         COALESCE(
             CASE WHEN l.cuisine_types IS NOT NULL
                  THEN array_to_string(l.cuisine_types, ', ')
-                 ELSE NULL END,
-            l.cuisine
+                 ELSE '' END,
+            ''
         ) AS cuisine,
         COALESCE(l.google_rating, l.rating) AS rating,
         COALESCE(l.price_range, l.price_level) AS price_range,
@@ -206,7 +206,7 @@ AS $$
               p_radius_m
           )
       AND (p_category  IS NULL OR lower(l.category) LIKE '%' || lower(p_category) || '%')
-      AND (p_cuisine   IS NULL OR lower(COALESCE(l.cuisine, array_to_string(l.cuisine_types, ' '))) LIKE '%' || lower(p_cuisine) || '%')
+      AND (p_cuisine   IS NULL OR lower(COALESCE(array_to_string(l.cuisine_types, ' '), '')) LIKE '%' || lower(p_cuisine) || '%')
       AND (
             p_price_max IS NULL
             OR CASE l.price_range
@@ -227,7 +227,7 @@ AS $$
           )
     ORDER BY distance_m ASC
     LIMIT p_limit;
-$$;
+$function$;
 
 GRANT EXECUTE ON FUNCTION public.search_locations_nearby(
     double precision, double precision, integer, text, text, text, integer

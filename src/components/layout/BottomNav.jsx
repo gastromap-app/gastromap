@@ -33,10 +33,10 @@ export function BottomNav() {
             >
                     <nav
                         className={cn(
-                            "max-w-md mx-auto pointer-events-auto rounded-[28px] border backdrop-blur-2xl shadow-2xl",
+                            "max-w-md mx-auto pointer-events-auto rounded-[28px] border backdrop-blur-2xl",
                             isDark
-                                ? "bg-black/65 border-white/10 shadow-black/50"
-                                : "bg-white/75 border-white/50 shadow-blue-500/8"
+                                ? "bg-black/65 border-white/10 shadow-2xl shadow-black/50"
+                                : "bg-white/90 border-slate-200/80 shadow-[0_4px_16px_rgba(15,23,42,0.08),0_20px_40px_rgba(15,23,42,0.1)]"
                         )}
                         style={{ height: 64 }}
                     >
@@ -77,8 +77,8 @@ export function BottomNav() {
                                                         "w-[19px] h-[19px] transition-all duration-200",
                                                         isActive
                                                             ? "text-blue-600 dark:text-blue-400 scale-110"
-                                                            : "text-gray-400 dark:text-gray-500",
-                                                        item.path === '/ai-guide' && !isActive && "text-blue-400/80"
+                                                            : "text-slate-500 dark:text-gray-500",
+                                                        item.path === '/ai-guide' && !isActive && "text-blue-500/80 dark:text-blue-400/80"
                                                     )}
                                                 />
                                             </motion.div>
@@ -90,7 +90,7 @@ export function BottomNav() {
                                                 "relative z-10 text-[9.5px] font-semibold tracking-wide transition-colors duration-200 leading-none",
                                                 isActive
                                                     ? "text-blue-600 dark:text-blue-400"
-                                                    : "text-gray-400 dark:text-gray-500"
+                                                    : "text-slate-500 dark:text-gray-500"
                                             )}
                                         >
                                             {item.label}

@@ -63,8 +63,8 @@ export function LanguageSelector({
     if (isAdminMode) {
         return (
             <div className={`flex items-center gap-3 px-4 py-3 ${className}`}>
-                <span className="text-lg">🇷🇺</span>
-                <span className={`text-sm font-semibold ${isDark ? 'text-white/80' : 'text-gray-900'}`}>Русский</span>
+                <span className="text-lg">{currentLang.flag}</span>
+                <span className={`text-sm font-semibold ${isDark ? 'text-white/80' : 'text-gray-900'}`}>{currentLang.label}</span>
             </div>
         )
     }

@@ -1,15 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
     /* Base HSL Values - Light Mode (Apple Style) */
-    --background: 0 0% 100%;
-    /* Pure White */
+    /* Subtle off-white so cards/sheets gain visible separation on the canvas */
+    --background: 240 20% 98%;
     --foreground: 240 10% 3.9%;
-    /* Almost Black */
 
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -17,29 +17,40 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Primary Gradient: Indigo -> Purple -> Pink */
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 0 0% 98%;
+    /* Primary: Electric Blue (matches brand, WCAG AA on white) */
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4.8% 95.9%;
-    /* Very Light Grey */
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 240 5% 96%;
+    /* Darker muted-foreground for better light-mode readability (WCAG AA 4.6:1) */
+    --muted-foreground: 240 4% 38%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 263.4 70% 50.4%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 217 91% 55%;
+
+    /* Surface elevation — used by .surface utilities for light mode depth */
+    --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 10px rgba(15, 23, 42, 0.05);
+    --shadow-card-hover: 0 4px 12px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.08);
+
+    /* Semantic text colors — four-step hierarchy for light mode.
+       Use .text-t-primary / .text-t-secondary / .text-t-tertiary / .text-t-quaternary
+       instead of ad-hoc `text-gray-500` / `text-slate-600` for consistency. */
+    --text-primary:     222 47% 11%;  /* slate-900 */
+    --text-secondary:   215 25% 27%;  /* slate-700 */
+    --text-tertiary:    215 16% 47%;  /* slate-500 */
+    --text-quaternary:  215 20% 65%;  /* slate-400 */
 
     --radius: 1rem;
-    /* Soft Apple-like rounding */
   }
 
   [data-theme='dark'] {
@@ -79,22 +90,38 @@
     /* #1c2029 subtle blue border */
     --input: 220 20% 14%;
     --ring: 217 91% 60%;
+
+    /* Dark-mode text hierarchy — soft whites tuned for OLED blacks */
+    --text-primary:     220 20% 96%;
+    --text-secondary:   220 10% 72%;
+    --text-tertiary:    220 10% 55%;
+    --text-quaternary:  220 10% 40%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
+  }
+
+  html,
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Helvetica', 'Helvetica Neue', 'Arial', sans-serif !important;
     font-weight: 400;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1, "ss01" 1;
+    letter-spacing: -0.003em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Tighter display typography (headings + large text) */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
   }
 }
 
@@ -119,7 +146,8 @@
 
   /* Premium Surface — card backgrounds */
   .surface {
-    @apply bg-white rounded-[28px] border border-slate-100 shadow-sm;
+    @apply bg-white rounded-[28px] border border-slate-100;
+    box-shadow: var(--shadow-card);
   }
 
   [data-theme='dark'] .surface {
@@ -128,11 +156,20 @@
 
   /* Premium Elevated — hovered/selected cards */
   .surface-elevated {
-    @apply bg-white rounded-[28px] border border-slate-100 shadow-md;
+    @apply bg-white rounded-[28px] border border-slate-100;
+    box-shadow: var(--shadow-card-hover);
   }
 
   [data-theme='dark'] .surface-elevated {
     @apply bg-[hsl(220,20%,9%)] rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
+  }
+
+  /* Light-theme helper — subtle resting shadow for cards on tinted canvas */
+  .card-shadow-soft {
+    box-shadow: var(--shadow-card);
+  }
+  [data-theme='dark'] .card-shadow-soft {
+    box-shadow: none;
   }
 
   /* Aurora Gradients */
@@ -183,6 +220,24 @@
   [data-theme='dark'] .text-secondary-dark {
     @apply text-[hsl(220,10%,55%)];
   }
+
+  /* ─── Semantic text-color utilities (theme-aware) ─────────────────────────
+     Four-step hierarchy that auto-adapts between light and dark.
+     Prefer these over `text-gray-*` / `text-slate-*` + dark: variants. */
+  .text-t-primary    { color: hsl(var(--text-primary)); }
+  .text-t-secondary  { color: hsl(var(--text-secondary)); }
+  .text-t-tertiary   { color: hsl(var(--text-tertiary)); }
+  .text-t-quaternary { color: hsl(var(--text-quaternary)); }
+
+  /* Eyebrow helper — pre-composed pattern we kept re-inventing inline */
+  .text-eyebrow-muted {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: hsl(var(--text-tertiary));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -199,7 +254,6 @@
     border-radius: 32px;
     overflow: hidden;
     border-width: 1px;
-    backdrop-filter: blur(4px);
     transition: all 0.3s ease;
 }
 
@@ -210,7 +264,8 @@
 
 [data-theme='light'] .language-container {
     background-color: #ffffff;
-    border-color: #f3f4f6;
+    border-color: rgb(226 232 240); /* slate-200 — visible against tinted canvas */
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 .language-item {

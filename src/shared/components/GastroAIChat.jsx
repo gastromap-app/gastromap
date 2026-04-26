@@ -51,16 +51,20 @@ function TypingBubble({ transparent, isDark }) {
             className="flex items-center gap-3 px-1 py-1"
         >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                transparent ? 'bg-white/10' : 'bg-gray-100 dark:bg-gray-800'
+                transparent
+                    ? isDark ? 'bg-white/10' : 'bg-black/5'
+                    : 'bg-gray-100 dark:bg-gray-800'
             }`}>
-                <Sparkles className={`w-4 h-4 ${transparent ? 'text-white' : 'text-indigo-500'}`} />
+                <Sparkles className={`w-4 h-4 ${transparent ? (isDark ? 'text-white' : 'text-indigo-600') : 'text-indigo-500'}`} />
             </div>
             <div className={`flex items-center p-3 rounded-2xl rounded-bl-none backdrop-blur-md border h-[42px] ${
-                transparent 
-                    ? 'bg-white/15 border-white/20' 
+                transparent
+                    ? isDark
+                        ? 'bg-white/15 border-white/20'
+                        : 'bg-white/80 border-black/10'
                     : 'bg-white/80 dark:bg-black/40 border-gray-100 dark:border-white/10'
             }`}>
-                <TypingDots colorClass={transparent || isDark ? 'bg-white' : 'bg-indigo-500'} />
+                <TypingDots colorClass={isDark ? 'bg-white' : 'bg-indigo-500'} />
             </div>
         </motion.div>
     )
@@ -270,7 +274,9 @@ export function ChatInterface({
                                             ? 'bg-indigo-600 text-white rounded-br-sm border border-white/20 ml-auto'
                                             : 'bg-indigo-600 text-white rounded-br-sm ml-auto'
                                         : transparent
-                                            ? 'bg-white/10 dark:bg-black/50 text-white rounded-bl-sm border border-white/10 backdrop-blur-md mr-auto'
+                                            ? isDark
+                                                ? 'bg-black/50 text-white border border-white/10 rounded-bl-sm backdrop-blur-md mr-auto'
+                                                : 'bg-white/85 text-gray-900 border border-black/10 rounded-bl-sm backdrop-blur-md mr-auto shadow-sm'
                                             : 'bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm mr-auto shadow-sm'
                                 }`}
                                 style={{ 
@@ -278,7 +284,7 @@ export function ChatInterface({
                                 }}
                             >
                                 {msg.content === '…' ? (
-                                    <TypingDots colorClass={isUser ? 'bg-white' : (transparent || isDark ? 'bg-white' : 'bg-indigo-500')} />
+                                    <TypingDots colorClass={isUser ? 'bg-white' : (isDark ? 'bg-white' : 'bg-indigo-500')} />
                                 ) : (
                                     msg.content ?? ''
                                 )}

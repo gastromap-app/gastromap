@@ -8,6 +8,7 @@ import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { config } from '@/shared/config/env'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
+import { summarizeSession } from '@/shared/api/ai/summarize-session'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { useEffect } from 'react'
 import { useGeoStore } from '@/shared/store/useGeoStore'
@@ -19,7 +20,7 @@ import { useGeoStore } from '@/shared/store/useGeoStore'
  * When VITE_OPENROUTER_API_KEY is set (or admin sets a key at runtime):
  *   • Uses analyzeQueryStream for real-time token delivery
  *   • Updates the last assistant message in-place as chunks arrive
- *   • Passes last 8 messages as multi-turn history context
+ *   • Passes last 10 messages as multi-turn history context
  *   • Supports 300+ models via OpenRouter (default: DeepSeek V3.2 Free)
  *
  * When no API key:
@@ -99,13 +100,8 @@ export function useAIChat() {
             saveChatMessage(currentSessionId, user.id, userMsg);
         }
 
-        // Build conversation history for multi-turn context
-        const history = messages
-            .slice(-8)
-            .map((m) => ({
-                role: m.role === 'assistant' ? 'assistant' : 'user',
-                content: m.content,
-            }))
+        // Build conversation history for multi-turn context (rolling window of last 10 turns)
+        // (history variable removed — context.history uses messages.slice(-10) directly)
 
         // Fetch user reviews for deep personalization if authenticated
         let userExperience = []
@@ -142,8 +138,14 @@ export function useAIChat() {
 
         const context = { 
             preferences: prefs, 
-            history,
-            userData 
+            history: messages.slice(-10), // full message objects (with attachments, intent, etc.)
+            userData,
+            // Geo context for search_nearby tool
+            geo: {
+                lat: useGeoStore.getState().lat || null,
+                lng: useGeoStore.getState().lng || null,
+            },
+            userId: user?.id || null,
         }
 
         try {
@@ -174,6 +176,45 @@ export function useAIChat() {
                     updateLastMessage('assistant', display || '…')
                 })
 
+                // Handle needs_geo: prompt for location access and retry once.
+                if (result.needsGeo) {
+                    updateLastMessage('assistant', '📍 Для поиска мест поблизости мне нужен доступ к вашей геолокации. Пожалуйста, разрешите доступ…')
+                    try {
+                        await requestGeo()
+                        const retryGeo = {
+                            lat: useGeoStore.getState().lat,
+                            lng: useGeoStore.getState().lng,
+                        }
+                        if (retryGeo.lat && retryGeo.lng) {
+                            const retryCtx = { ...context, geo: retryGeo }
+                            accumulated = ''
+                            const retryResult = await analyzeQueryStream(text.trim(), retryCtx, (chunk) => {
+                                accumulated += chunk
+                                const display = accumulated
+                                    .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
+                                    .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
+                                    .trim()
+                                updateLastMessage('assistant', display || '…')
+                            })
+                            const retryClean = (retryResult.content || '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').replace(/\{"matches":\[.*?\]\}\s*$/s, '').trim()
+                            const finalMsg = updateLastMessage('assistant', retryClean || 'Я нашёл несколько мест для вас:', {
+                                attachments: retryResult.attachments || retryResult.matches,
+                                matches: retryResult.matches,
+                                intent: retryResult.intent,
+                            })
+                            if (user?.id && currentSessionId && finalMsg) {
+                                saveChatMessage(currentSessionId, user.id, finalMsg)
+                            }
+                        } else {
+                            updateLastMessage('assistant', '📍 Не удалось получить геолокацию. Попробуйте указать город в запросе, например "кафе в Кракове".')
+                        }
+                    } catch {
+                        updateLastMessage('assistant', '📍 Геолокация недоступна. Попробуйте указать город в запросе.')
+                    }
+                    setTyping(false)
+                    return
+                }
+
                 // Final update — parsed content + resolved location cards
                 const cleanContent = (result.content || '')
                     .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
@@ -181,6 +222,7 @@ export function useAIChat() {
                     .trim()
 
                 const finalMsg = updateLastMessage('assistant', cleanContent || 'I found some places for you:', {
+                    attachments: result.attachments || result.matches,
                     matches: result.matches,
                     intent: result.intent,
                 })
@@ -192,6 +234,7 @@ export function useAIChat() {
                 // ── Local engine fallback (no API key, no proxy — dev only) ──
                 const response = await analyzeQuery(text.trim(), context)
                 const finalMsg = addMessage('assistant', response.content, {
+                    attachments: response.attachments || response.matches,
                     matches: response.matches,
                     intent: response.intent,
                 })
@@ -201,6 +244,13 @@ export function useAIChat() {
             }
 
             trimHistory()
+
+            // Fire-and-forget: summarize session when it grows large.
+            const currentMessages = useAIChatStore.getState().messages
+            const activeSessionId = useAIChatStore.getState().sessionId
+            if (activeSessionId && currentMessages.length >= 15) {
+                summarizeSession(activeSessionId, currentMessages).catch(() => {})
+            }
         } catch (err) {
             setError(err.message ?? 'GastroGuide не отвечает. Попробуйте ещё раз.')
             addMessage('assistant', 'Произошла ошибка. Попробуйте ещё раз.', { isError: true })

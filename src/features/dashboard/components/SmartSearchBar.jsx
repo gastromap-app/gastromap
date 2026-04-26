@@ -84,7 +84,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                 className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl transition-all border ${
                     isDark
                         ? `bg-white/[0.03] border-white/[0.06] ${focused ? 'border-[hsl(217,91%,60%)]/40 shadow-lg shadow-[hsl(217,91%,60%)]/10' : ''}`
-                        : `bg-white border-gray-100 shadow-xl shadow-blue-500/5 ${focused ? 'border-blue-200' : ''}`
+                        : `bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.06)] ${focused ? 'border-blue-400 shadow-[0_2px_4px_rgba(15,23,42,0.06),0_8px_24px_rgba(59,130,246,0.15)]' : ''}`
                 }`}
             >
                 <Search size={18} className="text-blue-500 mr-3 flex-shrink-0" />
@@ -95,7 +95,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                     onChange={(e) => { onChange(e); setOpen(true) }}
                     onFocus={() => { setFocused(true); setOpen(true) }}
                     onBlur={() => setTimeout(() => setFocused(false), 150)}
-                    className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-[hsl(220,20%,96%)]' : 'text-gray-900'}`}
+                    className={`bg-transparent flex-1 outline-none text-sm font-semibold ${isDark ? 'text-[hsl(220,20%,96%)] placeholder:text-white/40' : 'text-gray-900 placeholder:text-slate-400'}`}
                 />
                 <AnimatePresence>
                     {value && (
@@ -176,13 +176,13 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                             {highlight(loc.title, value)}
                                         </p>
                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                            <MapPin size={10} className="text-gray-400 flex-shrink-0" />
-                                            <p className="text-xs text-gray-400 truncate">
+                                            <MapPin size={10} className={isDark ? 'text-gray-400 flex-shrink-0' : 'text-slate-500 flex-shrink-0'} />
+                                            <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
                                                 {highlight(loc.city || loc.address || '', value)}
                                             </p>
                                             {loc.rating && (
                                                 <>
-                                                    <span className="text-gray-300">·</span>
+                                                    <span className={isDark ? 'text-gray-500' : 'text-slate-400'}>·</span>
                                                     <Star size={10} className="text-[hsl(217,91%,60%)] fill-[hsl(217,91%,60%)] flex-shrink-0" />
                                                     <span className="text-xs font-semibold text-[hsl(217,91%,60%)]">{loc.rating}</span>
                                                 </>
@@ -192,7 +192,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                     {/* Category pill */}
                                     {loc.category && (
                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                            isDark ? 'bg-white/[0.06] text-[hsl(220,10%,55%)]' : 'bg-gray-100 text-gray-500'
+                                            isDark ? 'bg-white/[0.06] text-[hsl(220,10%,55%)]' : 'bg-slate-100 text-slate-700'
                                         }`}>
                                             {loc.category}
                                         </span>

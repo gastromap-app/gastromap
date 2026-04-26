@@ -139,11 +139,11 @@ function getUserPreferences() {
  *
  * Returns raw rows (for client-side post-filtering).
  */
-async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, fetchLimit = 200, lat, lng }) {
+async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, fetchLimit = 200 }) {
     if (!supabase) return null
 
     try {
-        console.log(`[ai.tools] Tier 1: Querying Supabase...`, { city, category, hasLatLng: !!lat })
+        console.log(`[ai.tools] Tier 1: Querying Supabase...`, { city, category })
         
         let query = supabase
             .from('locations')
@@ -200,15 +200,11 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
     let results = locations
 
     if (city) {
-        const countBefore = results.length
         results = results.filter(l => cityMatch(l, city))
-        // console.log(`[ai.tools] applyTextFilters (city: ${city}): ${countBefore} -> ${results.length}`)
     }
     if (category) {
-        const countBefore = results.length
         const cat = norm(category)
         results = results.filter(l => norm(l.category).includes(cat))
-        // console.log(`[ai.tools] applyTextFilters (category: ${category}): ${countBefore} -> ${results.length}`)
     }
     if (cuisine_types?.length) {
         results = results.filter(l => {
@@ -310,11 +306,16 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
 /**
  * Execute a tool call from the AI agent.
  *
- * @param {string} name   - 'search_locations' | 'get_location_details'
- * @param {Object} args   - Arguments extracted by the LLM
- * @param {Array}  [locations=[]] - Optional pre-loaded locations (passed by agent loop)
+ * @param {string} name - One of: search_locations | search_nearby | get_location_details | compare_locations | ask_clarification
+ * @param {Object} args - Arguments extracted by the LLM
+ * @param {Object|Array} [ctx] - Execution context: { locations, geo, userId }.
+ *                               For backwards compatibility, an array is treated as ctx.locations.
  */
-export async function executeTool(name, args, locations = []) {
+export async function executeTool(name, args, ctx = {}) {
+    // Backwards-compat: callers used to pass `locations` array as 3rd arg.
+    if (Array.isArray(ctx)) ctx = { locations: ctx }
+    const { locations = [], geo = null, userId = null } = ctx || {}
+    void userId // reserved for per-user personalization hooks
 
     // ── search_locations ────────────────────────────────────────────────────
     if (name === 'search_locations') {
@@ -324,34 +325,31 @@ export async function executeTool(name, args, locations = []) {
             keyword, michelin, limit = 5,
         } = args
 
-        console.log(`[ai.tools] 🔎 Executing search_locations:`, { 
-            city, category, keyword, 
-            lat: args.lat, lng: args.lng, radius: args.radius,
-            price_range, min_rating 
+        console.log(`[ai.tools] 🔎 Executing search_locations:`, {
+            city, category, keyword,
+            price_range, min_rating,
         })
 
         // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
         let pool = []
-        
+
         // Personalization: Merge user preferences if not explicitly overridden by search
         const userPrefs = getUserPreferences()
         const effectiveCuisine = cuisine_types?.[0] || (keyword && !cuisine_types?.length ? null : userPrefs?.favoriteCuisines?.[0])
         const effectivePrice = price_range?.[0] || (keyword && !price_range?.length ? null : userPrefs?.priceRange?.[0])
 
         if (keyword) {
-            // Call semanticSearch (Hybrid RPC) which handles city/category/geo server-side
-            const semanticResults = await semanticSearch(keyword, limit * 5, null, { 
-                city, 
+            // Call semanticSearch (Hybrid RPC) which handles city/category/cuisine server-side.
+            // Geo-aware queries must go through search_nearby instead; this path is filter-only.
+            const semanticResults = await semanticSearch(keyword, limit * 5, null, {
+                city,
                 category,
                 cuisine: effectiveCuisine,
                 price_range: effectivePrice,
-                lat: args.lat,
-                lng: args.lng,
-                radius: args.radius
             })
-            
+
             if (semanticResults?.length) {
-                // Hydrate semantic results with full data from the store to ensure 
+                // Hydrate semantic results with full data from the store to ensure
                 // the AI has access to all metadata (kg_profile, insider_tips, etc.)
                 let activeLocations = locations
                 if (!activeLocations?.length) {
@@ -363,16 +361,14 @@ export async function executeTool(name, args, locations = []) {
 
                 pool = semanticResults.map(sr => {
                     const full = activeLocations.find(l => l.id === sr.id)
-                    // If we found the full record in the store, use it. 
-                    // Otherwise fall back to the RPC result fields.
                     return full ? { ...full, rrf_score: sr.rrf_score } : sr
                 })
-                
+
                 // Apply remaining structured filters that RPC doesn't handle
                 if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
                 if (min_rating)          pool = pool.filter(l => (l.google_rating ?? l.rating ?? 0) >= min_rating)
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
-                
+
                 // Apply advanced text filters (amenities, dietary, etc.)
                 pool = applyTextFilters(pool, { amenities, best_for, dietary_options, tags, cuisine_types })
             }
@@ -381,30 +377,28 @@ export async function executeTool(name, args, locations = []) {
         // ── Case B: Structured Browse (if no keyword OR if hybrid failed/empty) ──
         if (!pool.length) {
             // Tier 1: Supabase query (primary, always fresh)
-            const dbRows = await querySupabase({ 
-                city, 
-                category, 
+            const dbRows = await querySupabase({
+                city,
+                category,
                 cuisine: effectiveCuisine,
-                price_range: price_range?.length ? price_range : (effectivePrice ? [effectivePrice] : null), 
-                min_rating, 
+                price_range: price_range?.length ? price_range : (effectivePrice ? [effectivePrice] : null),
+                min_rating,
                 michelin,
-                lat: args.lat,
-                lng: args.lng
             })
             if (dbRows?.length) {
                 pool = dbRows
             } else {
                 // Tier 3 Fallback: in-memory Zustand store
-                // console.log('[ai.tools] No DB results or DB error — using in-memory fallback')
-                if (!locations?.length) {
+                let activeLocations = locations
+                if (!activeLocations?.length) {
                     try {
                         const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                        locations = useLocationsStore.getState().locations
+                        activeLocations = useLocationsStore.getState().locations
                     } catch (e) {
                         console.warn('[ai.tools] Could not load store:', e.message)
                     }
                 }
-                pool = [...(locations || [])]
+                pool = [...(activeLocations || [])]
 
                 // Apply SQL-equivalent filters in memory when DB is unavailable
                 if (price_range?.length) pool = pool.filter(l => price_range.includes(l.price_range))
@@ -414,23 +408,7 @@ export async function executeTool(name, args, locations = []) {
 
             // Tier 2: Client-side text filters (diacritics-safe via norm())
             pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options })
-            
-            // Tier 2.5: Geolocation filtering (if coordinates provided)
-            if (args.lat && args.lng) {
-                const radius = args.radius || 5000 // 5km default
-                const countBefore = pool.length
-                pool = pool.filter(l => {
-                    // Try different lat/lng field names from DB
-                    const lat = l.lat ?? l.latitude
-                    const lng = l.lng ?? l.longitude
-                    if (!lat || !lng) return false
-                    const dist = calculateDistance(args.lat, args.lng, lat, lng)
-                    l.distance_meters = dist // Store for AI context
-                    return dist <= radius
-                })
-                // console.log(`[ai.tools] Geo-filter (${radius}m): ${countBefore} -> ${pool.length}`)
-            }
-            
+
             // If keyword exists but hybrid failed, do a literal fallback
             if (keyword) {
                 pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
@@ -443,7 +421,6 @@ export async function executeTool(name, args, locations = []) {
         console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}.`)
 
         if (!results.length) {
-            // Return helpful empty result so LLM can respond gracefully
             return {
                 found: 0,
                 message: `No locations found matching the search criteria (city: ${city ?? 'any'}, category: ${category ?? 'any'}).`,
@@ -454,15 +431,121 @@ export async function executeTool(name, args, locations = []) {
         return results.map(mapLocation)
     }
 
+    // ── search_nearby ───────────────────────────────────────────────────────
+    if (name === 'search_nearby') {
+        const { radius_m = 1500, category, cuisine, price_max, limit = 5 } = args
+
+        // Hard requirement: live geolocation. Signal the control layer to prompt the user.
+        if (!geo || typeof geo.lat !== 'number' || typeof geo.lng !== 'number') {
+            return {
+                needs_geo: true,
+                message: 'Geolocation is required to answer "near me" queries. The UI will prompt the user to grant location access.',
+            }
+        }
+
+        const clampedRadius = Math.max(200, Math.min(20000, Number(radius_m) || 1500))
+        const clampedLimit = Math.max(1, Math.min(10, Number(limit) || 5))
+
+        console.log('[ai.tools] 📍 Executing search_nearby:', { geo, radius_m: clampedRadius, category, cuisine, price_max, limit: clampedLimit })
+
+        // Try the PostGIS RPC first (fast, server-side ST_DWithin).
+        let rpcRows = null
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.rpc('search_locations_nearby', {
+                    p_lat:       geo.lat,
+                    p_lng:       geo.lng,
+                    p_radius_m:  clampedRadius,
+                    p_category:  category ?? null,
+                    p_cuisine:   cuisine ?? null,
+                    p_price_max: price_max ?? null,
+                    p_limit:     clampedLimit,
+                })
+                if (error) {
+                    console.warn('[ai.tools] search_locations_nearby RPC error:', error.message)
+                } else {
+                    rpcRows = data
+                }
+            } catch (err) {
+                console.warn('[ai.tools] search_locations_nearby RPC failed:', err.message)
+            }
+        }
+
+        if (rpcRows?.length) {
+            // Hydrate with full store rows when available for richer LLM context.
+            let activeLocations = locations
+            if (!activeLocations?.length) {
+                try {
+                    const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                    activeLocations = useLocationsStore.getState().locations
+                } catch { activeLocations = [] }
+            }
+            const hydrated = rpcRows.map(row => {
+                const full = activeLocations.find(l => l.id === row.id)
+                return full
+                    ? { ...full, distance_meters: row.distance_m }
+                    : { ...row, distance_meters: row.distance_m }
+            })
+            return hydrated.map(mapLocation)
+        }
+
+        // JS Haversine fallback — needed until the migration runs against the DB.
+        let activeLocations = locations
+        if (!activeLocations?.length) {
+            try {
+                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                activeLocations = useLocationsStore.getState().locations
+            } catch { activeLocations = [] }
+        }
+
+        let pool = (activeLocations || []).filter(l => {
+            const lat = l.lat ?? l.latitude
+            const lng = l.lng ?? l.longitude
+            if (lat == null || lng == null) return false
+            const dist = calculateDistance(geo.lat, geo.lng, lat, lng)
+            if (dist > clampedRadius) return false
+            l.distance_meters = dist
+            return true
+        })
+
+        if (category) {
+            const cat = norm(category)
+            pool = pool.filter(l => norm(l.category).includes(cat))
+        }
+        if (cuisine) {
+            const cu = norm(cuisine)
+            pool = pool.filter(l =>
+                norm(l.cuisine).includes(cu) ||
+                (l.cuisine_types || []).some(c => norm(c).includes(cu)) ||
+                (l.kg_cuisines || []).some(c => norm(c).includes(cu))
+            )
+        }
+        if (price_max) {
+            const rank = { '$': 1, '$$': 2, '$$$': 3, '$$$$': 4 }
+            const cap = rank[price_max] || 4
+            pool = pool.filter(l => (rank[l.price_range] || 0) <= cap)
+        }
+
+        pool.sort((a, b) => (a.distance_meters ?? Infinity) - (b.distance_meters ?? Infinity))
+        const results = pool.slice(0, clampedLimit)
+
+        if (!results.length) {
+            return {
+                found: 0,
+                message: `No places within ${clampedRadius}m match the criteria.`,
+                results: [],
+            }
+        }
+        return results.map(mapLocation)
+    }
+
     // ── get_location_details ────────────────────────────────────────────────
     if (name === 'get_location_details') {
         const { location_id } = args
         if (!location_id) return { error: 'location_id is required' }
 
-        // Try in-memory first (fastest, zero latency)
         let loc = locations.find(l => String(l.id) === String(location_id))
 
-        // Fallback: Supabase direct query
         if (!loc && supabase) {
             try {
                 const { data } = await supabase
@@ -476,7 +559,6 @@ export async function executeTool(name, args, locations = []) {
             }
         }
 
-        // Fallback: Zustand store
         if (!loc) {
             try {
                 const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
@@ -488,10 +570,74 @@ export async function executeTool(name, args, locations = []) {
 
         return {
             ...mapLocation(loc),
-            // Extra fields only in detail view
             phone:       loc.phone ?? null,
             website:     loc.website ?? null,
             booking_url: loc.booking_url ?? null,
+        }
+    }
+
+    // ── compare_locations ──────────────────────────────────────────────────
+    // Fetches the full rich profile for 2-4 locations so the LLM can author a
+    // side-by-side answer. Phase 3.3 will layer structured comparison dimensions
+    // on top of this, but the raw data path is ready now.
+    if (name === 'compare_locations') {
+        const ids = Array.isArray(args.location_ids) ? args.location_ids.slice(0, 4) : []
+        if (ids.length < 2) {
+            return { error: 'compare_locations requires at least 2 location_ids' }
+        }
+
+        const dimensions = Array.isArray(args.dimensions) ? args.dimensions : []
+
+        // Hydrate each id (store first, then DB).
+        let activeLocations = locations
+        if (!activeLocations?.length) {
+            try {
+                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                activeLocations = useLocationsStore.getState().locations
+            } catch { activeLocations = [] }
+        }
+
+        const items = []
+        for (const id of ids) {
+            let loc = activeLocations.find(l => String(l.id) === String(id))
+            if (!loc && supabase) {
+                try {
+                    const { data } = await supabase
+                        .from('locations')
+                        .select('*')
+                        .eq('id', id)
+                        .single()
+                    loc = data
+                } catch {
+                    loc = null
+                }
+            }
+            if (loc) items.push(mapLocation(loc))
+        }
+
+        if (items.length < 2) {
+            return {
+                error: 'Could not find enough locations to compare',
+                requested: ids,
+                found: items.length,
+            }
+        }
+
+        return {
+            compared: items.length,
+            dimensions,
+            items,
+        }
+    }
+
+    // ── ask_clarification ──────────────────────────────────────────────────
+    // Short-circuit tool: the agent loop will surface this back to the user
+    // and stop generating further tool calls for this turn.
+    if (name === 'ask_clarification') {
+        return {
+            ask_clarification: true,
+            question: args.question || '',
+            suggestions: Array.isArray(args.suggestions) ? args.suggestions.slice(0, 4) : [],
         }
     }
 

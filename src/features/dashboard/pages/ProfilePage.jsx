@@ -31,7 +31,7 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
                     className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
                 >
                     <h3 className="text-2xl font-bold mb-2">{t('profile.feedback_title')}</h3>
-                    <p className={`text-sm mb-6 ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>{t('profile.feedback_desc')}</p>
+                    <p className={`text-sm mb-6 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{t('profile.feedback_desc')}</p>
 
                     <textarea
                         className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
@@ -64,9 +64,11 @@ const ProfilePage = () => {
 
     // Styling (derived from hooks, not hooks themselves)
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
-    const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
+    const subTextStyle = isDark ? "text-white/55" : "text-slate-600"
+    const cardBg = isDark
+        ? "bg-[#1f2128]/80 border-white/5"
+        : "bg-white border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)]"
+    const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-slate-50"
 
     // Real data from Supabase — safe with undefined userId (queries stay disabled)
     const { data: visits = [] }    = useUserVisits(authUser?.id)
@@ -100,7 +102,7 @@ const ProfilePage = () => {
     }
 
     const stats = [
-        { label: t('profile.level'), val: rankData?.points > 100 ? 'Expert' : rankData?.points > 20 ? 'Regular' : 'Newbie', icon: Star, color: 'text-yellow-500 bg-yellow-500/10', link: null },
+        { label: t('profile.level'), val: rankData?.points > 100 ? t('profile.rank_expert') : rankData?.points > 20 ? t('profile.rank_regular') : t('profile.rank_newbie'), icon: Star, color: 'text-yellow-500 bg-yellow-500/10', link: null },
         { label: t('profile.visited'), val: visits.length.toString(), icon: MapPin, color: 'text-blue-500 bg-blue-500/10', link: '/visited' },
         { label: t('profile.reviews'), val: reviews.length.toString(), icon: Utensils, color: 'text-green-500 bg-green-500/10', link: '/dashboard/my-submissions' },
         { label: t('profile.saved'), val: favorites.length.toString(), icon: Coffee, color: 'text-indigo-500 bg-indigo-500/10', link: '/saved' },
@@ -119,7 +121,7 @@ const ProfilePage = () => {
         {
             section: t('profile.section_account'),
             items: [
-                ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: 'Admin Panel', link: "/admin", highlight: true }] : []),
+                ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t('profile.admin_panel'), link: "/admin", highlight: true }] : []),
                 { icon: User, label: t('profile.personal_info'), link: "/profile/edit" },
                 { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: i18n.language?.toUpperCase() ?? "EN" },
                 { icon: Lock, label: t('profile.security'), link: "/profile/security" },
@@ -151,12 +153,12 @@ const ProfilePage = () => {
                             const registration = await navigator.serviceWorker.getRegistration();
                             if (registration) {
                                 await registration.update();
-                                showToast('Checking for updates… New version will download in the background.');
+                                showToast(t('profile.sw_checking'));
                             } else {
-                                showToast('Service Worker not registered. PWA might not be installed.');
+                                showToast(t('profile.sw_not_registered'));
                             }
                         } else {
-                            showToast('Offline mode is not supported by this browser.');
+                            showToast(t('profile.sw_unsupported'));
                         }
                     }
                 },
@@ -188,7 +190,7 @@ const ProfilePage = () => {
                     <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/30">
                         {user.name.charAt(0)}
                     </div>
-                    <div className="absolute -bottom-1 -right-1 bg-yellow-400 p-1.5 rounded-full text-white shadow-lg border-[3px] border-[#0F1115]">
+                    <div className={`absolute -bottom-1 -right-1 bg-yellow-400 p-1.5 rounded-full text-white shadow-lg border-[3px] ${isDark ? 'border-[#0F1115]' : 'border-white'}`}>
                         <Award size={14} />
                     </div>
                 </div>
@@ -240,7 +242,7 @@ const ProfilePage = () => {
                 <div className="flex items-center justify-between mb-4 px-2">
                     <h3 className={`text-[15px] font-black uppercase tracking-tight ${textStyle}`}>{t('profile.contributions')}</h3>
                     <Link to="/dashboard/add-place" className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600">
-                        <PlusCircle size={13} /> Place
+                        <PlusCircle size={13} /> {t('profile.add_place')}
                     </Link>
                 </div>
                 <div className={`rounded-[24px] overflow-hidden border backdrop-blur-sm ${cardBg}`}>
@@ -293,14 +295,14 @@ const ProfilePage = () => {
                             onClick={() => navigate('/profile/edit')}
                             className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'}`}
                         >
-                            Edit
+                            {t('profile.edit')}
                         </button>
                     </div>
 
                     <div className="space-y-5">
                         {/* Cuisines */}
                         <div className="space-y-2">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Cuisines</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.cuisines_label')}</label>
                             {prefs.favoriteCuisines?.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {prefs.favoriteCuisines.map(c => (
@@ -463,7 +465,7 @@ const ProfilePage = () => {
                 </button>
 
                 <div className="text-center mt-6">
-                    <p className={`text-[10px] font-medium ${isDark ? 'text-white/20' : 'text-gray-300'}`}>GastroMap v2.0.4 • 2026</p>
+                    <p className={`text-[10px] font-medium ${isDark ? 'text-white/30' : 'text-slate-400'}`}>GastroMap v2.0.4 • 2026</p>
                 </div>
             </div>
 

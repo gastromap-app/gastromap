@@ -46,6 +46,7 @@ const COUNTRY_IMAGES = {
 // ─── LOCATION CARD MOBILE ────────────────────────────────────────────────────
 
 const LocationCardMobile = ({ loc, type = 'recommended' }) => {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
@@ -78,7 +79,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
             className={`flex-shrink-0 w-[240px] rounded-card overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-200 ${
                 isDark
                     ? 'bg-[#1c1c1e] border border-white/8'
-                    : 'bg-white border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.08)]'
+                    : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.06)]'
             }`}
         >
             {/* Image */}
@@ -101,14 +102,14 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 {/* Trending badge */}
                 {type === 'trending' && (
                     <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full">
-                        Trending
+                        {t('dashboard.trending_badge')}
                     </div>
                 )}
 
                 {/* Favorite button — 44px touch target */}
                 <button
                     onClick={(e) => toggleFavorite(e, loc.id)}
-                    aria-label={saved ? 'Remove from saved' : 'Save place'}
+                    aria-label={saved ? t('location.saved') : t('location.save')}
                     className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-black/60"
                 >
                     <Heart
@@ -124,7 +125,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                     {loc.title || 'Unknown Place'}
                 </h4>
                 {/* Subtitle: real data — cuisine + city, not a generic fallback */}
-                <p className="text-[12px] text-gray-400 mt-0.5 truncate">
+                <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
                     {[loc.cuisine, loc.city].filter(Boolean).join(' · ') || loc.category || ''}
                 </p>
 
@@ -149,7 +150,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                     </div>
                     {/* Price level — key decision signal for users */}
                     {(loc.price_range || loc.price_level || loc.priceLevel) && (
-                        <span className={`text-[11px] font-bold tracking-tight ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <span className={`text-[11px] font-bold tracking-tight ${isDark ? 'text-gray-400' : 'text-slate-700'}`}>
                             {loc.price_range ?? loc.price_level ?? loc.priceLevel}
                         </span>
                     )}
@@ -233,7 +234,7 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
                 <div className={`absolute top-3 left-3 z-[500] px-3 py-1.5 rounded-pill text-[11px] font-semibold backdrop-blur-md pointer-events-none ${
                     isDark ? 'bg-black/60 text-white/80 border border-white/15' : 'bg-white/90 text-gray-700 border border-gray-200/60'
                 }`}>
-                    {filteredLocations.length} place{filteredLocations.length !== 1 ? 's' : ''}
+                    {t('dashboard.places_count', { count: filteredLocations.length })}
                 </div>
                 <MapTab />
             </div>
@@ -243,14 +244,16 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
 
 // ─── SECTION HEADER ───────────────────────────────────────────────────────────
 
-const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => (
+const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
+    const { t } = useTranslation()
+    return (
     <div className="flex justify-between items-end">
         <div>
             <h3 className={`text-[18px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {title}
             </h3>
             {subtitle && (
-                <p className="text-[12px] text-gray-500 mt-0.5 font-medium">{subtitle}</p>
+                <p className={`text-[12px] mt-0.5 font-medium ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{subtitle}</p>
             )}
         </div>
         {onSeeAll && (
@@ -258,11 +261,12 @@ const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => (
                 onClick={onSeeAll}
                 className="text-[13px] font-semibold text-blue-500 hover:text-blue-600 transition-colors min-h-11 flex items-center"
             >
-                See all
+                {t('dashboard.see_all')}
             </button>
         )}
     </div>
-)
+    )
+}
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
@@ -385,7 +389,7 @@ const DashboardPage = () => {
 
                     {/* Greeting */}
                     <div className="px-5 mb-5">
-                        <p className="text-[13px] font-medium text-gray-500 mb-0.5">{greeting}</p>
+                        <p className={`text-[13px] font-medium mb-0.5 ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{greeting}</p>
                         <h1 className={`text-[26px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {firstName} <span className="text-blue-600">✦</span>
                         </h1>
@@ -419,7 +423,7 @@ const DashboardPage = () => {
                                     <button
                                         key={country.slug}
                                         onClick={() => handleSelectCountry(country)}
-                                        aria-label={`Explore ${country.name}`}
+                                        aria-label={t('dashboard.explore_country_aria', { country: country.name })}
                                         className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
                                     >
                                         <img
@@ -430,7 +434,7 @@ const DashboardPage = () => {
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                                         <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                            {country.newCount} New
+                                            {t('dashboard.new_badge', { count: country.newCount })}
                                         </div>
                                         <div className="absolute bottom-3.5 left-4">
                                             <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
@@ -468,14 +472,14 @@ const DashboardPage = () => {
                                             }`}>
                                                 <div className="text-4xl">🍽️</div>
                                                 <div className="text-center">
-                                                    <p className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>No places yet</p>
-                                                    <p className="text-[12px] text-gray-400 mt-0.5">Be the first to add a spot</p>
+                                                    <p className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.empty_title')}</p>
+                                                    <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.empty_desc')}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => navigate('/dashboard/add-place')}
                                                     className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform"
                                                 >
-                                                    + Add a place
+                                                    + {t('dashboard.empty_cta')}
                                                 </button>
                                             </div>
                                         )
@@ -548,7 +552,7 @@ const DesktopDashboard = ({
 
     const cardClass = isDark
         ? 'bg-[hsl(220,20%,6%)] border border-white/[0.06] rounded-sheet'
-        : 'bg-white border border-gray-100 rounded-sheet shadow-[0_2px_20px_rgba(0,0,0,0.06)]'
+        : 'bg-white border border-slate-200/70 rounded-sheet shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.06)]'
 
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },
@@ -598,7 +602,7 @@ const DesktopDashboard = ({
                                         : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            {tab === 'overview' ? 'Overview' : 'Map'}
+                            {tab === 'overview' ? t('dashboard.tab_overview') : t('dashboard.tab_map')}
                         </button>
                     ))}
                 </div>
@@ -610,7 +614,7 @@ const DesktopDashboard = ({
                     }`}
                 >
                     <SlidersHorizontal size={15} />
-                    Filters
+                    {t('dashboard.filters')}
                 </button>
             </div>
 
@@ -636,19 +640,19 @@ const DesktopDashboard = ({
                                 <button
                                     key={country.slug}
                                     onClick={() => handleSelectCountry(country)}
-                                    aria-label={`Explore ${country.name}`}
+                                    aria-label={t('dashboard.explore_country_aria', { country: country.name })}
                                     className="relative h-[180px] rounded-card overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform duration-200 text-left"
                                 >
                                     <img src={country.image} alt={country.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                                     <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-full">
-                                        {country.newCount} New
+                                        {t('dashboard.new_badge', { count: country.newCount })}
                                     </div>
                                     <div className="absolute bottom-4 left-4">
                                         <h4 className="text-[18px] font-bold text-white mb-0.5">{country.name}</h4>
                                         <div className="flex items-center gap-1 text-white/60 text-[11px]">
                                             <MapPin size={10} />
-                                            <span>Explore cities</span>
+                                            <span>{t('dashboard.explore_cities')}</span>
                                         </div>
                                     </div>
                                 </button>
@@ -742,14 +746,14 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) =
             <h4 className={`text-[15px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {item.title}
             </h4>
-            <p className="text-[12px] text-gray-500 mt-0.5 truncate">{item.subtitle}</p>
+            <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{item.subtitle}</p>
             {item.special_labels?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                     {item.special_labels.slice(0, 3).map(label => (
                         <span
                             key={label}
                             className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                                isDark ? 'bg-white/8 text-white/60' : 'bg-slate-100 text-slate-700'
                             }`}
                         >
                             {translate(label)}

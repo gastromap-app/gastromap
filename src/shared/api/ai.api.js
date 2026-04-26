@@ -430,7 +430,7 @@ export async function analyzeQuery(message, context = {}) {
     if (getActiveAIConfig().apiKey) {
         try {
             const historyMessages = (context.history ?? [])
-                .slice(-8)
+                .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
@@ -465,7 +465,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
     if (getActiveAIConfig().apiKey) {
         try {
             const historyMessages = (context.history ?? [])
-                .slice(-8)
+                .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 

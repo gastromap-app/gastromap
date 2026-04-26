@@ -14,13 +14,16 @@ export function MainLayout() {
     const location = useLocation()
     const isMap = location.pathname === '/map'
     const isAIGuide = location.pathname === '/ai-guide'
+    // Location detail page has its own scroll-aware header (Apple Maps pattern)
+    // so the global header is hidden to avoid overlapping the hero image.
+    const isLocationDetail = location.pathname.startsWith('/location/')
     // Full-screen pages: no extra bottom padding (they handle their own layout)
     const isFullScreen = isMap || isAIGuide
 
     return (
         <AuroraBackground theme={theme}>
             <div className="flex flex-col min-h-screen text-foreground relative">
-                <UniversalHeader />
+                {!isLocationDetail && <UniversalHeader />}
                 <main
                     className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24'} md:pb-0`}
                     style={!isFullScreen ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : undefined}

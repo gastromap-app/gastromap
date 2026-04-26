@@ -37,11 +37,11 @@ export async function analyzeQuery(message, context = {}) {
     if (getActiveAIConfig().apiKey) {
         try {
             const historyMessages = (context.history ?? [])
-                .slice(-8)
+                .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData)
+            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
 
             const messages = [
                 { role: 'system', content: systemPrompt },
@@ -49,7 +49,7 @@ export async function analyzeQuery(message, context = {}) {
                 { role: 'user', content: message },
             ]
 
-            // locations from context, or fallback to store
+            // Build context for the agentic pass
             let locations = context.locations
             if (!locations?.length) {
                 try {
@@ -57,9 +57,26 @@ export async function analyzeQuery(message, context = {}) {
                     locations = useLocationsStore.getState().locations
                 } catch { locations = [] }
             }
-            const { text, usedLocations } = await runAgentPass(messages, locations)
+            const agentCtx = {
+                locations,
+                geo: context.geo || null,
+                userId: context.userId || null,
+            }
+            const agentResult = await runAgentPass(messages, agentCtx)
 
-            return { content: text, matches: usedLocations, intent }
+            if (agentResult.needsGeo) {
+                return { content: '', matches: [], intent, needsGeo: true, pendingTool: agentResult.pendingTool }
+            }
+            if (agentResult.askClarification) {
+                return { content: agentResult.text, matches: [], intent, askClarification: agentResult.askClarification }
+            }
+
+            return {
+                content: agentResult.text,
+                matches: agentResult.usedLocations ?? [],
+                attachments: agentResult.attachments ?? agentResult.usedLocations ?? [],
+                intent,
+            }
         } catch (err) {
             if (err.status === 401) throw new ApiError('Invalid OpenRouter API key. Check VITE_OPENROUTER_API_KEY.', 401, 'AUTH_ERROR')
             console.warn('[GastroAI] OpenRouter error, falling back to local engine:', err.message)
@@ -102,18 +119,18 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
             if (onChunk) onChunk('Thinking...')
 
             const historyMessages = (context.history ?? [])
-                .slice(-8)
+                .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData)
+            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
             const messages = [
                 { role: 'system', content: systemPrompt },
                 ...historyMessages,
                 { role: 'user', content: message },
             ]
 
-            // locations from context, or fallback to store
+            // Build context for the agentic pass (locations, geo, userId)
             let locations = context.locations
             if (!locations?.length) {
                 try {
@@ -122,15 +139,34 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 } catch { locations = [] }
             }
 
+            const agentCtx = {
+                locations,
+                geo: context.geo || null,
+                userId: context.userId || null,
+            }
+
             // This is the heavy lifting part
-            const { text, usedLocations } = await runAgentPass(messages, locations)
+            const agentResult = await runAgentPass(messages, agentCtx)
+
+            // Bubble up needs_geo / ask_clarification signals
+            if (agentResult.needsGeo) {
+                return { content: '', matches: [], intent, needsGeo: true, pendingTool: agentResult.pendingTool }
+            }
+            if (agentResult.askClarification) {
+                return {
+                    content: agentResult.text,
+                    matches: [],
+                    intent,
+                    askClarification: agentResult.askClarification,
+                }
+            }
 
             // Simulate streaming: emit word by word
-            if (onChunk && text) {
+            if (onChunk && agentResult.text) {
                 // Clear the "Thinking..." message first
                 onChunk('') 
                 
-                const words = text.split(' ')
+                const words = agentResult.text.split(' ')
                 for (let i = 0; i < words.length; i++) {
                     const chunk = (i === 0 ? '' : ' ') + words[i]
                     onChunk(chunk)
@@ -139,7 +175,12 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 }
             }
 
-            return { content: text, matches: usedLocations, intent }
+            return {
+                content: agentResult.text,
+                matches: agentResult.usedLocations ?? [],
+                attachments: agentResult.attachments ?? agentResult.usedLocations ?? [],
+                intent,
+            }
         } catch (err) {
             console.warn('[GastroAI] OpenRouter streaming error, falling back to local engine:', err.message)
         }

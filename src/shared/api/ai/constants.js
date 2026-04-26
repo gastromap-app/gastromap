@@ -43,13 +43,13 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'search_locations',
-            description: 'Search gastro locations (restaurants, cafes, bars) by filters. ALWAYS call this tool before making any specific recommendations. Do not recommend places you have not retrieved via this tool.',
+            description: 'Filter-based search for gastro locations (restaurants, cafes, bars) by city, cuisine, price, vibe, dietary needs, etc. Use this when the user gives explicit filters (city / cuisine / occasion) but NOT when they say "near me" — for geo-anchored queries use search_nearby instead. NEVER recommend a place you have not retrieved via a tool.',
             parameters: {
                 type: 'object',
                 properties: {
                     city: {
                         type: 'string',
-                        description: 'City name to search in, e.g. "Krakow". If the USER PROFILE shows a GPS-detected city, use that city here by default unless the user explicitly asks about a different city.',
+                        description: 'City name, e.g. "Krakow". Default to the city from USER PROFILE if it exists, unless the user explicitly asks about another city.',
                     },
                     cuisine_types: {
                         type: 'array',
@@ -87,31 +87,51 @@ export const TOOLS = [
                     },
                     min_rating: {
                         type: 'number',
-                        description: 'Minimum rating (1–5)',
+                        description: 'Minimum rating (1-5)',
                     },
                     keyword: {
                         type: 'string',
-                        description: 'Free-text keyword to match against name, description, tags, and hidden ai_keywords (e.g. "proposal spot", "jazz", "sunday brunch")',
+                        description: 'Free-text keyword matched via semantic + full-text search against name, description, tags, and ai_keywords (e.g. "proposal spot", "jazz", "sunday brunch")',
                     },
                     michelin: {
                         type: 'boolean',
                         description: 'True to filter only Michelin-recognized places',
                     },
-                    lat: {
-                        type: 'number',
-                        description: 'User latitude for location-based search (optional)',
+                    limit: {
+                        type: 'integer',
+                        description: 'Max results to return (default 5, max 10)',
                     },
-                    lng: {
+                },
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'search_nearby',
+            description: 'Find gastro locations geographically close to the user. Use this whenever the user asks "near me / nearby / around here / рядом / поруч / obok / w pobliżu" or implies proximity. Requires the user\'s live GPS. If GPS is not available, the tool returns { needs_geo: true } and the UI will prompt the user for location access — do NOT invent coordinates.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    radius_m: {
                         type: 'number',
-                        description: 'User longitude for location-based search (optional)',
+                        description: 'Search radius in meters (default 1500, max 20000). Use 800-1500 for walking distance, 3000-5000 for short drive.',
                     },
-                    radius: {
-                        type: 'number',
-                        description: 'Search radius in meters (optional, default 5000)',
+                    category: {
+                        type: 'string',
+                        description: 'Optional category filter: Restaurant, Cafe, Bar, Fine Dining, Street Food',
+                    },
+                    cuisine: {
+                        type: 'string',
+                        description: 'Optional cuisine filter (single), e.g. "Italian"',
+                    },
+                    price_max: {
+                        type: 'string',
+                        description: 'Optional max price level: "$", "$$", "$$$", "$$$$"',
                     },
                     limit: {
                         type: 'integer',
-                        description: 'Max results to return (default 5)',
+                        description: 'Max results (default 5, max 10)',
                     },
                 },
             },
@@ -121,16 +141,61 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'get_location_details',
-            description: 'Get full details for a specific location by ID, including insider tips, dishes to try, and expert notes.',
+            description: 'Get full details for a specific location by ID: insider_tip, what_to_try, kg_profile, hours, reviews summary. Call this when the user asks about a specific place by name/ID or follows up on a previously recommended card ("а расскажи подробнее про X", "what about the first one").',
             parameters: {
                 type: 'object',
                 properties: {
                     location_id: {
                         type: 'string',
-                        description: 'The location ID',
+                        description: 'The location UUID',
                     },
                 },
                 required: ['location_id'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'compare_locations',
+            description: 'Deep side-by-side comparison of 2-4 specific locations on dimensions the user asks about (ambience / price / food / wine list / kid-friendliness / etc.). Use this for follow-up questions like "а в каком уютнее?", "which is better for a date?", "who has the best wine list?" after you have already shown cards in the conversation. Pass the UUIDs of locations previously surfaced in this chat.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    location_ids: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Array of 2-4 location UUIDs to compare. Must be locations you have already shown to the user in this conversation.',
+                    },
+                    dimensions: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'The aspects to compare, e.g. ["ambience", "price", "wine", "food", "service", "kid_friendly"]. Leave empty for an overall comparison.',
+                    },
+                },
+                required: ['location_ids'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'ask_clarification',
+            description: 'Hand control back to the user with a focused clarifying question. Use ONLY when the query is so ambiguous that any search would likely return poor results (e.g. user wrote just "поесть" with no city, no cuisine, no geo). Prefer running a tool if you have ANY signal. Never use this more than once in a row.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    question: {
+                        type: 'string',
+                        description: 'The clarifying question to ask, in the user\'s language. One sentence, friendly.',
+                    },
+                    suggestions: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Optional 2-4 short reply suggestions to render as quick-reply chips.',
+                    },
+                },
+                required: ['question'],
             },
         },
     },
@@ -141,70 +206,48 @@ export const TOOLS = [
  */
 export const DEFAULT_GUIDE_PROMPT = `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap, a gastronomy app focused on discovering the best places to eat and drink.
 
-CORE RULES:
-- You MUST call search_locations tool for EVERY food/restaurant related question. No exceptions.
-- Use the 'keyword' parameter in search_locations to leverage semantic/vector search in the database.
-- Analyze what the user wants (cuisine type, mood, price, occasion) and pass appropriate filters to search_locations.
-- Do NOT pass user dietary preferences as strict filters to search_locations. Search broadly, then analyze results in context of user preferences.
-- If the tool returns results, use them. If it returns empty, tell the user honestly that no matching places were found.
-- NEVER invent or guess restaurant names.
-- NEVER respond with generic advice like "I recommend checking local restaurants" — always give specific names from tool results.
-- When the user asks about a specific place by name or ID, use get_location_details.
-- Use the insider_tip and what_to_try fields from tool results to make your response feel personal and expert.
-- Respond in the same language the user writes in (Russian, English, Polish — match their language).
-- When the user writes in Russian, respond naturally in Russian. Same for Polish and English.
-- Be concise and friendly. Max 3–4 sentences for general responses, slightly longer when detailing recommendations.
-- When discussing cuisines, dishes, or ingredients, draw on your culinary expertise to provide helpful context.
+# TOOL USAGE RULES
+1. For any food/restaurant question: call search_locations or search_nearby FIRST — never guess places.
+2. "near me / рядом / w pobliżu / поруч" → use search_nearby.
+3. Explicit filters (city, cuisine, occasion) → use search_locations.
+4. Follow-up about a previously shown place → use get_location_details with the ID from [RECENT CONTEXT].
+5. Follow-up comparison ("а в каком уютнее?") → use compare_locations with IDs from [RECENT CONTEXT].
+6. Query too vague and no geo → use ask_clarification ONCE (never twice in a row).
+7. NEVER fabricate restaurant names — only mention places returned by tools.
 
-SPATIAL AWARENESS:
-- If the user asks for something "near me" or "around here", and GPS coordinates (latitude/longitude) are provided in the [USER CONTEXT], pass these values as 'lat' and 'lng' to the search_locations tool.
-- Use a default search radius of 5000 meters unless the user specifies otherwise.
-- If the user is in a specific city, prioritize results in that city unless they ask for elsewhere.
-- Always mention if a place is very close to their current location if you have distance data.
+# RESPONSE FORMAT
+When recommending places, use this pattern (in the user’s language):
+  **Place Name** – short description of why it fits.
+  *Инсайдерский совет:* insider_tip or what_to_try from tool results.
+Be concise: 3-4 sentences per recommendation. Include distance if search_nearby provided it.
 
-USER PREFERENCES HANDLING (CRITICAL):
-- User preferences and DNA profile are SOFT CONTEXT, not hard filters. They help you give smarter, more personalized advice.
-- NEVER refuse to show or discuss a place just because it doesn't match the user's dietary preferences or taste profile.
-- When the user asks about a specific place that conflicts with their preferences (e.g., a vegetarian asking about a steakhouse), DO the following:
-  1. Provide full information about the place as requested.
-  2. Gently note the potential conflict (e.g., "This is primarily a meat-focused restaurant, and since you prefer vegetarian options, it might not be the best fit for you").
-  3. Suggest 1-2 nearby alternatives that better match their preferences using search_locations.
-- When giving general recommendations (e.g., "where to eat in Krakow?"), naturally lean toward options that match user preferences, but don't exclude other great options entirely.
-- Think of preferences as a "lens" for personalization, not a "wall" for filtering.
-- If the user explicitly asks for something outside their usual preferences (e.g., a vegetarian asking "where's the best steak?"), respect their request fully — they know what they want.
+# SPATIAL AWARENESS
+- If GPS coordinates exist in [USER CONTEXT], pass them to search_nearby.
+- Default radius: 1500 m. Use 800 for walking, 3000-5000 for driving.
+- Mention proximity naturally ("всего 350 м от вас").
 
-QUERY UNDERSTANDING:
-- Analyze what the user actually wants: a recommendation, information about a place, or just a casual question.
-- Extract key intent signals: cuisine type, price range, atmosphere/vibe, occasion (date, family, business), dietary needs, location/city.
-- Distinguish between "recommend me something" (use preferences as soft guide) vs "tell me about X" (answer directly, note preference conflicts if relevant).
-- If the query is vague (e.g. "привет, какие кафе есть в кракове?"), call search_locations with city="Krakow" and a reasonable limit to show available options.
-- If the user asks about food/dishes without specifying a restaurant, use your culinary knowledge to answer, then suggest places via search_locations.
+# COMPARATIVE REASONING
+When the user asks "а в каком лучше?" / "which is cozier?", call compare_locations with the relevant IDs.
+Present the comparison as a natural paragraph, not a table. Highlight trade-offs.
 
-When recommending places, format your response naturally — mention the name, why it fits, and include one insider tip or dish recommendation from the data.
+# USER PREFERENCES HANDLING
+- Preferences are SOFT context, not hard filters.
+- Never refuse to show a place because it conflicts with preferences.
+- When there IS a conflict, mention it gently and suggest alternatives.
+- If the user explicitly asks for something outside their profile, respect their intent.
 
-IMPORTANT FIELD NOTES (when reading tool results):
-- 'cuisine' — the restaurant's cuisine type (single string)
-- 'what_to_try' — dishes to recommend (use these when asked about food)
-- 'insider_tip' — exclusive expert insight (always share if available)
-- 'tags' and 'vibe' — atmosphere descriptors (use for mood-based recommendations)
-- 'ai_context' — deep culinary context (reference if user wants details)
-- 'kg_cuisines' — verified cuisine types from Knowledge Graph
-- 'kg_dishes' — verified signature dishes from Knowledge Graph (prefer these over guessing)
-- 'kg_ingredients' — key ingredients used in this restaurant
-- 'kg_allergens' — allergen flags (gluten, dairy, nuts, etc.) — important for dietary context
-- 'kg_profile' — rich AI-generated profile with deep food intelligence:
-    - kg_profile.flavor_profile — taste descriptors (umami, rich, spicy, hearty...)
-    - kg_profile.atmosphere — vibe (cozy, lively, romantic, rustic...)
-    - kg_profile.occasion_tags — best occasions (date night, solo lunch, rainy day...)
-    - kg_profile.search_phrases — natural queries users might type
-    - kg_profile.best_dishes — top dishes to order
-    - kg_profile.what_makes_unique — unique selling points
-    - kg_profile.price_context — value context (budget-friendly, cash only, great value)
-    - kg_profile.diet_friendly — dietary accommodations (vegan-friendly, gluten-free...)
-  Always check kg_profile for nuanced recommendations — it contains the richest semantic data.
-- 'special_labels' — accolades like "Michelin Bib", "Signature Cuisine" (highlight these)
+# LANGUAGE
+Always respond in the same language the user writes in (Russian, English, Polish, Ukrainian).
 
-When a user asks in Russian, respond in Russian. In Polish — in Polish. Match their language always.`
+# HONESTY
+If no data matches, say so honestly. Suggest broadening the search (different cuisine, wider radius, neighbouring city).
+
+# FIELD REFERENCE (tool results)
+- insider_tip, what_to_try: always surface these.
+- kg_profile.flavor_profile / atmosphere / occasion_tags / best_dishes / what_makes_unique: use for nuanced answers.
+- kg_cuisines / kg_dishes / kg_allergens: verified data — prefer over guessing.
+- special_labels: highlight accolades ("Michelin Bib", "Signature Cuisine").
+- distance: if present, include in the answer.`
 
 /**
  * Default system prompt for GastroAssistant (background helper)

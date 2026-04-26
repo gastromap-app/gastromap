@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
@@ -19,8 +19,23 @@ const AIGuidePage = () => {
     const navigate = useNavigate()
     const scrollRef = useRef(null)
 
+    // Scroll restoration: save position before navigating away, restore on mount.
+    useEffect(() => {
+        const savedY = sessionStorage.getItem('gastroguide_scroll_y')
+        if (savedY && scrollRef.current) {
+            requestAnimationFrame(() => {
+                scrollRef.current.scrollTop = Number(savedY)
+            })
+            sessionStorage.removeItem('gastroguide_scroll_y')
+        }
+    }, [])
+
     const handleCardClick = (locationId) => {
-        navigate(`/location/${locationId}`)
+        // Persist scroll position for restoration when the user comes back.
+        if (scrollRef.current) {
+            sessionStorage.setItem('gastroguide_scroll_y', String(scrollRef.current.scrollTop))
+        }
+        navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }
 
     return (

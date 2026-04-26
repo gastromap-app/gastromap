@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useI18n } from '@/hooks/useI18n'
-import { Globe, Check, ChevronDown, RefreshCw } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
+import { Check, ChevronDown, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
@@ -32,8 +33,11 @@ export function LanguageSelector({
     const currentIdx = languages.findIndex(l => l.code === language)
     const currentLang = languages[currentIdx] || languages[0]
 
-    // Determine theme context
-    const isDark = propIsDark ?? (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark')
+    // Reactive theme — subscribes to themechange event so dropdown repaints on toggle.
+    // Previously read `data-theme` eagerly at render which produced white-on-white text
+    // when the parent didn't re-render immediately after a theme switch.
+    const { theme } = useTheme()
+    const isDark = propIsDark ?? (theme === 'dark')
 
     useEffect(() => {
         if (variant !== 'dropdown') return
@@ -125,15 +129,15 @@ export function LanguageSelector({
         <div className={`relative ${className}`} ref={containerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all active:scale-95 ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all active:scale-95 ${
                     isDark 
                         ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' 
-                        : 'bg-gray-100 border-gray-200 text-gray-900 hover:bg-gray-200'
+                        : 'bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50 hover:border-slate-300'
                 }`}
             >
-                <span className="text-base">{currentLang.flag}</span>
-                <span className="text-xs font-bold uppercase tracking-tight">{currentLang.code}</span>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <span className="text-base leading-none">{currentLang.flag}</span>
+                <span className="text-caption font-bold uppercase tracking-tight">{currentLang.code}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-white/70' : 'text-slate-500'}`} />
             </button>
 
             <AnimatePresence>
@@ -151,10 +155,13 @@ export function LanguageSelector({
                                     key={lang.code}
                                     onClick={() => handleSelect(lang.code)}
                                     className="language-item"
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelect(lang.code) }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg">{lang.flag}</span>
-                                        <span className={`language-name ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                        <span className="text-lg leading-none">{lang.flag}</span>
+                                        <span className={`language-name ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                             {lang.label}
                                         </span>
                                     </div>

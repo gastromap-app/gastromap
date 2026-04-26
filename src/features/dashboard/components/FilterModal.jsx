@@ -15,6 +15,40 @@ const CUISINE_MENU_LABELS = [
     'All Day Breakfast', 'Fusion',
 ]
 
+// Map config-level English group names → i18n keys
+const GROUP_KEY_MAP = {
+    'Cuisine & Menu':      'filter.group_cuisine_menu',
+    'Bar & Drinks':        'filter.group_bar_drinks',
+    'Atmosphere':          'filter.group_atmosphere',
+    'Amenities & Service': 'filter.group_amenities_service',
+    'Awards & Special':    'filter.group_awards_special',
+}
+
+// Map establishment type id → category.* i18n key
+const CATEGORY_KEY_MAP = {
+    'all':         'category.all',
+    'Cafe':        'category.cafe',
+    'Restaurant':  'category.restaurant',
+    'Street Food': 'category.street_food',
+    'Bar':         'category.bar',
+    'Restobar':    'category.restobar',
+    'Market':      'category.market',
+    'Bakery':      'category.bakery',
+    'Winery':      'category.winery',
+    'Wine Bar':    'category.wine_bar',
+    'Coffee':      'category.coffee',
+    'Pastry':      'category.pastry',
+    'Fine Dining': 'category.fine_dining',
+}
+
+// Map best-time id → filter.best_time_* i18n key
+const BEST_TIME_KEY_MAP = {
+    morning:    'filter.best_time_morning',
+    day:        'filter.best_time_day',
+    evening:    'filter.best_time_evening',
+    late_night: 'filter.best_time_late_night',
+}
+
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const { t, i18n } = useTranslation()
     const isDark = theme === 'dark'
@@ -44,7 +78,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
         const { setUserLocation } = useLocationsStore.getState()
         if (newRadius > 0 && !geoGranted) {
             if (!navigator.geolocation) {
-                setGeoError('Geolocation not supported by this browser')
+                setGeoError(t('filter.geo_unsupported'))
                 return
             }
             navigator.geolocation.getCurrentPosition(
@@ -54,14 +88,14 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                     setRadius(newRadius)
                     setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
                 },
-                () => { setGeoError('Location access denied — enable it to use radius filter'); setRadius(0) },
+                () => { setGeoError(t('filter.geo_denied')); setRadius(0) },
                 { timeout: 5000 }
             )
         } else {
             setRadius(newRadius)
             if (newRadius === 0) setGeoError(null)
         }
-    }, [geoGranted])
+    }, [geoGranted, t])
 
     // Sync local state with store on open
     useEffect(() => {
@@ -187,7 +221,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div>
                                 <h2 className="text-[20px] font-bold">{t('filter.title')}</h2>
                                 {activeCount > 0 && (
-                                    <p className="text-[11px] text-blue-500 font-bold mt-0.5">{activeCount} active</p>
+                                    <p className="text-[11px] text-blue-500 font-bold mt-0.5">{t('filter.active_count', { count: activeCount, defaultValue: `${activeCount} active` })}</p>
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -214,11 +248,12 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Establishment Type */}
                             <div className="space-y-4 text-left md:col-span-2">
-                                <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Establishment Type</label>
+                                <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.establishment_type')}</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                     {ESTABLISHMENT_TYPES.map(type => {
                                         const isActive = selectedCategory === type.id
-                                        const displayLabel = i18n.language === 'ru' ? type.labelRu : type.label
+                                        const typeKey = CATEGORY_KEY_MAP[type.id]
+                                        const displayLabel = typeKey ? t(typeKey) : (i18n.language === 'ru' ? type.labelRu : type.label)
                                         return (
                                             <motion.button
                                                 key={type.id}
@@ -239,7 +274,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Rating */}
                                 <div className="space-y-4 text-left">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Rating</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.rating')}</label>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[
                                             { val: null, label: t('common.all') },
@@ -268,7 +303,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                                 {/* Price Level */}
                                 <div className="space-y-4 text-left">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Price Range</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.price_range')}</label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {['$', '$$', '$$$', '$$$$'].map(level => {
                                             const isActive = selectedPriceLevels.includes(level)
@@ -293,11 +328,12 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Best Time to Visit */}
                             <div className="space-y-4 text-left">
-                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Best Time to Visit</label>
+                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.best_time_visit')}</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {BEST_TIMES.map(time => {
                                         const isActive = selectedBestTime === time.id
-                                        const displayLabel = i18n.language === 'ru' ? time.labelRu : time.label
+                                        const timeKey = BEST_TIME_KEY_MAP[time.id]
+                                        const displayLabel = timeKey ? t(timeKey) : (i18n.language === 'ru' ? time.labelRu : time.label)
                                         
                                         // Map IDs to Lucide components for consistent UI
                                         const IconComponent = {
@@ -332,15 +368,17 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Special Features */}
                             <div className="space-y-6 text-left">
-                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Special Features & Labels</label>
+                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.special_features')}</label>
                                 <div className="space-y-6">
                                     {LABEL_GROUPS.map((cat, idx) => {
                                         // First group (Cuisine & Menu) uses dynamic KG data
                                         const items = idx === 0 ? dynamicCuisines : [...cat.items].sort()
                                         if (items.length === 0) return null
+                                        const groupKey = GROUP_KEY_MAP[cat.group]
+                                        const groupLabel = groupKey ? t(groupKey) : cat.group
                                         return (
                                         <div key={cat.group} className="space-y-3">
-                                            <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{cat.group}</h4>
+                                            <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{groupLabel}</h4>
                                             <div className="flex flex-wrap gap-2">
                                                 {items.map(chip => {
                                                     const isActive = selectedFeatures.includes(chip)
@@ -367,9 +405,9 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             </div>
 
                             {/* Search Radius */}
-                            <div className="space-y-4 text-left pt-6 border-t border-white/5">
+                            <div className={`space-y-4 text-left pt-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
                                 <div className="flex justify-between items-center">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Search Radius</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.search_radius')}</label>
                                     <span className="text-blue-500 font-bold text-sm">{radius} km</span>
                                 </div>
                                 <input
@@ -380,10 +418,10 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     onChange={e => handleRadiusChange(Number(e.target.value))}
                                     className="w-full h-2 bg-blue-600/10 rounded-full appearance-none cursor-pointer accent-blue-600"
                                 />
-                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
-                                    <span>Nearby</span>
-                                    <span>City-wide</span>
-                                    <span>Regional</span>
+                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                                    <span>{t('filter.radius_nearby')}</span>
+                                    <span>{t('filter.radius_city_wide')}</span>
+                                    <span>{t('filter.radius_regional')}</span>
                                 </div>
                                 {geoError && (
                                     <p className="text-xs text-amber-500 mt-1">⚠️ {geoError}</p>

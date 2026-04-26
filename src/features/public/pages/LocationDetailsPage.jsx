@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Star, MapPin, Clock, Phone, Share2, Heart,
@@ -30,6 +31,9 @@ import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 const LocationDetailsPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
+    const routerLocation = useLocation()
+    const cameFromChat = routerLocation.state?.from === 'chat'
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
@@ -127,12 +131,89 @@ const LocationDetailsPage = () => {
     }, [reviews, location])
 
     const [activeTab, setActiveTab] = useState('Overview')
-    const [showScrollHint, setShowScrollHint] = useState(true)
+
+    // Scroll-aware compact header — appears after user scrolls past the hero
+    const [scrollY, setScrollY] = useState(0)
+    useEffect(() => {
+        const onScroll = () => setScrollY(window.scrollY)
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+    // hero is ~55vh mobile / 60vh desktop — threshold for morphing header
+    const showCompactHeader = scrollY > 180
+
+    // Share handler — native share sheet on mobile, clipboard fallback on desktop
+    const [shareToast, setShareToast] = useState(null)
+    const shareToastTimerRef = useRef(null)
+    // Clear pending toast timer on unmount to avoid setState after unmount
+    useEffect(() => () => { if (shareToastTimerRef.current) clearTimeout(shareToastTimerRef.current) }, [])
+    const showShareToast = (msg) => {
+        setShareToast(msg)
+        if (shareToastTimerRef.current) clearTimeout(shareToastTimerRef.current)
+        shareToastTimerRef.current = setTimeout(() => setShareToast(null), 2200)
+    }
+    const shareLocation = async () => {
+        const url = window.location.href
+        const shareData = {
+            title: location?.title || 'GastroMap',
+            text: location?.description?.slice(0, 120) || 'Check out this place on GastroMap',
+            url,
+        }
+        // Try native share first (mobile & modern browsers); silently fall back otherwise
+        if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData) !== false) {
+            try {
+                await navigator.share(shareData)
+                showShareToast(t('common.shared'))
+                return
+            } catch (err) {
+                // User cancelled the share sheet — don't show error toast
+                if (err?.name === 'AbortError') return
+                // Other share failure → fall through to clipboard
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(url)
+            showShareToast(t('common.link_copied'))
+        } catch {
+            showShareToast(t('common.link_copy_failed'))
+        }
+    }
 
     // User interaction states
     const [userNote, setUserNote] = useState("")
     const [isWritingReview, setIsWritingReview] = useState(false)
     const [newReview, setNewReview] = useState({ rating: 5, text: "" })
+
+    // Load persisted note per-location (localStorage is the private vault for MVP)
+    useEffect(() => {
+        if (!location?.id) return
+        try {
+            const saved = localStorage.getItem(`gm:note:${location.id}`)
+            setUserNote(saved || "")
+        } catch { /* storage unavailable */ }
+    }, [location?.id])
+
+    const handleSaveNote = () => {
+        if (!location?.id) return
+        try {
+            if (userNote.trim()) {
+                localStorage.setItem(`gm:note:${location.id}`, userNote)
+            } else {
+                localStorage.removeItem(`gm:note:${location.id}`)
+            }
+            showShareToast(t('location.note_saved'))
+        } catch {
+            showShareToast(t('common.error'))
+        }
+    }
+
+    const handleClearNote = () => {
+        setUserNote("")
+        if (location?.id) {
+            try { localStorage.removeItem(`gm:note:${location.id}`) } catch { /* ignore */ }
+        }
+        showShareToast(t('location.note_cleared'))
+    }
 
     // Menu persistence state
     const [menuDishes, setMenuDishes] = useState([])
@@ -167,24 +248,20 @@ const LocationDetailsPage = () => {
     if (!location) return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <MapPin size={48} className="text-gray-300" />
-            <h2 className="text-xl font-black text-gray-700 dark:text-gray-200">Location not found</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">This place may have been removed or the link is incorrect.</p>
+            <h2 className="text-xl font-black text-gray-700 dark:text-gray-200">{t('location.not_found')}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('location.not_found_desc')}</p>
             <button
                 onClick={() => navigate('/explore')}
                 className="mt-2 px-6 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm"
             >
-                Browse places
+                {t('location.browse_places')}
             </button>
         </div>
     )
 
     const handleScroll = (e) => {
-        const { scrollLeft, scrollWidth, clientWidth } = e.target
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-            setShowScrollHint(false)
-        } else {
-            setShowScrollHint(true)
-        }
+        // reserved for future scroll-based effects inside the tab bar
+        void e
     }
 
     const openInMaps = () => {
@@ -197,13 +274,14 @@ const LocationDetailsPage = () => {
         if (!phone) return
         // Validate: must start with + or digits only — prevents open redirects via tel:
         if (!/^\+?[\d\s\-().]{7,20}$/.test(phone)) return
-        // eslint-disable-next-line react-hooks/immutability
         window.location.href = `tel:${phone}`
     }
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-white/[0.05] border-white/10" : "bg-white border-gray-100 shadow-sm"
+    const subTextStyle = isDark ? "text-white/60" : "text-slate-600"
+    const cardBg = isDark
+        ? "bg-white/[0.05] border-white/10"
+        : "bg-white border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)]"
 
     const fadeInUp = {
         hidden: { opacity: 0, y: 20 },
@@ -215,13 +293,13 @@ const LocationDetailsPage = () => {
         <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                    { icon: Clock, label: openLabel || "Hours Today", value: location.openingHours || '—', color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
-                    { icon: Phone, label: "Contact", value: location.phone || '—', color: "bg-green-500/10 text-green-500", hidden: !location.phone },
-                    { icon: MessageSquare, label: "Total Reviews", value: aggregate.count ? `${aggregate.count} reviews` : 'No reviews', color: "bg-indigo-500/10 text-indigo-500" },
-                    { icon: Navigation, label: "Directions", value: location.address ? 'Open in Maps' : '—', color: "bg-orange-500/10 text-orange-500" }
+                    { id: 'hours',    icon: Clock,          label: openLabel || t('location.hours_today'), value: location.openingHours || '—', color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
+                    { id: 'contact',  icon: Phone,          label: t('location.contact'),       value: location.phone || '—', color: "bg-green-500/10 text-green-500", hidden: !location.phone },
+                    { id: 'reviews',  icon: MessageSquare,  label: t('location.total_reviews'), value: aggregate.count ? t('location.review_count', { count: aggregate.count }) : t('location.no_reviews'), color: "bg-indigo-500/10 text-indigo-500" },
+                    { id: 'directions', icon: Navigation,  label: t('location.get_directions'),value: location.address ? t('location.open_in_maps') : '—', color: "bg-orange-500/10 text-orange-500" }
                 ].filter(info => !info.hidden).map((info, i) => (
                     <motion.div
-                        key={i}
+                        key={info.id}
                         role="button"
                         tabIndex={0}
                         aria-label={info.label}
@@ -230,13 +308,13 @@ const LocationDetailsPage = () => {
                         animate="visible"
                         transition={{ delay: 0.1 * i }}
                         onClick={() => {
-                            if (info.label === "Directions") openInMaps()
-                            if (info.label === "Contact") callNumber()
+                            if (info.id === 'directions') openInMaps()
+                            if (info.id === 'contact') callNumber()
                         }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
-                                if (info.label === "Directions") openInMaps()
-                                if (info.label === "Contact") callNumber()
+                                if (info.id === 'directions') openInMaps()
+                                if (info.id === 'contact') callNumber()
                             }
                         }}
                         className={`p-4 rounded-[24px] border transition-all duration-500 group cursor-pointer ${cardBg} hover:shadow-lg`}
@@ -267,7 +345,7 @@ const LocationDetailsPage = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                    <div className={`flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
                         {location.special_labels?.map(label => (
                             <span key={label} className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${isDark ? 'bg-blue-500/12 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
                                 {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
@@ -381,11 +459,11 @@ const LocationDetailsPage = () => {
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto relative z-10">
                         <button className={`flex-1 sm:flex-none px-10 py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
                             <Globe size={18} className="text-blue-500" />
-                            Visit Website
+                            {t('location.visit_website')}
                         </button>
                         <button className="flex-1 sm:flex-none px-10 py-5 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black text-sm shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all">
                             <ExternalLink size={18} />
-                            External Booking
+                            {t('location.external_booking')}
                         </button>
                     </div>
                 </div>
@@ -573,10 +651,10 @@ const LocationDetailsPage = () => {
             onSuccess: () => {
                 setNewReview({ rating: 5, text: '' })
                 setIsWritingReview(false)
-                alert('Thank you! Your review has been submitted and is awaiting moderation.')
+                showShareToast(t('location.review_submitted'))
             },
-            onError: (err) => {
-                alert('Failed to submit review: ' + (err?.message || 'Please try again.'))
+            onError: () => {
+                showShareToast(t('location.review_failed'))
             }
         })
     }
@@ -649,7 +727,7 @@ const LocationDetailsPage = () => {
                             <textarea
                                 value={newReview.text}
                                 onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
-                                placeholder="Share the details of your visit..."
+                                placeholder={t('location.review_placeholder')}
                                 className={`w-full p-6 rounded-3xl border bg-transparent outline-none focus:border-blue-500 transition-colors h-32 text-sm font-medium resize-none ${isDark ? 'border-white/10 text-white placeholder:text-white/30' : 'border-gray-100 text-gray-900'}`}
                             />
                             <button
@@ -657,7 +735,7 @@ const LocationDetailsPage = () => {
                                 disabled={!newReview.text.trim()}
                                 className={`w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${newReview.text.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
                             >
-                                <Send size={18} /> Submit Review
+                                <Send size={18} /> {t('location.submit_review')}
                             </button>
                         </div>
                     )}
@@ -668,7 +746,7 @@ const LocationDetailsPage = () => {
                     <AnimatePresence initial={false}>
                         {reviews.length === 0 ? (
                             <div className="text-center py-10">
-                                <p className={`text-sm font-medium ${subTextStyle}`}>No reviews yet. Be the first!</p>
+                                <p className={`text-sm font-medium ${subTextStyle}`}>{t('reviews.no_reviews')}</p>
                             </div>
                         ) : reviews.map((rev, i) => (
                             <motion.div
@@ -728,8 +806,8 @@ const LocationDetailsPage = () => {
                     <div className="flex items-center gap-4">
                         <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-14 h-14 object-cover rounded-full shadow-lg shadow-blue-500/20" />
                         <div>
-                            <h3 className={`text-2xl font-black ${textStyle}`}>Private Notes</h3>
-                            <p className={`text-xs font-bold uppercase tracking-widest text-blue-500`}>Only you can see this</p>
+                            <h3 className={`text-2xl font-black ${textStyle}`}>{t('location.private_notes')}</h3>
+                            <p className={`text-xs font-bold uppercase tracking-widest text-blue-500`}>{t('location.private_notes_desc')}</p>
                         </div>
                     </div>
 
@@ -737,18 +815,21 @@ const LocationDetailsPage = () => {
                         <textarea
                             value={userNote}
                             onChange={(e) => setUserNote(e.target.value)}
-                            placeholder="Remember their best table, your favorite wine, or a dish to avoid next time..."
+                            placeholder={t('location.note_placeholder')}
                             className={`w-full p-8 rounded-[32px] border bg-transparent outline-none focus:border-blue-500 transition-all min-h-[200px] text-lg font-medium leading-relaxed ${isDark ? 'border-white/10 text-white' : 'border-gray-200 text-gray-900 shadow-inner'}`}
                         />
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setUserNote("")}
+                                onClick={handleClearNote}
                                 className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 border transition-all ${isDark ? 'border-white/10 text-white hover:bg-white/5' : 'border-gray-200 text-gray-500 hover:bg-gray-100'}`}
                             >
-                                <Trash2 size={18} /> Clear
+                                <Trash2 size={18} /> {t('location.clear')}
                             </button>
-                            <button className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
-                                <CheckCircle2 size={18} /> Save Note
+                            <button
+                                onClick={handleSaveNote}
+                                className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 size={18} /> {t('location.save_note')}
                             </button>
                         </div>
                     </div>
@@ -776,118 +857,201 @@ const LocationDetailsPage = () => {
 
     return (
         <PageTransition
-            className="min-h-screen relative pt-20 md:pt-24"
-            style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
+            className="min-h-screen relative"
+            style={{ paddingBottom: 'calc(8.5rem + env(safe-area-inset-bottom))' }}
         >
-
-            <div className="relative">
-                {/* Action Bar Container - Now relative to content start */}
-                <div className="absolute top-4 left-[4vw] right-[4vw] flex justify-between items-center z-40">
+            {/* ── Fixed floating action bar (always accessible, above everything) ── */}
+            <div
+                className="fixed left-0 right-0 z-[120] pointer-events-none"
+                style={{ top: 0, paddingTop: 'calc(env(safe-area-inset-top) + 10px)' }}
+            >
+                <div className="max-w-5xl mx-auto px-[4vw] flex justify-between items-center pointer-events-auto">
                     <button
-                        onClick={() => navigate(-1)}
-                        className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 text-white hover:bg-white/20 active:scale-95 transition-all"
+                        onClick={() => cameFromChat ? navigate('/dashboard/guide', { replace: true }) : navigate(-1)}
+                        aria-label={cameFromChat ? 'Back to chat' : 'Go back'}
+                        className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
                     >
-                        <ArrowLeft size={22} />
+                        <ArrowLeft size={20} />
                     </button>
-                    <div className="flex gap-2.5">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={shareLocation}
+                            aria-label="Share"
+                            className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
+                        >
+                            <Share2 size={18} />
+                        </button>
                         <button
                             onClick={() => addVisited(location.id)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isVisited ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
-                            aria-label="Mark as visited"
+                            aria-label={isVisited ? 'Visited' : 'Mark as visited'}
+                            className={`w-11 h-11 rounded-full backdrop-blur-xl border flex items-center justify-center shadow-lg active:scale-95 transition-all ${isVisited ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-emerald-600/30' : 'bg-black/45 border-white/15 text-white hover:bg-black/60'}`}
                         >
-                            <CheckCircle2 size={22} className={isVisited ? "fill-white" : ""} />
+                            <CheckCircle2 size={20} className={isVisited ? 'fill-white' : ''} />
                         </button>
                         <button
                             onClick={() => toggleFavorite(location.id)}
-                            className={`p-3.5 rounded-2xl backdrop-blur-2xl border transition-all active:scale-95 ${isSaved ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
-                            aria-label="Save location"
+                            aria-label={isSaved ? 'Remove from saved' : 'Save'}
+                            className={`w-11 h-11 rounded-full backdrop-blur-xl border flex items-center justify-center shadow-lg active:scale-95 transition-all ${isSaved ? 'bg-red-500 border-red-300/60 text-white shadow-red-500/30' : 'bg-black/45 border-white/15 text-white hover:bg-black/60'}`}
                         >
-                            <Heart size={20} fill={isSaved ? "currentColor" : "none"} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Hero Image Section */}
-                <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
-                    <LazyImage
-                        src={location.image}
-                        crossOrigin="anonymous"
-                        fetchpriority="high"
-                        className="w-full h-full object-cover"
-                        alt={location.title}
-                        rootMargin="0px"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                    <div className="absolute inset-0 bg-black/20 z-0" />
-
-                    {/* Hero Info */}
-                    <div className="absolute bottom-6 left-[4vw] right-[4vw] z-20 space-y-2">
-                        <div className="flex items-center gap-2">
-                            <span className="bg-blue-600 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white shadow-lg">
-                                {location.category}
-                            </span>
-                            <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 text-white text-[10px] font-black">
-                                <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                                {location.google_rating ?? location.rating}
-                            </div>
-                        </div>
-                        <h1 className="text-2xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                            {location.title}
-                        </h1>
-                        <button
-                            onClick={openInMaps}
-                            className="flex items-center gap-1.5 text-white/80 font-bold hover:text-white transition-all text-left group"
-                        >
-                            <MapPin size={14} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                            <span className="text-xs md:text-sm border-b border-transparent group-hover:border-white/20 pb-0.5">{location.address}</span>
+                            <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="max-w-5xl mx-auto px-[4vw] pt-4 relative z-30">
-                <div className="grid grid-cols-1 gap-5">
-                    <div className="space-y-6">
-                        {/* Tab Switcher */}
-                        <div className="w-full relative group">
-                            <div
-                                onScroll={handleScroll}
-                                className={`p-1.5 rounded-2xl flex gap-1 items-center overflow-x-auto scrollbar-hide w-full md:w-fit ${isDark ? 'bg-white/[0.03]' : 'bg-gray-100/50'}`}
-                            >
-                                {['Overview', 'Menu', 'Reviews', 'Photos', 'Notes'].map((tab) => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setActiveTab(tab)}
-                                        className={`flex-shrink-0 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl' : 'text-gray-500 hover:text-blue-500'}`}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
-                            <AnimatePresence>
-                                {showScrollHint && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className={`pointer-events-none absolute right-0 top-0 bottom-0 w-20 z-10 md:hidden rounded-r-2xl bg-gradient-to-l ${isDark ? 'from-blue-600/20 to-transparent' : 'from-blue-600/10 to-transparent'}`}
-                                    >
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 animate-pulse">
-                                            <ChevronRight size={16} className="text-blue-500" />
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+            {/* ── Scroll-aware compact header (fades in after hero scrolls away) ── */}
+            <motion.div
+                initial={false}
+                animate={{ opacity: showCompactHeader ? 1 : 0, y: showCompactHeader ? 0 : -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className={`fixed top-0 left-0 right-0 z-[110] pointer-events-none ${showCompactHeader ? '' : 'pointer-events-none'}`}
+                style={{ paddingTop: 'env(safe-area-inset-top)' }}
+            >
+                <div className={`h-14 flex items-center px-16 md:px-20 border-b backdrop-blur-xl ${isDark ? 'bg-[hsl(220,20%,3%)]/85 border-white/10' : 'bg-white/85 border-black/5'}`}>
+                    <h2 className={`text-sm font-bold truncate mx-auto max-w-[60%] ${textStyle}`}>
+                        {location.title}
+                    </h2>
+                </div>
+            </motion.div>
+
+            {/* ── Share toast ────────────────────────────────────────────────────── */}
+            <AnimatePresence>
+                {shareToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="fixed z-[130] left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/80 backdrop-blur-md text-white text-xs font-semibold shadow-lg"
+                        style={{ top: 'calc(env(safe-area-inset-top) + 70px)' }}
+                    >
+                        {shareToast}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Hero Image (full-bleed from top of viewport) ───────────────────── */}
+            <div className="relative h-[55vh] md:h-[62vh] w-full overflow-hidden">
+                <LazyImage
+                    src={location.image}
+                    crossOrigin="anonymous"
+                    fetchpriority="high"
+                    className="w-full h-full object-cover"
+                    alt={location.title}
+                    rootMargin="0px"
+                />
+                {/* Top scrim to improve contrast for action bar */}
+                <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/55 via-black/20 to-transparent z-10 pointer-events-none" />
+                {/* Bottom scrim for title readability */}
+                <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-10 pointer-events-none" />
+
+                {/* Hero Info */}
+                <div className="absolute bottom-7 left-[4vw] right-[4vw] z-20 space-y-3 max-w-5xl mx-auto">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-blue-600 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white shadow-lg">
+                            {location.category}
+                        </span>
+                        <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/25 text-white text-[11px] font-black">
+                            <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                            {location.google_rating ?? location.rating ?? '—'}
+                            {aggregate.count > 0 && (
+                                <span className="text-white/70 font-semibold">· {aggregate.count}</span>
+                            )}
                         </div>
-
-                        {activeTab === 'Overview' && renderOverview()}
-                        {activeTab === 'Menu' && renderMenu()}
-                        {activeTab === 'Reviews' && renderReviews()}
-                        {activeTab === 'Photos' && renderPhotos()}
-                        {activeTab === 'Notes' && renderNotes()}
+                        {openLabel && (
+                            <div className={`flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${isOpen ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-100' : 'bg-red-500/20 border-red-400/40 text-red-100'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                                {openLabel}
+                            </div>
+                        )}
                     </div>
+                    <h1 className="text-[28px] leading-[1.05] md:text-5xl font-black text-white tracking-tight drop-shadow-md">
+                        {location.title}
+                    </h1>
+                    <button
+                        onClick={openInMaps}
+                        className="flex items-center gap-1.5 text-white/85 font-semibold hover:text-white transition-all text-left group"
+                    >
+                        <MapPin size={14} className="text-blue-300 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs md:text-sm border-b border-white/0 group-hover:border-white/30 pb-0.5">{location.address}</span>
+                    </button>
+                </div>
+            </div>
 
+            {/* ── Main Content ───────────────────────────────────────────────────── */}
+            <div className="max-w-5xl mx-auto px-[4vw] relative z-30">
+                {/* Sticky tab bar */}
+                <div
+                    className="sticky z-40 -mx-[4vw] px-[4vw] py-3"
+                    style={{ top: 'calc(env(safe-area-inset-top) + 56px)' }}
+                >
+                    <div className={`rounded-2xl backdrop-blur-xl border ${isDark ? 'bg-[hsl(220,20%,6%)]/85 border-white/[0.06]' : 'bg-white/85 border-black/5 shadow-sm'}`}>
+                        <div
+                            onScroll={handleScroll}
+                            className="p-1.5 rounded-2xl flex gap-1 items-center overflow-x-auto scrollbar-hide w-full"
+                        >
+                            {['Overview', 'Menu', 'Reviews', 'Photos', 'Notes'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`relative flex-shrink-0 px-5 md:px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all ${activeTab === tab ? 'text-white' : isDark ? 'text-white/60 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                                >
+                                    {activeTab === tab && (
+                                        <motion.span
+                                            layoutId="activeTabPill"
+                                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-md shadow-blue-500/30"
+                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                                        />
+                                    )}
+                                    <span className="relative z-10">{tab}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-6">
+                    {activeTab === 'Overview' && renderOverview()}
+                    {activeTab === 'Menu' && renderMenu()}
+                    {activeTab === 'Reviews' && renderReviews()}
+                    {activeTab === 'Photos' && renderPhotos()}
+                    {activeTab === 'Notes' && renderNotes()}
+                </div>
+            </div>
+
+            {/* ── Sticky bottom CTA bar (above BottomNav) ─────────────────────────── */}
+            <div
+                className="fixed left-0 right-0 z-[50] pointer-events-none px-4"
+                style={{ bottom: 'calc(5.75rem + env(safe-area-inset-bottom))' }}
+            >
+                <div className="max-w-md mx-auto pointer-events-auto">
+                    <div className={`flex gap-2 p-2 rounded-[22px] border backdrop-blur-2xl shadow-2xl ${isDark ? 'bg-black/70 border-white/10 shadow-black/50' : 'bg-white/95 border-slate-200/80 shadow-slate-900/15'}`}>
+                        {location?.phone && (
+                            <button
+                                onClick={callNumber}
+                                aria-label="Call"
+                                className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
+                            >
+                                <Phone size={15} />
+                                <span className="hidden xs:inline">Call</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={openInMaps}
+                            aria-label="Get directions"
+                            className="flex-[1.3] min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/30 transition-all active:scale-95"
+                        >
+                            <Navigation size={15} />
+                            Directions
+                        </button>
+                        <button
+                            onClick={shareLocation}
+                            aria-label="Share"
+                            className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
+                        >
+                            <Share2 size={15} />
+                            <span className="hidden xs:inline">Share</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </PageTransition>

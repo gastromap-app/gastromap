@@ -1,6 +1,7 @@
 import React, { useState, useEffect, memo, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
@@ -24,12 +25,13 @@ import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
 const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
-const SORT_OPTIONS = [
-    { value: 'google_rating', label: 'Top Rated' },
-    { value: 'price_asc',     label: 'Price ↑' },
-    { value: 'price_desc',    label: 'Price ↓' },
-    { value: 'name',          label: 'A → Z' },
-]
+const SORT_VALUES = ['google_rating', 'price_asc', 'price_desc', 'name']
+const SORT_LABEL_KEYS = {
+    google_rating: 'explore.top_rated',
+    price_asc:     'explore.price_asc',
+    price_desc:    'explore.price_desc',
+    name:          'explore.a_to_z',
+}
 
 // ─── Open status badge (uses real openingHours) ───────────────────────────
 function OpenBadge({ openingHours }) {
@@ -217,6 +219,7 @@ function EmptyState({ query, isDark }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 const LocationsPage = () => {
+    const { t } = useTranslation()
     const { country, city } = useParams()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -294,7 +297,7 @@ const LocationsPage = () => {
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
-    const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
+        const currentSort = { value: sortBy, label: t(SORT_LABEL_KEYS[sortBy] || 'explore.top_rated') }
 
     return (
         // Using a plain div here (not PageTransition) because:
@@ -315,7 +318,7 @@ const LocationsPage = () => {
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
                             <input
                                 type="text"
-                                placeholder={city ? `Search in ${city}...` : 'Search restaurants...'}
+                                placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
                                 value={localSearch}
                                 onChange={(e) => setLocalSearch(e.target.value)}
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -349,7 +352,7 @@ const LocationsPage = () => {
                         <>
                             {/* Results counter */}
                             <p className={`text-center text-[12px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                Showing {Math.min(visibleCount, localFilteredLocations.length)} of {localFilteredLocations.length}
+                                {t('explore.showing_of', { shown: Math.min(visibleCount, localFilteredLocations.length), total: localFilteredLocations.length })}
                             </p>
 
                             <motion.div
@@ -369,7 +372,7 @@ const LocationsPage = () => {
                                     onClick={() => setVisibleCount(prev => prev + 10)}
                                     className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] ${isDark ? 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
                                 >
-                                    Show more
+                                    {t('explore.show_more')}
                                 </button>
                             )}
                         </>
@@ -388,10 +391,10 @@ const LocationsPage = () => {
                     <div className="mt-10 space-y-6">
                         <div className="space-y-2">
                             <h1 className={`text-5xl font-black tracking-tight capitalize ${textStyle}`}>
-                                Explore <span className="text-blue-600">{city}</span>
+                                {t('explore.explore_in')} <span className="text-blue-600">{city}</span>
                             </h1>
                             <p className={`text-lg ${subTextStyle}`}>
-                                Top restaurants and hidden gems in the heart of {city}.
+                                {t('explore.city_tagline', { city })}
                             </p>
                         </div>
 
@@ -403,7 +406,7 @@ const LocationsPage = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder={city ? `Search in ${city}${country ? `, ${country}` : ''}...` : 'Search everywhere...'}
+                                    placeholder={city ? t('explore.search_in', { city: `${city}${country ? `, ${country}` : ''}` }) : t('explore.search_everywhere')}
                                     value={localSearch}
                                     onChange={(e) => setLocalSearch(e.target.value)}
                                     className={`w-full h-16 pl-14 pr-12 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${isDark ? 'bg-white/5 text-white border-white/10 focus:border-blue-500' : 'bg-white shadow-xl focus:border-blue-500'}`}
@@ -422,7 +425,7 @@ const LocationsPage = () => {
                             <div className="relative">
                                 <button
                                     onClick={() => setSortOpen((o) => !o)}
-                                    aria-label="Sort locations"
+                                    aria-label={t('explore.sort_aria')}
                                     aria-expanded={sortOpen}
                                     className={`h-16 px-6 rounded-[24px] flex items-center gap-2 font-bold text-sm border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
                                 >
@@ -438,17 +441,17 @@ const LocationsPage = () => {
                                             transition={{ duration: 0.15 }}
                                             className={`absolute right-0 top-full mt-2 w-40 rounded-2xl border shadow-xl z-50 overflow-hidden ${isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-100'}`}
                                         >
-                                            {SORT_OPTIONS.map((opt) => (
+                                            {SORT_VALUES.map((value) => (
                                                 <button
-                                                    key={opt.value}
-                                                    onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
+                                                    key={value}
+                                                    onClick={() => { setSortBy(value); setSortOpen(false) }}
                                                     className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors ${
-                                                        sortBy === opt.value
+                                                        sortBy === value
                                                             ? 'text-blue-600 bg-blue-50 dark:bg-blue-600/10'
                                                             : isDark ? 'text-white/70 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'
                                                     }`}
                                                 >
-                                                    {opt.label}
+                                                    {t(SORT_LABEL_KEYS[value])}
                                                 </button>
                                             ))}
                                         </motion.div>

@@ -9,11 +9,11 @@ import { useTranslation } from 'react-i18next'
 import { Coffee, Utensils, Wine, Star } from 'lucide-react'
 
 const MAP_CATEGORIES = [
-    { name: 'All', icon: null, emoji: '📍' },
-    { name: 'Cafe', icon: Coffee, emoji: '☕' },
-    { name: 'Restaurant', icon: Utensils, emoji: '🍽️' },
-    { name: 'Bar', icon: Wine, emoji: '🍸' },
-    { name: 'Fine Dining', icon: Star, emoji: '🎩' },
+    { name: 'All',         i18nKey: 'category.all',         icon: null,     emoji: '📍' },
+    { name: 'Cafe',        i18nKey: 'category.cafe',        icon: Coffee,   emoji: '☕' },
+    { name: 'Restaurant',  i18nKey: 'category.restaurant',  icon: Utensils, emoji: '🍽️' },
+    { name: 'Bar',         i18nKey: 'category.bar',         icon: Wine,     emoji: '🍸' },
+    { name: 'Fine Dining', i18nKey: 'category.fine_dining', icon: Star,     emoji: '🎩' },
 ]
 
 /**
@@ -78,7 +78,7 @@ const MapPage = () => {
                                     }`}
                                 >
                                     <span>{cat.emoji}</span>
-                                    {cat.name}
+                                    {t(cat.i18nKey)}
                                 </button>
                             )
                         })}

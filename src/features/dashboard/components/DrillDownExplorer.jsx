@@ -6,6 +6,74 @@ import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Simple open-status badge for mini-cards.
+ * Shows "Open" / "Closed" / "—" based on opening_hours string.
+ */
+function OpenStatusBadge({ hours, isDark }) {
+    if (!hours || hours === '—') {
+        return (
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${isDark ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400'}`}>
+                No hours
+            </span>
+        )
+    }
+
+    // Very naive parser — enough for most "Mon-Fri: 09:00-22:00" strings
+    const now = new Date()
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const todayName = dayNames[now.getDay()]
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+
+    // Try to find today's hours in the string
+    const lines = hours.split(/[,;]/)
+    let todayRange = null
+
+    for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.toLowerCase().includes(todayName.toLowerCase())) {
+            const match = trimmed.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/)
+            if (match) {
+                const [, sh, sm, eh, em] = match
+                const start = parseInt(sh) * 60 + parseInt(sm)
+                const end = parseInt(eh) * 60 + parseInt(em)
+                todayRange = { start, end }
+            }
+            break
+        }
+        // Also try generic "Daily" or catch-all at the end
+        const match = trimmed.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/)
+        if (match && !todayRange) {
+            const [, sh, sm, eh, em] = match
+            const start = parseInt(sh) * 60 + parseInt(sm)
+            const end = parseInt(eh) * 60 + parseInt(em)
+            todayRange = { start, end }
+        }
+    }
+
+    if (!todayRange) {
+        return (
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${isDark ? 'bg-white/5 text-white/30' : 'bg-gray-100 text-gray-400'}`}>
+                {hours.length > 20 ? hours.slice(0, 20) + '…' : hours}
+            </span>
+        )
+    }
+
+    const isOpen = currentMinutes >= todayRange.start && currentMinutes < todayRange.end
+
+    return (
+        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${
+            isOpen
+                ? 'bg-emerald-500/10 text-emerald-500'
+                : isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-500/10 text-red-500'
+        }`}>
+            {isOpen ? 'Open now' : 'Closed'}
+        </span>
+    )
+}
+
 // COUNTRY_CITIES used as FALLBACK only when no DB data is available
 const COUNTRY_CITIES_FALLBACK = {
     poland:      ['Kraków', 'Warsaw', 'Wrocław', 'Gdańsk', 'Poznań'],
@@ -284,22 +352,22 @@ export function DrillDownExplorer({
                                 </p>
                             </div>
 
-                            {/* Location list */}
-                            <div className="p-4 space-y-3 pb-32">
+                            {/* Location list — 2-column grid */}
+                            <div className="p-4 grid grid-cols-2 gap-3 pb-32">
                                 {!isInitialized ? (
-                                    <div className="space-y-3 px-1">
-                                        {[1,2,3].map(n => (
-                                            <div key={n} className={`w-full flex items-center gap-3 p-3 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-gray-100'} animate-pulse`}>
-                                                <div className={`w-16 h-16 rounded-xl flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
-                                                <div className="flex-1 space-y-2">
+                                    <>
+                                        {[1,2,3,4].map(n => (
+                                            <div key={n} className={`flex flex-col rounded-2xl overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'} animate-pulse`}>
+                                                <div className={`w-full h-28 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                                <div className="p-3 space-y-2">
                                                     <div className={`h-3 rounded-full w-3/4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
                                                     <div className={`h-2 rounded-full w-1/2 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
+                                    </>
                                 ) : cityLocations.length === 0 ? (
-                                    <div className={`text-center py-16 ${subStyle}`}>
+                                    <div className={`col-span-2 text-center py-16 ${subStyle}`}>
                                         <div className="text-4xl mb-4">🍽</div>
                                         <p className="text-sm font-bold">No places in {selectedCity} yet</p>
                                         <p className="text-xs mt-1 opacity-60">Check back later or try another city</p>
@@ -312,25 +380,67 @@ export function DrillDownExplorer({
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: i * 0.03 }}
                                             onClick={() => navigate(`/location/${loc.id}`)}
-                                            className={`w-full flex items-center gap-3 p-3 rounded-2xl active:scale-[0.98] transition-all text-left ${cardStyle}`}
+                                            className={`flex flex-col rounded-2xl overflow-hidden active:scale-[0.98] transition-all text-left ${cardStyle}`}
                                         >
-                                            <img
-                                                src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400'}
-                                                alt={loc.title}
-                                                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className={`font-black text-sm truncate ${textStyle}`}>{loc.title}</h4>
+                                            {/* Image */}
+                                            <div className="relative h-28 w-full overflow-hidden">
+                                                <img
+                                                    src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400'}
+                                                    alt={loc.title}
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                />
+                                                {/* Rating badge */}
+                                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                                                    <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                                                    <span className="text-[10px] font-bold text-white">{loc.google_rating ?? loc.rating ?? '—'}</span>
+                                                </div>
+                                                {/* Price badge */}
+                                                {loc.price_level && (
+                                                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
+                                                        <span className="text-[10px] font-bold text-white">{loc.price_level}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Info */}
+                                            <div className="p-3 flex flex-col flex-1">
+                                                <h4 className={`font-black text-sm leading-tight line-clamp-2 ${textStyle}`}>{loc.title}</h4>
                                                 <p className={`text-xs mt-0.5 truncate ${subStyle}`}>{loc.category}</p>
-                                                <div className="flex items-center gap-1 mt-1.5">
-                                                    <Star size={11} className="text-blue-600 fill-blue-600 flex-shrink-0" />
-                                                    <span className="text-[11px] font-bold text-blue-600">{loc.google_rating ?? loc.rating ?? '—'}</span>
-                                                    {loc.price_level && (
-                                                        <span className={`ml-1.5 text-[11px] font-semibold ${subStyle}`}>{loc.price_level}</span>
-                                                    )}
+
+                                                {/* Cuisine */}
+                                                {loc.cuisine && (
+                                                    <p className={`text-[10px] mt-1 font-medium truncate ${subStyle} opacity-70`}>
+                                                        {loc.cuisine}
+                                                    </p>
+                                                )}
+
+                                                {/* Tags / Labels */}
+                                                {loc.special_labels?.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                        {loc.special_labels.slice(0, 2).map(label => (
+                                                            <span
+                                                                key={label}
+                                                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                                                                    isDark ? 'bg-white/10 text-white/70' : 'bg-gray-100 text-gray-600'
+                                                                }`}
+                                                            >
+                                                                {label}
+                                                            </span>
+                                                        ))}
+                                                        {loc.special_labels.length > 2 && (
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                                                                +{loc.special_labels.length - 2}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Open status */}
+                                                <div className="mt-auto pt-2">
+                                                    <OpenStatusBadge hours={loc.openingHours} isDark={isDark} />
                                                 </div>
                                             </div>
-                                            <ChevronRight size={16} className={`${subStyle} flex-shrink-0`} />
                                         </motion.button>
                                     ))
                                 )}

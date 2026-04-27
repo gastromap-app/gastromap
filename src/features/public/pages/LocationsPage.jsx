@@ -45,7 +45,7 @@ function OpenBadge({ openingHours }) {
     )
 }
 
-// ─── Mobile location card (compact horizontal layout) ──────────────────────
+// ─── Mobile location card (compact vertical 2-column layout) ───────────────
 const MobileCard = memo(function MobileCard({ item }) {
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -59,44 +59,55 @@ const MobileCard = memo(function MobileCard({ item }) {
             initial="hidden"
             animate="visible"
             onClick={() => navigate(`/location/${item.id}`)}
-            className={`relative flex flex-row items-center p-2.5 rounded-2xl gap-3 overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
+            className={`relative flex flex-col rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
         >
             {/* Image */}
-            <LazyImage
-                src={item.image}
-                alt={item.title}
-                wrapperClassName="w-24 h-24 rounded-xl flex-shrink-0"
-                className="w-full h-full object-cover rounded-xl"
-            />
+            <div className="relative h-28 w-full overflow-hidden">
+                <LazyImage
+                    src={item.image}
+                    alt={item.title}
+                    wrapperClassName="w-full h-full"
+                    className="w-full h-full object-cover"
+                />
+                {/* Rating badge */}
+                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                    <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-[10px] font-bold text-white">{item.google_rating ?? item.rating ?? '—'}</span>
+                </div>
+                {/* Price badge */}
+                {(item.price_range ?? item.price_level ?? item.priceLevel) && (
+                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-white">
+                            {item.price_range ?? item.price_level ?? item.priceLevel}
+                        </span>
+                    </div>
+                )}
+                {/* Favorite button */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
+                    className={`absolute top-2 left-2 w-7 h-7 rounded-lg backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
+                        saved
+                            ? 'bg-red-500/80 text-white'
+                            : 'bg-black/40 text-white/80 hover:bg-black/60'
+                    }`}
+                >
+                    <Heart size={12} fill={saved ? 'currentColor' : 'none'} />
+                </button>
+            </div>
 
             {/* Info section */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                {/* Title + Favorite */}
-                <div className="flex items-start justify-between gap-2">
-                    <h4 className={`text-[15px] font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</h4>
-                    <FavoriteButton
-                        isFavorite={saved}
-                        onToggle={() => toggleFavorite(item.id)}
-                        variant="bare"
-                        size={16}
-                        className="!w-8 !h-8 -mr-1 -mt-1 flex-shrink-0"
-                    />
-                </div>
+            <div className="p-2.5 flex flex-col flex-1">
+                <h4 className={`text-[13px] font-bold leading-tight line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {item.title}
+                </h4>
 
-                {/* Cuisine / Category */}
-                <p className={`text-[12px] truncate ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>
+                {/* Category / Cuisine */}
+                <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                     {item.cuisine || item.category}
                 </p>
 
-                {/* Rating + Price + Open */}
-                <div className="flex items-center gap-2 text-[12px]">
-                    <Star size={12} className="text-yellow-400 fill-yellow-400 flex-shrink-0" />
-                    <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.google_rating ?? item.rating}</span>
-                    {(item.price_range ?? item.price_level ?? item.priceLevel) && (
-                        <span className={`font-semibold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {item.price_range ?? item.price_level ?? item.priceLevel}
-                        </span>
-                    )}
+                {/* Open status */}
+                <div className="mt-auto pt-1.5">
                     <OpenBadge openingHours={item.openingHours} />
                 </div>
             </div>
@@ -339,11 +350,13 @@ const LocationsPage = () => {
                 </div>
 
                 {/* Mobile location cards */}
-                <div className="px-4 pb-24 space-y-3">
+                <div className="px-4 pb-24">
                     {isLoading ? (
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <LocationCardMobileSkeleton key={i} isDark={isDark} />
-                        ))
+                        <div className="grid grid-cols-2 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <LocationCardMobileSkeleton key={i} isDark={isDark} />
+                            ))}
+                        </div>
                     ) : isError ? (
                         <ErrorState isDark={isDark} />
                     ) : localFilteredLocations.length === 0 ? (
@@ -351,7 +364,7 @@ const LocationsPage = () => {
                     ) : (
                         <>
                             {/* Results counter */}
-                            <p className={`text-center text-[12px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <p className={`text-center text-[12px] font-medium mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                                 {t('explore.showing_of', { shown: Math.min(visibleCount, localFilteredLocations.length), total: localFilteredLocations.length })}
                             </p>
 
@@ -359,7 +372,7 @@ const LocationsPage = () => {
                                 initial="hidden"
                                 animate="visible"
                                 variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } }}
-                                className="space-y-3"
+                                className="grid grid-cols-2 gap-3"
                             >
                                 {localFilteredLocations.slice(0, visibleCount).map((item) => (
                                     <MobileCard key={item.id} item={item} />

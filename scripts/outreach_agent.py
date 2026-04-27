@@ -1,383 +1,276 @@
 #!/usr/bin/env python3
 """
 GastroMap Outreach Agent
-Finds locations without contacts, searches Instagram/email via Brave,
-generates bilingual (PL + EN) outreach messages, sends to Telegram.
+Берёт локации из Supabase, ищет контакты, генерирует персональные письма,
+записывает в Google Sheets.
 """
 
-import os
-import sys
-import json
-import time
-import requests
+import os, sys, json, time, requests
+from datetime import datetime
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
-# ── Config ─────────────────────────────────────────────────────────────────
-SUPABASE_URL = os.environ.get("GASTROMAP_SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("GASTROMAP_SUPABASE_SERVICE_KEY", "")
-BRAVE_API_KEY = os.environ.get("BRAVE_API_KEY", "")
-TELEGRAM_BOT_TOKEN = os.environ.get("GASTROMAP_TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("GASTROMAP_TELEGRAM_CHAT_ID", "")
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+# === CONFIG ===
+SUPABASE_URL = os.environ['GASTROMAP_SUPABASE_URL']
+SUPABASE_KEY = os.environ['GASTROMAP_SUPABASE_SERVICE_KEY']
+BRAVE_API_KEY = os.environ.get('BRAVE_API_KEY', '')
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+SPREADSHEET_ID = '16lj-xNxRUhx-gkwQdVj9vljo1ejyelpNwRlj0ODdVn4'
+SERVICE_ACCOUNT_FILE = '/app/.agents/google-service-account.json'
+BATCH_SIZE = 20
 
-BATCH_SIZE = int(os.environ.get("OUTREACH_BATCH_SIZE", "20"))
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-HEADERS_SB = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-}
+def get_sheets_service():
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    return build('sheets', 'v4', credentials=creds)
 
-# ── Supabase ────────────────────────────────────────────────────────────────
-def fetch_locations_without_contacts(limit=BATCH_SIZE):
-    """Fetch locations that have no instagram, email, or website yet."""
-    url = (
-        f"{SUPABASE_URL}/rest/v1/locations"
-        f"?select=id,title,address,city,category,description,cuisine_types,tags,kg_profile,what_to_try,insider_tip,social_instagram,website,phone"
-        f"&status=eq.approved"
-        f"&social_instagram=is.null"
-        f"&outreach_sent=is.null"
-        f"&order=created_at.asc"
-        f"&limit={limit}"
-    )
-    r = requests.get(url, headers=HEADERS_SB)
-    if r.status_code != 200:
-        # Fallback without outreach_sent filter (column may not exist)
-        url2 = (
-            f"{SUPABASE_URL}/rest/v1/locations"
-            f"?select=id,title,address,city,category,description,cuisine_types,tags,what_to_try,insider_tip,social_instagram,website,phone"
-            f"&status=eq.approved"
-            f"&social_instagram=is.null"
-            f"&order=created_at.asc"
-            f"&limit={limit}"
-        )
-        r = requests.get(url2, headers=HEADERS_SB)
-    r.raise_for_status()
-    return r.json()
-
-def mark_outreach_sent(location_id):
-    """Mark location as outreach sent (if column exists)."""
-    url = f"{SUPABASE_URL}/rest/v1/locations?id=eq.{location_id}"
-    requests.patch(url, headers=HEADERS_SB, json={"outreach_sent": True})
-
-def update_location_contacts(location_id, instagram=None, website=None, email=None):
-    """Save found contacts back to Supabase."""
-    data = {}
-    if instagram:
-        data["social_instagram"] = instagram
-    if website:
-        data["website"] = website
-    if email:
-        # store in moderation_note temporarily if no email column
-        pass
-    if data:
-        url = f"{SUPABASE_URL}/rest/v1/locations?id=eq.{location_id}"
-        requests.patch(url, headers=HEADERS_SB, json=data)
-
-# ── Brave Search ────────────────────────────────────────────────────────────
-def brave_search(query, count=5):
-    """Search via Brave Search API."""
-    if not BRAVE_API_KEY:
-        return []
-    url = "https://api.search.brave.com/res/v1/web/search"
-    headers = {
-        "Accept": "application/json",
-        "Accept-Encoding": "gzip",
-        "X-Subscription-Token": BRAVE_API_KEY,
+def get_locations(limit=20, offset=0):
+    """Берём локации у которых ещё нет outreach записи (статус пустой)"""
+    url = f"{SUPABASE_URL}/rest/v1/locations"
+    params = {
+        'select': 'id,title,address,city,category,cuisine_types,kg_cuisines,social_instagram,website,phone,what_to_try,insider_tip,description,google_rating',
+        'status': 'eq.published',
+        'limit': str(limit),
+        'offset': str(offset),
+        'order': 'created_at.asc'
     }
-    params = {"q": query, "count": count, "country": "PL", "lang": "pl"}
+    headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f"Bearer {SUPABASE_KEY}"
+    }
+    r = requests.get(url, params=params, headers=headers)
+    return r.json() if r.status_code == 200 else []
+
+def search_contacts(location_title, city="Kraków"):
+    """Ищем контакты через Brave Search"""
+    if not BRAVE_API_KEY:
+        return {}
+    
+    query = f"{location_title} {city} kontakt email instagram"
+    headers = {
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': BRAVE_API_KEY
+    }
+    params = {'q': query, 'count': 5, 'country': 'PL', 'lang': 'pl'}
+    
     try:
-        r = requests.get(url, headers=headers, params=params, timeout=10)
+        r = requests.get('https://api.search.brave.com/res/v1/web/search',
+                        headers=headers, params=params, timeout=10)
         if r.status_code == 200:
-            data = r.json()
-            results = data.get("web", {}).get("results", [])
-            return results
+            results = r.json().get('web', {}).get('results', [])
+            # Ищем email и instagram в результатах
+            contacts = {}
+            for result in results[:3]:
+                desc = result.get('description', '') + result.get('url', '')
+                # Поиск instagram
+                if 'instagram.com/' in desc and 'instagram' not in contacts:
+                    import re
+                    ig = re.search(r'instagram\.com/([a-zA-Z0-9._]+)', desc)
+                    if ig:
+                        contacts['instagram'] = f"@{ig.group(1)}"
+                # Поиск email
+                if '@' in desc and 'email' not in contacts:
+                    email = re.search(r'[\w.-]+@[\w.-]+\.\w+', desc)
+                    if email and 'example' not in email.group():
+                        contacts['email'] = email.group()
+            return contacts
     except Exception as e:
-        print(f"  Brave search error: {e}")
-    return []
+        print(f"Search error: {e}")
+    return {}
 
-def find_contacts(location):
-    """Search for Instagram and email for a location."""
-    name = location.get("title", "")
-    city = location.get("city", "Kraków")
+def generate_message(location, lang='en'):
+    """Генерирует персональное письмо от лица владельца GastroMap"""
     
-    instagram_url = location.get("social_instagram") or ""
-    website = location.get("website") or ""
-    found_email = ""
-    
-    if not instagram_url:
-        # Search for Instagram
-        query = f'site:instagram.com "{name}" {city} restauracja kawiarnia'
-        results = brave_search(query, count=5)
-        for res in results:
-            url_r = res.get("url", "")
-            if "instagram.com/" in url_r and "/p/" not in url_r and "/reel/" not in url_r:
-                # Clean up to get handle
-                parts = url_r.rstrip("/").split("instagram.com/")
-                if len(parts) > 1:
-                    handle = parts[1].split("/")[0].split("?")[0]
-                    if handle and len(handle) > 2 and handle not in ("explore", "p", "reel"):
-                        instagram_url = f"https://www.instagram.com/{handle}/"
-                        break
-    
-    if not website:
-        # Search for website
-        query2 = f'"{name}" {city} restauracja oficjalna strona'
-        results2 = brave_search(query2, count=3)
-        for res in results2:
-            url_r = res.get("url", "")
-            if "instagram.com" not in url_r and "facebook.com" not in url_r and "tripadvisor" not in url_r:
-                website = url_r
-                break
-    
-    if website and not found_email:
-        # Try to find email via website search
-        query3 = f'"{name}" {city} kontakt email'
-        results3 = brave_search(query3, count=3)
-        for res in results3:
-            snippet = res.get("description", "") + res.get("title", "")
-            import re
-            emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", snippet)
-            if emails:
-                found_email = emails[0]
-                break
-    
-    return instagram_url, website, found_email
+    name = location.get('title', '')
+    address = location.get('address', '')
+    city = location.get('city', 'Kraków')
+    category = location.get('category', 'restaurant')
+    what_to_try = location.get('what_to_try', '')
+    insider_tip = location.get('insider_tip', '')
+    description = location.get('description', '')
+    rating = location.get('google_rating', '')
+    cuisines = location.get('kg_cuisines') or location.get('cuisine_types') or []
+    if isinstance(cuisines, list):
+        cuisines_str = ', '.join(cuisines[:3]) if cuisines else ''
+    else:
+        cuisines_str = str(cuisines)
 
-# ── LLM Message Generation ───────────────────────────────────────────────────
-def generate_outreach_message(location):
-    """Generate bilingual outreach message via OpenRouter LLM."""
-    name = location.get("title", "")
-    city = location.get("city", "Kraków")
-    category = location.get("category", "restauracja")
-    description = location.get("description", "")
-    cuisine = ""
-    if location.get("cuisine_types"):
-        ct = location["cuisine_types"]
-        if isinstance(ct, list):
-            cuisine = ", ".join(ct[:3])
-        else:
-            cuisine = str(ct)
-    what_to_try = location.get("what_to_try", "")
-    insider = location.get("insider_tip", "")
+    context = f"""
+Location: {name}
+Address: {address}, {city}
+Category: {category}
+Cuisines: {cuisines_str}
+Google Rating: {rating}
+Description: {description[:200] if description else 'N/A'}
+What to try: {what_to_try[:150] if what_to_try else 'N/A'}
+Insider tip: {insider_tip[:150] if insider_tip else 'N/A'}
+"""
 
-    # Build context for the prompt
-    context_parts = []
-    if description:
-        context_parts.append(f"Opis: {description[:200]}")
-    if cuisine:
-        context_parts.append(f"Kuchnia: {cuisine}")
-    if what_to_try:
-        context_parts.append(f"Polecane dania: {what_to_try}")
-    context_info = ". ".join(context_parts) if context_parts else ""
+    if lang == 'en':
+        prompt = f"""You are the founder of GastroMap (gastromap.app) — a curated food discovery app for Kraków. 
+You personally reach out to local restaurants/cafes/bars to invite them to collaborate and enrich their listing on your platform.
 
-    prompt = f"""Jesteś asystentem aplikacji GastroMap (gastromap.app) — przewodnika gastronomicznego po Krakowie.
+Write a SHORT, warm, personal outreach message (NOT a template, NOT robotic) in English to the owner/manager of this place.
 
-Napisz krótką, przyjazną wiadomość outreach do lokalu "{name}" w {city}, który jest {category}.
-{f"Kontekst: {context_info}" if context_info else ""}
+The message should:
+- Sound like a real person writing, not a marketing email
+- Be friendly but not overly formal
+- Mention 1-2 specific things about THEIR place (use the context below)
+- Explain briefly what GastroMap is and why it benefits them
+- Ask if they'd like to add details like insider tips, photos, menu highlights
+- Be 4-6 sentences max
+- End with your name: "Alik, GastroMap founder"
+- Include the app URL: gastromap.app
+
+Context about the place:
+{context}
+
+Write ONLY the message text, nothing else."""
+
+    else:  # Polish
+        prompt = f"""Jesteś założycielem GastroMap (gastromap.app) — aplikacji odkrywania restauracji w Krakowie.
+Osobiście kontaktujesz się z lokalnymi restauracjami/kawiarniami/barami, aby zaprosić je do współpracy.
+
+Napisz KRÓTKĄ, ciepłą, osobistą wiadomość (NIE szablon, NIE robotyczną) po polsku do właściciela/managera tego miejsca.
 
 Wiadomość powinna:
-1. Przedstawić GastroMap krótko (1 zdanie) — aplikacja odkrywania restauracji w Krakowie
-2. Zaproponować dodanie lokalu do aplikacji
-3. Poprosić o wypełnienie 4 pól z PRZYKŁADAMI jak to zrobić:
-   - **Opis miejsca** (2-3 zdania o atmosferze, specjalności, co wyróżnia)
-     Przykład dla {name}: "Przytulna kawiarnia z klimatem lat 20., słynąca z autorskiej kawy i domowych wypieków. Idealne miejsce na spokojne śniadanie lub popołudniową przerwę od miasta."
-   - **What to try / Co polecamy** (2-3 dania lub napoje)
-     Przykład: "Flat white z lokalnej palarni, tarta cytrynowa, bagel z łososiem"  
-   - **Insider tip** (ukryta wskazówka, coś czego nie znajdziesz w Google)
-     Przykład: "Poproś o stolik przy oknie — widok na podwórko jest absolutnie ukryty przed turystami"
-   - **Social media / kontakt** (Instagram, strona, email)
-4. Zakończyć przyjaznym zaproszeniem do odpowiedzi
+- Brzmieć jak napisana przez prawdziwą osobę, nie email marketingowy
+- Być przyjazna, ale nie zbyt formalna
+- Wspomnieć 1-2 konkretne rzeczy o ICH miejscu (użyj kontekstu poniżej)
+- Krótko wyjaśnić czym jest GastroMap i dlaczego im się to opłaca
+- Zapytać czy chcieliby dodać szczegóły: insider tipy, zdjęcia, menu highlights
+- Maksymalnie 4-6 zdań
+- Zakończyć: "Alik, założyciel GastroMap"
+- Zawierać URL: gastromap.app
 
-Napisz wiadomość w dwóch wersjach:
-🇵🇱 **Po polsku** (główna)
-🇬🇧 **In English** (below)
+Kontekst o miejscu:
+{context}
 
-Styl: ciepły, partnerski, nie korporacyjny. Bez zbędnego formalnego języka. Jak wiadomość od znajomego twórcy aplikacji.
-Długość: max 200 słów każda wersja.
-Format: zwykły tekst (nie markdown), gotowy do skopiowania i wklejenia w Instagram DM lub email."""
+Napisz TYLKO treść wiadomości, nic więcej."""
 
-    if not OPENROUTER_API_KEY:
-        # Fallback: template-based message
-        return generate_template_message(location)
-
-    try:
-        r = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://gastromap.app",
-                "X-Title": "GastroMap Outreach Agent",
-            },
-            json={
-                "model": "google/gemma-3-27b-it:free",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 800,
-                "temperature": 0.7,
-            },
-            timeout=30,
-        )
-        if r.status_code == 200:
-            data = r.json()
-            content = data["choices"][0]["message"]["content"]
-            return content.strip()
-        else:
-            print(f"  LLM error {r.status_code}: {r.text[:200]}")
-    except Exception as e:
-        print(f"  LLM exception: {e}")
-
-    return generate_template_message(location)
-
-def generate_template_message(location):
-    """Fallback template if LLM unavailable."""
-    name = location.get("title", "")
-    city = location.get("city", "Kraków")
-    return f"""🇵🇱 Cześć! Tworzę GastroMap (gastromap.app) — aplikację odkrywania restauracji w {city}. Chciałbym dodać {name} do naszej mapy!
-
-Czy możesz podzielić się kilkoma informacjami?
-
-📝 Opis miejsca (czym się wyróżniacie, klimat, specjalność):
-Przykład: "Przytulna kawiarnia z klimatem retro, słynąca z autorskiej kawy i domowych wypieków..."
-
-🍽 Co polecacie (2-3 dania/napoje):
-Przykład: "Flat white z lokalnej palarni, tarta cytrynowa, bagel z łososiem"
-
-💡 Insider tip (coś czego nie znajdziesz w Google):
-Przykład: "Poproś o stolik przy oknie — ukryty widok na podwórko"
-
-🔗 Social media / kontakt (Instagram, strona, email)
-
-Dziękuję za czas! 🙏 gastromap.app
-
----
-
-🇬🇧 Hi! I'm building GastroMap (gastromap.app) — a restaurant discovery app for {city}. I'd love to add {name} to our map!
-
-Could you share some info?
-
-📝 About your place (what makes you unique, atmosphere, specialty):
-Example: "A cozy retro-style café known for specialty coffee and homemade pastries..."
-
-🍽 What to try (2-3 dishes/drinks):
-Example: "Flat white from local roaster, lemon tart, salmon bagel"
-
-💡 Insider tip (something not on Google):
-Example: "Ask for the window seat — hidden courtyard view"
-
-🔗 Social media / contact (Instagram, website, email)
-
-Thank you! 🙏 gastromap.app"""
-
-# ── Telegram ────────────────────────────────────────────────────────────────
-def send_telegram(text):
-    """Send message to Telegram."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("  [Telegram] No credentials, printing to stdout:")
-        print(text)
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True,
+    headers = {
+        'Authorization': f"Bearer {OPENROUTER_API_KEY}",
+        'Content-Type': 'application/json'
     }
+    payload = {
+        'model': 'google/gemma-3-27b-it:free',
+        'messages': [{'role': 'user', 'content': prompt}],
+        'max_tokens': 400,
+        'temperature': 0.85
+    }
+    
     try:
-        r = requests.post(url, json=payload, timeout=10)
-        if r.status_code != 200:
-            print(f"  Telegram error: {r.text[:200]}")
+        r = requests.post('https://openrouter.ai/api/v1/chat/completions',
+                         headers=headers, json=payload, timeout=30)
+        if r.status_code == 200:
+            return r.json()['choices'][0]['message']['content'].strip()
     except Exception as e:
-        print(f"  Telegram exception: {e}")
+        print(f"LLM error: {e}")
+    return ""
 
-def format_telegram_card(location, instagram, website, email, message):
-    """Format the full card to send to Telegram."""
-    name = location.get("title", "?")
-    city = location.get("city", "")
-    address = location.get("address", "")
+def get_existing_ids(service):
+    """Получаем уже обработанные ID из таблицы"""
+    result = service.spreadsheets().values().get(
+        spreadsheetId=SPREADSHEET_ID,
+        range='Лист1!A2:A1000'
+    ).execute()
+    values = result.get('values', [])
+    return set(row[0] for row in values if row)
 
-    lines = [f"<b>📍 {name}</b>"]
-    if city or address:
-        lines.append(f"<i>{address}, {city}</i>")
-    lines.append("")
+def append_to_sheet(service, rows):
+    """Добавляем строки в таблицу"""
+    service.spreadsheets().values().append(
+        spreadsheetId=SPREADSHEET_ID,
+        range='Лист1!A1',
+        valueInputOption='RAW',
+        insertDataOption='INSERT_ROWS',
+        body={'values': rows}
+    ).execute()
 
-    # Contacts found
-    contacts = []
-    if instagram:
-        contacts.append(f"📸 Instagram: {instagram}")
-    if website:
-        contacts.append(f"🌐 Website: {website}")
-    if email:
-        contacts.append(f"📧 Email: {email}")
+def run(batch_size=20, offset=0):
+    print(f"🚀 Starting GastroMap Outreach Agent — batch {batch_size}, offset {offset}")
     
-    if contacts:
-        lines.append("<b>Найденные контакты:</b>")
-        lines.extend(contacts)
-    else:
-        lines.append("⚠️ Контакты не найдены — отправь вручную")
+    service = get_sheets_service()
+    existing_ids = get_existing_ids(service)
+    print(f"📊 Already processed: {len(existing_ids)} locations")
     
-    lines.append("")
-    lines.append("<b>— ГОТОВОЕ СООБЩЕНИЕ —</b>")
-    lines.append("")
-    
-    # Telegram has 4096 char limit — trim message if needed
-    msg_trimmed = message[:3000] if len(message) > 3000 else message
-    lines.append(msg_trimmed)
-    
-    return "\n".join(lines)
-
-# ── Main ────────────────────────────────────────────────────────────────────
-def main():
-    print(f"🚀 GastroMap Outreach Agent — batch of {BATCH_SIZE}")
-    
-    # Check required env
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        print("❌ Missing GASTROMAP_SUPABASE_URL or GASTROMAP_SUPABASE_SERVICE_KEY")
-        sys.exit(1)
-    
-    # Fetch locations
-    print("📥 Fetching locations without Instagram...")
-    locations = fetch_locations_without_contacts(BATCH_SIZE)
-    print(f"  Found {len(locations)} locations to process")
-    
-    if not locations:
-        send_telegram("✅ GastroMap Outreach: Все локации уже обработаны или нет новых без Instagram.")
-        return
-    
-    # Summary header
-    send_telegram(f"🔎 <b>GastroMap Outreach Agent</b>\nНачинаю обработку {len(locations)} локаций...\n\nКаждое сообщение — готово к копированию в Instagram DM или email ✉️")
-    time.sleep(1)
+    locations = get_locations(limit=batch_size + 10, offset=offset)
+    print(f"📍 Fetched {len(locations)} locations from Supabase")
     
     processed = 0
-    for i, loc in enumerate(locations, 1):
-        name = loc.get("title", "?")
-        print(f"\n[{i}/{len(locations)}] Processing: {name}")
-        
-        # 1. Find contacts
-        print("  🔍 Searching contacts...")
-        instagram, website, email = find_contacts(loc)
-        print(f"  Instagram: {instagram or 'not found'}")
-        print(f"  Website: {website or 'not found'}")
-        print(f"  Email: {email or 'not found'}")
-        
-        # Save found contacts back to DB
-        if instagram or website:
-            update_location_contacts(loc["id"], instagram=instagram, website=website, email=email)
-        
-        # 2. Generate message
-        print("  ✍️ Generating outreach message...")
-        message = generate_outreach_message(loc)
-        
-        # 3. Send to Telegram
-        card = format_telegram_card(loc, instagram, website, email, message)
-        send_telegram(card)
-        processed += 1
-        
-        # Rate limiting
-        time.sleep(2)
+    rows_to_add = []
     
-    # Summary
-    send_telegram(f"✅ <b>Outreach завершён</b>\nОбработано: {processed}/{len(locations)} локаций\n\nСкопируй сообщения выше и отправь напрямую в Instagram DM или email 🚀")
-    print(f"\n✅ Done! Processed {processed} locations.")
+    for loc in locations:
+        loc_id = str(loc.get('id', ''))
+        
+        if loc_id in existing_ids:
+            print(f"⏭️  Skip {loc.get('title')} — already processed")
+            continue
+        
+        if processed >= batch_size:
+            break
+            
+        title = loc.get('title', 'Unknown')
+        print(f"\n🔍 Processing: {title}")
+        
+        # Контакты из базы
+        instagram = loc.get('social_instagram', '') or ''
+        website = loc.get('website', '') or ''
+        phone = loc.get('phone', '') or ''
+        
+        # Дополнительный поиск если нет контактов
+        if not instagram and not website:
+            print(f"   Searching contacts...")
+            found = search_contacts(title)
+            instagram = found.get('instagram', instagram)
+            email_found = found.get('email', '')
+        else:
+            email_found = ''
+        
+        # Генерируем письма
+        print(f"   Generating EN message...")
+        msg_en = generate_message(loc, lang='en')
+        time.sleep(1)
+        
+        print(f"   Generating PL message...")
+        msg_pl = generate_message(loc, lang='pl')
+        time.sleep(1)
+        
+        # GastroMap ссылка
+        gastromap_url = f"https://gastromap-five.vercel.app/locations/{loc_id}"
+        
+        row = [
+            loc_id,
+            title,
+            loc.get('address', ''),
+            email_found,
+            instagram,
+            website,
+            'New',
+            msg_en,
+            msg_pl,
+            '',  # Дата отправки
+            '',  # Ответ
+            gastromap_url
+        ]
+        rows_to_add.append(row)
+        processed += 1
+        print(f"   ✅ Done ({processed}/{batch_size})")
+    
+    if rows_to_add:
+        print(f"\n📝 Writing {len(rows_to_add)} rows to Google Sheets...")
+        append_to_sheet(service, rows_to_add)
+        print(f"✅ Successfully saved {len(rows_to_add)} locations!")
+    else:
+        print("⚠️  No new locations to process")
+    
+    return len(rows_to_add)
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    offset = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    batch = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+    count = run(batch_size=batch, offset=offset)
+    print(f"\n🎉 Done! Processed {count} locations.")

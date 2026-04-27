@@ -927,6 +927,11 @@ export async function matchLocationWithKG(location, preloaded = {}) {
  * Synchronizes the entire Knowledge Graph with existing locations.
  * Updates ai_keywords and enriches ai_context for matching locations.
  */
+// Normalize string for comparison: lowercase + remove accents
+function normalizeForCompare(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 /**
  * Sync KG data for a SINGLE location.
  * Called automatically after saving a location card.
@@ -955,10 +960,10 @@ export async function syncKGForLocation(locationId) {
 
     // Filter out establishment types from kg_cuisines — those belong in `category` only
     const validCuisines = kgMatches.cuisines.filter(
-        c => !ESTABLISHMENT_TYPE_NAMES.has(c.toLowerCase())
+        c => !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))
     )
     const validExistingKgCuisines = (loc.kg_cuisines || []).filter(
-        c => !ESTABLISHMENT_TYPE_NAMES.has(c.toLowerCase())
+        c => !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))
     )
 
     // Build update payload — merge new matches with existing, keep unique

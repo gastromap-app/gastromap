@@ -110,6 +110,11 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
         }
     }, [isOpen])
 
+// Normalize string for comparison: lowercase + remove accents
+function normalizeForCompare(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
     // Automatically reflects any new cuisine added via KG enrichment.
     // Filters out establishment types (e.g. 'Cafe', 'Bar') that may have been
@@ -121,13 +126,13 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
             // KG cuisines (primary source — auto-updated)
             if (Array.isArray(loc.kg_cuisines)) {
                 loc.kg_cuisines.forEach(c => {
-                    if (c && !ESTABLISHMENT_TYPE_NAMES.has(c.toLowerCase())) {
+                    if (c && !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))) {
                         cuisineSet.add(c)
                     }
                 })
             }
             // Fallback: cuisine string field — also filter out establishment types
-            if (loc.cuisine && !ESTABLISHMENT_TYPE_NAMES.has(loc.cuisine.toLowerCase())) {
+            if (loc.cuisine && !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(loc.cuisine))) {
                 cuisineSet.add(loc.cuisine)
             }
         })

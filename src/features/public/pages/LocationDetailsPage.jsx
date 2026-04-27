@@ -291,12 +291,13 @@ const LocationDetailsPage = () => {
     // Render Helpers
     const renderOverview = () => (
         <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* ── Compact Info Grid ───────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {[
-                    { id: 'hours',    icon: Clock,          label: openLabel || t('location.hours_today'), value: location.openingHours || '—', color: isOpen ? "bg-emerald-500/10 text-emerald-500" : isOpen === false ? "bg-red-500/10 text-red-400" : "bg-blue-500/10 text-blue-500" },
-                    { id: 'contact',  icon: Phone,          label: t('location.contact'),       value: location.phone || '—', color: "bg-green-500/10 text-green-500", hidden: !location.phone },
-                    { id: 'reviews',  icon: MessageSquare,  label: t('location.total_reviews'), value: aggregate.count ? t('location.review_count', { count: aggregate.count }) : t('location.no_reviews'), color: "bg-indigo-500/10 text-indigo-500" },
-                    { id: 'directions', icon: Navigation,  label: t('location.get_directions'),value: location.address ? t('location.open_in_maps') : '—', color: "bg-orange-500/10 text-orange-500" }
+                    { id: 'hours',     icon: Clock,         label: openLabel || t('location.hours_today'), value: location.openingHours || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
+                    { id: 'contact',   icon: Phone,         label: t('location.contact'),        value: location.phone || '—', color: "text-green-500", bg: "bg-green-500/8", hidden: !location.phone },
+                    { id: 'reviews',   icon: MessageSquare, label: t('location.total_reviews'),  value: aggregate.count ? `${aggregate.count}` : '—', sub: aggregate.count ? t('location.review_count_short', { defaultValue: 'reviews' }) : t('location.no_reviews'), color: "text-indigo-500", bg: "bg-indigo-500/8" },
+                    { id: 'directions',icon: Navigation,   label: t('location.get_directions'), value: location.address ? t('location.open_in_maps') : '—', color: "text-orange-500", bg: "bg-orange-500/8" }
                 ].filter(info => !info.hidden).map((info, i) => (
                     <motion.div
                         key={info.id}
@@ -306,7 +307,7 @@ const LocationDetailsPage = () => {
                         variants={fadeInUp}
                         initial="hidden"
                         animate="visible"
-                        transition={{ delay: 0.1 * i }}
+                        transition={{ delay: 0.05 * i }}
                         onClick={() => {
                             if (info.id === 'directions') openInMaps()
                             if (info.id === 'contact') callNumber()
@@ -317,43 +318,45 @@ const LocationDetailsPage = () => {
                                 if (info.id === 'contact') callNumber()
                             }
                         }}
-                        className={`p-4 rounded-[24px] border transition-all duration-500 group cursor-pointer ${cardBg} hover:shadow-lg`}
+                        className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-300 group cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]' : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
                     >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-105 ${info.color}`}>
-                            <info.icon size={20} />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${info.bg}`}>
+                            <info.icon size={15} className={info.color} />
                         </div>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-50 mb-1 ${textStyle}`}>{info.label}</p>
-                        <p className={`text-[13px] font-bold leading-tight ${textStyle}`}>{info.value}</p>
+                        <div className="min-w-0">
+                            <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-40 ${textStyle}`}>{info.label}</p>
+                            <p className={`text-[12px] font-bold leading-tight truncate ${textStyle}`}>{info.value}</p>
+                            {info.sub && <p className={`text-[10px] opacity-40 ${textStyle}`}>{info.sub}</p>}
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
-            <section className="space-y-4">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-1 h-5 bg-blue-600 rounded-full" />
-                    <h3 className={`text-lg font-black ${textStyle}`}>Cuisine & Menu</h3>
-                </div>
-
-                <div className={`p-6 rounded-[32px] border ${cardBg} space-y-4`}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                            <UtensilsCrossed size={20} />
+            {/* ── Cuisine & Menu (compact inline) ─────────────────────────────── */}
+            {(location.cuisine || location.special_labels?.length > 0) && (
+                <section className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <UtensilsCrossed size={14} className="text-blue-500" />
+                            <h3 className={`text-sm font-black ${textStyle}`}>Cuisine & Menu</h3>
                         </div>
-                        <div>
-                            <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-50 ${textStyle}`}>Primary Cuisine</p>
-                            <p className={`text-sm font-bold ${textStyle}`}>{translate(location.cuisine) || 'International'}</p>
-                        </div>
-                    </div>
-
-                    <div className={`flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                        {location.special_labels?.map(label => (
-                            <span key={label} className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${isDark ? 'bg-blue-500/12 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
-                                {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
+                        {location.cuisine && (
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                                {translate(location.cuisine)}
                             </span>
-                        ))}
+                        )}
                     </div>
-                </div>
-            </section>
+                    {location.special_labels?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {location.special_labels.map(label => (
+                                <span key={label} className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${isDark ? 'bg-white/[0.04] border-white/8 text-white/60 hover:bg-white/[0.08]' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}>
+                                    {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
 
             <section className="space-y-2.5">
                 <div className="flex items-center gap-2.5">

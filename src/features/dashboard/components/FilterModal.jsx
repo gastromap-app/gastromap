@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES } from '@/shared/config/filterOptions'
+import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES, ESTABLISHMENT_TYPE_NAMES } from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 import { getLabelEmoji } from '@/shared/constants/taxonomy'
 import { translate, translateToRu } from '@/utils/translation'
@@ -111,17 +111,25 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }, [isOpen])
 
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
-    // Automatically reflects any new cuisine added via KG enrichment
+    // Automatically reflects any new cuisine added via KG enrichment.
+    // Filters out establishment types (e.g. 'Cafe', 'Bar') that may have been
+    // incorrectly stored in cuisine fields — those belong in `category` only.
     const locations = useLocationsStore(s => s.locations)
     const dynamicCuisines = useMemo(() => {
         const cuisineSet = new Set()
         locations.forEach(loc => {
             // KG cuisines (primary source — auto-updated)
             if (Array.isArray(loc.kg_cuisines)) {
-                loc.kg_cuisines.forEach(c => c && cuisineSet.add(c))
+                loc.kg_cuisines.forEach(c => {
+                    if (c && !ESTABLISHMENT_TYPE_NAMES.has(c.toLowerCase())) {
+                        cuisineSet.add(c)
+                    }
+                })
             }
-            // Fallback: cuisine string field  
-            if (loc.cuisine) cuisineSet.add(loc.cuisine)
+            // Fallback: cuisine string field — also filter out establishment types
+            if (loc.cuisine && !ESTABLISHMENT_TYPE_NAMES.has(loc.cuisine.toLowerCase())) {
+                cuisineSet.add(loc.cuisine)
+            }
         })
         return [...cuisineSet].sort()
     }, [locations])

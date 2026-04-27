@@ -39,6 +39,11 @@ export const ESTABLISHMENT_TYPES = [
     { id: 'Fine Dining', label: 'Fine Dining',labelRu: 'Fine Dining',  icon: '🎩' },
 ]
 
+// Canonical establishment type names for data validation (lowercased for comparison)
+export const ESTABLISHMENT_TYPE_NAMES = new Set(
+    ESTABLISHMENT_TYPES.filter(t => t.id !== 'all').map(t => t.id.toLowerCase())
+)
+
 // ─── Время визита ────────────────────────────────────────────────────────────
 // Хранятся в поле best_for[] в БД.
 // id совпадает со значением в best_for (e.g. 'morning', 'evening').

@@ -51,7 +51,7 @@ function normalise(row) {
     const lng = Number(row.lng ?? 0)
 
     // Schema: title, rating, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
-    const image         = resizeGoogleCdn(row.image_url ?? '', 800)
+    const image         = row.image_url ?? ''
     const rating        = Number(row.rating ?? 0)
     const googleRating  = Number(row.google_rating ?? 0)
     const priceRange    = row.price_range ?? '$$'

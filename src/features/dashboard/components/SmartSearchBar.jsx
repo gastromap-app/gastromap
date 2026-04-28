@@ -166,10 +166,10 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                     {/* Thumbnail */}
                                     <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                                         <LocationImage
-    src={loc.image}
-    alt=""
-    width={200}
-/>
+                                            src={loc.image}
+                                            alt=""
+                                            width={200}
+                                        />
                                     </div>
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">

@@ -5,18 +5,18 @@ import { ImageOff } from 'lucide-react'
 /**
  * LocationImage — адаптивный компонент изображений для GastroMap.
  *
- * Использует нативный <picture> + <source> для современных форматов.
  * Google CDN (lh3.googleusercontent.com) ресайзится через параметр =wNNN-h-k-no.
+ * Unsplash: через query params w/q/auto/fit.
  * Остальные URL используются как есть.
  *
  * Особенности:
  * - IntersectionObserver lazy loading (200px ahead)
  * - Skeleton placeholder → fade-in при загрузке
- * - Fallback иконка при ошибке
+ * - 2-уровневый fallback: resized → original → fallback icon
  * - fetchpriority="high" для первых видимых карточек (LCP)
  * - decoding="async" по умолчанию
  *
- * @param {string}  src              – image_url из normalise() (canonical)
+ * @param {string}  src              – image_url из normalise() (canonical, RAW без ресайза)
  * @param {string}  alt
  * @param {string}  className        – классы для <img>
  * @param {string}  wrapperClassName – классы для wrapper div
@@ -28,25 +28,22 @@ import { ImageOff } from 'lucide-react'
 const GOOGLE_CDN_RE = /lh3\.googleusercontent\.com/
 const UNSPLASH_RE   = /images\.unsplash\.com/
 
-/**
- * Добавляет параметр ресайза для Google CDN и Unsplash.
- * Google Photos: заменяем =wXXX... суффикс на =wW-h-k-no
- * Unsplash: добавляем ?w=W&q=80&auto=format&fit=crop
- */
 function resizeUrl(src, width) {
     if (!src) return src
     if (GOOGLE_CDN_RE.test(src)) {
-        // Google CDN: URL заканчивается на =w1920-h1080-k-no или похожим
-        // Заменяем весь размерный суффикс после последнего = или добавляем
         return src.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
     }
     if (UNSPLASH_RE.test(src)) {
-        const u = new URL(src)
-        u.searchParams.set('w', String(width))
-        u.searchParams.set('q', '80')
-        u.searchParams.set('auto', 'format')
-        u.searchParams.set('fit', 'crop')
-        return u.toString()
+        try {
+            const u = new URL(src)
+            u.searchParams.set('w', String(width))
+            u.searchParams.set('q', '80')
+            u.searchParams.set('auto', 'format')
+            u.searchParams.set('fit', 'crop')
+            return u.toString()
+        } catch {
+            return src
+        }
     }
     return src
 }
@@ -63,18 +60,21 @@ export default function LocationImage({
     priority = false,
     fallback = DEFAULT_FALLBACK,
 }) {
-    const wrapperRef  = useRef(null)
-    const [visible, setVisible]   = useState(priority)   // priority → грузим сразу
-    const [loaded,  setLoaded]    = useState(false)
-    const [error,   setError]     = useState(false)
+    const wrapperRef = useRef(null)
+    const [visible, setVisible]         = useState(priority)
+    const [loaded, setLoaded]           = useState(false)
+    const [error, setError]             = useState(false)
+    // useOriginal: true = второй шанс с оригинальным URL без ресайза
+    const [useOriginal, setUseOriginal] = useState(false)
 
-    const imgSrc = src || fallback
+    const rawSrc  = src || fallback
+    const resized = useOriginal ? rawSrc : resizeUrl(rawSrc, width)
 
-    // Ресайзим под нужную ширину
-    const resized = resizeUrl(imgSrc, width)
+    // Если resized === rawSrc (URL не поддерживает ресайз), пропускаем второй шанс
+    const canFallbackToOriginal = !useOriginal && resized !== rawSrc
 
     useEffect(() => {
-        if (priority) return   // уже видим
+        if (priority) return
         const el = wrapperRef.current
         if (!el) return
 
@@ -90,6 +90,24 @@ export default function LocationImage({
         observer.observe(el)
         return () => observer.disconnect()
     }, [priority])
+
+    // Сброс состояния при смене src
+    useEffect(() => {
+        setLoaded(false)
+        setError(false)
+        setUseOriginal(false)
+    }, [src])
+
+    function handleError() {
+        if (canFallbackToOriginal) {
+            // Первая ошибка: пробуем оригинальный URL без ресайза
+            setUseOriginal(true)
+            setLoaded(false)
+        } else {
+            // Вторая ошибка или нет резервного — показываем иконку
+            setError(true)
+        }
+    }
 
     return (
         <div
@@ -111,13 +129,6 @@ export default function LocationImage({
             {/* Основное изображение */}
             {visible && !error && (
                 <picture>
-                    {/*
-                      * Браузер сам выбирает подходящий source.
-                      * Google CDN отдаёт WebP автоматически — дополнительный
-                      * <source type="image/webp"> не нужен, браузер договорится
-                      * через Accept header. Оставляем один <img> для простоты
-                      * и совместимости с crossOrigin.
-                      */}
                     <img
                         src={resized}
                         alt={alt}
@@ -125,15 +136,7 @@ export default function LocationImage({
                         decoding="async"
                         fetchPriority={priority ? 'high' : 'auto'}
                         onLoad={() => setLoaded(true)}
-                        onError={() => {
-                            // При ошибке пробуем оригинальный URL без ресайза
-                            if (resized !== imgSrc) {
-                                // второй шанс — оригинал
-                                setError(false)
-                            } else {
-                                setError(true)
-                            }
-                        }}
+                        onError={handleError}
                         className={cn(
                             'w-full h-full object-cover transition-opacity duration-300',
                             loaded ? 'opacity-100' : 'opacity-0',

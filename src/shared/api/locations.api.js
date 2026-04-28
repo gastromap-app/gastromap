@@ -37,11 +37,15 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // Schema: title, rating, price_level, cuisine (string), image, photos (array)
-    const image      = row.image ?? ''
-    const rating     = Number(row.rating ?? 0)
-    const priceLevel = row.price_level ?? '$$'
-    const cuisineRaw = row.cuisine ?? ''
+    // DB canonical fields: image_url, google_rating, price_range, cuisine_types (array)
+    const image      = row.image_url ?? row.image ?? ''
+    const rating     = Number(row.google_rating ?? row.rating ?? 0)
+    const priceLevel = row.price_range ?? row.price_level ?? '$$'
+    // cuisine_types is array in DB; cuisine is legacy string — prefer array
+    const cuisineArr = Array.isArray(row.cuisine_types)
+        ? row.cuisine_types.filter(Boolean)
+        : (row.cuisine_types ? [row.cuisine_types] : [])
+    const cuisineRaw = cuisineArr[0] ?? row.cuisine ?? ''
 
     // Normalise legacy 'active' → 'approved' for UI consistency
     const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
@@ -64,7 +68,7 @@ function normalise(row) {
         type: row.category ?? 'other',
 
         cuisine: cuisineRaw,
-        cuisine_types: cuisineRaw ? [cuisineRaw] : [],
+        cuisine_types: cuisineArr.length ? cuisineArr : (cuisineRaw ? [cuisineRaw] : []),
 
         image,
         image_url: image,
@@ -73,7 +77,7 @@ function normalise(row) {
 
         rating,
         google_rating: rating,
-        google_user_ratings_total: 0,
+        google_user_ratings_total: row.google_user_ratings_total ?? 0,
 
         price_level: priceLevel,
         priceLevel,
@@ -88,26 +92,34 @@ function normalise(row) {
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
         vibe: row.vibe ?? [],
-        features: row.amenities ?? row.features ?? [],
-        amenities: row.amenities ?? row.features ?? [],
+        amenities: row.amenities ?? [],
+        features: row.amenities ?? [],
         best_for: row.best_for ?? [],
-        dietary: row.dietary_options ?? row.dietary ?? [],
-        dietary_options: row.dietary_options ?? row.dietary ?? [],
+        dietary_options: row.dietary_options ?? [],
+        dietary: row.dietary_options ?? [],
 
-        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : (row.has_wifi ?? false),
-        has_outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
-        reservations_required: row.reservation_required ?? row.reservations_required ?? false,
+        has_wifi: row.has_wifi ?? (row.wifi_quality ? row.wifi_quality !== 'none' : false),
+        wifi_quality: row.wifi_quality ?? (row.has_wifi ? 'high' : 'none'),
+        has_outdoor_seating: row.has_outdoor_seating ?? row.outdoor_seating ?? false,
+        outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
+        reservations_required: row.reservations_required ?? row.reservation_required ?? false,
+        reservation_required: row.reservation_required ?? row.reservations_required ?? false,
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
 
         insider_tip: row.insider_tip ?? '',
-        what_to_try: typeof row.must_try === 'string'
-            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-            : (row.must_try ?? row.what_to_try ?? []),
-        must_try: typeof row.must_try === 'string'
-            ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-            : (row.must_try ?? row.what_to_try ?? []),
+        // what_to_try is the canonical array field in DB; must_try is legacy string — prefer array
+        what_to_try: Array.isArray(row.what_to_try) && row.what_to_try.length
+            ? row.what_to_try
+            : (typeof row.must_try === 'string' && row.must_try
+                ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+                : []),
+        must_try: Array.isArray(row.what_to_try) && row.what_to_try.length
+            ? row.what_to_try
+            : (typeof row.must_try === 'string' && row.must_try
+                ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
+                : []),
 
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
@@ -152,7 +164,7 @@ export async function getLocations(filters = {}) {
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('rating', { ascending: false })
+        .order('google_rating', { ascending: false })
         .range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
@@ -540,19 +552,28 @@ function _toRow(d) {
     if (d.category !== undefined) row.category = d.category
     else if (d.type !== undefined) row.category = d.type
 
-    if (d.cuisine !== undefined)     row.cuisine = Array.isArray(d.cuisine) ? d.cuisine[0] ?? '' : (d.cuisine ?? '')
-    if (d.cuisine_types !== undefined) row.cuisine = Array.isArray(d.cuisine_types) ? d.cuisine_types[0] ?? '' : (d.cuisine_types ?? '')
+    // cuisine_types is canonical array in DB; cuisine is legacy derived string
+    if (d.cuisine_types !== undefined) {
+        const arr = Array.isArray(d.cuisine_types) ? d.cuisine_types.filter(Boolean) : [d.cuisine_types].filter(Boolean)
+        row.cuisine_types = arr
+        row.cuisine = arr[0] ?? ''  // keep legacy field in sync
+    } else if (d.cuisine !== undefined) {
+        row.cuisine = Array.isArray(d.cuisine) ? (d.cuisine[0] ?? '') : (d.cuisine ?? '')
+        row.cuisine_types = row.cuisine ? [row.cuisine] : []
+    }
 
     // Images
-    if (d.image_url !== undefined) row.image = d.image_url
-    else if (d.image !== undefined) row.image = d.image
+    // image_url is the canonical DB column name
+    if (d.image_url !== undefined)     row.image_url = d.image_url
+    else if (d.image !== undefined)    row.image_url = d.image
 
     if (d.google_photos !== undefined) row.photos = d.google_photos
     else if (d.photos !== undefined) row.photos = d.photos
     else if (d.images !== undefined) row.photos = d.images
 
-    if (d.rating !== undefined)         row.rating = Number(d.rating)
-    if (d.google_rating !== undefined)  row.rating = Number(d.google_rating)
+    // google_rating is canonical DB column
+    if (d.google_rating !== undefined)  row.google_rating = Number(d.google_rating)
+    else if (d.rating !== undefined)    row.google_rating = Number(d.rating)
 
     // Price
     if (d.price_range !== undefined)  row.price_level = d.price_range
@@ -570,32 +591,51 @@ function _toRow(d) {
     if (d.tags !== undefined)        row.tags = d.tags
     // if (d.vibe !== undefined)     // vibe not in schema, use tags?
     
-    if (d.amenities !== undefined)   row.amenities = d.amenities
-    else if (d.features !== undefined) row.amenities = d.features
+    // amenities — canonical DB column (features does NOT exist in DB)
+    if (d.amenities !== undefined)      row.amenities = d.amenities
+    else if (d.features !== undefined)  row.amenities = d.features
 
-    if (d.best_for !== undefined)    row.best_for = d.best_for
-    
+    if (d.best_for !== undefined)       row.best_for = d.best_for
+    if (d.special_labels !== undefined) row.special_labels = d.special_labels
+    if (d.vibe !== undefined)           row.vibe = d.vibe
+
+    // dietary_options — canonical DB column
     if (d.dietary_options !== undefined) row.dietary_options = d.dietary_options
     else if (d.dietary !== undefined)    row.dietary_options = d.dietary
 
-    if (d.special_labels !== undefined) row.special_labels = d.special_labels
-    
-    if (d.has_wifi !== undefined)    row.wifi_quality = d.has_wifi ? 'high' : 'none'
-    
-    if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
-    else if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
+    // wifi — both columns exist in DB, keep in sync
+    if (d.has_wifi !== undefined) {
+        row.has_wifi = d.has_wifi
+        row.wifi_quality = d.has_wifi ? 'high' : 'none'
+    } else if (d.wifi_quality !== undefined) {
+        row.wifi_quality = d.wifi_quality
+        row.has_wifi = d.wifi_quality !== 'none'
+    }
 
-    if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
-    else if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
+    // outdoor_seating — both columns exist in DB, keep in sync
+    const outdoorVal = d.has_outdoor_seating ?? d.outdoor_seating
+    if (outdoorVal !== undefined) {
+        row.outdoor_seating = outdoorVal
+        row.has_outdoor_seating = outdoorVal
+    }
 
-    if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
+    // reservations — both columns exist in DB, keep in sync
+    const reservVal = d.reservations_required ?? d.reservation_required
+    if (reservVal !== undefined) {
+        row.reservation_required = reservVal
+        row.reservations_required = reservVal
+    }
 
-    // What to try (stored as text in DB, but treated as list in UI)
-    const whatToTry = d.must_try ?? d.what_to_try
-    if (whatToTry !== undefined) {
-        row.must_try = Array.isArray(whatToTry)
-            ? whatToTry.join(', ')
-            : String(whatToTry)
+    if (d.insider_tip !== undefined) row.insider_tip = d.insider_tip
+
+    // what_to_try — canonical array column; must_try is legacy string kept for search/FTS
+    const whatToTryArr = d.what_to_try ?? d.must_try
+    if (whatToTryArr !== undefined) {
+        const arr = Array.isArray(whatToTryArr)
+            ? whatToTryArr
+            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
+        row.what_to_try = arr
+        row.must_try = arr.join(', ')  // keep legacy string in sync
     }
 
     if (d.ai_keywords !== undefined)  row.ai_keywords = d.ai_keywords
@@ -603,39 +643,13 @@ function _toRow(d) {
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
 
-    // AI Enrichment status
-    if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
-    if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
+    if (d.ai_enrichment_status !== undefined)      row.ai_enrichment_status = d.ai_enrichment_status
+    if (d.ai_enrichment_error !== undefined)        row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
-
-    // ── Fields with canonical column names in Supabase ───────────────────────
-    // vibe — separate column (was incorrectly merged into tags)
-    if (d.vibe !== undefined) row.vibe = d.vibe
-
-    // features — canonical column name (not amenities)
-    if (d.features !== undefined) row.features = d.features
-    else if (d.amenities !== undefined) row.features = d.amenities
-
-    // Boolean fields — use canonical column names
-    if (d.has_wifi !== undefined) row.has_wifi = d.has_wifi
-    if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
-    if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
 
     // Michelin
     if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
-    if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
-
-    // what_to_try — canonical array column
-    const whatToTryArr = d.what_to_try ?? d.must_try
-    if (whatToTryArr !== undefined) {
-        row.what_to_try = Array.isArray(whatToTryArr)
-            ? whatToTryArr
-            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
-    }
-
-    // dietary — canonical column name
-    if (d.dietary !== undefined) row.dietary = d.dietary
-    else if (d.dietary_options !== undefined) row.dietary = d.dietary_options
+    if (d.michelin_bib !== undefined)   row.michelin_bib = d.michelin_bib
 
     // ── KG fields — Knowledge Graph enrichment ───────────────────────────────
     if (d.kg_cuisines !== undefined)   row.kg_cuisines = d.kg_cuisines

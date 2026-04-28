@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Star, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
+import { MapPin, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
@@ -68,16 +68,6 @@ export default function LocationCard({ location }) {
                     {location.description}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-                    {/* Best Time subtle indicator */}
-                    {location.best_time && location.best_time.length > 0 && (
-                        <div className="flex gap-1 text-[12px] opacity-70 mr-1 items-center">
-                            {location.best_time.includes('morning') && <Sunrise size={12} className="text-orange-400" />}
-                            {location.best_time.includes('day') && <Sun size={12} className="text-yellow-500" />}
-                            {location.best_time.includes('evening') && <Sunset size={12} className="text-orange-500" />}
-                            {location.best_time.includes('late_night') && <Sparkles size={12} className="text-indigo-400" />}
-                        </div>
-                    )}
-
                     {/* Tags */}
                     {location.tags?.slice(0, 2).map(tag => (
                         <Badge key={tag} variant="outline" className="text-[9px] font-bold h-5 px-2 bg-slate-50 dark:bg-slate-800/50 border-none">

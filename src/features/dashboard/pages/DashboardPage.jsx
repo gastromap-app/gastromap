@@ -131,14 +131,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 {/* Footer row: best time icons + price + label chip */}
                 <div className="flex items-center justify-between mt-2.5">
                     <div className="flex items-center gap-1.5">
-                        {loc.best_time && loc.best_time.length > 0 && (
-                            <div className="flex items-center gap-0.5">
-                                {loc.best_time.includes('morning') && <Sunrise size={11} className="text-orange-400" />}
-                                {loc.best_time.includes('day') && <Sun size={11} className="text-yellow-500" />}
-                                {loc.best_time.includes('evening') && <Sunset size={11} className="text-orange-500" />}
-                                {loc.best_time.includes('late_night') && <Sparkles size={11} className="text-indigo-400" />}
-                            </div>
-                        )}
+
                         {loc.special_labels?.[0] && (
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 isDark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-600'
@@ -753,14 +746,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) =
                     Trending
                 </div>
             )}
-            {item.best_time && item.best_time.length > 0 && (
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 text-white/80">
-                    {item.best_time.includes('morning')   && <Sunrise size={13} className="text-orange-300" />}
-                    {item.best_time.includes('day')       && <Sun size={13} className="text-yellow-300" />}
-                    {item.best_time.includes('evening')   && <Sunset size={13} className="text-orange-400" />}
-                    {item.best_time.includes('late_night') && <Sparkles size={13} className="text-indigo-300" />}
-                </div>
-            )}
+
         </div>
 
         <div className="p-4">

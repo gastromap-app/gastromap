@@ -18,6 +18,7 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
+import LocationImage from '@/components/ui/LocationImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
@@ -290,11 +291,11 @@ const LocationDetailsPage = () => {
                 {/* Bento Style Gallery Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-[300px] md:h-[600px]">
                     <div className="col-span-2 md:col-span-6 rounded-[24px] md:rounded-[48px] overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage
+                        <LocationImage
                             src={location.image}
                             alt={location.title}
-                            crossOrigin="anonymous"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width={800}
+                            className="transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
@@ -663,13 +664,12 @@ const LocationDetailsPage = () => {
 
                 {/* Hero Image Section */}
                 <div className="relative h-[35vh] md:h-[50vh] w-full overflow-hidden">
-                    <LazyImage
+                    <LocationImage
                         src={location.image}
-                        crossOrigin="anonymous"
-                        fetchpriority="high"
-                        className="w-full h-full object-cover"
                         alt={location.title}
-                        rootMargin="0px"
+                        width={1200}
+                        priority={true}
+                        className="object-cover"
                     />
                     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent z-10" />
                     <div className="absolute inset-0 bg-black/20 z-0" />

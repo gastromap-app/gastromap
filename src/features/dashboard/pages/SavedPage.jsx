@@ -6,6 +6,7 @@ import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shar
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
+import LocationImage from '@/components/ui/LocationImage'
 
 // ─── Location card (compact horizontal) ──────────────────────────────────
 function SavedCard({ favorite, index, onRemove }) {
@@ -29,11 +30,11 @@ function SavedCard({ favorite, index, onRemove }) {
             {/* Image */}
             <Link to={`/location/${loc.id}`} className="flex-shrink-0">
                 <div className="w-20 h-20 rounded-xl overflow-hidden">
-                    <img
+                    <LocationImage
                         src={loc.image}
                         alt={loc.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        width={200}
+                        className="transition-transform duration-500 group-hover:scale-110"
                     />
                 </div>
             </Link>

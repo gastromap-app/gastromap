@@ -1,4 +1,5 @@
 import React from 'react'
+import LocationImage from '@/components/ui/LocationImage'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock, Trash2 } from 'lucide-react'
@@ -32,11 +33,11 @@ function VisitedCard({ visit, index, onDelete }) {
                 {/* Image with visited badge */}
                 <div className="flex-shrink-0 relative">
                     <div className="w-20 h-20 rounded-xl overflow-hidden">
-                        <img
+                        <LocationImage
                             src={loc.image}
                             alt={loc.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 grayscale-[20%]"
+                            width={200}
+                            className="transition-transform duration-500 group-hover:scale-110 grayscale-[20%]"
                         />
                     </div>
                     {/* Visited checkmark overlay */}

@@ -31,6 +31,18 @@ if (USE_SUPABASE) {
 // Exposes BOTH API-canonical names (title, priceLevel, openingHours …)
 // AND admin-form aliases (name, price_range, opening_hours, image_url, …)
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
+
+// ── Google CDN resize helper ────────────────────────────────────────────────
+// Используется в normalise() для получения оптимальной ширины из Google Photos.
+// Компонент LocationImage делает то же самое на фронте — это резерв для SSR/OG.
+function resizeGoogleCdn(url, width = 800) {
+    if (!url) return url
+    if (/lh3\.googleusercontent\.com/.test(url)) {
+        return url.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
+    }
+    return url
+}
+
 function normalise(row) {
     if (!row) return null;
 
@@ -38,7 +50,7 @@ function normalise(row) {
     const lng = Number(row.lng ?? 0)
 
     // DB canonical fields: image_url, google_rating, price_range, cuisine_types (array)
-    const image      = row.image_url ?? row.image ?? ''
+    const image      = resizeGoogleCdn(row.image_url ?? row.image ?? '', 800)
     const rating     = Number(row.google_rating ?? row.rating ?? 0)
     const priceLevel = row.price_range ?? row.price_level ?? '$$'
     // cuisine_types is array in DB; cuisine is legacy string — prefer array

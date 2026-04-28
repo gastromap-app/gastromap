@@ -4,6 +4,7 @@ import { Search, MapPin, Star, X } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
+import LocationImage from '@/components/ui/LocationImage'
 
 /**
  * SmartSearchBar
@@ -157,10 +158,10 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                                 >
                                     {/* Thumbnail */}
                                     <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                        <img
-                                            src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=100'}
+                                        <LocationImage
+                                            src={loc.image}
                                             alt=""
-                                            className="w-full h-full object-cover"
+                                            width={200}
                                         />
                                     </div>
                                     {/* Info */}

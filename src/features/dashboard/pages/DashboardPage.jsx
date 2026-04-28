@@ -18,6 +18,7 @@ import { translate } from '@/utils/translation'
 import { DashboardCardSkeleton } from '@/components/ui/Skeleton'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
+import LocationImage from '@/components/ui/LocationImage'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { SmartSearchBar } from '../components/SmartSearchBar'
@@ -83,11 +84,11 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
         >
             {/* Image */}
             <div className="relative h-[180px] overflow-hidden">
-                <img
-                    src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop'}
+                <LocationImage
+                    src={loc.image}
                     alt={loc.title || 'Location'}
-                    crossOrigin="anonymous"
-                    className="w-full h-full object-cover"
+                    width={400}
+                    className="transition-transform duration-300 group-hover:scale-105"
                 />
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
@@ -730,11 +731,11 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) =
         className={`${cardClass} overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200`}
     >
         <div className="relative h-[220px] overflow-hidden">
-            <img
+            <LocationImage
                 src={item.image}
-                crossOrigin="anonymous"
                 alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                width={800}
+                className="transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">

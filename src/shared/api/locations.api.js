@@ -574,9 +574,10 @@ function _toRow(d) {
     else if (d.rating !== undefined)    row.google_rating = Number(d.rating)
 
     // Price
-    if (d.price_range !== undefined)  row.price_level = d.price_range
-    else if (d.price_level !== undefined) row.price_level = d.price_level
-    else if (d.priceLevel !== undefined) row.price_level = d.priceLevel
+    // price_range is canonical DB column (price_level does NOT exist in DB)
+    if (d.price_range !== undefined)  row.price_range = d.price_range
+    else if (d.price_level !== undefined) row.price_range = d.price_level
+    else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
 
     // Hours
     if (d.opening_hours !== undefined) row.opening_hours = d.opening_hours

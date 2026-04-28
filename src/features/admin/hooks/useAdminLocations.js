@@ -69,7 +69,7 @@ export const useAdminLocations = () => {
         try {
             const { supabase } = await import('@/shared/api/client')
             const { data } = await supabase.from('locations')
-                .select('id,title,category,city,country,address,description,rating,price_level,status,created_at')
+                .select('id,title,category,city,country,address,description,google_rating,price_range,status,created_at')
                 .order('created_at', { ascending: false })
             const json = JSON.stringify(data || [], null, 2)
             const blob = new Blob([json], { type: 'application/json' })
@@ -120,7 +120,7 @@ export const useAdminLocations = () => {
             insider_tip: '',
             must_try: '',
             what_to_try: [],
-            price_level: '$$',
+            price_range: '$$',
             website: '',
             phone: '',
             opening_hours: '',
@@ -132,7 +132,7 @@ export const useAdminLocations = () => {
             images: [],
             lat: 50.0647,
             lng: 19.9450,
-            rating: null,
+            google_rating: null,
             tags: [],
             vibe: [],
             features: [],

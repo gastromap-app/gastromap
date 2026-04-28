@@ -172,7 +172,11 @@
     "explore_country_aria": "Исследовать {{country}}",
     "explore_cities": "Открыть города",
     "new_badge": "{{count}} Новых",
-    "places_count": "{{count}} мест"
+    "places_count": "{{count}} мест",
+    "nearby_locations": "Локации рядом",
+    "within_distance": "В радиусе 10 км",
+    "open_now": "Открыто сейчас",
+    "currently_serving": "Работают в данный момент"
   },
   "profile": {
     "title": "Профиль",

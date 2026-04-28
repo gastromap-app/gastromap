@@ -18,7 +18,7 @@ import { MOCK_LOCATIONS } from '@/mocks/locations'
  */
 
 const DEFAULT_FILTERS = {
-    activeCategory: 'All',
+    activeCategories: [],
     searchQuery: '',
     activePriceLevels: [],
     minRating: null,
@@ -29,6 +29,7 @@ const DEFAULT_FILTERS = {
     sortBy: 'google_rating',
     activeCity: 'All',
     activeCountry: 'All',
+    isOpenNow: false,
 }
 
 /** Compare price levels for sort: $ < $$ < $$$ */
@@ -42,9 +43,41 @@ const BEST_TIME_LABELS = {
     late_night: ['Night', 'Late night', 'Bar', 'Club', 'Nightlife', 'Ночь', 'Поздний ужин'],
 }
 
+/** 
+ * Helper to check if a location is currently open.
+ * Supports format "HH:mm - HH:mm" or "HH:mm-HH:mm"
+ */
+function isLocationOpen(openingHours) {
+    if (!openingHours) return true 
+    try {
+        const now = new Date()
+        const currentTime = now.getHours() * 60 + now.getMinutes()
+        
+        const parts = openingHours.split('-').map(p => p.trim())
+        if (parts.length !== 2) return true
+
+        const parseTime = (t) => {
+            const [h, m] = t.split(':').map(Number)
+            return h * 60 + m
+        }
+
+        const start = parseTime(parts[0])
+        const end = parseTime(parts[1])
+
+        if (end < start) {
+            // Over midnight
+            return currentTime >= start || currentTime <= end
+        }
+        return currentTime >= start && currentTime <= end
+    } catch (e) {
+        return true
+    }
+}
+
+
 export function applyAllFilters(locations, filters) {
     const {
-        activeCategory,
+        activeCategories,
         searchQuery,
         activePriceLevels,
         minRating,
@@ -55,13 +88,19 @@ export function applyAllFilters(locations, filters) {
         sortBy,
         activeCity,
         activeCountry,
+        isOpenNow,
     } = filters
 
     let result = [...locations]
 
-    // ─── Category ────────────────────────────────────────────────────────────
-    if (activeCategory && activeCategory !== 'All') {
-        result = result.filter(loc => loc.category === activeCategory)
+    // ─── Categories (Multi-select) ───────────────────────────────────────────
+    if (activeCategories?.length > 0) {
+        result = result.filter(loc => activeCategories.includes(loc.category))
+    }
+
+    // ─── Open Now ────────────────────────────────────────────────────────────
+    if (isOpenNow) {
+        result = result.filter(loc => isLocationOpen(loc.openingHours || loc.hours))
     }
 
     // ─── Country ─────────────────────────────────────────────────────────────
@@ -142,15 +181,22 @@ export function applyAllFilters(locations, filters) {
         })
     }
 
-    // ─── Radius (Distance) ──────────────────────────────────────────────────
-    if (radius > 0 && userLocation?.lat && userLocation?.lng) {
-        result = result.filter(loc => {
-            const lat = loc.latitude ?? loc.coordinates?.lat
-            const lng = loc.longitude ?? loc.coordinates?.lng
-            if (!lat || !lng) return false
-            const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
-            return d <= radius
+    // ─── Distance Calculation & Radius ────────────────────────────────────────
+    if (userLocation?.lat && userLocation?.lng) {
+        // 1. Calculate and attach distance to all items
+        result = result.map(loc => {
+            const lat = loc.lat ?? loc.latitude ?? loc.coordinates?.lat
+            const lng = loc.lng ?? loc.longitude ?? loc.coordinates?.lng
+            const distance = (lat != null && lng != null)
+                ? calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
+                : Infinity
+            return { ...loc, distance }
         })
+
+        // 2. Filter by radius if set
+        if (radius > 0) {
+            result = result.filter(loc => loc.distance <= radius)
+        }
     }
 
     // ─── Sort ────────────────────────────────────────────────────────────────
@@ -216,11 +262,25 @@ export const useLocationsStore = create((set, get) => ({
 
     // ─── Filter setters ───────────────────────────────────────────────────
 
-    setCategory: (activeCategory) =>
-        set(state => ({
-            activeCategory,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategory }),
-        })),
+    setCategory: (cat) => set(state => ({
+        activeCategories: [cat],
+        filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: [cat] }),
+    })),
+
+    toggleCategory: (cat) => set(state => {
+        const next = state.activeCategories.includes(cat)
+            ? state.activeCategories.filter(c => c !== cat)
+            : [...state.activeCategories, cat]
+        return {
+            activeCategories: next,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: next }),
+        }
+    }),
+
+    setIsOpenNow: (isOpenNow) => set(state => ({
+        isOpenNow,
+        filteredLocations: applyAllFilters(state.locations, { ...state, isOpenNow }),
+    })),
 
     setSearchQuery: (searchQuery) =>
         set(state => ({
@@ -305,7 +365,7 @@ export const useLocationsStore = create((set, get) => ({
     getActiveFiltersCount: () => {
         const state = get()
         let count = 0
-        if (state.activeCategory !== 'All') count++
+        if (state.activeCategories?.length > 0) count++
         if (state.searchQuery) count++
         if (state.activePriceLevels?.length > 0) count++
         if (state.minRating !== null) count++
@@ -314,7 +374,29 @@ export const useLocationsStore = create((set, get) => ({
         if (state.radius > 0) count++
         if (state.activeCity !== 'All') count++
         if (state.activeCountry !== 'All') count++
+        if (state.isOpenNow) count++
         return count
+    },
+
+    updateUserLocation: async () => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation not supported'))
+                return
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude
+                    const lng = pos.coords.longitude
+                    get().setUserLocation({ lat, lng })
+                    resolve({ lat, lng })
+                },
+                (err) => {
+                    reject(err)
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            )
+        })
     },
 
     // ─── Data mutations ──────────────────────────────────────────────────

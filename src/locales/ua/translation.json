@@ -172,7 +172,11 @@
     "explore_country_aria": "Досліджувати {{country}}",
     "explore_cities": "Відкрити міста",
     "new_badge": "{{count}} Нових",
-    "places_count": "{{count}} місць"
+    "places_count": "{{count}} місць",
+    "nearby_locations": "Локації поруч",
+    "within_distance": "В радіусі 10 км",
+    "open_now": "Відкрито зараз",
+    "currently_serving": "Працюють в даний момент"
   },
   "profile": {
     "admin_panel": "Панель адміністратора",

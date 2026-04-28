@@ -92,9 +92,9 @@ export function useUserGeo({ autoRequest = false } = {}) {
                 setStatus('denied')
             },
             {
-                enableHighAccuracy: false,
+                enableHighAccuracy: true,
                 timeout: 10000, // Increase to 10s for better stability
-                maximumAge: 10 * 60 * 1000, // Cache for 10 minutes
+                maximumAge: 0, // Force fresh location
             }
         )
     }, [status, setCoords, setLocation, setStatus, setError])

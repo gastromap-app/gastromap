@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { SmartSearchBar } from '../components/SmartSearchBar'
+import CategoryFilters from '../components/CategoryFilters'
+import { useUserGeo } from '@/shared/hooks/useUserGeo'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,34 @@ function getGreeting(t) {
     if (h < 12) return t('dashboard.greeting_morning')
     if (h < 18) return t('dashboard.greeting_afternoon')
     return t('dashboard.greeting_evening')
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 999999
+    
+    // Convert string coordinates (e.g., from DB) to numbers safely
+    const nLat1 = Number(String(lat1).replace(',', '.'))
+    const nLon1 = Number(String(lon1).replace(',', '.'))
+    const nLat2 = Number(String(lat2).replace(',', '.'))
+    const nLon2 = Number(String(lon2).replace(',', '.'))
+    
+    if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return 999999
+
+    const R = 6371 // Radius of the earth in km
+    const dLat = (nLat2 - nLat1) * (Math.PI / 180)
+    const dLon = (nLon2 - nLon1) * (Math.PI / 180)
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(nLat1 * (Math.PI / 180)) * Math.cos(nLat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const d = R * c // Distance in km
+    return d
+}
+
+const formatDistance = (dist) => {
+    if (dist < 1) return `${Math.round(dist * 1000)} m`
+    return `${dist.toFixed(1)} km`
 }
 
 // Static fallback images per country slug — defined at module level to keep stable reference
@@ -73,17 +103,19 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
     const saved = isFavorite(loc?.id)
     if (!loc) return null
 
+    const isNearby = type === 'nearby'
+
     return (
         <div
             onClick={() => navigate(`/location/${loc.id}`)}
-            className={`flex-shrink-0 w-[240px] rounded-card overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-200 ${
+            className={`flex-shrink-0 ${isNearby ? 'w-[140px]' : 'w-[240px]'} rounded-[16px] overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-200 ${
                 isDark
                     ? 'bg-[#1c1c1e] border border-white/8'
                     : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.06)]'
             }`}
         >
             {/* Image */}
-            <div className="relative h-[180px] overflow-hidden">
+            <div className={`relative ${isNearby ? 'h-[100px]' : 'h-[180px]'} overflow-hidden`} >
                 <img
                     src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop'}
                     alt={loc.title || 'Location'}
@@ -94,9 +126,9 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
                 {/* Rating pill */}
-                <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full">
-                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[11px] font-bold text-white">{loc.rating ?? loc.google_rating ?? '4.5'}</span>
+                <div className={`absolute ${isNearby ? 'top-2 left-2 px-2 py-0.5' : 'top-3 left-3 px-2.5 py-1'} flex items-center gap-1 bg-black/50 backdrop-blur-md rounded-full`}>
+                    <Star size={isNearby ? 8 : 10} className="text-yellow-400 fill-yellow-400" />
+                    <span className={`${isNearby ? 'text-[10px]' : 'text-[11px]'} font-bold text-white`}>{loc.rating ?? loc.google_rating ?? '4.5'}</span>
                 </div>
 
                 {/* Trending badge */}
@@ -106,31 +138,41 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                     </div>
                 )}
 
+                {/* Distance Badge for Nearby */}
+                {isNearby && loc._distance !== undefined && loc._distance !== Infinity && (
+                    <div className="absolute bottom-2 left-2 bg-blue-500/90 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white flex items-center gap-0.5">
+                        <MapPin size={8} />
+                        {formatDistance(loc._distance)}
+                    </div>
+                )}
+
                 {/* Favorite button — 44px touch target */}
-                <button
-                    onClick={(e) => toggleFavorite(e, loc.id)}
-                    aria-label={saved ? t('location.saved') : t('location.save')}
-                    className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-black/60"
-                >
-                    <Heart
-                        size={16}
-                        className={saved ? 'text-red-400 fill-red-400' : 'text-white/90'}
-                    />
-                </button>
+                {!isNearby && (
+                    <button
+                        onClick={(e) => toggleFavorite(e, loc.id)}
+                        aria-label={saved ? t('location.saved') : t('location.save')}
+                        className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-black/60"
+                    >
+                        <Heart
+                            size={16}
+                            className={saved ? 'text-red-400 fill-red-400' : 'text-white/90'}
+                        />
+                    </button>
+                )}
             </div>
 
             {/* Content */}
-            <div className="px-4 py-3.5">
-                <h4 className={`text-[14px] font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <div className={isNearby ? 'px-3 py-2.5' : 'px-4 py-3.5'}>
+                <h4 className={`font-bold leading-tight truncate ${isNearby ? 'text-[13px]' : 'text-[14px]'} ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {loc.title || 'Unknown Place'}
                 </h4>
                 {/* Subtitle: real data — cuisine + city, not a generic fallback */}
-                <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+                <p className={`${isNearby ? 'text-[11px]' : 'text-[12px]'} mt-0.5 truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
                     {[loc.cuisine, loc.city].filter(Boolean).join(' · ') || loc.category || ''}
                 </p>
 
                 {/* Footer row: best time icons + price + label chip */}
-                <div className="flex items-center justify-between mt-2.5">
+                <div className={`flex items-center justify-between ${isNearby ? 'mt-1.5' : 'mt-2.5'}`}>
                     <div className="flex items-center gap-1.5">
                         {loc.best_time && loc.best_time.length > 0 && (
                             <div className="flex items-center gap-0.5">
@@ -377,6 +419,62 @@ const DashboardPage = () => {
     const firstName = user?.name?.split(' ')[0] || 'there'
     const greeting = getGreeting(t)
 
+    // ─── NEW SECTIONS LOGIC ───────────────────────────────────────────────
+    
+    // 1. Nearby Locations (Sorted by distance if location exists)
+    const { lat: geoLat, lng: geoLng, status: geoStatus, requestGeo } = useUserGeo({ autoRequest: true })
+    
+    // Sync geo location to store
+    useEffect(() => {
+        if (geoLat && geoLng) {
+            useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
+        }
+    }, [geoLat, geoLng])
+    
+    const nearbyLocations = useMemo(() => {
+        if (!geoLat || !geoLng || !filteredLocations.length) return []
+        
+        const withDistance = filteredLocations
+            .map(loc => {
+                let dist = loc.distance
+                if (dist == null) {
+                    const lat = loc.lat ?? loc.latitude ?? loc.coordinates?.lat
+                    const lng = loc.lng ?? loc.longitude ?? loc.coordinates?.lng
+                    dist = (lat != null && lng != null) ? calculateDistance(geoLat, geoLng, lat, lng) : Infinity
+                }
+                return { ...loc, _distance: dist }
+            })
+            .filter(loc => loc._distance <= 1) // strictly 1 km radius
+            .sort((a, b) => a._distance - b._distance)
+
+        return withDistance.slice(0, 10)
+    }, [filteredLocations, geoLat, geoLng])
+
+    // 2. Open Now Locations
+    const openNowLocations = useMemo(() => {
+        const isLocOpen = (openingHours) => {
+            if (!openingHours) return true 
+            try {
+                const now = new Date()
+                const currentTime = now.getHours() * 60 + now.getMinutes()
+                const parts = openingHours.split('-').map(p => p.trim())
+                if (parts.length !== 2) return true
+                const parseTime = (t) => {
+                    const [h, m] = t.split(':').map(Number)
+                    return h * 60 + m
+                }
+                const start = parseTime(parts[0])
+                const end = parseTime(parts[1])
+                if (end < start) return currentTime >= start || currentTime <= end
+                return currentTime >= start && currentTime <= end
+            } catch (e) { return true }
+        }
+
+        return filteredLocations
+            .filter(loc => isLocOpen(loc.openingHours || loc.hours))
+            .slice(0, 10)
+    }, [filteredLocations])
+
     return (
         <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
             <div data-testid="dashboard-page" className="contents">
@@ -396,13 +494,16 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Search + filter */}
-                    <div className="px-5 mb-5">
+                    <div className="px-5 mb-5 space-y-5">
                         <SmartSearchBar
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFilter={() => setIsFilterOpen(true)}
                             placeholder={t('dashboard.search_placeholder')}
                         />
+                        
+                        {/* Quick Filters Component */}
+                        <CategoryFilters isDark={isDark} />
                     </div>
 
                     {/* Pull-to-refresh indicator */}
@@ -410,6 +511,55 @@ const DashboardPage = () => {
 
                     {/* Feed content — map is available on separate MapPage */}
                     <div className="space-y-8 pb-14 px-5" {...pullHandlers}>
+                        {/* Nearby Locations */}
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title={t('dashboard.nearby_locations', 'Locations Nearby')}
+                                subtitle={t('dashboard.within_distance', 'Within 1 km')}
+                                onSeeAll={() => {
+                                    useLocationsStore.getState().setRadius(1)
+                                    navigate('/explore')
+                                }}
+                                isDark={isDark}
+                            />
+                            
+                            {geoStatus === 'loading' ? (
+                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={i} className="snap-center flex-shrink-0">
+                                            <DashboardCardSkeleton isDark={isDark} />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : geoStatus === 'denied' || geoStatus === 'error' ? (
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                    <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={24} />
+                                    <div className="text-center">
+                                        <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
+                                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.location_desc', 'Please allow location access to see places near you.')}</p>
+                                    </div>
+                                    <button onClick={requestGeo} className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform">
+                                        {t('dashboard.enable_location', 'Enable Location')}
+                                    </button>
+                                </div>
+                            ) : nearbyLocations.length > 0 ? (
+                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                    {nearbyLocations.map((loc) => (
+                                        <div key={loc.id} className="snap-center">
+                                            <LocationCardMobile loc={loc} type="nearby" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={`w-full flex flex-col items-center justify-center gap-2 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                    <div className="text-center">
+                                        <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
+                                        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Explore by Country */}
                         <div className="space-y-4">
                             <SectionHeader
@@ -510,6 +660,28 @@ const DashboardPage = () => {
                                 }
                             </div>
                         </div>
+
+                        {/* Open Now */}
+                        {openNowLocations.length > 0 && (
+                            <div className="space-y-4">
+                                <SectionHeader
+                                    title={t('dashboard.open_now')}
+                                    subtitle={t('dashboard.currently_serving')}
+                                    onSeeAll={() => {
+                                        useLocationsStore.getState().setIsOpenNow(true)
+                                        navigate('/explore')
+                                    }}
+                                    isDark={isDark}
+                                />
+                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                    {openNowLocations.map((loc) => (
+                                        <div key={loc.id} className="snap-center">
+                                            <LocationCardMobile loc={loc} type="open_now" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -519,6 +691,10 @@ const DashboardPage = () => {
                         locations={locations}
                         recommended={recommended}
                         trending={trending}
+                        nearbyLocations={nearbyLocations}
+                        geoStatus={geoStatus}
+                        requestGeo={requestGeo}
+                        openNowLocations={openNowLocations}
                         authUser={user}
                         countries={countries}
                         theme={theme}
@@ -536,7 +712,9 @@ const DashboardPage = () => {
 // ─── DESKTOP DASHBOARD ────────────────────────────────────────────────────────
 
 const DesktopDashboard = ({
-    _locations, recommended, trending, authUser, countries, theme,
+    _locations, recommended, trending, nearbyLocations = [], openNowLocations = [],
+    geoStatus, requestGeo,
+    authUser, countries, theme,
     setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
     handleSelectCountry,
 }) => {
@@ -573,15 +751,19 @@ const DesktopDashboard = ({
                     {firstName} <span className="text-blue-500">✦</span>
                 </h1>
 
-                {/* Search */}
-                <div className="mb-8">
-                    <SmartSearchBar
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFilter={() => setIsFilterOpen(true)}
-                        placeholder={t('dashboard.search_placeholder')}
-                        className="max-w-2xl"
-                    />
+                {/* Search + Filters */}
+                <div className="mb-8 space-y-6">
+                    <div className="max-w-2xl">
+                        <SmartSearchBar
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFilter={() => setIsFilterOpen(true)}
+                            placeholder={t('dashboard.search_placeholder')}
+                        />
+                    </div>
+                    
+                    {/* Quick Filters */}
+                    <CategoryFilters isDark={isDark} />
                 </div>
             </div>
 
@@ -628,6 +810,58 @@ const DesktopDashboard = ({
                     variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
                     className="space-y-12"
                 >
+                    {/* Nearby Locations */}
+                    <motion.div variants={itemVariants} className="space-y-5 pb-8 border-b border-white/[0.05]">
+                        <SectionHeader
+                            title={t('dashboard.nearby_locations', 'Locations Nearby')}
+                            subtitle={t('dashboard.within_distance', 'Within 1 km')}
+                            onSeeAll={() => {
+                                useLocationsStore.getState().setRadius(1)
+                                navigate('/explore')
+                            }}
+                            isDark={isDark}
+                        />
+                        
+                        {geoStatus === 'loading' ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <DashboardCardSkeleton key={i} isDark={isDark} />
+                                ))}
+                            </div>
+                        ) : geoStatus === 'denied' || geoStatus === 'error' ? (
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                                <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={28} />
+                                <div className="text-center">
+                                    <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
+                                    <p className={`text-[13px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.location_desc', 'Please allow location access to see places near you.')}</p>
+                                </div>
+                                <button onClick={requestGeo} className="mt-3 px-5 py-2.5 rounded-pill bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-bold active:scale-95 transition-all">
+                                    {t('dashboard.enable_location', 'Enable Location')}
+                                </button>
+                            </div>
+                        ) : nearbyLocations.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {nearbyLocations.slice(0, 3).map((item) => (
+                                    <DesktopCard
+                                        key={item.id}
+                                        item={item}
+                                        cardClass={cardClass}
+                                        isDark={isDark}
+                                        type="nearby"
+                                        onClick={() => navigate(`/location/${item.id}`)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`w-full flex flex-col items-center justify-center gap-2 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="text-center">
+                                    <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
+                                    <p className={`text-[13px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+
                     {/* Countries */}
                     <motion.div variants={itemVariants} className="space-y-5">
                         <SectionHeader
@@ -702,6 +936,32 @@ const DesktopDashboard = ({
                             ))}
                         </div>
                     </motion.div>
+
+                    {/* Open Now */}
+                    {openNowLocations.length > 0 && (
+                        <motion.div variants={itemVariants} className="space-y-5 pt-8 border-t border-white/[0.05]">
+                            <SectionHeader
+                                title={t('dashboard.open_now')}
+                                subtitle={t('dashboard.currently_serving')}
+                                onSeeAll={() => {
+                                    useLocationsStore.getState().setIsOpenNow(true)
+                                    navigate('/explore')
+                                }}
+                                isDark={isDark}
+                            />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {openNowLocations.slice(0, 3).map((item) => (
+                                    <DesktopCard
+                                        key={item.id}
+                                        item={item}
+                                        cardClass={cardClass}
+                                        isDark={isDark}
+                                        onClick={() => navigate(`/location/${item.id}`)}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
                 </motion.div>
             )}
         </div>
@@ -710,7 +970,46 @@ const DesktopDashboard = ({
 
 // ─── DESKTOP CARD ─────────────────────────────────────────────────────────────
 
-const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) => (
+const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClick }) => {
+    const isNearby = type === 'nearby'
+
+    if (isNearby) {
+        return (
+            <div
+                onClick={onClick}
+                className={`${cardClass} flex overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200 h-[100px] border ${isDark ? 'border-white/5 bg-[#1c1c1e]' : 'border-slate-200/60 bg-white'} rounded-[16px]`}
+            >
+                <div className="relative w-[110px] shrink-0 overflow-hidden">
+                    <img
+                        src={item.image}
+                        crossOrigin="anonymous"
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-full">
+                        <Star size={8} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-[9px] font-bold text-white">{item.rating ?? item.google_rating}</span>
+                    </div>
+                </div>
+                <div className="p-3 flex flex-col justify-center overflow-hidden w-full">
+                    <h4 className={`text-[14px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {item.title}
+                    </h4>
+                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>
+                        {[item.cuisine, item.city].filter(Boolean).join(' · ') || item.category || ''}
+                    </p>
+                    {item._distance !== undefined && (
+                        <div className={`mt-1.5 text-[11px] font-medium flex items-center gap-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            <MapPin size={10} />
+                            {(item._distance).toFixed(1)} km
+                        </div>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    return (
     <div
         onClick={onClick}
         className={`${cardClass} overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200`}
@@ -763,6 +1062,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, onClick }) =
             )}
         </div>
     </div>
-)
+    )
+}
 
 export default DashboardPage

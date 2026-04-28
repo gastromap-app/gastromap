@@ -166,7 +166,11 @@
     "explore_country_aria": "Explore {{country}}",
     "explore_cities": "Explore cities",
     "new_badge": "{{count}} New",
-    "places_count": "{{count}} places"
+    "places_count": "{{count}} places",
+    "nearby_locations": "Nearby Locations",
+    "within_distance": "Within 10 km distance",
+    "open_now": "Open Now",
+    "currently_serving": "Currently serving"
   },
   "profile": {
     "edit": "Edit",

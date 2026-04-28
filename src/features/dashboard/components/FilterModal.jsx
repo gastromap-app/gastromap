@@ -162,7 +162,7 @@ function normalizeForCompare(str) {
         const { applyFilters } = useLocationsStore.getState()
         
         applyFilters({
-            activeCategory: selectedCategory === 'all' ? 'All' : selectedCategory,
+            activeCategories: selectedCategory === 'all' ? [] : [selectedCategory],
             minRating: selectedRating,
             activePriceLevels: selectedPriceLevels,
             activeVibes: selectedFeatures,

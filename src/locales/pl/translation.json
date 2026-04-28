@@ -172,7 +172,11 @@
     "explore_country_aria": "Odkrywaj {{country}}",
     "explore_cities": "Odkrywaj miasta",
     "new_badge": "{{count}} Nowych",
-    "places_count": "{{count}} miejsc"
+    "places_count": "{{count}} miejsc",
+    "nearby_locations": "Lokalizacje w pobliżu",
+    "within_distance": "W promieniu 10 km",
+    "open_now": "Teraz otwarte",
+    "currently_serving": "Obecnie obsługujące"
   },
   "profile": {
     "admin_panel": "Panel administratora",

@@ -100,10 +100,8 @@ function normalise(row) {
 
         has_wifi: row.has_wifi ?? (row.wifi_quality ? row.wifi_quality !== 'none' : false),
         wifi_quality: row.wifi_quality ?? (row.has_wifi ? 'high' : 'none'),
-        has_outdoor_seating: row.has_outdoor_seating ?? row.outdoor_seating ?? false,
-        outdoor_seating: row.outdoor_seating ?? row.has_outdoor_seating ?? false,
-        reservations_required: row.reservations_required ?? row.reservation_required ?? false,
-        reservation_required: row.reservation_required ?? row.reservations_required ?? false,
+        has_outdoor_seating: row.has_outdoor_seating ?? false,
+        reservations_required: row.reservations_required ?? false,
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
@@ -612,17 +610,15 @@ function _toRow(d) {
         row.has_wifi = d.wifi_quality !== 'none'
     }
 
-    // outdoor_seating — both columns exist in DB, keep in sync
+    // has_outdoor_seating — canonical column (outdoor_seating was dropped 2026-04-28)
     const outdoorVal = d.has_outdoor_seating ?? d.outdoor_seating
     if (outdoorVal !== undefined) {
-        row.outdoor_seating = outdoorVal
         row.has_outdoor_seating = outdoorVal
     }
 
-    // reservations — both columns exist in DB, keep in sync
+    // reservations_required — canonical column (reservation_required was dropped 2026-04-28)
     const reservVal = d.reservations_required ?? d.reservation_required
     if (reservVal !== undefined) {
-        row.reservation_required = reservVal
         row.reservations_required = reservVal
     }
 

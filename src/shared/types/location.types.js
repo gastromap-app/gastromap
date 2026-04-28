@@ -25,7 +25,7 @@
  * @property {string[]} amenities - Удобства: ['wifi', 'parking', 'outdoor_seating'] ⚠️ НЕ 'features'
  * @property {string[]} best_for - Для каких случаев: ['date night', 'business lunch', 'groups']
  * @property {'quiet'|'moderate'|'lively'|'loud'} noise_level - Уровень шума
- * @property {boolean} outdoor_seating - Есть ли открытая терраса
+ * @property {boolean} has_outdoor_seating - Есть ли открытая терраса (canonical; outdoor_seating dropped 2026-04-28)
  * @property {boolean} pet_friendly - Можно ли с животными
  * @property {boolean} child_friendly - Подходит ли для детей
  * @property {string} average_visit_duration - Средняя длительность посещения: '1-2 hours'
@@ -97,7 +97,7 @@
  * @property {string[]} [amenities] - Удобства ⚠️ НЕ 'features'
  * @property {string[]} [best_for] - Случаи использования
  * @property {string} [noise_level] - Уровень шума
- * @property {boolean} [outdoor_seating] - Открытая терраса
+ * @property {boolean} [has_outdoor_seating] - Открытая терраса (canonical)
  * @property {boolean} [pet_friendly] - Можно с животными
  * @property {boolean} [child_friendly] - Подходит для детей
  * @property {string} [average_visit_duration] - Длительность посещения
@@ -124,7 +124,7 @@
  * @property {string[]} best_for - Случаи использования (максимум 4)
  * @property {string} noise_level - Уровень шума
  * @property {string} price_range - Диапазон цен ⚠️ НЕ 'price_level'
- * @property {boolean} outdoor_seating - Терраса
+ * @property {boolean} has_outdoor_seating - Терраса (canonical)
  * @property {boolean} pet_friendly - Можно с животными
  * @property {boolean} child_friendly - Подходит для детей
  * @property {string} average_visit_duration - Длительность посещения

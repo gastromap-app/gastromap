@@ -67,7 +67,7 @@ const EMPTY_FORM = {
     name: '', country: '', country_code: '', city: '', address: '',
     category: 'restaurant', website_url: '',
     description: '', price_range: '',
-    outdoor_seating: false, pet_friendly: false,
+    has_outdoor_seating: false, pet_friendly: false,
     must_try: '', insider_tip: '',
 }
 
@@ -751,7 +751,7 @@ export default function AddPlacePage() {
                             {/* Features toggles */}
                             <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-3">
                                 <p className={labelCls}>Features</p>
-                                <Toggle label="🌿 Outdoor seating" value={form.outdoor_seating} onChange={() => setForm((f) => ({ ...f, outdoor_seating: !f.outdoor_seating }))} />
+                                <Toggle label="🌿 Outdoor seating" value={form.has_outdoor_seating} onChange={() => setForm((f) => ({ ...f, has_outdoor_seating: !f.has_outdoor_seating }))} />
                                 <div className="border-t border-slate-200 dark:border-slate-700" />
                                 <Toggle label="🐾 Pet friendly" value={form.pet_friendly} onChange={() => setForm((f) => ({ ...f, pet_friendly: !f.pet_friendly }))} />
                             </div>
@@ -842,7 +842,7 @@ export default function AddPlacePage() {
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 capitalize font-semibold">{form.category}</span>
-                                        {form.outdoor_seating && <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 font-semibold">🌿 Outdoor</span>}
+                                        {form.has_outdoor_seating && <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 font-semibold">🌿 Outdoor</span>}
                                         {form.pet_friendly    && <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1 font-semibold">🐾 Pets OK</span>}
                                     </div>
                                     {form.description && <p className="text-slate-500 text-xs line-clamp-3 pt-1">{form.description}</p>}

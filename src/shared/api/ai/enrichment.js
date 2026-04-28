@@ -3,7 +3,7 @@
  *
  * Given name + address + city + category, returns a structured object with:
  * description, cuisine_types, tags, dietary_options, amenities, best_for,
- * price_range, outdoor_seating, pet_friendly.
+ * price_range, has_outdoor_seating, pet_friendly.
  *
  * Does NOT fill: must_try, insider_tip — those are user-only fields.
  */
@@ -19,7 +19,7 @@ Given a place name, address, city, and category, return a JSON object with the f
 - amenities: array of strings from: wifi, outdoor_seating, pet_friendly, parking, reservations, takeaway, delivery
 - best_for: array of strings from: date, family, friends, business, solo, groups
 - price_range: one of: $, $$, $$$, $$$$
-- outdoor_seating: boolean
+- has_outdoor_seating: boolean
 - pet_friendly: boolean
 
 Return ONLY a valid JSON object, no markdown, no explanation.`

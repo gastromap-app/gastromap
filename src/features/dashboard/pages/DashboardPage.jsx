@@ -524,7 +524,7 @@ const DashboardPage = () => {
                                 isDark={isDark}
                             />
                             
-                            {geoStatus === 'loading' ? (
+                            {(geoStatus === 'loading' || geoStatus === 'idle' || isLoading) ? (
                                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
                                     {Array.from({ length: 3 }).map((_, i) => (
                                         <div key={i} className="snap-center flex-shrink-0">
@@ -552,7 +552,8 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className={`w-full flex flex-col items-center justify-center gap-2 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                    <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={28} />
                                     <div className="text-center">
                                         <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
                                         <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
@@ -721,6 +722,7 @@ const DesktopDashboard = ({
 }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
+    const isLoading = useLocationsStore(s => s.isLoading)
     const isDark = theme === 'dark'
     const [activeTab, setActiveTab] = useState('overview')
     const greeting = getGreeting(t)
@@ -823,7 +825,7 @@ const DesktopDashboard = ({
                             isDark={isDark}
                         />
                         
-                        {geoStatus === 'loading' ? (
+                        {(geoStatus === 'loading' || geoStatus === 'idle' || isLoading) ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {Array.from({ length: 3 }).map((_, i) => (
                                     <DashboardCardSkeleton key={i} isDark={isDark} />
@@ -854,7 +856,8 @@ const DesktopDashboard = ({
                                 ))}
                             </div>
                         ) : (
-                            <div className={`w-full flex flex-col items-center justify-center gap-2 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                                <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={32} />
                                 <div className="text-center">
                                     <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
                                     <p className={`text-[13px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
@@ -1002,7 +1005,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClic
                     {item._distance !== undefined && (
                         <div className={`mt-1.5 text-[11px] font-medium flex items-center gap-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                             <MapPin size={10} />
-                            {(item._distance).toFixed(1)} km
+                            {item._distance < 1 ? `${Math.round(item._distance * 1000)} m` : `${item._distance.toFixed(1)} km`}
                         </div>
                     )}
                 </div>

@@ -98,8 +98,7 @@ function normalise(row) {
         dietary_options: row.dietary_options ?? [],
         dietary: row.dietary_options ?? [],
 
-        has_wifi: row.has_wifi ?? (row.wifi_quality ? row.wifi_quality !== 'none' : false),
-        wifi_quality: row.wifi_quality ?? (row.has_wifi ? 'high' : 'none'),
+        has_wifi: row.has_wifi ?? false,
         has_outdoor_seating: row.has_outdoor_seating ?? false,
         reservations_required: row.reservations_required ?? false,
 
@@ -605,9 +604,9 @@ function _toRow(d) {
     // wifi — both columns exist in DB, keep in sync
     if (d.has_wifi !== undefined) {
         row.has_wifi = d.has_wifi
-        row.wifi_quality = d.has_wifi ? 'high' : 'none'
+        row.has_wifi = Boolean(d.has_wifi)
     } else if (d.wifi_quality !== undefined) {
-        row.wifi_quality = d.wifi_quality
+        // wifi_quality was dropped — convert to has_wifi boolean
         row.has_wifi = d.wifi_quality !== 'none'
     }
 

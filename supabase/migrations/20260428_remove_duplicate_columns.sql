@@ -49,4 +49,11 @@ COMMENT ON COLUMN locations.reservations_required IS 'Canonical boolean. reserva
 COMMENT ON COLUMN locations.what_to_try IS 'Canonical array of dishes. must_try (string) kept for FTS compatibility.';
 COMMENT ON COLUMN locations.has_wifi IS 'Canonical boolean. wifi_quality (string: none/low/medium/high) kept for display.';
 
+-- ── Step 3b: Drop wifi_quality (was: none/low/medium/high string) ─────────
+-- has_wifi (boolean) is the only canonical field for wifi status.
+-- wifi_quality had 213 'none' and 8 'high' — all aligned with has_wifi already.
+ALTER TABLE locations DROP COLUMN IF EXISTS wifi_quality;
+
+COMMENT ON COLUMN locations.has_wifi IS 'Canonical boolean for WiFi availability. wifi_quality (string) was removed 2026-04-28.';
+
 COMMIT;

@@ -177,7 +177,9 @@
     "nearby_locations": "Lokalizacje w pobliżu",
     "within_distance": "W promieniu 10 km",
     "open_now": "Teraz otwarte",
-    "currently_serving": "Obecnie obsługujące"
+    "currently_serving": "Obecnie obsługujące",
+    "no_nearby_places": "Brak miejsc w pobliżu",
+    "no_nearby_desc": "Nie ma miejsc w odległości 1 km od Twojej lokalizacji."
   },
   "profile": {
     "admin_panel": "Panel administratora",

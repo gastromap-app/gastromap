@@ -177,7 +177,9 @@
     "nearby_locations": "Локації поруч",
     "within_distance": "В радіусі 10 км",
     "open_now": "Відкрито зараз",
-    "currently_serving": "Працюють в даний момент"
+    "currently_serving": "Працюють в даний момент",
+    "no_nearby_places": "Поруч немає місць",
+    "no_nearby_desc": "У радіусі 1 км від вашого місцезнаходження немає закладів."
   },
   "profile": {
     "admin_panel": "Панель адміністратора",

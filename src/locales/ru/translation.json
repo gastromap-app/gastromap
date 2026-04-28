@@ -177,7 +177,9 @@
     "nearby_locations": "Локации рядом",
     "within_distance": "В радиусе 10 км",
     "open_now": "Открыто сейчас",
-    "currently_serving": "Работают в данный момент"
+    "currently_serving": "Работают в данный момент",
+    "no_nearby_places": "Рядом нет мест",
+    "no_nearby_desc": "В радиусе 1 км от вашего местоположения нет заведений."
   },
   "profile": {
     "title": "Профиль",

@@ -177,7 +177,9 @@
     "currently_serving": "Currently serving",
     "quick_stats": "Quick Stats",
     "recent_activity": "Recent Activity",
-    "welcome": "Welcome, {{name}}!"
+    "welcome": "Welcome, {{name}}!",
+    "no_nearby_places": "No Places Nearby",
+    "no_nearby_desc": "There are no places within 1km of your current location."
   },
   "profile": {
     "edit": "Edit",

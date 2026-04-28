@@ -186,4 +186,4 @@ ON CONFLICT (id) DO NOTHING;
 
 UPDATE public.profiles
 SET role = 'admin'
-WHERE email = 'alik2191@gmail.com';
+WHERE email = 'admin@example.com';

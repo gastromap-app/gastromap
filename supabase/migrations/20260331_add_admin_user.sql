@@ -1,6 +1,6 @@
 -- Add Admin User
--- Email: alik2191@gmail.com
--- Password: Vitalya_219
+-- Email: admin@example.com
+-- Password: [REDACTED_IN_VAULT]
 -- Date: 2026-03-31
 
 -- IMPORTANT: This script should be run AFTER the user signs up
@@ -14,7 +14,7 @@ SELECT
     '["all"]'::jsonb,
     NOW()
 FROM auth.users
-WHERE email = 'alik2191@gmail.com'
+WHERE email = 'admin@example.com'
 ON CONFLICT (user_id) 
 DO UPDATE SET 
     role = 'admin',
@@ -46,4 +46,4 @@ SELECT
 FROM auth.users u
 JOIN public.user_roles r ON r.user_id = u.id
 WHERE r.role = 'admin'
-  AND u.email = 'alik2191@gmail.com';
+  AND u.email = 'admin@example.com';

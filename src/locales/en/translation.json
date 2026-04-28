@@ -69,7 +69,11 @@
     "submit_review": "Submit Review",
     "review_placeholder": "Share the details of your visit…",
     "review_submitted": "Thank you! Your review is awaiting moderation.",
-    "review_failed": "Failed to submit review. Please try again."
+    "review_failed": "Failed to submit review. Please try again.",
+    "review_count_few": "{{count}} reviews",
+    "review_count_many": "{{count}} reviews",
+    "review_count_one": "{{count}} review",
+    "review_count_other": "{{count}} reviews"
   },
   "reviews": {
     "based_on": "Based on {{count}} reviews",
@@ -170,7 +174,10 @@
     "nearby_locations": "Nearby Locations",
     "within_distance": "Within 10 km distance",
     "open_now": "Open Now",
-    "currently_serving": "Currently serving"
+    "currently_serving": "Currently serving",
+    "quick_stats": "Quick Stats",
+    "recent_activity": "Recent Activity",
+    "welcome": "Welcome, {{name}}!"
   },
   "profile": {
     "edit": "Edit",
@@ -229,7 +236,13 @@
     "send": "Send",
     "saved": "Saved",
     "signing_out": "Signing out…",
-    "feedback_send": "Send"
+    "feedback_send": "Send",
+    "about": "About",
+    "help": "Help",
+    "notifications": "Notifications",
+    "preferences": "Preferences",
+    "privacy": "Privacy",
+    "title": "Profile"
   },
   "profile_edit": {
     "title": "Edit Profile",
@@ -328,7 +341,9 @@
     "best_time_morning": "Morning",
     "best_time_day": "Lunch",
     "best_time_evening": "Evening",
-    "best_time_late_night": "Night"
+    "best_time_late_night": "Night",
+    "apply_count_few": "Apply {{count}} filters",
+    "apply_count_many": "Apply {{count}} filters"
   },
   "category": {
     "all": "All",
@@ -365,5 +380,19 @@
     "accessDenied": "Access denied. Admins only.",
     "selectLocation": "Select a location",
     "searchLocations": "Search locations..."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection error. Please check your internet connection.",
+    "not_found": "Not found.",
+    "server": "Server error. Please try again later.",
+    "unauthorized": "Unauthorized."
+  },
+  "notifications": {
+    "email_disabled": "Email notifications disabled",
+    "email_enabled": "Email notifications enabled",
+    "push_disabled": "Push notifications disabled",
+    "push_enabled": "Push notifications enabled",
+    "title": "Notifications"
   }
 }

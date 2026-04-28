@@ -72,7 +72,8 @@
     "submit_review": "Wyślij opinię",
     "review_placeholder": "Podziel się szczegółami swojej wizyty…",
     "review_submitted": "Dziękujemy! Twoja opinia oczekuje na moderację.",
-    "review_failed": "Nie udało się wysłać opinii. Spróbuj ponownie."
+    "review_failed": "Nie udało się wysłać opinii. Spróbuj ponownie.",
+    "review_count": "{{count}} opinii"
   },
   "reviews": {
     "based_on": "Na podstawie {{count}} opinii",
@@ -240,7 +241,8 @@
     "feedback_placeholder": "Podziel się swoimi przemyśleniami, sugestiami lub problemami…",
     "feedback_send": "Wyślij",
     "saved": "Zapisane",
-    "signing_out": "Wylogowywanie…"
+    "signing_out": "Wylogowywanie…",
+    "send": "Wyślij"
   },
   "notifications": {
     "title": "Powiadomienia",

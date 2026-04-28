@@ -22,7 +22,8 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    // Updated 2026-04-23: prioritized Nemotron 120B as per user request
+    // Updated 2026-04-28: added Qwen3 Coder 480B as top-priority free model
+    'qwen/qwen3-coder:free',                  // 🆕 480B MoE, 262K ctx, SOTA agentic coding + tool-use
     'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
     'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling ✅
     'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality

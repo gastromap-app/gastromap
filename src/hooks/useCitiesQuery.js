@@ -22,7 +22,7 @@ export function useCitiesQuery(country) {
                 .from('locations')
                 .select('city')
                 .ilike('country', `%${countryName}%`)
-                .eq('status', 'approved')
+                .in('status', ['active', 'approved'])
                 .not('city', 'is', null)
 
             if (error) {
@@ -33,6 +33,16 @@ export function useCitiesQuery(country) {
                 return []
             }
 
+            // Fetch geo covers for cities
+            const { data: coversData } = await supabase
+                .from('geo_covers')
+                .select('slug, image_url')
+                .eq('geo_type', 'city')
+
+            const coverMap = Object.fromEntries(
+                (coversData || []).map(c => [c.slug, c.image_url])
+            )
+
             // Aggregate unique cities and count locations in each
             const cityMap = {}
             data.forEach(row => {
@@ -42,11 +52,14 @@ export function useCitiesQuery(country) {
             })
 
             // Convert to array format with count and image
-            const cities = Object.entries(cityMap).map(([name, count]) => ({
-                name,
-                count,
-                image: getCityImage(name),
-            }))
+            const cities = Object.entries(cityMap).map(([name, count]) => {
+                const slug = name.toLowerCase().replace(/\s+/g, '-')
+                return {
+                    name,
+                    count,
+                    image: coverMap[slug] || getCityImage(name),
+                }
+            })
 
             // Sort by count (descending) then by name
             cities.sort((a, b) => {

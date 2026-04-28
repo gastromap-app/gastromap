@@ -12,17 +12,12 @@ const ProfileEditPage = () => {
     const { data: preferences = {}, isLoading: loadingPrefs } = useUserPreferences(authUser?.id)
     const updatePrefs = useUpdatePreferencesMutation()
 
-    const user = authUser || {
-        name: 'Alex Johnson',
-        email: 'alex@gastromap.com',
-        preferences: {
-            longTerm: {
-                favoriteCuisines: ['Israeli', 'Modern Polish', 'Coffee'],
-                atmospherePreference: ['cozy', 'modern', 'quiet'],
-                features: ['wifi', 'pet-friendly']
-            }
-        }
+    // FIX: Redirect to login if not authenticated — never show fake data
+    if (!authUser) {
+        navigate('/login', { replace: true })
+        return null
     }
+    const user = authUser
 
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -138,11 +133,12 @@ const ProfileEditPage = () => {
                             <input
                                 type="email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all focus:border-blue-500 ${inputBg} ${textStyle}`}
+                                readOnly
+                                className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all bg-gray-100 border-gray-200 cursor-not-allowed opacity-60 ${textStyle}`}
                                 placeholder={t('profile_edit.email_placeholder')}
                             />
                         </div>
+                        <p className="text-[10px] text-gray-400 ml-2">Email cannot be changed here for security reasons.</p>
                     </div>
 
                     <div className="space-y-2">

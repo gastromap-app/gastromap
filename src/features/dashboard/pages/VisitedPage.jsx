@@ -27,21 +27,21 @@ function VisitedCard({ visit, index, onDelete }) {
                 className={`group relative flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
                     isDark
                         ? 'bg-white/5 border border-white/10 hover:bg-white/8'
-                        : 'bg-white border border-gray-100 hover:shadow-md'
+                        : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.06),0_10px_30px_rgba(15,23,42,0.08)]'
                 }`}
             >
                 {/* Image with visited badge */}
                 <div className="flex-shrink-0 relative">
                     <div className="w-20 h-20 rounded-xl overflow-hidden">
                         <LocationImage
-                            src={loc.image}
-                            alt={loc.title}
-                            width={200}
-                            className="transition-transform duration-500 group-hover:scale-110 grayscale-[20%]"
-                        />
+    src={loc.image}
+    alt={loc.title}
+    width={200}
+    className="transition-transform duration-500 group-hover:scale-110 grayscale-[20%]"
+/>
                     </div>
                     {/* Visited checkmark overlay */}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-gray-900">
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-md border-2 ${isDark ? 'border-gray-900' : 'border-white'}`}>
                         <CheckCircle size={12} className="text-white fill-white" />
                     </div>
                 </div>
@@ -53,25 +53,25 @@ function VisitedCard({ visit, index, onDelete }) {
                             <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {loc.title}
                             </h3>
-                            <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+                            <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/50' : 'text-gray-600'}`}>
                                 {loc.category}
                             </p>
                         </div>
 
                         <div className="flex-shrink-0 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-xl">
                             <Star size={10} className="text-emerald-500 fill-emerald-500" />
-                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.rating}</span>
+                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.google_rating || loc.rating}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 mt-2">
-                        <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-white/40' : 'text-gray-600'}`}>
                             <Clock size={10} />
                             {visit.visited_at ? new Date(visit.visited_at).toLocaleDateString() : '—'}
                         </span>
                         {visit.review_text && (
                             <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg line-clamp-1 ${
-                                isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                                isDark ? 'bg-white/8 text-white/60' : 'bg-slate-100 text-slate-700'
                             }`}>
                                 {visit.review_text}
                             </span>
@@ -83,7 +83,7 @@ function VisitedCard({ visit, index, onDelete }) {
                 <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(visit.id) }}
                     className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
-                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400' : 'bg-gray-100 hover:bg-red-50 text-gray-500 dark:text-gray-400 hover:text-red-500'
+                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400' : 'bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500'
                     }`}
                     aria-label="Delete visit"
                 >
@@ -135,7 +135,7 @@ function EmptyState({ isDark }) {
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('visited.empty_title')}
             </h2>
-            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/50' : 'text-slate-600'}`}>
                 {t('visited.empty_desc')}
             </p>
 
@@ -161,8 +161,8 @@ const VisitedPage = () => {
     const { data: visits = [], isLoading } = useUserVisitsWithLocations(user?.id)
     const deleteVisitMutation = useDeleteVisitMutation()
 
-    const handleDelete = (visitId) => {
-        deleteVisitMutation.mutate({ visitId, userId: user.id })
+    const handleDelete = (visitId, locationId) => {
+        deleteVisitMutation.mutate({ visitId, userId: user.id, locationId })
     }
 
     // Loading state
@@ -202,7 +202,7 @@ const VisitedPage = () => {
                     {t('visited.title')}
                 </h1>
                 {visits.length > 0 && (
-                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/50' : 'text-slate-600'}`}>
                         {t('visited.diary')}
                     </p>
                 )}
@@ -215,7 +215,7 @@ const VisitedPage = () => {
                     <VisitedStats count={visits.length} isDark={isDark} />
                     <div className="space-y-3">
                         {visits.map((visit, i) => (
-                            <VisitedCard key={visit.id} visit={visit} index={i} onDelete={handleDelete} />
+                            <VisitedCard key={visit.id} visit={visit} index={i} onDelete={(visitId) => handleDelete(visitId, visit.location_id)} />
                         ))}
                     </div>
                 </>

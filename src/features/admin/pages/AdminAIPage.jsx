@@ -202,7 +202,7 @@ const ModelCard = ({ model, selected, onSelect, disabled }) => (
             'w-full text-left p-4 rounded-2xl border transition-all duration-200',
             selected
                 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 shadow-md shadow-indigo-500/10'
-                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600',
+                : 'border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,9%)]/50 hover:border-slate-300 dark:hover:border-slate-600',
             disabled && 'opacity-50 cursor-not-allowed'
         )}
     >
@@ -210,18 +210,18 @@ const ModelCard = ({ model, selected, onSelect, disabled }) => (
             <div className="flex items-center gap-2 min-w-0">
                 <div className={cn(
                     'w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all',
-                    selected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
+                    selected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-white/[0.08]'
                 )}>
                     {selected && <div className="w-1.5 h-1.5 bg-white rounded-full m-auto mt-[1px]" />}
                 </div>
                 <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{model.name}</span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 flex-shrink-0">{model.provider}</span>
+                <span className="text-[10px] text-slate-400 dark:text-[hsl(220,10%,55%)] flex-shrink-0">{model.provider}</span>
             </div>
             <span className={cn('text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0', model.badgeColor)}>
                 {model.badge}
             </span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-3 pl-6">{model.description}</p>
+        <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-3 pl-6">{model.description}</p>
         <div className="flex gap-3 pl-6">
             <span className="flex items-center gap-1 text-[10px] text-slate-400">
                 <Cpu size={10} /> {model.context}
@@ -239,7 +239,7 @@ const ModelCard = ({ model, selected, onSelect, disabled }) => (
 // ─── Agent card ───────────────────────────────────────────────────────────────
 
 const AgentCard = ({ name, role, isActive, onToggle, icon: Icon, color, description }) => (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
+    <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
         <div className={cn('absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-10 transition-opacity group-hover:opacity-20', color.replace('text-', 'bg-'))} />
         <div className="relative z-10">
             <div className="flex justify-between items-start mb-5">
@@ -248,7 +248,7 @@ const AgentCard = ({ name, role, isActive, onToggle, icon: Icon, color, descript
                 </div>
                 <div className={cn(
                     'px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-[0.2em] flex items-center gap-1.5',
-                    isActive ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                    isActive ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-slate-400'
                 )}>
                     <div className={cn('w-1.5 h-1.5 rounded-full', isActive ? 'bg-green-500 animate-pulse' : 'bg-slate-300')} />
                     {isActive ? 'ACTIVE' : 'PAUSED'}
@@ -256,20 +256,20 @@ const AgentCard = ({ name, role, isActive, onToggle, icon: Icon, color, descript
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-0.5">{name}</h3>
             <p className="text-[10px] font-bold text-indigo-500/80 uppercase tracking-widest mb-3">{role}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{description}</p>
+            <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-6">{description}</p>
             <div className="flex gap-2">
                 <button
                     onClick={onToggle}
                     aria-label={isActive ? `Stop ${name}` : `Start ${name}`}
                     className={cn(
                         'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md',
-                        isActive ? 'bg-slate-900 dark:bg-slate-800 text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'
+                        isActive ? 'bg-slate-900 dark:bg-[hsl(220,20%,9%)] text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'
                     )}
                 >
                     {isActive ? <Pause size={14} /> : <Play size={14} />}
                     {isActive ? 'STOP' : 'START'}
                 </button>
-                <button aria-label={`${name} settings`} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all">
+                <button aria-label={`${name} settings`} className="p-3 rounded-xl bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all">
                     <Settings size={18} />
                 </button>
             </div>
@@ -283,7 +283,7 @@ const ToolCard = ({ tool }) => {
     const fn = tool.function
     const params = fn.parameters?.properties || {}
     return (
-        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <Code size={16} className="text-indigo-500" />
@@ -296,13 +296,13 @@ const ToolCard = ({ tool }) => {
                     <Copy size={12} /> Copy JSON
                 </button>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{fn.description}</p>
+            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">{fn.description}</p>
             <div className="space-y-2">
                 {Object.entries(params).map(([name, prop]) => (
                     <div key={name} className="flex items-start gap-3 text-xs">
                         <code className="font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded flex-shrink-0">{name}</code>
                         <span className="text-slate-400 flex-shrink-0">{prop.type}{prop.type === 'array' ? `[${prop.items?.type}]` : ''}</span>
-                        <span className="text-slate-600 dark:text-slate-400">{prop.description}</span>
+                        <span className="text-slate-600 dark:text-[hsl(220,10%,55%)]">{prop.description}</span>
                     </div>
                 ))}
             </div>
@@ -318,10 +318,10 @@ const ToolCard = ({ tool }) => {
 const CollapsibleSection = ({ title, icon: Icon, iconColor = 'text-indigo-500', defaultOpen = false, children }) => {
     const [open, setOpen] = useState(defaultOpen)
     return (
-        <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
+                className="w-full px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2 hover:bg-slate-50/50 dark:hover:bg-[hsl(220,20%,12%)]/20 transition-colors"
             >
                 <Icon size={16} className={iconColor} />
                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white flex-1 text-left">{title}</h2>
@@ -387,8 +387,16 @@ const AdminAIPage = () => {
 
     const validateKey = React.useCallback(async () => {
         setApiKeyStatus('validating')
+        setApiKeyError('')
+
+        const timeoutId = setTimeout(() => {
+            setApiKeyStatus('error')
+            setApiKeyError('Validation timeout — no response in 10s')
+        }, 10000)
+
         try {
             const result = await testAIConnection('ping', primaryModel)
+            clearTimeout(timeoutId)
             if (result.ok) {
                 setApiKeyStatus('valid')
                 setApiKeyError('')
@@ -397,8 +405,9 @@ const AdminAIPage = () => {
                 setApiKeyError(result.text || 'Invalid API Key')
             }
         } catch (err) {
+            clearTimeout(timeoutId)
             setApiKeyStatus('error')
-            setApiKeyError(err.message)
+            setApiKeyError(err.message || 'Connection failed')
         }
     }, [primaryModel])
 
@@ -595,8 +604,8 @@ const AdminAIPage = () => {
             />
 
             {/* 2. Active Agents */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Bot size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Active Agents</h2>
                 </div>
@@ -627,7 +636,7 @@ const AdminAIPage = () => {
             {/* 3. Data Sources Pipeline */}
             <CollapsibleSection title="Data Sources Pipeline" icon={Layers} iconColor="text-violet-500" defaultOpen={false}>
                 <div className="p-6">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-5">
                         Read-only visualization of the AI data pipeline — how user queries flow through the system.
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -640,16 +649,16 @@ const AdminAIPage = () => {
                             { icon: UserCheck, label: 'User Profile', desc: 'Preferences, Foodie DNA, visit history, favorites', color: 'text-rose-500 bg-rose-100 dark:bg-rose-500/20' },
                         ].map((step, i) => (
                             <div key={step.label} className="relative">
-                                <div className="bg-slate-50/70 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 h-full">
+                                <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.04] h-full">
                                     <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-3', step.color)}>
                                         <step.icon size={18} />
                                     </div>
                                     <h3 className="font-bold text-xs text-slate-900 dark:text-white mb-1">{step.label}</h3>
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">{step.desc}</p>
+                                    <p className="text-[11px] text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">{step.desc}</p>
                                 </div>
                                 {/* Arrow between cards on larger screens */}
                                 {i < 5 && (
-                                    <div className="hidden md:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 text-slate-300 dark:text-slate-600">
+                                    <div className="hidden md:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 text-slate-300 dark:text-[hsl(220,10%,55%)]">
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 4l8 6-8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                     </div>
                                 )}
@@ -664,15 +673,15 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 4. AI Models */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Cpu size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter Free)</h2>
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Primary Model */}
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">Primary Model</h3>
                                 <button
@@ -706,7 +715,7 @@ const AdminAIPage = () => {
                                             {getPrimaryInfo().badge}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getPrimaryInfo().description}</p>
+                                    <p className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)] mb-2">{getPrimaryInfo().description}</p>
                                     <div className="flex gap-3 text-[10px] text-slate-500">
                                         <span>📊 {getPrimaryInfo().context}</span>
                                         <span>🌍 {getPrimaryInfo().languages}</span>
@@ -717,7 +726,7 @@ const AdminAIPage = () => {
                         </div>
 
                         {/* Fallback Model */}
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">Fallback Model</h3>
                                 <button
@@ -744,14 +753,14 @@ const AdminAIPage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="p-4 bg-slate-100 dark:bg-[hsl(220,20%,9%)]/50 rounded-xl border border-slate-200 dark:border-white/[0.08]">
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="font-bold text-sm text-slate-900 dark:text-white">{getFallbackInfo().name}</span>
-                                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-600 dark:text-[hsl(220,10%,55%)]">
                                             {getFallbackInfo().badge}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{getFallbackInfo().description}</p>
+                                    <p className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)] mb-2">{getFallbackInfo().description}</p>
                                     <div className="flex gap-3 text-[10px] text-slate-500">
                                         <span>📊 {getFallbackInfo().context}</span>
                                         <span>🌍 {getFallbackInfo().languages}</span>
@@ -773,7 +782,7 @@ const AdminAIPage = () => {
             {/* 5. Model Cascade Editor */}
             <CollapsibleSection title="Model Cascade Editor" icon={GitBranch} iconColor="text-amber-500" defaultOpen={false}>
                 <div className="p-6">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">
                         Drag models up/down to set the fallback order. Disable models to skip them in the cascade.
                         The primary model is always tried first; this list is used only when it fails.
                     </p>
@@ -786,8 +795,8 @@ const AdminAIPage = () => {
                                     className={cn(
                                         'flex items-center gap-3 p-3 rounded-xl border transition-all',
                                         enabled
-                                            ? 'bg-slate-50/70 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50'
-                                            : 'bg-slate-100/50 dark:bg-slate-800/10 border-slate-200/50 dark:border-slate-700/30 opacity-50'
+                                            ? 'bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border-slate-100 dark:border-white/[0.04]'
+                                            : 'bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/10 border-slate-200/50 dark:border-white/[0.02] opacity-50'
                                     )}
                                 >
                                     <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex-shrink-0">
@@ -795,7 +804,7 @@ const AdminAIPage = () => {
                                     </span>
                                     <span className={cn(
                                         'flex-1 text-sm font-mono truncate',
-                                        enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'
+                                        enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[hsl(220,10%,55%)]'
                                     )}>
                                         {modelDisplayName(modelId)}
                                     </span>
@@ -803,7 +812,7 @@ const AdminAIPage = () => {
                                         <button
                                             onClick={() => moveCascade(index, -1)}
                                             disabled={index === 0}
-                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                             aria-label="Move up"
                                         >
                                             <ArrowUp size={14} />
@@ -811,7 +820,7 @@ const AdminAIPage = () => {
                                         <button
                                             onClick={() => moveCascade(index, 1)}
                                             disabled={index === cascadeModels.length - 1}
-                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                             aria-label="Move down"
                                         >
                                             <ArrowDown size={14} />
@@ -822,7 +831,7 @@ const AdminAIPage = () => {
                                                 'p-1.5 rounded-lg transition-all',
                                                 enabled
                                                     ? 'text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
-                                                    : 'text-slate-300 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                    : 'text-slate-300 dark:text-[hsl(220,10%,55%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)]'
                                             )}
                                             aria-label={enabled ? 'Disable model' : 'Enable model'}
                                         >
@@ -840,8 +849,8 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 6. API Key */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Shield size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter API Key</h2>
                 </div>
@@ -853,11 +862,11 @@ const AdminAIPage = () => {
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
                                 placeholder="sk-or-v1-..."
-                                className="w-full h-12 px-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                className="w-full h-12 px-5 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                             />
                             <button
                                 onClick={() => setShowKey(!showKey)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)]"
                                 aria-label={showKey ? 'Hide API key' : 'Show API key'}
                             >
                                 {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -871,20 +880,20 @@ const AdminAIPage = () => {
                                     "px-4 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all",
                                     apiKeyStatus === 'valid' 
                                         ? "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
-                                        : "bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
+                                        : "bg-slate-50 border-slate-200 text-slate-600 dark:bg-[hsl(220,20%,9%)] dark:border-white/[0.08] dark:text-[hsl(220,10%,55%)]"
                                 )}
                             >
                                 {apiKeyStatus === 'validating' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                                 <span className="ml-2">Test Key</span>
                             </button>
-                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50">
+                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border border-slate-100 dark:border-white/[0.04]">
                                 <div className={cn(
                                     "w-2 h-2 rounded-full",
                                     apiKeyStatus === 'valid' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
                                     apiKeyStatus === 'invalid' || apiKeyStatus === 'error' ? "bg-red-500" :
-                                    apiKeyStatus === 'validating' ? "bg-amber-500 animate-pulse" : "bg-slate-300 dark:bg-slate-600"
+                                    apiKeyStatus === 'validating' ? "bg-amber-500 animate-pulse" : "bg-slate-300 dark:bg-[hsl(220,10%,35%)]"
                                 )} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[hsl(220,10%,55%)]">
                                     Status: {apiKeyStatus === 'idle' ? 'Not Checked' : apiKeyStatus.toUpperCase()}
                                 </span>
                                 {apiKeyError && (
@@ -895,7 +904,7 @@ const AdminAIPage = () => {
                             </div>
                         </div>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
                         Get your free API key from{' '}
                         <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                             openrouter.ai/keys
@@ -909,7 +918,7 @@ const AdminAIPage = () => {
                 <div className="p-6 space-y-6">
                     {/* Temperature */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Thermometer size={14} className="text-indigo-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Temperature</h3>
@@ -928,7 +937,7 @@ const AdminAIPage = () => {
                             </div>
                             <p className="text-xs text-slate-400">Higher = more creative, Lower = more focused</p>
                         </div>
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Thermometer size={14} className="text-emerald-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant Temperature</h3>
@@ -951,7 +960,7 @@ const AdminAIPage = () => {
 
                     {/* Max Tokens */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Hash size={14} className="text-indigo-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Max Tokens</h3>
@@ -963,11 +972,11 @@ const AdminAIPage = () => {
                                 step="64"
                                 value={guideMaxTokens}
                                 onChange={(e) => setGuideMaxTokens(Math.max(256, Math.min(4096, parseInt(e.target.value) || 256)))}
-                                className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                             />
                             <p className="text-xs text-slate-400 mt-1.5">256 – 4096 tokens</p>
                         </div>
-                        <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Hash size={14} className="text-emerald-500" />
                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant Max Tokens</h3>
@@ -979,14 +988,14 @@ const AdminAIPage = () => {
                                 step="64"
                                 value={assistantMaxTokens}
                                 onChange={(e) => setAssistantMaxTokens(Math.max(256, Math.min(4096, parseInt(e.target.value) || 256)))}
-                                className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                                className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                             />
                             <p className="text-xs text-slate-400 mt-1.5">256 – 4096 tokens</p>
                         </div>
                     </div>
 
                     {/* Tone */}
-                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={14} className="text-indigo-500" />
                             <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide Tone</h3>
@@ -994,21 +1003,21 @@ const AdminAIPage = () => {
                         <select
                             value={guideTone}
                             onChange={(e) => setGuideTone(e.target.value)}
-                            className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                            className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all"
                         >
                             <option value="friendly">Friendly — Warm, casual, like a foodie friend</option>
                             <option value="professional">Professional — Polished, expert restaurant critic</option>
                             <option value="expert">Expert — Concise, data-driven, culinary insider</option>
                         </select>
                         <div className="mt-3 space-y-1">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                <span className="font-bold text-slate-700 dark:text-slate-300">Friendly</span> — Casual and warm, like chatting with a foodie friend who knows all the hidden gems.
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                                <span className="font-bold text-slate-700 dark:text-[hsl(220,10%,55%)]">Friendly</span> — Casual and warm, like chatting with a foodie friend who knows all the hidden gems.
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                <span className="font-bold text-slate-700 dark:text-slate-300">Professional</span> — Polished and elegant, like an expert restaurant critic writing for a guide.
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                                <span className="font-bold text-slate-700 dark:text-[hsl(220,10%,55%)]">Professional</span> — Polished and elegant, like an expert restaurant critic writing for a guide.
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                <span className="font-bold text-slate-700 dark:text-slate-300">Expert</span> — Concise and data-driven, delivering culinary insider knowledge efficiently.
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                                <span className="font-bold text-slate-700 dark:text-[hsl(220,10%,55%)]">Expert</span> — Concise and data-driven, delivering culinary insider knowledge efficiently.
                             </p>
                         </div>
                     </div>
@@ -1016,17 +1025,17 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 8. System Prompts (with Live Preview) */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <FileText size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">System Prompts</h2>
                 </div>
                 <div className="p-6 space-y-5">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
                         Customize AI behavior. Leave empty to use default prompts. Changes take effect immediately after saving.
                     </p>
                     {/* GastroGuide Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
@@ -1060,7 +1069,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setGuidePrompt(e.target.value)}
                             placeholder={DEFAULT_PROMPTS.guide}
                             rows={6}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {guidePrompt.length} characters {guidePrompt.length === 0 && '(using default)'}
@@ -1068,7 +1077,7 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* GastroAssistant Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
@@ -1092,7 +1101,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setAssistantPrompt(e.target.value)}
                             placeholder={DEFAULT_PROMPTS.assistant}
                             rows={6}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {assistantPrompt.length} characters {assistantPrompt.length === 0 && '(using default)'}
@@ -1100,7 +1109,7 @@ const AdminAIPage = () => {
                     </div>
 
                     {/* KG Agent Prompt */}
-                    <div className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
@@ -1130,7 +1139,7 @@ const AdminAIPage = () => {
                         <div className="mb-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Search size={13} className="text-indigo-500" />
-                                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Brave Search API Key</label>
+                                <label className="text-xs font-semibold text-slate-700 dark:text-[hsl(220,10%,55%)]">Brave Search API Key</label>
                                 <span className="text-xs text-slate-400">(free tier: 2 000 req/month)</span>
                             </div>
                             <div className="flex gap-2">
@@ -1141,13 +1150,13 @@ const AdminAIPage = () => {
                                         value={braveApiKey}
                                         onChange={(e) => setBraveApiKey(e.target.value)}
                                         placeholder="BSA..."
-                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all"
+                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowBraveKey(v => !v)}
-                                    className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                    className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                                 >
                                     {showBraveKey ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
@@ -1163,7 +1172,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setKgAgentPrompt(e.target.value)}
                             placeholder={DEFAULT_KG_SYSTEM_PROMPT}
                             rows={8}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
                         <p className="text-xs text-slate-400 mt-2">
                             {kgAgentPrompt.length} characters {kgAgentPrompt.length === 0 && '(using default — Open Food Facts + Wikipedia sources)'}
@@ -1175,7 +1184,7 @@ const AdminAIPage = () => {
                         <motion.div
                             initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-slate-50/70 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50"
+                            className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]"
                         >
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
@@ -1189,11 +1198,11 @@ const AdminAIPage = () => {
                                     Close
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-3">
                                 Sample prompt built with test user profile (Italian & Polish cuisines, Romantic vibe, Krakow context).
                             </p>
-                            <div className="max-h-[400px] overflow-y-auto p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <pre className="whitespace-pre-wrap font-mono text-xs text-slate-700 dark:text-slate-300">{previewPrompt}</pre>
+                            <div className="max-h-[400px] overflow-y-auto p-4 bg-white dark:bg-[hsl(220,20%,6%)] rounded-xl border border-slate-200 dark:border-white/[0.08]">
+                                <pre className="whitespace-pre-wrap font-mono text-xs text-slate-700 dark:text-[hsl(220,10%,55%)]">{previewPrompt}</pre>
                             </div>
                         </motion.div>
                     )}
@@ -1203,7 +1212,7 @@ const AdminAIPage = () => {
             {/* 9. Tool Definitions Viewer */}
             <CollapsibleSection title="Tool Definitions" icon={Wrench} iconColor="text-indigo-500" defaultOpen={false}>
                 <div className="p-6 space-y-4">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
                         Tools the AI can call during conversations. These are sent with each request to enable function calling.
                     </p>
                     {TOOLS.map((tool) => (
@@ -1213,8 +1222,8 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* 10. Enhanced Test Panel */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Play size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Model</h2>
                 </div>
@@ -1225,7 +1234,7 @@ const AdminAIPage = () => {
                             onChange={(e) => setTestModel(e.target.value)}
                             disabled={fullPipelineTest}
                             className={cn(
-                                "px-4 h-12 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all",
+                                "px-4 h-12 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all",
                                 fullPipelineTest && 'opacity-50'
                             )}
                         >
@@ -1238,7 +1247,7 @@ const AdminAIPage = () => {
                                 'h-12 px-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all flex items-center gap-2',
                                 fullPipelineTest
                                     ? 'bg-violet-50 border-violet-200 text-violet-600 dark:bg-violet-500/10 dark:border-violet-500/20 dark:text-violet-400'
-                                    : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-[hsl(220,20%,9%)] dark:border-white/[0.08] dark:text-[hsl(220,10%,55%)]'
                             )}
                         >
                             {fullPipelineTest ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
@@ -1249,7 +1258,7 @@ const AdminAIPage = () => {
                             value={testMessage}
                             onChange={(e) => setTestMessage(e.target.value)}
                             placeholder={fullPipelineTest ? "Try: romantic dinner in Krakow" : "Test message..."}
-                            className="flex-1 min-w-[200px] h-12 px-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                            className="flex-1 min-w-[200px] h-12 px-5 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                             onKeyDown={(e) => e.key === 'Enter' && handleTest()}
                         />
                         <button
@@ -1258,7 +1267,7 @@ const AdminAIPage = () => {
                             className={cn(
                                 'h-10 px-5 rounded-2xl font-semibold text-sm text-white flex items-center gap-2 transition-all active:scale-95',
                                 testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)
-                                    ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
+                                    ? 'bg-slate-300 dark:bg-[hsl(220,20%,12%)] cursor-not-allowed'
                                     : fullPipelineTest
                                         ? 'bg-violet-600 hover:bg-violet-500 shadow-sm'
                                         : 'bg-indigo-600 hover:bg-indigo-500 shadow-sm'
@@ -1299,7 +1308,7 @@ const AdminAIPage = () => {
                                     {testResult.model} · {testResult.latency}ms
                                 </span>
                             </div>
-                            <p className="text-sm text-slate-700 dark:text-slate-300 font-mono">
+                            <p className="text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] font-mono">
                                 {testResult.text}
                             </p>
 
@@ -1308,7 +1317,7 @@ const AdminAIPage = () => {
                                 <div className="mt-3 space-y-2">
                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tool Calls</p>
                                     {testResult.toolCalls.map((tc, i) => (
-                                        <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs font-mono">
+                                        <div key={i} className="p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)] rounded-xl text-xs font-mono">
                                             <span className="text-indigo-600 dark:text-indigo-400">{tc.name}</span>
                                             <span className="text-slate-400 ml-2">→ {tc.resultCount} results</span>
                                             <pre className="text-slate-500 mt-1 text-[10px] overflow-x-auto">{JSON.stringify(tc.args, null, 2)}</pre>

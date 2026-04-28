@@ -23,8 +23,8 @@ const RequireAuth = () => {
 const RequireAdmin = () => {
     const { user, isAuthenticated, isLoading } = useAuthStore()
     if (isLoading) return <AuthLoader />
-    if (!isAuthenticated) return <Navigate to="/login" replace />
-    if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
+    if (!isAuthenticated || !user) return <Navigate to="/login" replace />
+    if (user.role !== 'admin') return <Navigate to="/dashboard" replace />
     return <Outlet />
 }
 
@@ -99,6 +99,7 @@ const AdminNotificationsPage = lazy(() => import('@/features/admin/pages/AdminNo
 const AdminStatsPage = lazy(() => import('@/features/admin/pages/AdminStatsPage'))
 const AdminSettingsPage = lazy(() => import('@/features/admin/pages/AdminSettingsPage'))
 const AdminGeoCoversPage = lazy(() => import('@/features/admin/pages/AdminGeoCoversPage'))
+const AdminMenuScannerPage = lazy(() => import('@/features/admin/pages/AdminMenuScannerPage'))
 
 // ─── Fallback UI while a page chunk loads ──────────────────────────────────
 const PageLoader = () => (
@@ -202,6 +203,7 @@ export const AppRouter = () => {
                         <Route path="stats" element={<AdminStatsPage />} />
                         <Route path="settings" element={<AdminSettingsPage />} />
                         <Route path="geo-covers" element={<AdminGeoCoversPage />} />
+                        <Route path="menu-scanner" element={<AdminMenuScannerPage />} />
                     </Route>
                 </Route>
 

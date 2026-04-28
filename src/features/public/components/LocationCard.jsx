@@ -1,22 +1,27 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Star } from 'lucide-react'
+import { MapPin, Star, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Link } from 'react-router-dom'
-import { useFavoritesStore } from '@/features/dashboard/hooks/useFavoritesStore'
+import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { translate } from '@/utils/translation'
 import LazyImage from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTranslation } from 'react-i18next'
 import { getCategoryLabel } from '@/shared/config/filterOptions'
+import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { getDisplayRating } from '@/utils/ratingUtils'
 
 export default function LocationCard({ location }) {
     const { i18n } = useTranslation()
     const navigate = useNavigate()
     const { isFavorite, toggleFavorite } = useFavoritesStore()
     const isFav = isFavorite(location.id)
+
+    // Calculate Ground Truth Rating
+    const displayRating = getDisplayRating(location, [])
 
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
@@ -54,7 +59,7 @@ export default function LocationCard({ location }) {
                     </h3>
                     <div className="flex items-center gap-1 text-yellow-500">
                         <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-medium text-foreground">{location.rating}</span>
+                        <span className="text-sm font-medium text-foreground">{displayRating.rating}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground text-sm">
@@ -68,9 +73,19 @@ export default function LocationCard({ location }) {
                     {location.description}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                    {/* Best Time subtle indicator */}
+                    {location.best_time && location.best_time.length > 0 && (
+                        <div className="flex gap-1 text-[12px] opacity-70 mr-1 items-center">
+                            {location.best_time.includes('morning') && <Sunrise size={12} className="text-orange-400" />}
+                            {location.best_time.includes('day') && <Sun size={12} className="text-yellow-500" />}
+                            {location.best_time.includes('evening') && <Sunset size={12} className="text-orange-500" />}
+                            {location.best_time.includes('late_night') && <Sparkles size={12} className="text-indigo-400" />}
+                        </div>
+                    )}
+
                     {/* Tags */}
                     {location.tags?.slice(0, 2).map(tag => (
-                        <Badge key={tag} variant="outline" className="text-[9px] font-bold h-5 px-2 bg-slate-50 dark:bg-slate-800/50 border-none">
+                        <Badge key={tag} variant="outline" className="text-[9px] font-bold h-5 px-2 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-none">
                             {translate(tag)}
                         </Badge>
                     ))}
@@ -78,7 +93,7 @@ export default function LocationCard({ location }) {
                     {/* Special Labels */}
                     {location.special_labels?.slice(0, 2).map(label => (
                         <span key={label} className="text-[9px] font-black uppercase tracking-wider text-blue-500/80 dark:text-blue-400/60">
-                            • {translate(label)}
+                            • {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
                         </span>
                     ))}
                 </div>

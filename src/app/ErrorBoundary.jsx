@@ -64,7 +64,7 @@ function DefaultErrorUI({ error, onReset }) {
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
                     Что-то пошло не так
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-2 leading-relaxed">
+                <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] font-medium mb-2 leading-relaxed">
                     Произошла непредвиденная ошибка. Попробуйте обновить страницу.
                 </p>
 
@@ -86,7 +86,7 @@ function DefaultErrorUI({ error, onReset }) {
                     </button>
                     <a
                         href="/"
-                        className="h-13 w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                        className="h-13 w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-[hsl(220,10%,55%)] font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
                     >
                         <Home size={16} />
                         На главную
@@ -112,7 +112,7 @@ export function RouteErrorFallback({ error, reset }) {
                 <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                     Something went wrong
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-xs">
+                <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] font-medium max-w-xs">
                     This page encountered an error. Try refreshing or go back.
                 </p>
                 {import.meta.env.DEV && error?.message && (
@@ -131,7 +131,7 @@ export function RouteErrorFallback({ error, reset }) {
                 </button>
                 <a
                     href="/"
-                    className="h-10 px-5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all active:scale-95"
+                    className="h-10 px-5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-[hsl(220,10%,55%)] font-black text-xs uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all active:scale-95"
                 >
                     <Home size={14} />
                     Home
@@ -148,9 +148,9 @@ export function RouteErrorFallback({ error, reset }) {
  */
 export function MapErrorFallback({ reset }) {
     return (
-        <div className="w-full h-full min-h-[300px] flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800/50 rounded-2xl gap-4">
+        <div className="w-full h-full min-h-[300px] flex flex-col items-center justify-center bg-slate-100 dark:bg-[hsl(220,20%,9%)]/50 rounded-2xl gap-4">
             <AlertTriangle className="text-slate-400" size={32} />
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-semibold text-slate-500 dark:text-[hsl(220,10%,55%)]">
                 Карта недоступна
             </p>
             <button
@@ -170,7 +170,7 @@ export function AIChatErrorFallback({ reset }) {
     return (
         <div className="flex flex-col items-center justify-center p-8 gap-3 text-center">
             <AlertTriangle className="text-amber-500" size={28} />
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+            <p className="text-sm font-semibold text-slate-600 dark:text-[hsl(220,10%,55%)]">
                 GastroGuide временно недоступен
             </p>
             <button

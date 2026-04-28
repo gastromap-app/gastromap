@@ -28,6 +28,31 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
         }
     }
 
+    // Quote-aware CSV field splitter
+    const parseCSVLine = (line) => {
+        const fields = []
+        let current = ''
+        let inQuotes = false
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i]
+            if (ch === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"'
+                    i++ // skip escaped quote
+                } else {
+                    inQuotes = !inQuotes
+                }
+            } else if (ch === ',' && !inQuotes) {
+                fields.push(current.trim())
+                current = ''
+            } else {
+                current += ch
+            }
+        }
+        fields.push(current.trim())
+        return fields
+    }
+
     const parseFile = (file) => {
         setIsParsing(true)
         const reader = new FileReader()
@@ -39,11 +64,11 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                     if (file.name.endsWith('.json')) {
                         setPreviewData(JSON.parse(content).slice(0, 5))
                     } else {
-                        // Very basic CSV parser
+                        // Quote-aware CSV parser
                         const lines = content.split('\n')
-                        const headers = lines[0].split(',')
+                        const headers = parseCSVLine(lines[0])
                         const data = lines.slice(1, 6).map(line => {
-                            const values = line.split(',')
+                            const values = parseCSVLine(line)
                             return headers.reduce((obj, header, i) => {
                                 obj[header.trim()] = values[i]?.trim()
                                 return obj
@@ -80,7 +105,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                 address: item.address || '',
                 description: item.description || '',
                 price_level: item.price_level || item.price_range || '$$',
-                rating: parseFloat(item.rating) || 4.0,
+                google_rating: parseFloat(item.rating) || 4.0,
                 status: 'pending',
                 photos: item.photos ? (Array.isArray(item.photos) ? item.photos : [item.photos]) : [],
                 ...(item.lat && item.lng ? { lat: parseFloat(item.lat), lng: parseFloat(item.lng) } : {}),
@@ -126,18 +151,18 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[32px] md:rounded-[48px] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
+                className="relative bg-white dark:bg-[hsl(220,20%,6%)] w-full max-w-2xl rounded-[32px] md:rounded-[48px] shadow-2xl overflow-hidden border border-slate-200 dark:border-white/[0.06]"
             >
                 {/* Header */}
-                <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/20">
+                <div className="p-6 md:p-8 border-b border-slate-100 dark:border-white/[0.06] flex justify-between items-center bg-slate-50/50 dark:bg-[hsl(220,20%,3%)]/20">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <Database className="w-5 h-5 text-indigo-500" />
                             Import Locations
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest font-bold">Step {step} of 3</p>
+                        <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1 uppercase tracking-widest font-bold">Step {step} of 3</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400">
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-colors text-slate-400">
                         <X size={20} />
                     </button>
                 </div>
@@ -155,14 +180,14 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                             >
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center gap-4 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all cursor-pointer group"
+                                    className="border-2 border-dashed border-slate-200 dark:border-white/[0.06] rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center gap-4 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/20 transition-all cursor-pointer group"
                                 >
                                     <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-3xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
                                         {isParsing ? <Loader2 className="w-8 h-8 animate-spin" /> : <Upload className="w-8 h-8" />}
                                     </div>
                                     <div className="text-center">
                                         <p className="font-bold text-slate-900 dark:text-white text-lg">Click or drag locations file</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Supports .csv and .json formats</p>
+                                        <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1">Supports .csv and .json formats</p>
                                     </div>
                                     <input
                                         type="file"
@@ -198,13 +223,13 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                     <button onClick={() => setStep(1)} className="text-[10px] font-bold uppercase text-slate-400 hover:text-indigo-500 tracking-widest">Change File</button>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+                                <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.06] overflow-hidden">
                                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
                                         <table className="w-full text-left text-[11px]">
-                                            <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0">
+                                            <thead className="bg-slate-100 dark:bg-[hsl(220,20%,9%)] sticky top-0">
                                                 <tr>
                                                     {previewData[0] && Object.keys(previewData[0]).map(key => (
-                                                        <th key={key} className="px-4 py-2 font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider whitespace-nowrap">{key}</th>
+                                                        <th key={key} className="px-4 py-2 font-bold uppercase text-slate-500 dark:text-[hsl(220,10%,55%)] tracking-wider whitespace-nowrap">{key}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
@@ -212,7 +237,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                                 {previewData.map((row, i) => (
                                                     <tr key={i}>
                                                         {Object.values(row).map((val, j) => (
-                                                            <td key={j} className="px-4 py-3 text-slate-600 dark:text-slate-300 truncate max-w-[150px]">{val?.toString() || '—'}</td>
+                                                            <td key={j} className="px-4 py-3 text-slate-600 dark:text-[hsl(220,10%,55%)] truncate max-w-[150px]">{val?.toString() || '—'}</td>
                                                         ))}
                                                     </tr>
                                                 ))}
@@ -223,21 +248,21 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
 
                                 <div className="p-6 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-[24px] border border-indigo-500/10 flex items-center justify-between group cursor-pointer" onClick={() => setEnrichmentEnabled(!enrichmentEnabled)}>
                                     <div className="flex items-center gap-4">
-                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", enrichmentEnabled ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-200 dark:bg-slate-800 text-slate-400")}>
+                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", enrichmentEnabled ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-200 dark:bg-[hsl(220,20%,9%)] text-slate-400")}>
                                             <Sparkles className={cn("w-5 h-5", enrichmentEnabled && "animate-pulse")} />
                                         </div>
                                         <div>
                                             <p className="font-bold text-sm text-slate-900 dark:text-white">GastroAI Enrichment</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Auto-fill coordinates, ratings and opening hours</p>
+                                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">Auto-fill coordinates, ratings and opening hours</p>
                                         </div>
                                     </div>
-                                    <div className={cn("w-12 h-6 rounded-full relative transition-colors duration-300", enrichmentEnabled ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-800")}>
+                                    <div className={cn("w-12 h-6 rounded-full relative transition-colors duration-300", enrichmentEnabled ? "bg-indigo-500" : "bg-slate-200 dark:bg-[hsl(220,20%,9%)]")}>
                                         <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300", enrichmentEnabled ? "left-7" : "left-1")} />
                                     </div>
                                 </div>
 
                                 {isImporting && (
-                                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-6">
+                                    <div className="w-full bg-slate-100 dark:bg-[hsl(220,20%,9%)] h-1.5 rounded-full overflow-hidden mt-6">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${importProgress}%` }}
@@ -278,7 +303,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">Import Success!</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">{previewData.length} locations added and verified with GastroAI.</p>
+                                    <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-2 font-medium">{previewData.length} locations added and verified with GastroAI.</p>
                                 </div>
                                 <Button
                                     onClick={onClose}

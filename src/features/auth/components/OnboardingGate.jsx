@@ -45,13 +45,17 @@ export function OnboardingGate({ children }) {
         if (prefs.onboardingCompleted) return
 
         // Local store is empty — check Supabase before showing onboarding
-        // (handles fresh-device / reinstall scenario — BUG-ON1)
-        hasTriggeredRef.current = true
+        // FIX: only set hasTriggeredRef AFTER loadFromSupabase completes to avoid
+        // blocking retry on network failure (race condition fix)
         loadFromSupabase().then((completed) => {
+            hasTriggeredRef.current = true
             if (!completed) {
                 // Truly first time — show onboarding after layout renders
                 setTimeout(() => setShowOnboarding(true), 600)
             }
+        }).catch(() => {
+            // Don't set hasTriggeredRef on error — allow retry on next render
+            console.warn('[OnboardingGate] loadFromSupabase failed, will retry')
         })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, prefs.onboardingCompleted])

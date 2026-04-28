@@ -101,3 +101,13 @@ export const translate = (text) => {
     if (!text) return text;
     return LABEL_TRANSLATIONS[text] || text;
 };
+
+// Reverse mapping for EN -> RU translation
+const REVERSE_TRANSLATIONS = Object.fromEntries(
+    Object.entries(LABEL_TRANSLATIONS).map(([ru, en]) => [en, ru])
+);
+
+export const translateToRu = (text) => {
+    if (!text) return text;
+    return REVERSE_TRANSLATIONS[text] || text;
+};

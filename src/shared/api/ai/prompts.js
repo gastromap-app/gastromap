@@ -6,6 +6,7 @@
  */
 
 import { DEFAULT_GUIDE_PROMPT, DEFAULT_ASSISTANT_PROMPT } from './constants'
+import { buildRecentContext } from './recent-context'
 
 /**
  * Build a system prompt for the specified agent.
@@ -14,9 +15,10 @@ import { DEFAULT_GUIDE_PROMPT, DEFAULT_ASSISTANT_PROMPT } from './constants'
  * @param {string | null} [queryContext=null] - Query for knowledge graph context
  * @param {'guide' | 'assistant'} [agentType='guide'] - Which agent's prompt to build
  * @param {Object} [userData=null] - Dynamic user profile data (history, favorites)
+ * @param {Array} [recentMessages=[]] - Last N messages from the store, used for recent context injection
  * @returns {Promise<string>} - Built system prompt with personalization
  */
-export async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null) {
+export async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null, recentMessages = []) {
     let appCfg = {}
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
@@ -42,7 +44,7 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
 
     // 1. Dynamic user personalization context (injecting knowledge from database)
     const geoLine = userData?.userCity
-        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)`
+        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)${userData.userLat ? `\n- Current GPS: ${userData.userLat}, ${userData.userLng}` : ''}`
         : '- Current location: unknown (ask if the city matters for the request)'
 
     const profile = userData ? `
@@ -77,11 +79,14 @@ ${userData.userExperience || 'No direct review history yet.'}
         }
     }
 
+    // 3. Recent conversation context (locations in the rolling window)
+    const recentCtx = buildRecentContext(recentMessages)
+
     return `${basePrompt}
 ${knowledgeContext}
 ${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
 ${profile}
-
+${recentCtx ? `\n${recentCtx}\n` : ''}
 PERSONALIZATION GUIDELINES:
 - The USER PREFERENCES and USER PROFILE are context for smarter responses, NOT strict search filters.
 - Use them to personalize your tone, add relevant warnings, and suggest better alternatives when appropriate.

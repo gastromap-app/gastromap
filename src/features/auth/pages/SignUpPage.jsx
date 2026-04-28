@@ -35,6 +35,20 @@ const SignUpPage = () => {
         const email = formData.get('email')
         const password = formData.get('password')
 
+        // FIX: Frontend password validation — give user clear feedback before API call
+        if (password.length < 8) {
+            useAuthStore.getState().setError('Password must be at least 8 characters')
+            return
+        }
+        if (!/[A-Z]/.test(password)) {
+            useAuthStore.getState().setError('Password must contain at least one uppercase letter')
+            return
+        }
+        if (!/[0-9]/.test(password)) {
+            useAuthStore.getState().setError('Password must contain at least one number')
+            return
+        }
+
         const result = await register(email, password, name)
         if (result.success) {
             if (result.emailConfirmation) {

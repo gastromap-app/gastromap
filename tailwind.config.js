@@ -15,7 +15,24 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['Inter', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+            },
+            // ─── Semantic typography scale ─────────────────────────────────────────
+            // Source of truth. Prefer these over raw `text-[Npx]` so hierarchy stays
+            // consistent across pages. Scale: display > h1 > h2 > h3 > body > body-sm
+            // > caption > eyebrow > micro. Line-height / letter-spacing / weight are
+            // locked per step so callers only need one class.
+            fontSize: {
+                display:  ['clamp(2rem, 5vw, 3rem)', { lineHeight: '1.05', letterSpacing: '-0.03em',  fontWeight: '800' }],
+                h1:       ['1.75rem',                  { lineHeight: '1.15', letterSpacing: '-0.025em', fontWeight: '800' }],
+                h2:       ['1.375rem',                 { lineHeight: '1.2',  letterSpacing: '-0.02em',  fontWeight: '700' }],
+                h3:       ['1.125rem',                 { lineHeight: '1.25', letterSpacing: '-0.015em', fontWeight: '700' }],
+                'card-title': ['0.9375rem',            { lineHeight: '1.25', letterSpacing: '-0.01em',  fontWeight: '700' }],
+                body:     ['0.9375rem',                { lineHeight: '1.5',  letterSpacing: '-0.003em', fontWeight: '400' }],
+                'body-sm':['0.8125rem',                { lineHeight: '1.45', letterSpacing: '0',        fontWeight: '500' }],
+                caption:  ['0.75rem',                  { lineHeight: '1.3',  letterSpacing: '0',        fontWeight: '500' }],
+                eyebrow:  ['0.6875rem',                { lineHeight: '1.2',  letterSpacing: '0.14em',   fontWeight: '700' }],
+                micro:    ['0.625rem',                 { lineHeight: '1.2',  letterSpacing: '0.08em',   fontWeight: '700' }],
             },
             borderRadius: {
                 lg: 'var(--radius)',
@@ -72,6 +89,11 @@ export default {
                     '3': 'hsl(var(--chart-3))',
                     '4': 'hsl(var(--chart-4))',
                     '5': 'hsl(var(--chart-5))'
+                },
+                surface: {
+                    DEFAULT: 'hsl(220 20% 6%)',
+                    elevated: 'hsl(220 20% 9%)',
+                    foreground: 'hsl(220 20% 96%)'
                 },
                 sidebar: {
                     DEFAULT: 'hsl(var(--sidebar-background))',

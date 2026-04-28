@@ -52,11 +52,11 @@ async function generateEmbedding(text) {
  *
  * @param {string} queryText - Natural language query
  * @param {number} [limit=10] - Max results
- * @param {string} [city] - Optional city filter
- * @param {string} [category] - Optional category filter
+ * @param {string} [_apiKey] - Unused but kept for signature compatibility
+ * @param {Object} [options] - Additional filters { city, category, cuisine, price_range }
  * @returns {Promise<Array>} Matched location rows
  */
-export async function semanticSearch(queryText, limit = 10, _apiKey = null, { city, category } = {}) {
+export async function semanticSearch(queryText, limit = 10, _apiKey = null, { city, category, cuisine: _cuisine, price_range: _priceRange } = {}) {
     if (!queryText?.trim() || !supabase) return []
 
     try {
@@ -74,6 +74,8 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
                 rrf_k: 60,
             })
 
+            console.log(`[ai.search] hybrid RPC result:`, { count: data?.length || 0, error: error?.message })
+
             if (!error && data?.length > 0) {
                 return data
             }
@@ -89,6 +91,8 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
             p_category: category || null,
             p_limit: limit,
         })
+
+        console.log(`[ai.search] fulltext RPC result:`, { count: data?.length || 0, error: error?.message })
 
         if (error) {
             console.warn('[ai.search] fulltext RPC error:', error.message)

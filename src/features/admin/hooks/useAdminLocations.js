@@ -6,17 +6,33 @@ import {
     useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
     useUpdateLocationEmbeddingMutation, useBulkUpdateEmbeddingsMutation,
     useEnrichLocationFullMutation,
-    useAIQueryMutation, useCulinaryContextMutation 
+    useAIQueryMutation, useCulinaryContextMutation,
+    usePendingReviews, useUpdateReviewStatusMutation
 } from '@/shared/api/queries'
+import { applyAllFilters } from '@/shared/store/useLocationsStore'
 
 /**
  * Custom hook for Admin Locations page business logic
  * Extracted to reduce component complexity and improve testability
  */
 export const useAdminLocations = () => {
-    const [view, setView] = useState('list')
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
+    
+    // Advanced Filters (Synchronized with Dashboard)
+    const [activeCategory, setActiveCategory] = useState('All')
+    const [activePriceLevels, setActivePriceLevels] = useState([])
+    const [minRating, setMinRating] = useState(null)
+    const [activeVibes, setActiveVibes] = useState([])
+    const [sortBy, setSortBy] = useState('newest')
+    const [activeCity, setActiveCity] = useState('All')
+    const [activeCountry, setActiveCountry] = useState('All')
+
+    // Reset city when country changes
+    useEffect(() => {
+        setActiveCity('All')
+    }, [activeCountry])
+
     const [selectedLocation, setSelectedLocation] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
     const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
@@ -29,6 +45,7 @@ export const useAdminLocations = () => {
     const [isImproving, setIsImproving] = useState(null)
     const [isExporting, setIsExporting] = useState(false)
     const [toast, setToast] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
     const PAGE_SIZE = 20
 
     // Auto-hide toast
@@ -69,7 +86,7 @@ export const useAdminLocations = () => {
         try {
             const { supabase } = await import('@/shared/api/client')
             const { data } = await supabase.from('locations')
-                .select('id,title,category,city,country,address,description,google_rating,price_range,status,created_at')
+                .select('*')
                 .order('created_at', { ascending: false })
             const json = JSON.stringify(data || [], null, 2)
             const blob = new Blob([json], { type: 'application/json' })
@@ -98,6 +115,8 @@ export const useAdminLocations = () => {
     const deleteLocMutation = useDeleteLocationMutation()
     const updateLocStatusMutation = useUpdateLocationStatusMutation()
     const { data: pendingLocations = [] } = usePendingLocations()
+    const { data: pendingReviews = [] } = usePendingReviews()
+    const updateReviewStatusMutation = useUpdateReviewStatusMutation()
     const extractMutation = useExtractLocationMutation()
     const reindexMutation = useReindexLocationSemanticMutation()
     const bulkReindexMutation = useBulkReindexLocationsMutation()
@@ -120,7 +139,7 @@ export const useAdminLocations = () => {
             insider_tip: '',
             must_try: '',
             what_to_try: [],
-            price_range: '$$',
+            price_level: '$$',
             website: '',
             phone: '',
             opening_hours: '',
@@ -133,6 +152,7 @@ export const useAdminLocations = () => {
             lat: 50.0647,
             lng: 19.9450,
             google_rating: null,
+            rating: null,
             tags: [],
             vibe: [],
             features: [],
@@ -182,16 +202,7 @@ export const useAdminLocations = () => {
         if (loadError) console.error('[Admin] Load Error:', loadError)
     }, [locsData, loadError])
 
-    // Background tasks listener (future proofing for toasts)
-    useEffect(() => {
-        const handleBgTask = (e) => {
-            const { type, status, id } = e.detail
-            console.log(`[Admin] Background task ${type} for ${id}: ${status}`)
-            // Here we can trigger a toast notification
-        }
-        window.addEventListener('bg-task-status', handleBgTask)
-        return () => window.removeEventListener('bg-task-status', handleBgTask)
-    }, [])
+    // (Removed duplicate bg-task-status listener — the one above at line ~59 already handles toasts)
 
     const prepareFormData = (loc) => {
         if (!loc) return null
@@ -228,7 +239,11 @@ export const useAdminLocations = () => {
             prepared.price_level = loc.price_range
         }
         
-        if (loc.tags?.length) {
+        // FIX: Do NOT overwrite vibe from tags — they are separate DB columns
+        // vibe = atmosphere labels, tags = search keywords — different semantics
+        // Ensure vibe has a value from the location data (already set above)
+        if (!prepared.vibe?.length && loc.tags?.length) {
+            // Only fall back to tags if vibe is truly empty
             prepared.vibe = [...loc.tags]
         }
 
@@ -263,6 +278,8 @@ export const useAdminLocations = () => {
                     address:       data.address        ?? prev.address,
                     lat:           data.lat            ?? prev.lat,
                     lng:           data.lng            ?? prev.lng,
+                    google_rating: data.google_rating  ?? prev.google_rating,
+                    rating:        data.rating         ?? prev.rating ?? data.google_rating,
                     // Contact
                     phone:         data.phone          ?? prev.phone,
                     website:       data.website        ?? prev.website,
@@ -349,6 +366,26 @@ export const useAdminLocations = () => {
         }
     }
 
+    const handleApproveReview = async (reviewId) => {
+        try {
+            await updateReviewStatusMutation.mutateAsync({ reviewId, status: 'published' })
+            setToast({ message: 'Отзыв одобрен и опубликован.', type: 'success' })
+        } catch (error) {
+            console.error('Approve review failed:', error)
+            setToast({ message: 'Ошибка при одобрении отзыва.', type: 'error' })
+        }
+    }
+
+    const handleRejectReview = async (reviewId) => {
+        try {
+            await updateReviewStatusMutation.mutateAsync({ reviewId, status: 'rejected' })
+            setToast({ message: 'Отзыв отклонён.', type: 'success' })
+        } catch (error) {
+            console.error('Reject review failed:', error)
+            setToast({ message: 'Ошибка при отклонении отзыва.', type: 'error' })
+        }
+    }
+
     const handleDelete = (id) => {
         if (confirm('Вы уверены, что хотите удалить этот объект? Это действие нельзя отменить.')) {
             deleteLocMutation.mutate(id)
@@ -406,11 +443,21 @@ export const useAdminLocations = () => {
             // DO NOT delete vibe — it's a separate DB column
         }
         
-        if (typeof submissionData.must_try === 'string') {
-            submissionData.what_to_try = submissionData.must_try
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean)
+        // Handle what_to_try / must_try with both array and string sources
+        if (Array.isArray(submissionData.what_to_try) && submissionData.what_to_try.length > 0) {
+            submissionData.must_try = submissionData.what_to_try.join(', ')
+        } else if (typeof submissionData.must_try === 'string' && submissionData.must_try.trim()) {
+            submissionData.what_to_try = submissionData.must_try.split(',').map(s => s.trim()).filter(Boolean)
+            submissionData.must_try = submissionData.must_try.trim()
+        }
+
+        // Clean up legacy fields to ensure strict schema adherence
+        // Ensure both ratings are numbers if present
+        if (submissionData.rating !== undefined && submissionData.rating !== null) {
+            submissionData.rating = parseFloat(submissionData.rating)
+        }
+        if (submissionData.google_rating !== undefined && submissionData.google_rating !== null) {
+            submissionData.google_rating = parseFloat(submissionData.google_rating)
         }
 
         return submissionData
@@ -440,6 +487,9 @@ export const useAdminLocations = () => {
                     setIsSlideOverOpen(false)
                     setFormData(null)
                     setSelectedLocation(null)
+                    // FIX: Switch filter to 'pending' so newly created location is visible
+                    setStatusFilter('pending')
+                    setToast({ message: 'Локация создана! Статус: ожидает модерации.', type: 'success' })
                 },
                 onError: (err) => {
                     alert('Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'))
@@ -462,16 +512,25 @@ export const useAdminLocations = () => {
         }
     }
 
-    const filteredLocations = locationsList.filter(loc => {
-        const matchesSearch = !searchQuery ||
-            loc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            loc.category?.toLowerCase().includes(searchQuery.toLowerCase())
-        
-        const matchesStatus = statusFilter === 'all' || loc.status === statusFilter
-        
-        return matchesSearch && matchesStatus
-    })
+    const filteredLocations = applyAllFilters(locationsList, {
+        activeCategory,
+        searchQuery,
+        activePriceLevels,
+        minRating,
+        activeVibes,
+        sortBy,
+        activeCity,
+        activeCountry,
+    }).filter(loc => statusFilter === 'all' || loc.status === statusFilter)
+
+    // Derived data for filters
+    const countries = Array.from(new Set(locationsList.map(l => l.country).filter(Boolean))).sort()
+    const cities = Array.from(new Set(
+        locationsList
+            .filter(l => activeCountry === 'All' || l.country === activeCountry)
+            .map(l => l.city)
+            .filter(Boolean)
+    )).sort()
 
     // Pagination logic
     const totalPages = Math.ceil(filteredLocations.length / PAGE_SIZE)
@@ -483,7 +542,7 @@ export const useAdminLocations = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, statusFilter])
+    }, [searchQuery, statusFilter, activeCategory, activePriceLevels, minRating, activeVibes, sortBy, activeCity, activeCountry])
 
     const addImageUrl = (url) => {
         if (!url) return
@@ -511,12 +570,24 @@ export const useAdminLocations = () => {
 
     return {
         // State
-        view,
-        setView,
-        searchQuery,
-        setSearchQuery,
         statusFilter,
         setStatusFilter,
+        searchQuery,
+        setSearchQuery,
+        activeCategory,
+        setActiveCategory,
+        activePriceLevels,
+        setActivePriceLevels,
+        minRating,
+        setMinRating,
+        activeVibes,
+        setActiveVibes,
+        sortBy,
+        setSortBy,
+        activeCity,
+        setActiveCity,
+        activeCountry,
+        setActiveCountry,
         selectedLocation,
         setSelectedLocation,
         isSlideOverOpen,
@@ -543,15 +614,19 @@ export const useAdminLocations = () => {
         // Data
         locationsList,
         pendingLocations,
+        pendingReviews,
         loadingLocations,
         loadError,
         filteredLocations,
+        countries,
+        cities,
         
         // Mutations
         createLocMutation,
         updateLocMutation,
         deleteLocMutation,
         updateLocStatusMutation,
+        updateReviewStatusMutation,
         extractMutation,
         reindexMutation,
         embeddingMutation,
@@ -585,6 +660,8 @@ export const useAdminLocations = () => {
         removeImage,
         prepareFormData,
         isExporting,
-        handleExport
+        handleExport,
+        handleApproveReview,
+        handleRejectReview
     }
 }

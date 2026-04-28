@@ -31,7 +31,7 @@ export const MaintenanceGuard = ({ children }) => {
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-[#FDFDFD] dark:bg-slate-950 flex items-center justify-center p-6 text-center">
+        <div className="fixed inset-0 z-[9999] bg-[#FDFDFD] dark:bg-[hsl(220,20%,3%)] flex items-center justify-center p-6 text-center">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
             <motion.div
@@ -56,14 +56,14 @@ export const MaintenanceGuard = ({ children }) => {
                     <Link to="/" className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                         <ArrowLeft size={18} /> Back to Home
                     </Link>
-                    <button className="w-full h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                    <button className="w-full h-14 bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] transition-all">
                         <MessageCircle size={18} /> Contact Support
                     </button>
                     {user && (
                         <button
                             onClick={handleSignOut}
                             disabled={signingOut}
-                            className="w-full h-14 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="w-full h-14 bg-white dark:bg-[hsl(220,20%,6%)] border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {signingOut
                                 ? <span className="w-4 h-4 rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
@@ -74,7 +74,7 @@ export const MaintenanceGuard = ({ children }) => {
                     )}
                 </div>
 
-                <div className="mt-20 pt-10 border-t border-slate-100 dark:border-slate-800/50">
+                <div className="mt-20 pt-10 border-t border-slate-100 dark:border-white/[0.03]">
                     <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">GastroOS System Status</p>
                     <div className="flex justify-center gap-2">
                         {[1, 2, 3, 4, 5].map(i => (

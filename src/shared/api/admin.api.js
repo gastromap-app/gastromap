@@ -2,22 +2,30 @@ import { supabase } from './client'
 
 export async function getAdminStats() {
     if (!supabase) return mockAdminStats
-    const [locations, users, engagement, payments, topLocs] = await Promise.all([
+
+    const results = await Promise.allSettled([
         supabase.rpc('get_location_stats'),
         supabase.rpc('get_user_stats'),
         supabase.rpc('get_engagement_stats'),
         supabase.rpc('get_payment_stats'),
         supabase.from('locations')
-            .select('id, title, city, category, rating')
-            .order('rating', { ascending: false })
+            .select('id, title, city, category, google_rating')
+            .order('google_rating', { ascending: false })
             .limit(5),
     ])
+
+    const safeGet = (result, label) => {
+        if (result.status === 'fulfilled') return result.value.data
+        console.warn(`[admin.api] ${label} failed:`, result.reason)
+        return null
+    }
+
     return {
-        locations: locations.data,
-        users: users.data,
-        engagement: engagement.data,
-        payments: payments.data,
-        top_locations: topLocs.data || [],
+        locations: safeGet(results[0], 'get_location_stats'),
+        users: safeGet(results[1], 'get_user_stats'),
+        engagement: safeGet(results[2], 'get_engagement_stats'),
+        payments: safeGet(results[3], 'get_payment_stats'),
+        top_locations: safeGet(results[4], 'top_locations') || [],
     }
 }
 
@@ -33,12 +41,21 @@ export async function getRecentLocations(limit = 5) {
 
 export async function getRecentActivity(limit = 10) {
     if (!supabase) return mockRecentActivity
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('user_visits')
-        .select('id, user_id, location_id, visited_at, locations(title)')
+        .select('id, user_id, location_id, visited_at, locations(title), profiles(name, email)')
         .order('visited_at', { ascending: false })
         .limit(limit)
-    return data || []
+    if (error) {
+        console.warn('[admin.api] getRecentActivity:', error.message)
+        return []
+    }
+    // Map to the shape the UI expects
+    return (data || []).map(item => ({
+        ...item,
+        user_name: item.profiles?.name || item.profiles?.email || 'User',
+        action_text: `Visited ${item.locations?.title || 'a location'}`,
+    }))
 }
 
 export async function getProfiles() {
@@ -167,24 +184,34 @@ export async function getUserDetails(userId) {
 
 export async function getPendingReviews() {
     if (!supabase) return mockPendingReviews
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('reviews')
-        .select('*, profiles(full_name, name), locations(id, title, city)')
+        .select('id, user_id, location_id, rating, review_text, status, created_at, profiles(name, avatar_url), locations(title, city)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
+    if (error) {
+        console.warn('[admin.api] getPendingReviews join failed, falling back:', error.message)
+        const { data: fallback } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+        return fallback || []
+    }
     // Normalise author name across schema variants
     return (data || []).map(r => ({
         ...r,
         profiles: r.profiles
-            ? { ...r.profiles, name: r.profiles.full_name || r.profiles.name || '—' }
+            ? { ...r.profiles, name: r.profiles.name || '—' }
             : null,
     }))
 }
 
 export async function updateReviewStatus(reviewId, status, _comment) {
     if (!supabase) return { error: 'No Supabase' }
+    // _comment parameter is intentionally unused — reviews table has no admin_comment column.
     // reviews table columns: id, user_id, location_id, rating, review_text, status, created_at, updated_at
-    // admin_comment column does NOT exist — only update status + updated_at
+    // Only update status + updated_at.
     const updates = { status, updated_at: new Date().toISOString() }
     const { data, error } = await supabase
         .from('reviews')
@@ -200,7 +227,7 @@ export async function getPendingLocations() {
     if (!supabase) return mockPendingLocations
     // Check both locations table (direct entries) and user_submissions
     const [locsRes, subsRes] = await Promise.all([
-        supabase.from('locations').select('id, title, category, city, created_at, status')
+        supabase.from('locations').select('id, title, category, city, created_at, status, insider_tip, what_to_try, tags, moderation_note')
             .in('status', ['pending', 'revision_requested'])
             .order('created_at', { ascending: false }),
         supabase.from('user_submissions').select('id, title, category, city, submitted_at, status, user_id')
@@ -236,9 +263,9 @@ export async function getTopLocations(limit = 5) {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('id, title, city, category, rating, reviews(count), user_visits(count)')
+        .select('id, title, city, category, google_rating, reviews(count), user_visits(count)')
         .in('status', ['active', 'approved'])
-        .order('rating', { ascending: false })
+        .order('google_rating', { ascending: false })
         .limit(limit * 3) // fetch more, sort in JS
 
     if (error) { console.error('[admin.api] getTopLocations:', error.message); return [] }
@@ -249,7 +276,7 @@ export async function getTopLocations(limit = 5) {
             const visit_count  = loc.user_visits?.[0]?.count ?? 0
             return { ...loc, review_count, visit_count, score: review_count + visit_count }
         })
-        .sort((a, b) => b.score - a.score || b.rating - a.rating)
+        .sort((a, b) => b.score - a.score || (b.google_rating ?? 0) - (a.google_rating ?? 0))
         .slice(0, limit)
 }
 
@@ -260,16 +287,17 @@ export async function getCategoryStats() {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('category, status, rating')
+        .select('category, status, google_rating')
 
     if (error) { console.error('[admin.api] getCategoryStats:', error.message); return [] }
 
     const map = {}
     for (const loc of data || []) {
-        if (!map[loc.category]) map[loc.category] = { category: loc.category, total: 0, active: 0, ratings: [] }
-        map[loc.category].total++
-        if (loc.status === 'active' || loc.status === 'approved') map[loc.category].active++
-        if (loc.rating) map[loc.category].ratings.push(Number(loc.rating))
+        const cat = loc.category || 'Uncategorized'
+        if (!map[cat]) map[cat] = { category: cat, total: 0, active: 0, ratings: [] }
+        map[cat].total++
+        if (loc.status === 'active' || loc.status === 'approved') map[cat].active++
+        if (loc.google_rating) map[cat].ratings.push(Number(loc.google_rating))
     }
 
     return Object.values(map)
@@ -291,17 +319,19 @@ export async function getCityStats() {
     if (!supabase) return []
     const { data, error } = await supabase
         .from('locations')
-        .select('city, country, rating')
+        .select('city, country, google_rating')
         .in('status', ['active', 'approved'])
 
     if (error) { console.error('[admin.api] getCityStats:', error.message); return [] }
 
     const map = {}
     for (const loc of data || []) {
-        const key = `${loc.city}|${loc.country}`
-        if (!map[key]) map[key] = { city: loc.city, country: loc.country, total: 0, ratings: [] }
+        const city = loc.city || 'Unknown'
+        const country = loc.country || 'Unknown'
+        const key = `${city}|${country}`
+        if (!map[key]) map[key] = { city, country, total: 0, ratings: [] }
         map[key].total++
-        if (loc.rating) map[key].ratings.push(Number(loc.rating))
+        if (loc.google_rating) map[key].ratings.push(Number(loc.google_rating))
     }
 
     return Object.values(map)

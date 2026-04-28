@@ -30,7 +30,7 @@ const NotificationTypeCard = ({ type, enabled, onToggle }) => (
         'p-4 rounded-xl border transition-all',
         enabled
             ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/5'
-            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
+            : 'border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)]'
     )}>
         <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -39,7 +39,7 @@ const NotificationTypeCard = ({ type, enabled, onToggle }) => (
                     <h4 className="font-bold text-slate-900 dark:text-white text-sm">
                         {type.label}
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-0.5">
                         {type.description}
                     </p>
                     {type.adminOnly && (
@@ -169,8 +169,8 @@ const AdminNotificationsPage = () => {
             />
 
             {/* Permission Status */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Bell size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Permission Status</h2>
                 </div>
@@ -183,7 +183,7 @@ const AdminNotificationsPage = () => {
                                     ? 'bg-green-100 dark:bg-green-500/20'
                                     : permissionStatus === 'denied'
                                         ? 'bg-red-100 dark:bg-red-500/20'
-                                        : 'bg-slate-100 dark:bg-slate-800'
+                                        : 'bg-slate-100 dark:bg-[hsl(220,20%,9%)]'
                             )}>
                                 {permissionStatus === 'granted' ? (
                                     <Bell className="text-green-500" size={24} />
@@ -220,7 +220,7 @@ const AdminNotificationsPage = () => {
                                 className={cn(
                                     'px-4 py-2 rounded-xl font-bold text-sm transition-all',
                                     permissionStatus === 'denied'
-                                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                                        ? 'bg-slate-200 dark:bg-[hsl(220,20%,12%)] text-slate-400 cursor-not-allowed'
                                         : pushEnabled
                                             ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30'
                                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -242,8 +242,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* Test Notification */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <TestTube size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Notifications</h2>
                 </div>
@@ -255,7 +255,7 @@ const AdminNotificationsPage = () => {
                             className={cn(
                                 'h-10 px-5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all',
                                 testing || permissionStatus !== 'granted'
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                                    ? 'bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-400 cursor-not-allowed'
                                     : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
                             )}
                         >
@@ -284,8 +284,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* User Notification Types */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Users size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">User Notification Types</h2>
                 </div>
@@ -304,8 +304,8 @@ const AdminNotificationsPage = () => {
             </div>
 
             {/* Admin Notification Types */}
-            <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Shield size={16} className="text-indigo-500" />
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Admin Notification Types</h2>
                 </div>
@@ -327,7 +327,7 @@ const AdminNotificationsPage = () => {
             <div className="flex justify-between items-center">
                 <button
                     onClick={resetPreferences}
-                    className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium"
+                    className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] hover:text-slate-700 dark:hover:text-[hsl(220,20%,90%)] transition-colors font-medium"
                 >
                     Reset to Defaults
                 </button>

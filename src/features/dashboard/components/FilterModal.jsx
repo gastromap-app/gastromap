@@ -1,17 +1,53 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES } from '@/shared/config/filterOptions'
+import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES, ESTABLISHMENT_TYPE_NAMES } from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
+import { getLabelEmoji } from '@/shared/constants/taxonomy'
+import { translate, translateToRu } from '@/utils/translation'
 
 // Non-cuisine static labels that stay in the "Cuisine & Menu" group
 const CUISINE_MENU_LABELS = [
     'Signature Cuisine', 'Vegan Menu', 'Delicious Desserts',
     'All Day Breakfast', 'Fusion',
 ]
+
+// Map config-level English group names → i18n keys
+const GROUP_KEY_MAP = {
+    'Cuisine & Menu':      'filter.group_cuisine_menu',
+    'Bar & Drinks':        'filter.group_bar_drinks',
+    'Atmosphere':          'filter.group_atmosphere',
+    'Amenities & Service': 'filter.group_amenities_service',
+    'Awards & Special':    'filter.group_awards_special',
+}
+
+// Map establishment type id → category.* i18n key
+const CATEGORY_KEY_MAP = {
+    'all':         'category.all',
+    'Cafe':        'category.cafe',
+    'Restaurant':  'category.restaurant',
+    'Street Food': 'category.street_food',
+    'Bar':         'category.bar',
+    'Restobar':    'category.restobar',
+    'Market':      'category.market',
+    'Bakery':      'category.bakery',
+    'Winery':      'category.winery',
+    'Wine Bar':    'category.wine_bar',
+    'Coffee':      'category.coffee',
+    'Pastry':      'category.pastry',
+    'Fine Dining': 'category.fine_dining',
+}
+
+// Map best-time id → filter.best_time_* i18n key
+const BEST_TIME_KEY_MAP = {
+    morning:    'filter.best_time_morning',
+    day:        'filter.best_time_day',
+    evening:    'filter.best_time_evening',
+    late_night: 'filter.best_time_late_night',
+}
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const { t, i18n } = useTranslation()
@@ -39,34 +75,66 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
     // Request geolocation when radius filter is activated
     const handleRadiusChange = useCallback((newRadius) => {
+        const { setUserLocation } = useLocationsStore.getState()
         if (newRadius > 0 && !geoGranted) {
             if (!navigator.geolocation) {
-                setGeoError('Geolocation not supported by this browser')
+                setGeoError(t('filter.geo_unsupported'))
                 return
             }
             navigator.geolocation.getCurrentPosition(
-                () => { setGeoGranted(true); setGeoError(null); setRadius(newRadius) },
-                () => { setGeoError('Location access denied — enable it to use radius filter'); setRadius(0) },
+                (pos) => { 
+                    setGeoGranted(true)
+                    setGeoError(null)
+                    setRadius(newRadius)
+                    setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                },
+                () => { setGeoError(t('filter.geo_denied')); setRadius(0) },
                 { timeout: 5000 }
             )
         } else {
             setRadius(newRadius)
             if (newRadius === 0) setGeoError(null)
         }
-    }, [geoGranted])
+    }, [geoGranted, t])
+
+    // Sync local state with store on open
+    useEffect(() => {
+        if (isOpen) {
+            const store = useLocationsStore.getState()
+            setSelectedCategory(store.activeCategory === 'All' ? 'all' : store.activeCategory)
+            setSelectedRating(store.minRating)
+            setSelectedPriceLevels(store.activePriceLevels || [])
+            setSelectedFeatures(store.activeVibes || [])
+            setSelectedBestTime(store.activeBestTime)
+            setRadius(store.radius || 0)
+        }
+    }, [isOpen])
+
+// Normalize string for comparison: lowercase + remove accents
+function normalizeForCompare(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
 
     // ── Dynamic cuisines from KG data ─────────────────────────────────────────
-    // Automatically reflects any new cuisine added via KG enrichment
+    // Automatically reflects any new cuisine added via KG enrichment.
+    // Filters out establishment types (e.g. 'Cafe', 'Bar') that may have been
+    // incorrectly stored in cuisine fields — those belong in `category` only.
     const locations = useLocationsStore(s => s.locations)
     const dynamicCuisines = useMemo(() => {
         const cuisineSet = new Set()
         locations.forEach(loc => {
             // KG cuisines (primary source — auto-updated)
             if (Array.isArray(loc.kg_cuisines)) {
-                loc.kg_cuisines.forEach(c => c && cuisineSet.add(c))
+                loc.kg_cuisines.forEach(c => {
+                    if (c && !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))) {
+                        cuisineSet.add(c)
+                    }
+                })
             }
-            // Fallback: cuisine string field  
-            if (loc.cuisine) cuisineSet.add(loc.cuisine)
+            // Fallback: cuisine string field — also filter out establishment types
+            if (loc.cuisine && !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(loc.cuisine))) {
+                cuisineSet.add(loc.cuisine)
+            }
         })
         return [...cuisineSet].sort()
     }, [locations])
@@ -91,16 +159,16 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     }
 
     const handleApply = () => {
-        const { applyFilters, setRadius } = useLocationsStore.getState()
+        const { applyFilters } = useLocationsStore.getState()
+        
         applyFilters({
-            activeCategory: selectedCategory === 'all' ? 'All' : selectedCategory,
+            activeCategories: selectedCategory === 'all' ? [] : [selectedCategory],
             minRating: selectedRating,
             activePriceLevels: selectedPriceLevels,
             activeVibes: selectedFeatures,
             activeBestTime: selectedBestTime,
+            radius: radius
         })
-        // Radius stored separately (no re-filter needed — geo filter runs on server)
-        setRadius(radius)
         onClose()
     }
 
@@ -157,7 +225,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         animate="visible"
                         exit="hidden"
                         className={`relative w-full md:max-w-2xl overflow-hidden shadow-2xl border transition-colors duration-300
-                            ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}
+                            ${isDark ? 'bg-[hsl(220,20%,6%)] border-white/[0.06] text-[hsl(220,20%,96%)]' : 'bg-white border-gray-200 text-gray-900'}
                             rounded-t-sheet md:rounded-sheet`}
                         style={{ maxHeight: '90vh' }}
                     >
@@ -166,14 +234,14 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div>
                                 <h2 className="text-[20px] font-bold">{t('filter.title')}</h2>
                                 {activeCount > 0 && (
-                                    <p className="text-[11px] text-blue-500 font-bold mt-0.5">{activeCount} active</p>
+                                    <p className="text-[11px] text-blue-500 font-bold mt-0.5">{t('filter.active_count', { count: activeCount, defaultValue: `${activeCount} active` })}</p>
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
                                 {activeCount > 0 && (
                                     <button
                                         onClick={handleReset}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                     >
                                         <RotateCcw size={12} />
                                         {t('filter.reset')}
@@ -181,7 +249,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/5 text-white/60 hover:text-white' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
                                 >
                                     <X size={24} />
                                 </button>
@@ -193,20 +261,23 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Establishment Type */}
                             <div className="space-y-4 text-left md:col-span-2">
-                                <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Establishment Type</label>
+                                <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.establishment_type')}</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                     {ESTABLISHMENT_TYPES.map(type => {
                                         const isActive = selectedCategory === type.id
-                                        const displayLabel = i18n.language === 'ru' ? type.labelRu : type.label
+                                        const typeKey = CATEGORY_KEY_MAP[type.id]
+                                        const displayLabel = typeKey ? t(typeKey) : (i18n.language === 'ru' ? type.labelRu : type.label)
                                         return (
-                                            <button
+                                            <motion.button
                                                 key={type.id}
+                                                whileHover={{ scale: 1.02, y: -2 }}
+                                                whileTap={{ scale: 0.98 }}
                                                 onClick={() => setSelectedCategory(isActive ? 'all' : type.id)}
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
                                                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{type.icon}</span>
                                                 <span className="text-[11px] font-bold">{displayLabel}</span>
-                                            </button>
+                                            </motion.button>
                                         )
                                     })}
                                 </div>
@@ -216,26 +287,28 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Rating */}
                                 <div className="space-y-4 text-left">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Rating</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.rating')}</label>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[
-                                            { val: null, label: 'Any' },
+                                            { val: null, label: t('common.all') },
                                             { val: 4,    label: '4+' },
                                             { val: 4.5,  label: '4.5+' },
                                         ].map(opt => {
                                             const isActive = selectedRating === opt.val
                                             return (
-                                                <button
+                                                <motion.button
                                                     key={String(opt.val)}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
                                                     onClick={() => setSelectedRating(isActive ? null : opt.val)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center gap-1.5 font-semibold text-sm transition-all ${isActive
-                                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                        : isDark ? 'bg-white/5 border-white/5 text-white hover:bg-white/10' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
+                                                        ? 'bg-[hsl(217,91%,60%)] border-[hsl(217,91%,60%)] text-white shadow-lg shadow-[hsl(217,91%,60%)]/20'
+                                                        : isDark ? 'bg-white/[0.03] border-white/[0.04] text-[hsl(220,20%,96%)] hover:bg-white/[0.06]' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
                                                     }`}
                                                 >
                                                     {opt.val != null && <Star size={14} className={isActive ? 'text-white fill-white' : 'text-yellow-500 fill-yellow-500'} />}
                                                     {opt.label}
-                                                </button>
+                                                </motion.button>
                                             )
                                         })}
                                     </div>
@@ -243,21 +316,23 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                                 {/* Price Level */}
                                 <div className="space-y-4 text-left">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Price Range</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.price_range')}</label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {['$', '$$', '$$$', '$$$$'].map(level => {
                                             const isActive = selectedPriceLevels.includes(level)
                                             return (
-                                                <button
+                                                <motion.button
                                                     key={level}
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
                                                     onClick={() => togglePriceLevel(level)}
                                                     className={`h-14 rounded-2xl border flex items-center justify-center font-bold text-sm transition-all ${isActive
-                                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                        : isDark ? 'bg-white/5 border-white/5 text-white hover:bg-white/10' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
+                                                        ? 'bg-[hsl(217,91%,60%)] border-[hsl(217,91%,60%)] text-white shadow-lg shadow-[hsl(217,91%,60%)]/20'
+                                                        : isDark ? 'bg-white/[0.03] border-white/[0.04] text-[hsl(220,20%,96%)] hover:bg-white/[0.06]' : 'bg-white border-gray-100 text-gray-600 shadow-sm hover:border-blue-400'
                                                     }`}
                                                 >
                                                     {level}
-                                                </button>
+                                                </motion.button>
                                             )
                                         })}
                                     </div>
@@ -266,24 +341,39 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Best Time to Visit */}
                             <div className="space-y-4 text-left">
-                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Best Time to Visit</label>
+                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.best_time_visit')}</label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { id: 'morning',    label: 'Morning', Icon: Sunrise, iconClass: 'text-orange-400' },
-                                        { id: 'day',        label: 'Day',     Icon: Sun, iconClass: 'text-yellow-500' },
-                                        { id: 'evening',    label: 'Evening', Icon: Sunset, iconClass: 'text-orange-500' },
-                                        { id: 'late_night', label: 'Night',   Icon: Sparkles, iconClass: 'text-indigo-400' },
-                                    ].map(time => {
-                                        const isActive = selectedFeatures.includes(time.id)
+                                    {BEST_TIMES.map(time => {
+                                        const isActive = selectedBestTime === time.id
+                                        const timeKey = BEST_TIME_KEY_MAP[time.id]
+                                        const displayLabel = timeKey ? t(timeKey) : (i18n.language === 'ru' ? time.labelRu : time.label)
+                                        
+                                        // Map IDs to Lucide components for consistent UI
+                                        const IconComponent = {
+                                            morning: Sunrise,
+                                            day: Sun,
+                                            evening: Sunset,
+                                            late_night: Sparkles
+                                        }[time.id] || Sun
+
+                                        const iconClass = {
+                                            morning: 'text-orange-400',
+                                            day: 'text-yellow-500',
+                                            evening: 'text-orange-500',
+                                            late_night: 'text-indigo-400'
+                                        }[time.id] || 'text-blue-500'
+
                                         return (
-                                            <button
+                                            <motion.button
                                                 key={time.id}
-                                                onClick={() => toggleFeature(time.id)}
+                                                whileHover={{ scale: 1.02, y: -2 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => setSelectedBestTime(isActive ? null : time.id)}
                                                 className={`${blockBase} ${isActive ? blockActive : blockInactive}`}
                                             >
-                                                <time.Icon size={20} className={time.iconClass} />
-                                                <span className="text-[11px] font-bold">{time.label}</span>
-                                            </button>
+                                                <IconComponent size={20} className={`${iconClass} group-hover:scale-110 transition-transform`} />
+                                                <span className="text-[11px] font-bold">{displayLabel}</span>
+                                            </motion.button>
                                         )
                                     })}
                                 </div>
@@ -291,26 +381,33 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
                             {/* Special Features */}
                             <div className="space-y-6 text-left">
-                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Special Features & Labels</label>
+                                <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.special_features')}</label>
                                 <div className="space-y-6">
                                     {LABEL_GROUPS.map((cat, idx) => {
                                         // First group (Cuisine & Menu) uses dynamic KG data
                                         const items = idx === 0 ? dynamicCuisines : [...cat.items].sort()
                                         if (items.length === 0) return null
+                                        const groupKey = GROUP_KEY_MAP[cat.group]
+                                        const groupLabel = groupKey ? t(groupKey) : cat.group
                                         return (
                                         <div key={cat.group} className="space-y-3">
-                                            <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{cat.group}</h4>
+                                            <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{groupLabel}</h4>
                                             <div className="flex flex-wrap gap-2">
                                                 {items.map(chip => {
                                                     const isActive = selectedFeatures.includes(chip)
                                                     return (
-                                                        <button
+                                                        <motion.button
                                                             key={chip}
+                                                            whileHover={{ scale: 1.03 }}
+                                                            whileTap={{ scale: 0.97 }}
                                                             onClick={() => toggleFeature(chip)}
                                                             className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
                                                         >
-                                                            {chip}
-                                                        </button>
+                                                            <span className="mr-1.5 opacity-90 group-hover:scale-125 transition-transform duration-300">
+                                                                {getLabelEmoji(chip)}
+                                                            </span>
+                                                            {i18n.language === 'ru' ? translateToRu(chip) : translate(chip)}
+                                                        </motion.button>
                                                     )
                                                 })}
                                             </div>
@@ -321,9 +418,9 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                             </div>
 
                             {/* Search Radius */}
-                            <div className="space-y-4 text-left pt-6 border-t border-white/5">
+                            <div className={`space-y-4 text-left pt-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
                                 <div className="flex justify-between items-center">
-                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>Search Radius</label>
+                                    <label className={`text-[11px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.search_radius')}</label>
                                     <span className="text-blue-500 font-bold text-sm">{radius} km</span>
                                 </div>
                                 <input
@@ -334,10 +431,10 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                                     onChange={e => handleRadiusChange(Number(e.target.value))}
                                     className="w-full h-2 bg-blue-600/10 rounded-full appearance-none cursor-pointer accent-blue-600"
                                 />
-                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
-                                    <span>Nearby</span>
-                                    <span>City-wide</span>
-                                    <span>Regional</span>
+                                <div className={`flex justify-between text-[10px] font-bold uppercase ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                                    <span>{t('filter.radius_nearby')}</span>
+                                    <span>{t('filter.radius_city_wide')}</span>
+                                    <span>{t('filter.radius_regional')}</span>
                                 </div>
                                 {geoError && (
                                     <p className="text-xs text-amber-500 mt-1">⚠️ {geoError}</p>
@@ -347,7 +444,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className={`absolute bottom-0 left-0 right-0 p-6 pb-8 md:p-8 backdrop-blur-md border-t ${isDark ? 'bg-[#1a1a1a]/80 border-white/5' : 'bg-white/80 border-gray-100'}`}>
+                        <div className={`absolute bottom-0 left-0 right-0 p-6 pb-8 md:p-8 backdrop-blur-md border-t ${isDark ? 'bg-[hsl(220,20%,6%)]/80 border-white/[0.04]' : 'bg-white/80 border-gray-100'}`}>
                             <button
                                 onClick={handleApply}
                                 className="w-full h-16 bg-blue-600 text-white font-bold rounded-[20px] shadow-xl shadow-blue-500/30 active:scale-[0.98] hover:bg-blue-700 transition-all text-base"

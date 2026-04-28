@@ -50,7 +50,7 @@ function SubmissionCard({ item, index }) {
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: index * 0.06 }}
-            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 space-y-3 shadow-sm"
+            className="bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06] rounded-3xl p-5 space-y-3 shadow-sm"
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -64,7 +64,7 @@ function SubmissionCard({ item, index }) {
             </div>
 
             <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 capitalize bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                <span className="text-xs text-slate-400 capitalize bg-slate-100 dark:bg-[hsl(220,20%,9%)] px-2.5 py-1 rounded-lg">
                     {item.category}
                 </span>
                 <span className="text-xs text-slate-400">{date}</span>
@@ -119,7 +119,7 @@ export default function MySubmissionsPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Submissions</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Places you have suggested to GastroMap</p>
+                    <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1">Places you have suggested to GastroMap</p>
                 </div>
                 <button
                     onClick={() => navigate('/dashboard/add-place')}
@@ -137,7 +137,7 @@ export default function MySubmissionsPage() {
                         { label: 'Approved', count: counts.approved, color: 'text-emerald-600 dark:text-emerald-400' },
                         { label: 'Rejected', count: counts.rejected, color: 'text-red-500 dark:text-red-400'      },
                     ].map((s) => (
-                        <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 text-center shadow-sm">
+                        <div key={s.label} className="bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06] rounded-2xl p-4 text-center shadow-sm">
                             <p className={`text-2xl font-black ${s.color}`}>{s.count}</p>
                             <p className="text-slate-400 text-xs mt-0.5">{s.label}</p>
                         </div>
@@ -166,7 +166,7 @@ export default function MySubmissionsPage() {
                     <div className="text-6xl">📍</div>
                     <div>
                         <p className="text-xl font-black text-slate-900 dark:text-white">No submissions yet</p>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">
+                        <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-2">
                             Know a great place that is not on GastroMap? Add it!
                         </p>
                     </div>

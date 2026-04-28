@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Instagram, Twitter, Linkedin } from 'lucide-react'
 
 const PublicFooter = () => (
-    <div className="bg-slate-50 dark:bg-slate-950 transition-colors duration-500 mt-auto">
+    <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)] transition-colors duration-500 mt-auto">
         <footer className="relative bg-black text-white py-12 md:py-20 rounded-t-[30px] md:rounded-t-[40px] overflow-hidden">
 
             {/* Static CSS Gradient Background — no JS, no GPU */}

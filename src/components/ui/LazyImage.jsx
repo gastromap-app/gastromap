@@ -49,13 +49,13 @@ export default function LazyImage({
         <div ref={wrapperRef} className={cn('relative w-full h-full', wrapperClassName)}>
             {/* Skeleton shown while image hasn't loaded */}
             {!isLoaded && !hasError && (
-                <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                <div className="absolute inset-0 bg-slate-200 dark:bg-[hsl(220,20%,9%)] animate-pulse" />
             )}
 
             {/* Error fallback */}
             {hasError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800/60">
-                    <ImageOff className="text-slate-400 dark:text-slate-600" size={28} />
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-[hsl(220,20%,9%)]/60">
+                    <ImageOff className="text-slate-400 dark:text-[hsl(220,10%,55%)]" size={28} />
                 </div>
             )}
 

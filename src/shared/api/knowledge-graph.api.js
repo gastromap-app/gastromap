@@ -10,6 +10,8 @@ import { simulateDelay, ApiError } from './client'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/shared/lib/cache'
+import { ESTABLISHMENT_TYPE_NAMES } from '@/shared/config/filterOptions'
+import { log as safeLog, warn as safeWarn, error as safeError } from '@/shared/lib/safe-console.js'
 
 // ─── Embedding Generation ───────────────────────────────────────────────────
 
@@ -52,7 +54,7 @@ async function generateEmbedding(text) {
 
             if (!response.ok) {
                 const errBody = await response.json().catch(() => ({}))
-                console.warn(`[KG] Embedding model ${model} failed: ${response.status}`, errBody.message)
+                safeWarn(`[KG] Embedding model ${model} failed: ${response.status}`, errBody.message)
                 continue
             }
 
@@ -60,7 +62,7 @@ async function generateEmbedding(text) {
             const embedding = data.data?.[0]?.embedding
             if (embedding && embedding.length > 0) return embedding
         } catch (err) {
-            console.warn(`[KG] Embedding fetch error for ${model}:`, err.message)
+            safeWarn(`[KG] Embedding fetch error for ${model}:`, err.message)
             continue
         }
     }
@@ -130,6 +132,10 @@ const SCHEMA_WHITELIST = {
         'is_vegan', 'origin', 'season', 'flavor_profile', 'common_pairings', 
         'dietary_info', 'description', 'origin_region', 'health_notes', 
         'substitutes', 'storage_tip'
+    ],
+    vibes: [
+        'name', 'slug', 'description', 'synonyms', 'category', 'is_negative',
+        'is_premium', 'priority'
     ]
 }
 
@@ -272,19 +278,25 @@ const mockIngredients = [
     },
 ]
 
+const mockVibes = [
+    { id: 'mock-1', name: 'Romantic', slug: 'romantic', description: 'Romantic and intimate atmosphere', icon: '\uD83D\uDC95' },
+    { id: 'mock-2', name: 'Cozy', slug: 'cozy', description: 'Warm and comfortable setting', icon: '\uD83C\uDFE0' },
+    { id: 'mock-3', name: 'Trendy', slug: 'trendy', description: 'Modern and fashionable venue', icon: '\u2728' },
+]
+
 // ─── Cuisines API ───────────────────────────────────────────────────────────
 
 export async function getCuisines() {
     // L2: localStorage cache — skip Supabase if data is fresh
     const cached = getCachedData('cuisines')
     if (cached) {
-        console.debug('[KG] cuisines served from localStorage cache')
+        safeLog('[KG] cuisines served from localStorage cache')
         return cached
     }
 
     // L3: Supabase
     if (!supabase) {
-        console.warn('[KG] Supabase not configured — returning mock cuisines')
+        safeWarn('[KG] Supabase not configured — returning mock cuisines')
         return mockCuisines
     }
     const { data, error } = await supabase
@@ -292,7 +304,7 @@ export async function getCuisines() {
         .select('*')
         .order('name', { ascending: true })
     if (error) {
-        console.error('[KG] getCuisines error:', error.message, '— returning mock data as fallback')
+        safeError('[KG] getCuisines error:', error.message, '— returning mock data as fallback')
         return mockCuisines  // L4: mock fallback
     }
 
@@ -319,7 +331,7 @@ export async function getCuisineById(id) {
  * Falls back to direct Supabase insert if proxy returns 404 (local dev without serverless).
  */
 async function saveViaProxy(type, data) {
-    console.log(`[proxy] 🛰️ POST kg-save | type: ${type} | item: "${data.name}"`)
+    safeLog(`[proxy] 🛰️ POST kg-save | type: ${type} | item: "${data.name}"`)
 
     // ── 1. JWT Retrieval ──────────────────────────────────────────────────────
     let jwt = ''
@@ -334,7 +346,7 @@ async function saveViaProxy(type, data) {
             jwt = session.access_token
         }
     } catch (e) {
-        console.warn('[saveViaProxy] ❌ Session retrieval failed/timed out:', e.message)
+        safeWarn('[saveViaProxy] ❌ Session retrieval failed/timed out:', e.message)
     }
 
     if (!jwt) {
@@ -355,21 +367,21 @@ async function saveViaProxy(type, data) {
                     if (token) { jwt = token; break }
                 }
             }
-            if (jwt) console.log('[saveViaProxy] 📥 Recovered JWT from localStorage')
+            if (jwt) safeLog('[saveViaProxy] 📥 Recovered JWT from localStorage')
         } catch { /* ignore */ }
     }
 
     if (!jwt) {
-        console.error('[proxy] 🛑 No JWT — admin must be logged in to save KG items')
+        safeError('[proxy] 🛑 No JWT — admin must be logged in to save KG items')
         throw new ApiError('Not authenticated. Please log in as admin.', 401, 'AUTH_REQUIRED')
     }
 
-    console.log('[saveViaProxy] 🌐 Sending POST to kg-save Edge Function with JWT (len:', jwt.length, ')')
+    safeLog('[saveViaProxy] 🌐 Sending POST to kg-save Edge Function with JWT (len:', jwt.length, ')')
 
     // ── 2. fetch with AbortController timeout (10s) ──────────────────────────
     const controller = new AbortController()
     const timeout = setTimeout(() => {
-        console.error('[saveViaProxy] ⏱️ ERROR: fetch timed out after 10s')
+        safeError('[saveViaProxy] ⏱️ ERROR: fetch timed out after 10s')
         controller.abort()
     }, 10_000)
 
@@ -384,13 +396,13 @@ async function saveViaProxy(type, data) {
             },
             body: JSON.stringify({ type, data }),
         })
-        console.log(`[saveViaProxy] 📡 Fetch response status: ${res.status} (${res.statusText})`)
+        safeLog(`[saveViaProxy] 📡 Fetch response status: ${res.status} (${res.statusText})`)
     } catch (fetchErr) {
         clearTimeout(timeout)
         const msg = fetchErr.name === 'AbortError'
             ? 'Request timed out after 10s'
             : `Network error: ${fetchErr.message}`
-        console.error('[proxy] ❌ fetch failed:', msg)
+        safeError('[proxy] ❌ fetch failed:', msg)
         throw new ApiError(msg, 0, 'NETWORK_ERROR')
     } finally {
         clearTimeout(timeout)
@@ -398,7 +410,7 @@ async function saveViaProxy(type, data) {
 
     if (res.status === 404 || res.status === 401 || res.status === 500) {
         const reason = res.status === 404 ? 'Proxy not found' : res.status === 401 ? 'Auth failure' : 'Server error'
-        console.warn(`[proxy] ${res.status} (${reason}) — falling back to direct Supabase insert`)
+        safeWarn(`[proxy] ${res.status} (${reason}) — falling back to direct Supabase insert`)
         return null
     }
 
@@ -408,21 +420,21 @@ async function saveViaProxy(type, data) {
     } catch (parseErr) {
         void parseErr
         const raw = await res.text().catch(() => '')
-        console.error('[proxy] Could not parse JSON:', raw.slice(0, 200))
+        safeError('[proxy] Could not parse JSON:', raw.slice(0, 200))
         throw new ApiError(`kg-save returned non-JSON (${res.status})`, res.status, 'PARSE_ERROR')
     }
 
-    console.log(`[proxy] Response body`, result)
+    safeLog(`[proxy] Response body`, result)
 
     if (!res.ok) {
-        console.error(`[proxy] Save failed`, { status: res.status, error: result.error, details: result.details })
+        safeError('[proxy] Save failed', { status: res.status, error: result.error, details: result.details })
         throw new ApiError(result.error || `KG save failed: ${res.status}`, res.status, 'SAVE_ERROR')
     }
 
     if (result.duplicate) {
-        console.log(`[proxy] Duplicate — already exists: "${data.name}"`)
+        safeLog(`[proxy] Duplicate — already exists: "${data.name}"`)
     } else {
-        console.log(`[proxy] ✓ Saved "${data.name}" → id: ${result.data?.id}`)
+        safeLog(`[proxy] ✓ Saved "${data.name}" → id: ${result.data?.id}`)
     }
 
     return result.data
@@ -489,20 +501,20 @@ export async function getDishes(cuisineId = null) {
     // L2: localStorage cache
     const cached = getCachedData(cacheKey)
     if (cached) {
-        console.debug('[KG] dishes served from localStorage cache', { cuisineId })
+        safeLog('[KG] dishes served from localStorage cache', { cuisineId })
         return cached
     }
 
     // L3: Supabase
     if (!supabase) {
-        console.warn('[KG] Supabase not configured — returning mock dishes')
+        safeWarn('[KG] Supabase not configured — returning mock dishes')
         return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes
     }
     let query = supabase.from('dishes').select('*, cuisine:cuisines(name)')
     if (cuisineId) query = query.eq('cuisine_id', cuisineId)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KG] getDishes error:', error.message, '— returning mock data as fallback')
+        safeError('[KG] getDishes error:', error.message, '— returning mock data as fallback')
         return cuisineId ? mockDishes.filter(d => d.cuisine_id === cuisineId) : mockDishes  // L4
     }
 
@@ -572,20 +584,20 @@ export async function getIngredients(category = null) {
     // L2: localStorage cache
     const cached = getCachedData(cacheKey)
     if (cached) {
-        console.debug('[KG] ingredients served from localStorage cache', { category })
+        safeLog('[KG] ingredients served from localStorage cache', { category })
         return cached
     }
 
     // L3: Supabase
     if (!supabase) {
-        console.warn('[KG] Supabase not configured — returning mock ingredients')
+        safeWarn('[KG] Supabase not configured — returning mock ingredients')
         return category ? mockIngredients.filter(i => i.category === category) : mockIngredients
     }
     let query = supabase.from('ingredients').select('*')
     if (category) query = query.eq('category', category)
     const { data, error } = await query.order('name', { ascending: true })
     if (error) {
-        console.error('[KG] getIngredients error:', error.message, '— returning mock data as fallback')
+        safeError('[KG] getIngredients error:', error.message, '— returning mock data as fallback')
         return category ? mockIngredients.filter(i => i.category === category) : mockIngredients  // L4
     }
 
@@ -646,6 +658,79 @@ export async function deleteIngredient(id) {
     invalidateCacheGroup('ingredients')
     return { success: true }
 }
+// ─── Vibes API ──────────────────────────────────────────────────────────────
+
+export async function getVibes() {
+    const cached = getCachedData('vibes')
+    if (cached) return cached
+
+    if (!supabase) return mockVibes
+    const { data, error } = await supabase
+        .from('vibes')
+        .select('*')
+        .order('name', { ascending: true })
+    
+    if (error) {
+        safeError('[KG] getVibes error:', error.message)
+        return mockVibes
+    }
+
+    const result = data || []
+    setCachedData('vibes', result, TTL.vibes)
+    return result
+}
+
+export async function createVibe(vibe) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...vibe, id: Date.now().toString(), created_at: new Date().toISOString() }
+    }
+    const proxyResult = await saveViaProxy('vibe', vibe)
+    if (proxyResult) {
+        invalidateCacheGroup('vibes')
+        return proxyResult
+    }
+    const cleanData = sanitizeForDB('vibes', vibe)
+    const { data, error } = await supabase
+        .from('vibes')
+        .insert([cleanData])
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'CREATE_ERROR')
+    invalidateCacheGroup('vibes')
+    return data
+}
+
+export async function updateVibe(id, updates) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { ...updates, id }
+    }
+    const cleanData = sanitizeForDB('vibes', updates)
+    const { data, error } = await supabase
+        .from('vibes')
+        .update(cleanData)
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw new ApiError(error.message, 500, 'UPDATE_ERROR')
+    invalidateCacheGroup('vibes')
+    return data
+}
+
+export async function deleteVibe(id) {
+    if (!supabase) {
+        await simulateDelay(300)
+        return { success: true }
+    }
+    const { error } = await supabase
+        .from('vibes')
+        .delete()
+        .eq('id', id)
+    if (error) throw new ApiError(error.message, 500, 'DELETE_ERROR')
+    invalidateCacheGroup('vibes')
+    return { success: true }
+}
 
 // ─── Semantic Search (requires pgvector) ─────────────────────────────────────
 
@@ -670,7 +755,7 @@ export async function searchCuisinesSemantic(query, limit = 5) {
     try {
         embedding = await generateEmbedding(query)
     } catch (err) {
-        console.warn('[KG] Embedding generation failed, falling back to text search:', err.message)
+        safeWarn('[KG] Embedding generation failed, falling back to text search:', err.message)
         return textSearchCuisines(query, limit)
     }
 
@@ -685,7 +770,7 @@ export async function searchCuisinesSemantic(query, limit = 5) {
     })
 
     if (error) {
-        console.warn('[KG] Semantic RPC search failed:', error.message, '— falling back to text search')
+        safeWarn('[KG] Semantic RPC search failed:', error.message, '— falling back to text search')
         return textSearchCuisines(query, limit)
     }
 
@@ -745,7 +830,7 @@ export async function getAIContextForQuery(query) {
             contextNote: `Based on your query, relevant culinary traditions include: ${cuisines.map(c => c.name).join(', ')}.`,
         }
     } catch (err) {
-        console.warn('[KnowledgeGraph] getAIContext error:', err.message)
+        safeWarn('[KnowledgeGraph] getAIContext error:', err.message)
         return null
     }
 }
@@ -787,20 +872,31 @@ export async function matchLocationWithKG(location, preloaded = {}) {
         location.description,
         location.cuisine,
         ...(location.tags || []),
+        ...(location.special_labels || []),
         ...(location.what_to_try || [])
     ].join(' ').toLowerCase()
 
-    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+    const [allCuisines, allDishes, allIngredients, allVibes] = await Promise.all([
         preloaded.allCuisines ?? getCuisines(),
         preloaded.allDishes   ?? getDishes(),
         preloaded.allIngredients ?? getIngredients(),
+        preloaded.allVibes ?? getVibes(),
     ])
 
     const matches = {
         cuisines: [],
         dishes: [],
-        ingredients: []
+        ingredients: [],
+        vibes: []
     }
+
+    // Match Vibes
+    allVibes.forEach(v => {
+        const keywords = [v.name, ...(v.synonyms || [])].map(k => k.toLowerCase())
+        if (keywords.some(k => textToMatch.includes(k))) {
+            matches.vibes.push(v)
+        }
+    })
 
     // Match Cuisines
     allCuisines.forEach(c => {
@@ -831,6 +927,11 @@ export async function matchLocationWithKG(location, preloaded = {}) {
  * Synchronizes the entire Knowledge Graph with existing locations.
  * Updates ai_keywords and enriches ai_context for matching locations.
  */
+// Normalize string for comparison: lowercase + remove accents
+function normalizeForCompare(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 /**
  * Sync KG data for a SINGLE location.
  * Called automatically after saving a location card.
@@ -857,9 +958,17 @@ export async function syncKGForLocation(locationId) {
         ...kgMatches.ingredients,
     ]))
 
+    // Filter out establishment types from kg_cuisines — those belong in `category` only
+    const validCuisines = kgMatches.cuisines.filter(
+        c => !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))
+    )
+    const validExistingKgCuisines = (loc.kg_cuisines || []).filter(
+        c => !ESTABLISHMENT_TYPE_NAMES.has(normalizeForCompare(c))
+    )
+
     // Build update payload — merge new matches with existing, keep unique
     const updatePayload = {
-        kg_cuisines:    Array.from(new Set([...(loc.kg_cuisines    || []), ...kgMatches.cuisines])),
+        kg_cuisines:    Array.from(new Set([...validExistingKgCuisines, ...validCuisines])),
         kg_dishes:      Array.from(new Set([...(loc.kg_dishes      || []), ...kgMatches.dishes])),
         kg_ingredients: Array.from(new Set([...(loc.kg_ingredients || []), ...kgMatches.ingredients])),
         ai_keywords:    newKeywords,
@@ -872,11 +981,41 @@ export async function syncKGForLocation(locationId) {
         .eq('id', locationId)
 
     if (upErr) {
-        console.error('[KG] syncKGForLocation failed:', upErr.message)
+        safeError('[KG] syncKGForLocation failed:', upErr.message)
         return null
     }
 
-    return { cuisines: kgMatches.cuisines, dishes: kgMatches.dishes, ingredients: kgMatches.ingredients }
+    // Update location_vibes join table
+    if (kgMatches.vibes.length > 0) {
+        try {
+            // 1. Remove existing vibes to prevent duplicates (or use upsert if available)
+            await supabase
+                .from('location_vibes')
+                .delete()
+                .eq('location_id', locationId)
+
+            // 2. Insert new matches
+            const vibeInserts = kgMatches.vibes.map(v => ({
+                location_id: locationId,
+                vibe_id: v.id
+            }))
+
+            const { error: vibeErr } = await supabase
+                .from('location_vibes')
+                .insert(vibeInserts)
+
+            if (vibeErr) safeWarn('[KG] Could not sync vibes to join table:', vibeErr.message)
+        } catch (err) {
+            safeWarn('[KG] Vibes sync error:', err.message)
+        }
+    }
+
+    return { 
+        cuisines: kgMatches.cuisines, 
+        dishes: kgMatches.dishes, 
+        ingredients: kgMatches.ingredients,
+        vibes: kgMatches.vibes.map(v => v.name)
+    }
 }
 
 export async function syncKGToLocations(onProgress) {
@@ -888,13 +1027,14 @@ export async function syncKGToLocations(onProgress) {
     
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
 
-    // Fetch KG reference data ONCE before the loop — avoids N×3 DB queries
-    const [allCuisines, allDishes, allIngredients] = await Promise.all([
+    // Fetch KG reference data ONCE before the loop — avoids N×4 DB queries
+    const [allCuisines, allDishes, allIngredients, allVibes] = await Promise.all([
         getCuisines(),
         getDishes(),
         getIngredients(),
+        getVibes(),
     ])
-    const preloaded = { allCuisines, allDishes, allIngredients }
+    const preloaded = { allCuisines, allDishes, allIngredients, allVibes }
 
     let updatedCount = 0
     for (let i = 0; i < locations.length; i++) {
@@ -906,7 +1046,8 @@ export async function syncKGToLocations(onProgress) {
             ...(loc.ai_keywords || []),
             ...kgMatches.cuisines,
             ...kgMatches.dishes,
-            ...kgMatches.ingredients
+            ...kgMatches.ingredients,
+            ...kgMatches.vibes.map(v => v.name)
         ]))
 
         // Also write to kg_* columns (additive merge)
@@ -933,6 +1074,16 @@ export async function syncKGToLocations(onProgress) {
             if (!upError) updatedCount++
         }
 
+        // Sync vibes to join table
+        if (kgMatches.vibes.length > 0) {
+            try {
+                await supabase.from('location_vibes').delete().eq('location_id', loc.id)
+                await supabase.from('location_vibes').insert(
+                    kgMatches.vibes.map(v => ({ location_id: loc.id, vibe_id: v.id }))
+                )
+            } catch (e) { /* ignore individual sync errors in batch */ }
+        }
+
         if (onProgress) onProgress(i + 1, locations.length)
     }
 
@@ -952,7 +1103,7 @@ export async function mergeEntities(type, keepId, idsToDelete) {
     if (!supabase) return { success: true }
     if (!idsToDelete?.length) return { success: true }
 
-    console.log(`[KG] Merging ${idsToDelete.length} ${type} into ${keepId}`)
+    safeLog(`[KG] Merging ${idsToDelete.length} ${type} into ${keepId}`)
 
     try {
         // Special case: if merging cuisines, we must update all dishes that pointed to deleted cuisines
@@ -963,7 +1114,7 @@ export async function mergeEntities(type, keepId, idsToDelete) {
                 .in('cuisine_id', idsToDelete)
             
             if (relError) {
-                console.warn('[KG] Could not update dish relations during merge:', relError.message)
+                safeWarn('[KG] Could not update dish relations during merge:', relError.message)
                 // Continue anyway, as the main merge is priority
             }
         }
@@ -979,7 +1130,7 @@ export async function mergeEntities(type, keepId, idsToDelete) {
         invalidateCacheGroup(type)
         return { success: true, count: idsToDelete.length }
     } catch (error) {
-        console.error(`[KG] Merge error for ${type}:`, error.message)
+        safeError(`[KG] Merge error for ${type}:`, error.message)
         throw new ApiError(error.message, 500, 'MERGE_ERROR')
     }
 }

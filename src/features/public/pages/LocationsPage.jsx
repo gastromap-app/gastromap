@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, memo, useMemo } from 'react'
+import React, { useState, useEffect, memo, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { useTranslation } from 'react-i18next'
 import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
-    Coffee, Wine, Store, Navigation, List,
+    Coffee, Wine, Store, List,
     ArrowUpDown, X, SearchX, AlertCircle
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
@@ -25,12 +25,13 @@ import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
 const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
-const SORT_OPTIONS = [
-    { value: 'rating',     label: 'Top Rated' },
-    { value: 'price_asc',  label: 'Price ↑' },
-    { value: 'price_desc', label: 'Price ↓' },
-    { value: 'name',       label: 'A → Z' },
-]
+const SORT_VALUES = ['google_rating', 'price_asc', 'price_desc', 'name']
+const SORT_LABEL_KEYS = {
+    google_rating: 'explore.top_rated',
+    price_asc:     'explore.price_asc',
+    price_desc:    'explore.price_desc',
+    name:          'explore.a_to_z',
+}
 
 // ─── Open status badge (uses real openingHours) ───────────────────────────
 function OpenBadge({ openingHours }) {
@@ -44,7 +45,7 @@ function OpenBadge({ openingHours }) {
     )
 }
 
-// ─── Mobile location card ─────────────────────────────────────────────────
+// ─── Mobile location card (compact vertical 2-column layout) ───────────────
 const MobileCard = memo(function MobileCard({ item }) {
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -52,96 +53,62 @@ const MobileCard = memo(function MobileCard({ item }) {
     const { isFavorite, toggleFavorite } = useFavoritesStore()
     const saved = isFavorite(item.id)
 
-    const openMaps = (e) => {
-        e.stopPropagation()
-        const query = encodeURIComponent(`${item.title}, ${item.address || item.city || ''}`)
-        window.open(`https://maps.google.com/?q=${query}`, '_blank', 'noopener')
-    }
-
     return (
         <motion.div
             variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
             initial="hidden"
             animate="visible"
             onClick={() => navigate(`/location/${item.id}`)}
-            className={`relative flex flex-col p-3 rounded-sheet overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
+            className={`relative flex flex-col rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
         >
-            {/* Image area */}
-            <div className="relative h-48 w-full rounded-card overflow-hidden mb-3">
+            {/* Image */}
+            <div className="relative h-28 w-full overflow-hidden">
                 <LazyImage
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700"
+                    wrapperClassName="w-full h-full"
+                    className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-                {/* Special label */}
-                <div className="absolute top-3 left-3 flex gap-2">
-                    {item.special_labels?.slice(0, 1).map(label => (
-                        <div key={label} className="bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-pill text-[10px] font-semibold shadow-lg">
-                            {label}
-                        </div>
-                    ))}
+                {/* Rating badge */}
+                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                    <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-[10px] font-bold text-white">{item.google_rating ?? item.rating ?? '—'}</span>
                 </div>
-
-                {/* Save button — 44×44 via FavoriteButton chip variant */}
-                <div className="absolute top-1.5 right-1.5">
-                    <FavoriteButton
-                        isFavorite={saved}
-                        onToggle={() => toggleFavorite(item.id)}
-                        variant="chip"
-                        size={18}
-                    />
-                </div>
-
-                {/* Bottom overlay: category pill + title + maps CTA */}
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end gap-2">
-                    <div className="flex-1 min-w-0 space-y-1">
-                        <span className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-pill text-[10px] font-semibold border border-white/30">
-                            {item.category}
+                {/* Price badge */}
+                {(item.price_range ?? item.price_level ?? item.priceLevel) && (
+                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-white">
+                            {item.price_range ?? item.price_level ?? item.priceLevel}
                         </span>
-                        <h4 className="text-[18px] font-bold text-white leading-tight truncate">{item.title}</h4>
                     </div>
-                    {/* Maps CTA — now wired to open Google Maps */}
-                    <button
-                        onClick={openMaps}
-                        aria-label={`Open ${item.title} in Maps`}
-                        className="w-11 h-11 flex-shrink-0 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-90 transition-transform"
-                    >
-                        <Navigation size={18} />
-                    </button>
-                </div>
+                )}
+                {/* Favorite button */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
+                    className={`absolute top-2 left-2 w-7 h-7 rounded-lg backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
+                        saved
+                            ? 'bg-red-500/80 text-white'
+                            : 'bg-black/40 text-white/80 hover:bg-black/60'
+                    }`}
+                >
+                    <Heart size={12} fill={saved ? 'currentColor' : 'none'} />
+                </button>
             </div>
 
-            {/* Info row */}
-            <div className="px-1 pb-1 space-y-2">
-                {/* Rating + price */}
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-1.5">
-                        <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                        <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.rating}</span>
-                        <span className={`text-[11px] ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>({item.reviews ?? '—'})</span>
-                    </div>
-                    <span className={`font-semibold text-[13px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {item.price_range ?? item.price_level ?? item.priceLevel ?? ''}
-                    </span>
-                </div>
+            {/* Info section */}
+            <div className="p-2.5 flex flex-col flex-1">
+                <h4 className={`text-[13px] font-bold leading-tight line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {item.title}
+                </h4>
 
-                {/* Cuisine + open status */}
-                <div className="flex items-center justify-between gap-2">
-                    {(item.cuisine || item.category) && (
-                        <p className={`text-[12px] font-semibold truncate ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>
-                            {[item.cuisine, item.category].filter(Boolean).join(' · ')}
-                        </p>
-                    )}
-                    <div className="flex-shrink-0">
-                        <OpenBadge openingHours={item.openingHours} />
-                    </div>
-                </div>
+                {/* Category / Cuisine */}
+                <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {item.cuisine || item.category}
+                </p>
 
-                {/* Navigate to detail hint */}
-                <div className="flex justify-end">
-                    <ChevronRight size={16} className={`${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                {/* Open status */}
+                <div className="mt-auto pt-1.5">
+                    <OpenBadge openingHours={item.openingHours} />
                 </div>
             </div>
         </motion.div>
@@ -171,7 +138,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                 />
                 {/* Rating */}
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-black text-gray-900 flex items-center gap-1 shadow-md">
-                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {item.rating}
+                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {item.google_rating ?? item.rating}
                 </div>
                 {/* Save */}
                 <button
@@ -263,6 +230,7 @@ function EmptyState({ query, isDark }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 const LocationsPage = () => {
+    const { t } = useTranslation()
     const { country, city } = useParams()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -299,26 +267,40 @@ const LocationsPage = () => {
 
     // REGRESSION FIX: use query data directly for city pages, not global store
     // The global store holds ALL locations — filtering here by city avoids store pollution
-    const localFilteredLocations = useMemo(() => {
-        const source = cityData ?? []
-        const q = localSearch.toLowerCase()
-        return source.filter(loc => {
-            const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
-            const catMatch = activeCategory === 'All' || loc.category === activeCategory
-            const ratingMatch = !minRating || (loc.rating ?? 0) >= minRating
-            const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
-            return searchMatch && catMatch && ratingMatch && priceMatch
-        })
-    }, [cityData, localSearch, activeCategory, minRating, activePriceLevels])
+    const source = cityData ?? []
+    const q = localSearch?.toLowerCase()
+    const filtered = useMemo(() => source.filter(loc => {
+        const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
+        const catMatch = activeCategory === 'All' || loc.category === activeCategory
+        const ratingMatch = !minRating || (loc.google_rating ?? loc.rating ?? 0) >= minRating
+        const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
+        return searchMatch && catMatch && ratingMatch && priceMatch
+    }), [source, q, activeCategory, minRating, activePriceLevels])
 
-    const scrollContainerRef = useRef(null)
-    // eslint-disable-next-line no-unused-vars
-    const virtualizer = useVirtualizer({
-        count: isLoading ? 0 : localFilteredLocations.length,
-        getScrollElement: () => scrollContainerRef.current,
-        estimateSize: () => 342,
-        overscan: 3,
-    })
+    const sortedFiltered = useMemo(() => {
+        const result = [...filtered]
+        // Apply sorting (same logic as useLocationsStore)
+        if (sortBy === 'google_rating') {
+            result.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
+        } else if (sortBy === 'name') {
+            result.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+        } else if (sortBy === 'price_asc') {
+            result.sort((a, b) => (a.price_level || 0) - (b.price_level || 0))
+        } else if (sortBy === 'price_desc') {
+            result.sort((a, b) => (b.price_level || 0) - (a.price_level || 0))
+        }
+        return result
+    }, [filtered, sortBy])
+
+    // Alias for template compatibility
+    const localFilteredLocations = sortedFiltered
+
+    // ── Load More pagination (mobile) ────────────────────────────────
+    const [visibleCount, setVisibleCount] = useState(10)
+
+    useEffect(() => {
+        setVisibleCount(10)
+    }, [localFilteredLocations])
 
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -326,7 +308,7 @@ const LocationsPage = () => {
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
-    const currentSort = SORT_OPTIONS.find(o => o.value === sortBy)
+        const currentSort = { value: sortBy, label: t(SORT_LABEL_KEYS[sortBy] || 'explore.top_rated') }
 
     return (
         // Using a plain div here (not PageTransition) because:
@@ -339,7 +321,7 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={scrollContainerRef}>
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto">
                 {/* Header with search */}
                 <div className="sticky top-0 z-40 px-4 pt-20 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
                     <div className="flex gap-2">
@@ -347,7 +329,7 @@ const LocationsPage = () => {
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
                             <input
                                 type="text"
-                                placeholder={city ? `Search in ${city}...` : 'Search restaurants...'}
+                                placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
                                 value={localSearch}
                                 onChange={(e) => setLocalSearch(e.target.value)}
                                 className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -368,26 +350,45 @@ const LocationsPage = () => {
                 </div>
 
                 {/* Mobile location cards */}
-                <div className="px-4 pb-24 space-y-4">
+                <div className="px-4 pb-24">
                     {isLoading ? (
-                        Array.from({ length: 6 }).map((_, i) => (
-                            <LocationCardMobileSkeleton key={i} isDark={isDark} />
-                        ))
+                        <div className="grid grid-cols-2 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <LocationCardMobileSkeleton key={i} isDark={isDark} />
+                            ))}
+                        </div>
                     ) : isError ? (
                         <ErrorState isDark={isDark} />
                     ) : localFilteredLocations.length === 0 ? (
                         <EmptyState query={localSearch} isDark={isDark} />
                     ) : (
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
-                            className="space-y-4"
-                        >
-                            {localFilteredLocations.map((item) => (
-                                <MobileCard key={item.id} item={item} />
-                            ))}
-                        </motion.div>
+                        <>
+                            {/* Results counter */}
+                            <p className={`text-center text-[12px] font-medium mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                {t('explore.showing_of', { shown: Math.min(visibleCount, localFilteredLocations.length), total: localFilteredLocations.length })}
+                            </p>
+
+                            <motion.div
+                                initial="hidden"
+                                animate="visible"
+                                variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } }}
+                                className="grid grid-cols-2 gap-3"
+                            >
+                                {localFilteredLocations.slice(0, visibleCount).map((item) => (
+                                    <MobileCard key={item.id} item={item} />
+                                ))}
+                            </motion.div>
+
+                            {/* Show more button */}
+                            {visibleCount < localFilteredLocations.length && (
+                                <button
+                                    onClick={() => setVisibleCount(prev => prev + 10)}
+                                    className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] ${isDark ? 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                >
+                                    {t('explore.show_more')}
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -403,10 +404,10 @@ const LocationsPage = () => {
                     <div className="mt-10 space-y-6">
                         <div className="space-y-2">
                             <h1 className={`text-5xl font-black tracking-tight capitalize ${textStyle}`}>
-                                Explore <span className="text-blue-600">{city}</span>
+                                {t('explore.explore_in')} <span className="text-blue-600">{city}</span>
                             </h1>
                             <p className={`text-lg ${subTextStyle}`}>
-                                Top restaurants and hidden gems in the heart of {city}.
+                                {t('explore.city_tagline', { city })}
                             </p>
                         </div>
 
@@ -418,7 +419,7 @@ const LocationsPage = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder={city ? `Search in ${city}${country ? `, ${country}` : ''}...` : 'Search everywhere...'}
+                                    placeholder={city ? t('explore.search_in', { city: `${city}${country ? `, ${country}` : ''}` }) : t('explore.search_everywhere')}
                                     value={localSearch}
                                     onChange={(e) => setLocalSearch(e.target.value)}
                                     className={`w-full h-16 pl-14 pr-12 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${isDark ? 'bg-white/5 text-white border-white/10 focus:border-blue-500' : 'bg-white shadow-xl focus:border-blue-500'}`}
@@ -437,7 +438,7 @@ const LocationsPage = () => {
                             <div className="relative">
                                 <button
                                     onClick={() => setSortOpen((o) => !o)}
-                                    aria-label="Sort locations"
+                                    aria-label={t('explore.sort_aria')}
                                     aria-expanded={sortOpen}
                                     className={`h-16 px-6 rounded-[24px] flex items-center gap-2 font-bold text-sm border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
                                 >
@@ -453,17 +454,17 @@ const LocationsPage = () => {
                                             transition={{ duration: 0.15 }}
                                             className={`absolute right-0 top-full mt-2 w-40 rounded-2xl border shadow-xl z-50 overflow-hidden ${isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-100'}`}
                                         >
-                                            {SORT_OPTIONS.map((opt) => (
+                                            {SORT_VALUES.map((value) => (
                                                 <button
-                                                    key={opt.value}
-                                                    onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
+                                                    key={value}
+                                                    onClick={() => { setSortBy(value); setSortOpen(false) }}
                                                     className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors ${
-                                                        sortBy === opt.value
+                                                        sortBy === value
                                                             ? 'text-blue-600 bg-blue-50 dark:bg-blue-600/10'
                                                             : isDark ? 'text-white/70 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'
                                                     }`}
                                                 >
-                                                    {opt.label}
+                                                    {t(SORT_LABEL_KEYS[value])}
                                                 </button>
                                             ))}
                                         </motion.div>

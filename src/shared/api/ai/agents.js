@@ -103,14 +103,18 @@ function parseXmlToolCalls(text) {
  * 2. If tool_calls (native OpenAI format or XML text) → execute locally → send results back → get final text.
  *
  * @param {Array} messages - Full messages array including system prompt
- * @param {Array} [locations=[]] - Optional locations for local tool execution
- * @returns {Promise<{ text: string, usedLocations: Array, modelUsed: string }>}
- *   - text: Final text response from model
- *   - usedLocations: Array of full location objects referenced in tools
- *   - modelUsed: Which model was actually used from cascade
+ * @param {Object|Array} [ctx] - Execution context: { locations, geo, userId }.
+ *                               Legacy callers may pass a locations array directly.
+ * @returns {Promise<{ text: string, usedLocations: Array, modelUsed: string, attachments?: Array,
+ *                    needsGeo?: boolean, askClarification?: { question, suggestions } }>}
  */
-export async function runAgentPass(messages, locations = []) {
+export async function runAgentPass(messages, ctx = {}) {
     const startTime = Date.now()
+
+    // Backwards-compat: callers used to pass a locations array directly.
+    if (Array.isArray(ctx)) ctx = { locations: ctx }
+    const locations = ctx?.locations || []
+    void locations // kept for API parity
 
     // ── Read admin config from store ────────────────────────────────────────
     let adminCascade = []
@@ -148,7 +152,7 @@ export async function runAgentPass(messages, locations = []) {
 
     // ── Path A: Native OpenAI tool_calls ────────────────────────────────────
     if (finishReason === 'tool_calls' && assistantMsg.tool_calls?.length) {
-        return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, locations, modelUsed, 'native', {
+        return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, ctx, modelUsed, 'native', {
             startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
         })
     }
@@ -156,7 +160,7 @@ export async function runAgentPass(messages, locations = []) {
     // ── Path B: XML tool calls embedded in text (some free models) ──────────
     const xmlCalls = parseXmlToolCalls(assistantMsg.content)
     if (xmlCalls.length) {
-        return runToolCalls(xmlCalls, assistantMsg, messages, locations, modelUsed, 'xml', {
+        return runToolCalls(xmlCalls, assistantMsg, messages, ctx, modelUsed, 'xml', {
             startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
         })
     }
@@ -167,6 +171,7 @@ export async function runAgentPass(messages, locations = []) {
     return {
         text: cleanText,
         usedLocations: [],
+        attachments: [],
         modelUsed,
         toolCalls: trackedToolCalls,
         timing: {
@@ -183,12 +188,13 @@ export async function runAgentPass(messages, locations = []) {
  * @param {Array}  toolCalls    - Tool call objects (native or xml-parsed, both have .function.name/.arguments)
  * @param {Object} assistantMsg - The assistant message that contained the tool calls
  * @param {Array}  messages     - Original messages array
- * @param {Array}  locations    - Available locations for local execution
+ * @param {Object} ctx          - Execution context: { locations, geo, userId }
  * @param {string} modelUsed    - Which model produced this response
  * @param {'native'|'xml'} mode - Whether we're handling native or XML tool calls
  */
-async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelUsed, mode, meta = {}) {
+async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, mode, meta = {}) {
     const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 1024, cascade } = meta
+    const locations = ctx?.locations || []
     const toolResults = []
     let usedLocations = []
     let toolTime = 0
@@ -202,12 +208,51 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
         }
 
         const toolStart = Date.now()
-        const result = await executeTool(toolCall.function.name, args, locations)
+        const result = await executeTool(toolCall.function.name, args, ctx)
         toolTime += Date.now() - toolStart
 
         // Track this tool call for enhanced metadata
         const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0)
         trackedToolCalls.push({ name: toolCall.function.name, args, resultCount })
+
+        // Early exit: needs_geo — tool signalled that live GPS is required.
+        // Stop the agent loop so the UI can prompt the user and retry.
+        if (result && typeof result === 'object' && result.needs_geo) {
+            return {
+                text: '',
+                usedLocations: [],
+                attachments: [],
+                needsGeo: true,
+                pendingTool: { name: toolCall.function.name, args },
+                modelUsed,
+                toolCalls: trackedToolCalls,
+                timing: {
+                    startMs: startTime,
+                    toolExecutionMs: toolTime,
+                    totalMs: Date.now() - startTime,
+                },
+            }
+        }
+
+        // Early exit: ask_clarification — surface the question directly.
+        if (result && typeof result === 'object' && result.ask_clarification) {
+            return {
+                text: result.question || '',
+                usedLocations: [],
+                attachments: [],
+                askClarification: {
+                    question: result.question || '',
+                    suggestions: result.suggestions || [],
+                },
+                modelUsed,
+                toolCalls: trackedToolCalls,
+                timing: {
+                    startMs: startTime,
+                    toolExecutionMs: toolTime,
+                    totalMs: Date.now() - startTime,
+                },
+            }
+        }
 
         if (mode === 'native') {
             // Native mode: use the OpenAI tool role format
@@ -222,17 +267,19 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
             toolResults.push({ role: 'user', content: stripped })
         }
 
-        // Collect full location objects for UI cards
-        if (toolCall.function.name === 'search_locations' && Array.isArray(result)) {
+        // Collect full location objects for UI cards.
+        // search_locations + search_nearby → array of mapLocation results.
+        if ((toolCall.function.name === 'search_locations' || toolCall.function.name === 'search_nearby')
+            && Array.isArray(result)) {
             let activeLocations = locations
             if (!activeLocations?.length) {
                 const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
                 activeLocations = useLocationsStore.getState().locations
             }
             usedLocations = result
-                .map(r => activeLocations.find(l => l.id === r.id))
+                .map(r => activeLocations.find(l => l.id === r.id) || r)
                 .filter(Boolean)
-                .slice(0, 3)
+                .slice(0, 5)
         }
         if (toolCall.function.name === 'get_location_details' && result?.id) {
             let activeLocations = locations
@@ -242,6 +289,17 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
             }
             const loc = activeLocations.find(l => l.id === result.id)
             if (loc) usedLocations = [loc]
+            else usedLocations = [result]
+        }
+        if (toolCall.function.name === 'compare_locations' && result?.items?.length) {
+            let activeLocations = locations
+            if (!activeLocations?.length) {
+                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                activeLocations = useLocationsStore.getState().locations
+            }
+            usedLocations = result.items
+                .map(r => activeLocations.find(l => l.id === r.id) || r)
+                .filter(Boolean)
         }
     }
 
@@ -278,6 +336,7 @@ async function runToolCalls(toolCalls, assistantMsg, messages, locations, modelU
     return {
         text: finalContent,
         usedLocations,
+        attachments: usedLocations,
         modelUsed,
         toolCalls: trackedToolCalls,
         timing: {

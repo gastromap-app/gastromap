@@ -4,8 +4,8 @@
  * Admin Setup Script
  * 
  * Creates admin user in Supabase database
- * Email: alik2191@gmail.com
- * Password: Vitalya_219
+ * Email: admin@example.com
+ * Password: [REDACTED]
  */
 
 import { createClient } from '@supabase/supabase-js'

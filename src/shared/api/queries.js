@@ -69,7 +69,7 @@ export function useAdminLocationsQuery(filters = {}) {
             const { getLocations } = await import('./locations.api')
             return getLocations(filters)
         },
-        staleTime: 0,
+        staleTime: 30_000,
         refetchOnWindowFocus: true,
     })
 }
@@ -188,6 +188,8 @@ export function useDeleteLocationMutation() {
         },
         onSuccess: (_data, id) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+            qc.invalidateQueries({ queryKey: ['favorites'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
             // Sync to Zustand store (user-facing pages)
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 useLocationsStore.getState().deleteLocation(id)
@@ -355,7 +357,7 @@ export function useAdminStats() {
             const { getAdminStats } = await import('./admin.api')
             return getAdminStats()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -366,7 +368,7 @@ export function useRecentLocations(limit = 5) {
             const { getRecentLocations } = await import('./admin.api')
             return getRecentLocations(limit)
         }, 
-        staleTime: 60_000 
+        staleTime: 30_000,
     })
 }
 
@@ -377,7 +379,7 @@ export function useRecentActivity(limit = 10) {
             const { getRecentActivity } = await import('./admin.api')
             return getRecentActivity(limit)
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -389,7 +391,7 @@ export function useProfiles() {
             const { getProfiles } = await import('./admin.api')
             return getProfiles()
         }, 
-        staleTime: 60_000 
+        staleTime: 30_000,
     })
 }
 
@@ -423,6 +425,7 @@ export function useUserDetails(userId) {
             return getUserDetails(userId)
         },
         enabled: !!userId,
+        staleTime: 30_000,
     })
 }
 
@@ -434,7 +437,7 @@ export function usePendingReviews() {
             const { getPendingReviews } = await import('./admin.api')
             return getPendingReviews()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
@@ -448,6 +451,8 @@ export function useUpdateReviewStatusMutation() {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['pending-reviews'] })
             qc.invalidateQueries({ queryKey: ['reviews'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
         },
     })
 }
@@ -459,20 +464,26 @@ export function usePendingLocations() {
             const { getPendingLocations } = await import('./admin.api')
             return getPendingLocations()
         }, 
-        staleTime: 0, // admin: always fresh
+        staleTime: 30_000,
     })
 }
 
 export function useUpdateLocationStatusMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ id, status }) => {
+        mutationFn: async ({ id, status, moderationNote }) => {
             const { updateLocation } = await import('./locations.api')
-            return updateLocation(id, { status })
+            const payload = { status }
+            if (moderationNote !== undefined) payload.moderation_note = moderationNote
+            return updateLocation(id, payload)
         },
         onSuccess: (data, { id, status }) => {
             qc.invalidateQueries({ queryKey: ['locations'] })
             qc.invalidateQueries({ queryKey: ['pending-locations'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
+            qc.invalidateQueries({ queryKey: ['category-stats'] })
+            qc.invalidateQueries({ queryKey: ['top-locations'] })
+            qc.invalidateQueries({ queryKey: ['city-stats'] })
             // Sync to Zustand store (user-facing pages)
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 if (status === 'approved' || status === 'active') {
@@ -664,13 +675,19 @@ export function useAddVisitMutation() {
 export function useDeleteVisitMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ visitId, userId: _userId }) => {
+        mutationFn: async ({ visitId, userId: _userId, locationId }) => {
             const { deleteVisit } = await import('./visits.api')
             return deleteVisit(visitId)
         },
-        onSuccess: (_, { userId }) => {
+        onSuccess: (_, { userId, locationId }) => {
             qc.invalidateQueries({ queryKey: ['visits', userId] })
             qc.invalidateQueries({ queryKey: ['visits-with-locations', userId] })
+            // Sync local prefs store — remove from lastVisited so UI stays consistent
+            if (locationId) {
+                import('@/shared/store/useUserPrefsStore').then(({ useUserPrefsStore }) => {
+                    useUserPrefsStore.getState().removeVisited(locationId)
+                })
+            }
         },
     })
 }
@@ -709,6 +726,8 @@ export function useCreateReviewMutation() {
         },
         onSuccess: (_, { locationId }) => {
             qc.invalidateQueries({ queryKey: ['reviews', locationId] })
+            qc.invalidateQueries({ queryKey: ['pending-reviews'] })
+            qc.invalidateQueries({ queryKey: ['admin-stats'] })
         },
     })
 }
@@ -828,6 +847,7 @@ export function useUpdateCuisineMutation() {
         onSuccess: (_, { id }) => {
             qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
             qc.invalidateQueries({ queryKey: ['knowledge-cuisine', id] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
         },
     })
 }
@@ -839,7 +859,10 @@ export function useDeleteCuisineMutation() {
             const { deleteCuisine } = await import('./knowledge-graph.api')
             return deleteCuisine(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-cuisines'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -874,7 +897,10 @@ export function useUpdateDishMutation() {
             const { updateDish } = await import('./knowledge-graph.api')
             return updateDish(id, updates)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-dishes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -885,7 +911,10 @@ export function useDeleteDishMutation() {
             const { deleteDish } = await import('./knowledge-graph.api')
             return deleteDish(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-dishes'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-dishes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -920,7 +949,10 @@ export function useUpdateIngredientMutation() {
             const { updateIngredient } = await import('./knowledge-graph.api')
             return updateIngredient(id, updates)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 
@@ -931,7 +963,64 @@ export function useDeleteIngredientMutation() {
             const { deleteIngredient } = await import('./knowledge-graph.api')
             return deleteIngredient(id)
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-ingredients'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
+    })
+}
+
+// ─── Vibes API Hooks ────────────────────────────────────────────────────────
+
+export function useVibes() {
+    return useQuery({
+        queryKey: ['knowledge-vibes'],
+        queryFn: async () => {
+            const { getVibes } = await import('./knowledge-graph.api')
+            return getVibes()
+        },
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
+        retry: 2,
+    })
+}
+
+export function useCreateVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (vibe) => {
+            const { createVibe } = await import('./knowledge-graph.api')
+            return createVibe(vibe)
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge-vibes'] }),
+    })
+}
+
+export function useUpdateVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, updates }) => {
+            const { updateVibe } = await import('./knowledge-graph.api')
+            return updateVibe(id, updates)
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-vibes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
+    })
+}
+
+export function useDeleteVibeMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (id) => {
+            const { deleteVibe } = await import('./knowledge-graph.api')
+            return deleteVibe(id)
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['knowledge-vibes'] })
+            qc.invalidateQueries({ queryKey: ['locations'] })
+        },
     })
 }
 

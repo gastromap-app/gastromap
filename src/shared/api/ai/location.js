@@ -47,8 +47,10 @@ export async function generateLocationSemanticSummary(location, extraContext = n
         if (spoonData?.data) {
             culinaryContext += `\nCULINARY DATA (Dishes/Ingredients): ${JSON.stringify(spoonData.data)}`
         }
-        if (offData) {
-            culinaryContext += `\nFOOD FACTS: Categories: ${offData.categories.join(', ')}, Allergens: ${offData.allergens.join(', ')}`
+        if (offData && offData.categories) {
+            const categoriesStr = Array.isArray(offData.categories) ? offData.categories.join(', ') : String(offData.categories)
+            const allergensStr = Array.isArray(offData.allergens) ? offData.allergens.join(', ') : (offData.allergens ? String(offData.allergens) : '')
+            culinaryContext += `\nFOOD FACTS: Categories: ${categoriesStr}` + (allergensStr ? `, Allergens: ${allergensStr}` : '')
         }
     } catch (err) {
         // Culinary enrichment is optional — never block semantic summary generation

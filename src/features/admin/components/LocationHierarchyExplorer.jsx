@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     MapPin, ChevronRight, ArrowLeft, Building2, Star,
-    Eye, EyeOff, Clock, Sun, Moon, Sunset, CloudSun,
-    Edit, Trash2, Gem, Trophy, X, Loader2
+    Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminLocationsQuery } from '@/shared/api/queries'
@@ -74,8 +73,6 @@ const LocationHierarchyExplorer = ({ className }) => {
     }, [allLocations])
 
     const handleSelect = (item) => {
-        if (item.status === 'hidden' || item.status === 'coming_soon') return
-
         if (level === 'countries') {
             setHistory([...history, { level: 'countries', id: item.id, name: item.name }])
             setLevel('cities')
@@ -113,34 +110,20 @@ const LocationHierarchyExplorer = ({ className }) => {
 
     const { items, type, parentId } = getCurrentItems()
 
-    const getStatusBadge = (status) => {
-        if (status === 'coming_soon') return (
-            <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 px-2 py-1 rounded-full">
-                <Clock size={9} /> Coming Soon
-            </span>
-        )
-        if (status === 'hidden') return (
-            <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-slate-400 bg-slate-500/10 px-2 py-1 rounded-full">
-                <EyeOff size={9} /> Hidden
-            </span>
-        )
-        return null
-    }
-
     if (isLoading) return (
-        <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm p-8 flex items-center justify-center gap-3 text-slate-400">
             <Loader2 size={18} className="animate-spin" />
             <span className="text-sm font-medium">Loading locations...</span>
         </div>
     )
 
     return (
-        <div className={cn("bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
+        <div className={cn("bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm", className)}>
             {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                 <div className="flex items-center gap-2">
                     {level !== 'countries' && (
-                        <button onClick={handleBack} className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400 mr-1">
+                        <button onClick={handleBack} className="p-1.5 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-all text-slate-400 mr-1">
                             <ArrowLeft size={16} />
                         </button>
                     )}
@@ -167,7 +150,7 @@ const LocationHierarchyExplorer = ({ className }) => {
                                 <p className="text-xs text-slate-400 mt-1">{selectedLocation.category} · {selectedLocation.address}</p>
                                 <div className="flex items-center gap-1 mt-2">
                                     <Star size={12} className="text-amber-400 fill-amber-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedLocation.rating || '—'}</span>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-[hsl(220,10%,55%)]">{selectedLocation.rating || '—'}</span>
                                 </div>
                             </div>
                         </div>
@@ -187,7 +170,6 @@ const LocationHierarchyExplorer = ({ className }) => {
                         {items.length === 0 ? (
                             <div className="col-span-3 py-8 text-center text-slate-400 text-sm">Нет данных</div>
                         ) : items.map((item, i) => {
-                            const isBlocked = item.status === 'hidden' || item.status === 'coming_soon'
                             const img = type === 'locations' ? item.image : item.image
 
                             return (
@@ -197,15 +179,12 @@ const LocationHierarchyExplorer = ({ className }) => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: i * 0.04 }}
                                     onClick={() => handleSelect(item)}
-                                    className={cn(
-                                        "relative rounded-[20px] overflow-hidden aspect-[4/3] group cursor-pointer",
-                                        isBlocked && "cursor-default"
-                                    )}
+                                    className="relative rounded-[20px] overflow-hidden aspect-[4/3] group cursor-pointer"
                                 >
                                     {img ? (
                                         <img src={img} alt={item.name || item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                                     ) : (
-                                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <div className="w-full h-full bg-slate-100 dark:bg-[hsl(220,20%,9%)] flex items-center justify-center">
                                             <MapPin size={24} className="text-slate-300" />
                                         </div>
                                     )}
@@ -224,18 +203,12 @@ const LocationHierarchyExplorer = ({ className }) => {
                                                 <span className="text-white/80 text-[10px] font-medium">{item.rating}</span>
                                             </div>
                                         )}
-                                        {getStatusBadge(item.status)}
                                     </div>
-                                    {!isBlocked && (
-                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="w-6 h-6 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                                <ChevronRight size={12} className="text-white" />
-                                            </div>
+                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="w-6 h-6 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                            <ChevronRight size={12} className="text-white" />
                                         </div>
-                                    )}
-                                    {isBlocked && (
-                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
-                                    )}
+                                    </div>
                                 </motion.div>
                             )
                         })}

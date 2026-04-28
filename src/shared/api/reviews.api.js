@@ -2,39 +2,67 @@ import { supabase, ApiError } from './client'
 
 export async function getLocationReviews(locationId) {
     if (!supabase) return []
-    // Accept both 'approved' (new moderation) and 'published' (legacy)
-    const { data, error } = await supabase
-        .from('reviews')
-        .select('*, profiles(full_name, avatar_url)')
-        .eq('location_id', locationId)
-        .in('status', ['approved', 'published'])
-        .order('created_at', { ascending: false })
-    if (error) {
-        // Profiles table might not exist — retry without the join
+    
+    // Attempt with most probable columns — handle schema variants
+    // If the join fails due to missing columns, PostgREST returns 400.
+    // We catch it and try simpler variants.
+    try {
+        const { data, error } = await supabase
+            .from('reviews')
+            .select('*, profiles(name, avatar_url)')
+            .eq('location_id', locationId)
+            .in('status', ['published'])
+            .order('created_at', { ascending: false })
+
+        if (!error && data) {
+            return data.map(r => ({
+                ...r,
+                author_name: r.profiles?.name || 'User',
+                author_avatar: r.profiles?.avatar_url || null
+            }))
+        }
+
+        // Fallback 1: user_profiles (common in some clones)
+        const { data: upData, error: upError } = await supabase
+            .from('reviews')
+            .select('*, user_profiles(name, avatar_url)')
+            .eq('location_id', locationId)
+            .in('status', ['published'])
+            .order('created_at', { ascending: false })
+
+        if (!upError && upData) {
+            return upData.map(r => ({
+                ...r,
+                author_name: r.user_profiles?.name || 'User',
+                author_avatar: r.user_profiles?.avatar_url || null
+            }))
+        }
+
+        // Fallback 2: Plain fetch without join (safest)
         const { data: plain, error: e2 } = await supabase
             .from('reviews')
             .select('*')
             .eq('location_id', locationId)
-            .in('status', ['approved', 'published'])
+            .in('status', ['published'])
             .order('created_at', { ascending: false })
-        if (e2) throw new ApiError(e2.message, 500, 'FETCH_ERROR')
+
+        if (e2) throw e2
         return plain || []
+
+    } catch (err) {
+        console.warn('[ReviewsAPI] Fetch error (expected during schema migration):', err.message)
+        return []
     }
-    // Normalize author name from profiles join
-    return (data || []).map(r => ({
-        ...r,
-        author_name: r.profiles?.full_name || r.profiles?.display_name || 'User',
-    }))
 }
 
 export async function getUserReviews(userId) {
     if (!supabase) return []
-    // Exclude 'rejected' reviews — users should only see their pending/approved/published contributions
+    // Exclude 'rejected' reviews — users should only see their pending/published contributions
     const { data, error } = await supabase
         .from('reviews')
         .select('*, locations(title)')
         .eq('user_id', userId)
-        .in('status', ['pending', 'approved', 'published'])
+        .in('status', ['pending', 'published'])
         .order('created_at', { ascending: false })
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
     return data || []

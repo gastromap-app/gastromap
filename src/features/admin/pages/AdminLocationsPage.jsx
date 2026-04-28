@@ -1,17 +1,19 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import {
     Plus, Search, Filter, MoreHorizontal, Edit, Trash2,
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
     CheckCircle, Clock, AlertCircle, Star, ChevronDown, ArrowRight,
     X, LayoutGrid, List as ListIcon, Activity, Zap, Phone, Link as LinkIcon, Tag, Sparkles,
-    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save
+    Instagram, Facebook, Wand2, Image as ImageIcon, Map, CalendarCheck, Save,
+    MessageSquare, User, Calendar
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { useTheme } from '@/hooks/useTheme'
 import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
@@ -69,24 +71,45 @@ const AdminLocationsPage = () => {
     const hook = useAdminLocations()
     
     const {
-        view, setView, searchQuery, setSearchQuery,
+        statusFilter, setStatusFilter, searchQuery, setSearchQuery,
+        activeCategory, setActiveCategory, activePriceLevels, setActivePriceLevels,
+        minRating, setMinRating, activeVibes, setActiveVibes, sortBy, setSortBy,
+        activeCity, setActiveCity, activeCountry, setActiveCountry,
         selectedLocation, isSlideOverOpen, setIsSlideOverOpen,
         isImportWizardOpen, setIsImportWizardOpen, viewMode, setViewMode,
         formData, setFormData,
         culinarySearchQuery, setCulinarySearchQuery, culinaryResults,
         openActionMenuId, setOpenActionMenuId, isImproving, setIsImproving,
-        locationsList, pendingLocations, loadError, filteredLocations,
+        locationsList, pendingLocations, pendingReviews, loadError, filteredLocations,
+        countries, cities,
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
         aiQueryMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
+        handleApproveReview, handleRejectReview,
         isExporting, handleExport,
         toast, setToast
     } = hook
 
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
     const LABEL_GROUPS = getLabelGroupsRu() // auto-synced from filterOptions.js
+
+    const mapLocations = useMemo(() =>
+        filteredLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng),
+        [filteredLocations]
+    )
+
+    const mapCenter = useMemo(() => {
+        if (!mapLocations.length) return [50.0647, 19.9450]
+        return [
+            mapLocations.reduce((s, l) => s + l.coordinates.lat, 0) / mapLocations.length,
+            mapLocations.reduce((s, l) => s + l.coordinates.lng, 0) / mapLocations.length,
+        ]
+    }, [mapLocations])
 
     const BEST_TIMES = [
         { id: 'morning', label: 'Утро', icon: Clock },
@@ -179,39 +202,113 @@ const AdminLocationsPage = () => {
 
             <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
-            <div className="bg-white dark:bg-slate-900/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-slate-800/50 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
                 <LocationFilters
-                    view={view}
-                    onViewChange={setView}
+                    view={statusFilter}
+                    onViewChange={setStatusFilter}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     filteredCount={filteredLocations.length}
                     totalCount={locationsList.length}
+                    
+                    // Advanced Filters
+                    activeCategory={activeCategory}
+                    onCategoryChange={setActiveCategory}
+                    activePriceLevels={activePriceLevels}
+                    onPriceLevelsChange={setActivePriceLevels}
+                    minRating={minRating}
+                    onMinRatingChange={setMinRating}
+                    activeVibes={activeVibes}
+                    onVibesChange={setActiveVibes}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    activeCity={activeCity}
+                    onCityChange={setActiveCity}
+                    activeCountry={activeCountry}
+                    onCountryChange={setActiveCountry}
+                    cities={cities}
+                    countries={countries}
                 />
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-slate-800/50">
+                {statusFilter !== 'reviews' && totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-white/[0.04]">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => p - 1)}
-                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
                         >← Prev</button>
-                        <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                        <span className="text-sm font-bold text-slate-500 dark:text-[hsl(220,10%,55%)]">
                             {currentPage} / {totalPages}
                         </span>
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(p => p + 1)}
-                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
                         >Next →</button>
                     </div>
                 )}
 
                 <div className="flex-1 flex flex-col pt-2 font-black leading-none">
-                    {view === 'list' && (
+                    {statusFilter === 'reviews' ? (
+                        <div className="p-4 lg:p-10">
+                            {pendingReviews.length === 0 ? (
+                                <div className="text-center py-20">
+                                    <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)] mb-4" />
+                                    <p className="text-lg font-bold text-slate-400">Нет отзывов на модерации</p>
+                                    <p className="text-sm text-slate-400 mt-1">Все отзывы проверены</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {pendingReviews.map((rev) => (
+                                        <div
+                                            key={rev.id}
+                                            className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-[24px] border border-slate-100 dark:border-white/[0.06] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                                        >
+                                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-[hsl(217,91%,60%)]/10 flex items-center justify-center text-indigo-600 dark:text-[hsl(217,91%,60%)] shrink-0">
+                                                    <User size={22} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-[hsl(220,20%,96%)]">{rev.profiles?.name || 'Anonymous'}</p>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                            <MapPin size={10} /> {rev.locations?.title || rev.location_id}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        {[1,2,3,4,5].map(s => (
+                                                            <Star key={s} size={12} className={s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 dark:text-[hsl(220,6%,30%)] fill-slate-200 dark:fill-[hsl(220,6%,30%)]'} />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-sm text-slate-600 dark:text-[hsl(220,10%,55%)] mt-2 line-clamp-2">{rev.review_text}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                                                        <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString('ru-RU')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <button
+                                                    onClick={() => handleRejectReview(rev.id)}
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(220,20%,9%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
+                                                >
+                                                    Отклонить
+                                                </button>
+                                                <button
+                                                    onClick={() => handleApproveReview(rev.id)}
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
+                                                >
+                                                    Одобрить
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : viewMode === 'list' ? (
                         <ListViewSection
                             filteredLocations={paginatedLocations}
                             viewMode={viewMode}
@@ -223,7 +320,56 @@ const AdminLocationsPage = () => {
                             openActionMenuId={openActionMenuId}
                             onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
                         />
-                    )}
+                    ) : viewMode === 'map' ? (
+                        <div className="flex-1 relative min-h-[500px]">
+                            {mapLocations.length === 0 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                    <MapPin size={48} className="mb-3 opacity-30" />
+                                    <p className="text-sm font-bold">Нет локаций с координатами</p>
+                                </div>
+                            ) : (
+                                <MapContainer
+                                    center={mapCenter}
+                                    zoom={5}
+                                    scrollWheelZoom={false}
+                                    className="w-full h-full absolute inset-0"
+                                >
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                                        url={isDark
+                                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                                            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'}
+                                    />
+                                    {mapLocations.map(loc => (
+                                        <Marker
+                                            key={loc.id}
+                                            position={[loc.coordinates.lat, loc.coordinates.lng]}
+                                        >
+                                            <Popup>
+                                                <div className="font-sans p-1 min-w-[160px]">
+                                                    <p className="font-bold text-sm text-slate-900">{loc.title}</p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">{loc.city}{loc.country ? `, ${loc.country}` : ''}</p>
+                                                    {(loc.google_rating ?? loc.rating) && (
+                                                        <p className="text-xs text-amber-600 font-bold mt-1">★ {loc.google_rating ?? loc.rating}</p>
+                                                    )}
+                                                    <span className={cn(
+                                                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-2",
+                                                        loc.status === 'active' || loc.status === 'approved'
+                                                            ? "bg-emerald-50 text-emerald-600"
+                                                            : loc.status === 'pending'
+                                                                ? "bg-amber-50 text-amber-600"
+                                                                : "bg-rose-50 text-rose-500"
+                                                    )}>
+                                                        {loc.status}
+                                                    </span>
+                                                </div>
+                                            </Popup>
+                                        </Marker>
+                                    ))}
+                                </MapContainer>
+                            )}
+                        </div>
+                    ) : null}
                 </div>
             </div>
 

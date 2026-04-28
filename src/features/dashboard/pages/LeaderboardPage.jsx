@@ -111,7 +111,7 @@ export default function LeaderboardPage() {
                     initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     className="flex flex-col items-center relative z-10"
                 >
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xl border-[3px] border-slate-300 dark:border-slate-500 z-10 mb-2">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-[hsl(220,20%,12%)] flex items-center justify-center font-bold text-xl border-[3px] border-slate-300 dark:border-white/[0.08] z-10 mb-2">
                         {top3[1] ? getInitials(top3[1].full_name) : '?'}
                     </div>
                     <div className="w-20 md:w-28 h-28 bg-gradient-to-t from-slate-200 dark:from-slate-800 to-slate-100 dark:to-slate-700 rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x border-slate-300/50">
@@ -190,9 +190,9 @@ export default function LeaderboardPage() {
                             {/* Divider indicating gap to current user */}
                             <div className="h-12 flex items-center justify-center bg-black/[0.02] dark:bg-white/[0.02]">
                                 <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
                                 </div>
                             </div>
 

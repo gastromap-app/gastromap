@@ -13,6 +13,8 @@ import { supabase, ApiError } from './client'
 import { enrichLocationData } from '@/features/admin/components/LocationForm/enrichment'
 import { config } from '@/shared/config/env'
 import { CATEGORIES_FULL } from '../constants/taxonomy'
+import { sanitizePayload } from '../lib/schema-validator.js'
+import { log as safeLog, warn as safeWarn, error as safeError } from '../lib/safe-console.js'
 // import { 
 //     processLocationTranslations, 
 //     saveTranslations,
@@ -22,9 +24,9 @@ import { CATEGORIES_FULL } from '../constants/taxonomy'
 // import { getActiveAIConfig } from './ai-config.api'
 
 const USE_SUPABASE = config.supabase.isConfigured
-console.log('[locations.api] 🔌 Database Mode:', USE_SUPABASE ? 'SUPABASE' : 'MOCKS fall-back')
+safeLog('[locations.api] 🔌 Database Mode:', USE_SUPABASE ? 'SUPABASE' : 'MOCKS fall-back')
 if (USE_SUPABASE) {
-    console.log('[locations.api] 🌐 Supabase URL:', config.supabase.url)
+    safeLog('[locations.api] 🌐 Supabase URL:', config.supabase.url)
 }
 
 // ─── Shape normaliser ──────────────────────────────────────────────────────
@@ -33,8 +35,7 @@ if (USE_SUPABASE) {
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
 
 // ── Google CDN resize helper ────────────────────────────────────────────────
-// Используется в normalise() для получения оптимальной ширины из Google Photos.
-// Компонент LocationImage делает то же самое на фронте — это резерв для SSR/OG.
+// Для Google Photos заменяем размерный суффикс =wXXX на =wW-h-k-no.
 function resizeGoogleCdn(url, width = 800) {
     if (!url) return url
     if (/lh3\.googleusercontent\.com/.test(url)) {
@@ -49,18 +50,14 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // DB canonical fields: image_url, google_rating, price_range, cuisine_types (array)
-    const image      = resizeGoogleCdn(row.image_url ?? row.image ?? '', 800)
-    const rating     = Number(row.google_rating ?? row.rating ?? 0)
-    const priceLevel = row.price_range ?? row.price_level ?? '$$'
-    // cuisine_types is array in DB; cuisine is legacy string — prefer array
-    const cuisineArr = Array.isArray(row.cuisine_types)
-        ? row.cuisine_types.filter(Boolean)
-        : (row.cuisine_types ? [row.cuisine_types] : [])
-    const cuisineRaw = cuisineArr[0] ?? row.cuisine ?? ''
+    // Schema: title, rating, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
+    const image         = resizeGoogleCdn(row.image_url ?? '', 800)
+    const rating        = Number(row.rating ?? 0)
+    const googleRating  = Number(row.google_rating ?? 0)
+    const priceRange    = row.price_range ?? '$$'
+    const cuisineTypes  = Array.isArray(row.cuisine_types) ? row.cuisine_types : []
 
-    // Normalise legacy 'active' → 'approved' for UI consistency
-    const status = row.status === 'active' ? 'approved' : (row.status ?? 'approved')
+    const status = row.status ?? 'approved'
 
     return {
         id: row.id,
@@ -79,21 +76,21 @@ function normalise(row) {
         category: CATEGORIES_FULL.find(c => c.toLowerCase() === (row.category || '').toLowerCase()) || row.category || 'Other',
         type: row.category ?? 'other',
 
-        cuisine: cuisineRaw,
-        cuisine_types: cuisineArr.length ? cuisineArr : (cuisineRaw ? [cuisineRaw] : []),
+        cuisine: cuisineTypes[0] || '',
+        cuisine_types: cuisineTypes,
 
         image,
         image_url: image,
-        photos: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
-        images: Array.isArray(row.photos) ? row.photos : (row.photos ? [row.photos] : []),
+        photos: Array.isArray(row.google_photos) ? row.google_photos : [],
+        images: Array.isArray(row.google_photos) ? row.google_photos : [],
 
         rating,
-        google_rating: rating,
+        google_rating: googleRating,
         google_user_ratings_total: row.google_user_ratings_total ?? 0,
 
-        price_level: priceLevel,
-        priceLevel,
-        price_range: priceLevel,
+        price_level: priceRange,
+        priceLevel: priceRange,
+        price_range: priceRange,
 
         opening_hours: row.opening_hours ?? '',
         openingHours: row.opening_hours ?? '',
@@ -104,31 +101,22 @@ function normalise(row) {
         tags: row.tags ?? [],
         special_labels: row.special_labels ?? [],
         vibe: row.vibe ?? [],
-        amenities: row.amenities ?? [],
         features: row.amenities ?? [],
+        amenities: row.amenities ?? [],
         best_for: row.best_for ?? [],
-        dietary_options: row.dietary_options ?? [],
         dietary: row.dietary_options ?? [],
+        dietary_options: row.dietary_options ?? [],
 
-        has_wifi: row.has_wifi ?? false,
-        has_outdoor_seating: row.has_outdoor_seating ?? false,
-        reservations_required: row.reservations_required ?? false,
+        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : false,
+        has_outdoor_seating: row.outdoor_seating ?? false,
+        reservations_required: row.reservation_required ?? false,
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
 
         insider_tip: row.insider_tip ?? '',
-        // what_to_try is the canonical array field in DB; must_try is legacy string — prefer array
-        what_to_try: Array.isArray(row.what_to_try) && row.what_to_try.length
-            ? row.what_to_try
-            : (typeof row.must_try === 'string' && row.must_try
-                ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-                : []),
-        must_try: Array.isArray(row.what_to_try) && row.what_to_try.length
-            ? row.what_to_try
-            : (typeof row.must_try === 'string' && row.must_try
-                ? row.must_try.split(',').map(s => s.trim()).filter(Boolean)
-                : []),
+        what_to_try: Array.isArray(row.what_to_try) ? row.what_to_try : (row.must_try ? [row.must_try] : []),
+        must_try: row.must_try ?? (Array.isArray(row.what_to_try) ? row.what_to_try[0] : ''),
 
         ai_keywords: row.ai_keywords ?? [],
         ai_context: row.ai_context ?? '',
@@ -170,39 +158,47 @@ export async function getLocations(filters = {}) {
 
     const bypassStatus = all || showAll
 
+    safeLog('[locations.api] 🚀 Fetching locations with filters:', filters)
+
     let q = supabase
         .from('locations')
         .select('*', { count: 'exact' })
-        .order('google_rating', { ascending: false })
-        .range(offset, offset + (limit - 1))
+
+    // Try sorting by google_rating, fall back to no sort if column missing
+    q = q.order('google_rating', { ascending: false })
+    
+    q = q.range(offset, offset + (limit - 1))
 
     // Admin can pass all=true or showAll=true to bypass status filter, or status='pending' etc.
+    // FIX: Accept both 'approved' and 'active' — DB migration may not have run yet
     if (!bypassStatus) {
-        q = q.eq('status', status ?? 'approved')
+        const statusVal = status ?? 'approved'
+        q = statusVal === 'approved'
+            ? q.in('status', ['approved', 'active'])
+            : q.eq('status', statusVal)
     } else if (status) {
-        // bypass requested + explicit status = filter by that specific status
         q = q.eq('status', status)
     }
-    // bypass requested + no status = return everything regardless of status
 
     if (category && category !== 'All') q = q.eq('category', category)
     if (city)    q = q.ilike('city', `%${city}%`)
     if (country) q = q.ilike('country', `%${country}%`)
-    if (minRating != null) q = q.gte('rating', minRating)
-    if (priceLevel?.length) q = q.in('price_level', priceLevel)
+    
+    // Use google_rating for filtering if present
+    if (minRating != null) q = q.gte('google_rating', minRating)
+    
+    if (priceLevel?.length) q = q.in('price_range', priceLevel)
     if (vibe?.length) q = q.overlaps('vibe', vibe)
 
-    // Search by title or city if query exists
     if (query) {
         q = q.or(`title.ilike.%${query}%,city.ilike.%${query}%`)
     }
 
-    console.log('[locations.api] Query params:', { city, country, status: bypassStatus ? 'any' : (status ?? 'approved') })
-
     const { data, error, count } = await q
 
     if (error) {
-        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
+        safeError('[locations.api] ❌ Supabase query FAILED:', error.message)
+        safeError('[locations.api] 📉 Hard fallback to mocks.')
         return _mockGetLocations(filters)
     }
 
@@ -222,14 +218,15 @@ export async function getLocation(id, { adminMode = false } = {}) {
         .eq('id', id)
 
     // Public facing: only show active (approved) locations. Admin mode: show any status.
+    // FIX: Accept both 'approved' and 'active' — DB migration may not have run yet
     if (!adminMode) {
-        q = q.eq('status', 'approved')
+        q = q.in('status', ['approved', 'active'])
     }
 
     const { data, error } = await q.single()
 
     if (error) {
-        console.error('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
+        safeError('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
         return _mockGetLocation(id)
     }
 
@@ -253,7 +250,7 @@ async function enrichLocationWithAI(locationData) {
     try {
         return await enrichLocationData(locationData)
     } catch (err) {
-        console.warn('[locations.api] AI enrichment failed, continuing without it:', err.message)
+        safeWarn('[locations.api] AI enrichment failed, continuing without it:', err.message)
         return locationData
     }
 }
@@ -275,12 +272,16 @@ export async function createLocation(data, enableTranslation = null) {
 
     // Enrich with AI keywords and embeddings if enabled
     if (isAiReady) {
-        console.log('[locations.api] Enriching location with AI keywords + embedding...')
+        safeLog('[locations.api] Enriching location with AI keywords + embedding...')
         locationData = await enrichLocationWithAI(locationData)
     }
 
     // Create location IMMEDIATELY (without waiting for translations)
-    const row = _toRow(locationData)
+    let row = _toRow(locationData)
+        
+    // Note: 'rating' column does not exist in DB - only google_rating exists.
+    // sanitizePayload() in _smartSave filters out any 'rating' field.
+        
     const { data: created, error } = await _smartSave('locations', null, row)
 
     if (error) throw new ApiError(error.message, 500, error.code)
@@ -288,20 +289,20 @@ export async function createLocation(data, enableTranslation = null) {
     // Auto-translate IN BACKGROUND (non-blocking, fire-and-forget)
     // This allows the UI to return immediately while translations happen in the background
     if (shouldTranslate) {
-        console.log('[locations.api] Starting background translation for location:', created.id)
+        safeLog('[locations.api] Starting background translation for location:', created.id)
 
         const { processLocationTranslations, saveTranslations } = await import('./translation.api')
         // Don't await this - let it run in the background
         processLocationTranslations(data, true)
             .then(result => {
-                console.log('[locations.api] Auto-translation completed, saving translations...')
+                safeLog('[locations.api] Auto-translation completed, saving translations...')
                 return saveTranslations(created.id, result.translations)
             })
             .then(() => {
-                console.log('[locations.api] Translations saved successfully')
+                safeLog('[locations.api] Translations saved successfully')
             })
             .catch(error => {
-                console.error('[locations.api] Background translation failed (non-blocking):', error)
+                safeError('[locations.api] Background translation failed (non-blocking):', error)
                 // Silently fail - translations are optional enhancement
             })
     }
@@ -334,7 +335,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     
     // 1. AI Enrichment & Translation
     if (shouldTranslate) {
-        console.log('[locations.api] Starting background enrichment/translation for updated location:', id)
+        safeLog('[locations.api] Starting background enrichment/translation for updated location:', id)
         
         // Use a self-executing async function for background work
         (async () => {
@@ -385,7 +386,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                             dispatchStatus('ai-enrichment', 'error')
                         }
                     } catch (aiErr) {
-                        console.warn('[locations.api] Background AI enrichment failed:', aiErr.message)
+                        safeWarn('[locations.api] Background AI enrichment failed:', aiErr.message)
                         dispatchStatus('ai-enrichment', 'error')
                     }
                 }
@@ -403,7 +404,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                             dispatchStatus('translation', 'success')
                         }
                     } catch (transErr) {
-                        console.warn('[locations.api] Background translation failed:', transErr.message)
+                        safeWarn('[locations.api] Background translation failed:', transErr.message)
                         dispatchStatus('translation', 'error')
                     }
                 }
@@ -412,10 +413,10 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                 if (Object.keys(bgUpdates).length > 0) {
                     const bgRow = _toRow(bgUpdates)
                     await _smartSave('locations', id, bgRow)
-                    console.log('[locations.api] Background updates saved for:', id)
+                    safeLog('[locations.api] Background updates saved for:', id)
                 }
             } catch (err) {
-                console.error('[locations.api] Critical failure in background tasks:', err.message)
+                safeError('[locations.api] Critical failure in background tasks:', err.message)
             }
         })()
     }
@@ -435,7 +436,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                     }))
                 })
                 .catch(e => {
-                    console.warn('[locations.api] Background KG sync failed:', e.message)
+                    safeWarn('[locations.api] Background KG sync failed:', e.message)
                     window.dispatchEvent(new CustomEvent('bg-task-status', { 
                         detail: { id: updated.id, type: 'kg-sync', status: 'error' } 
                     }))
@@ -495,41 +496,38 @@ export async function getLocationTranslated(id, lang = 'en') {
 
 // ─── Smart Sanitizer ───────────────────────────────────────────────────────
 /**
- * Executes a save (insert or update) but smartly catches missing column errors.
- * If a column is missing in the DB schema, it strips it and retries.
+ * Executes a save (insert or update).
+ * Previously this silently stripped missing columns, causing data loss.
+ * Now it fails fast with a clear error so developers know to fix the schema.
  */
 async function _smartSave(table, id, row) {
-    let payload = { ...row }
-    let maxRetries = 10 // Prevent infinite loops
+    const payload = sanitizePayload({ ...row });
+    
+    const req = id
+        ? supabase.from(table).update(payload).eq('id', id).select().single()
+        : supabase.from(table).insert(payload).select().single()
 
-    while (maxRetries > 0) {
-        const req = id 
-            ? supabase.from(table).update(payload).eq('id', id).select().single()
-            : supabase.from(table).insert(payload).select().single()
-            
-        const { data, error } = await req
+    const { data, error } = await req
 
-        if (error) {
-            // Check if it's a missing column error (PostgREST PGRST200)
-            if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
-                // Parse missing column name: "Could not find the 'xyz' column of 'table'..."
-                const match = error.message.match(/find the '([^']+)' column/)
-                if (match && match[1]) {
-                    const missingCol = match[1]
-                    console.warn(`[smartSave] Column '${missingCol}' missing in DB schema. Stripping it and retrying...`)
-                    delete payload[missingCol]
-                    maxRetries--
-                    continue // retry request without this column
+    if (error) {
+        // Detect missing column error (PostgREST PGRST200) and surface a clear message
+        if (error.code === 'PGRST200' && error.message.includes('Could not find the') && error.message.includes('column')) {
+            const match = error.message.match(/find the '([^']+)' column/)
+            const missingCol = match?.[1] || 'unknown'
+            safeError(`[smartSave] CRITICAL: Column '${missingCol}' is missing in DB table '${table}'.`)
+            safeError(`[smartSave] Data was NOT saved. Run the missing migration or add the column manually.`)
+            return {
+                data: null,
+                error: {
+                    ...error,
+                    message: `Database schema mismatch: column '${missingCol}' does not exist in table '${table}'. Please run migrations or contact admin.`,
                 }
             }
-            // Other error
-            return { data: null, error }
         }
-
-        return { data, error: null }
+        return { data: null, error }
     }
-    
-    return { data: null, error: { message: 'Exceeded max retries for smartSave missing columns', code: '500' } }
+
+    return { data, error: null }
 }
 
 // ─── Shape converter (app → DB) ────────────────────────────────────────────
@@ -557,35 +555,22 @@ function _toRow(d) {
     if (d.lng !== undefined) row.lng = Number(d.lng)
     else if (d.longitude !== undefined) row.lng = Number(d.longitude)
 
-    // Category
-    if (d.category !== undefined) row.category = d.category
-    else if (d.type !== undefined) row.category = d.type
-
-    // cuisine_types is canonical array in DB; cuisine is legacy derived string
-    if (d.cuisine_types !== undefined) {
-        const arr = Array.isArray(d.cuisine_types) ? d.cuisine_types.filter(Boolean) : [d.cuisine_types].filter(Boolean)
-        row.cuisine_types = arr
-        row.cuisine = arr[0] ?? ''  // keep legacy field in sync
-    } else if (d.cuisine !== undefined) {
-        row.cuisine = Array.isArray(d.cuisine) ? (d.cuisine[0] ?? '') : (d.cuisine ?? '')
-        row.cuisine_types = row.cuisine ? [row.cuisine] : []
-    }
+    // Cuisine
+    if (d.cuisine_types !== undefined) row.cuisine_types = d.cuisine_types
+    else if (d.cuisine !== undefined) row.cuisine_types = Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine]
 
     // Images
-    // image_url is the canonical DB column name
-    if (d.image_url !== undefined)     row.image_url = d.image_url
-    else if (d.image !== undefined)    row.image_url = d.image
+    if (d.image_url !== undefined) row.image_url = d.image_url
+    else if (d.image !== undefined) row.image_url = d.image
 
-    if (d.google_photos !== undefined) row.photos = d.google_photos
-    else if (d.photos !== undefined) row.photos = d.photos
-    else if (d.images !== undefined) row.photos = d.images
+    if (d.google_photos !== undefined) row.google_photos = d.google_photos
+    else if (d.photos !== undefined) row.google_photos = d.photos
+    else if (d.images !== undefined) row.google_photos = d.images
 
-    // google_rating is canonical DB column
-    if (d.google_rating !== undefined)  row.google_rating = Number(d.google_rating)
-    else if (d.rating !== undefined)    row.google_rating = Number(d.rating)
+    // Rating (only google_rating exists in DB, no 'rating' column)
+    if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
 
     // Price
-    // price_range is canonical DB column (price_level does NOT exist in DB)
     if (d.price_range !== undefined)  row.price_range = d.price_range
     else if (d.price_level !== undefined) row.price_range = d.price_level
     else if (d.priceLevel !== undefined) row.price_range = d.priceLevel
@@ -599,67 +584,49 @@ function _toRow(d) {
     if (d.booking_url !== undefined) row.booking_url = d.booking_url
 
     if (d.tags !== undefined)        row.tags = d.tags
-    // if (d.vibe !== undefined)     // vibe not in schema, use tags?
+    if (d.vibe !== undefined)        row.vibe = d.vibe
     
-    // amenities — canonical DB column (features does NOT exist in DB)
-    if (d.amenities !== undefined)      row.amenities = d.amenities
-    else if (d.features !== undefined)  row.amenities = d.features
+    if (d.amenities !== undefined)   row.amenities = d.amenities
+    else if (d.features !== undefined) row.amenities = d.features
 
-    if (d.best_for !== undefined)       row.best_for = d.best_for
-    if (d.special_labels !== undefined) row.special_labels = d.special_labels
-    if (d.vibe !== undefined)           row.vibe = d.vibe
-
-    // dietary_options — canonical DB column
+    if (d.best_for !== undefined)    row.best_for = d.best_for
+    
     if (d.dietary_options !== undefined) row.dietary_options = d.dietary_options
     else if (d.dietary !== undefined)    row.dietary_options = d.dietary
 
-    // wifi — both columns exist in DB, keep in sync
-    if (d.has_wifi !== undefined) {
-        row.has_wifi = d.has_wifi
-        row.has_wifi = Boolean(d.has_wifi)
-    } else if (d.wifi_quality !== undefined) {
-        // wifi_quality was dropped — convert to has_wifi boolean
-        row.has_wifi = d.wifi_quality !== 'none'
-    }
+    if (d.special_labels !== undefined) row.special_labels = d.special_labels
+    
+    if (d.wifi_quality !== undefined)    row.wifi_quality = d.wifi_quality
+    else if (d.has_wifi !== undefined)   row.wifi_quality = d.has_wifi ? 'high' : 'none'
+    
+    if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
+    else if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
 
-    // has_outdoor_seating — canonical column (outdoor_seating was dropped 2026-04-28)
-    const outdoorVal = d.has_outdoor_seating ?? d.outdoor_seating
-    if (outdoorVal !== undefined) {
-        row.has_outdoor_seating = outdoorVal
-    }
+    if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
+    else if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
 
-    // reservations_required — canonical column (reservation_required was dropped 2026-04-28)
-    const reservVal = d.reservations_required ?? d.reservation_required
-    if (reservVal !== undefined) {
-        row.reservations_required = reservVal
-    }
+    if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
 
-    if (d.insider_tip !== undefined) row.insider_tip = d.insider_tip
-
-    // what_to_try — canonical array column; must_try is legacy string kept for search/FTS
-    const whatToTryArr = d.what_to_try ?? d.must_try
-    if (whatToTryArr !== undefined) {
-        const arr = Array.isArray(whatToTryArr)
-            ? whatToTryArr
-            : String(whatToTryArr).split(',').map(s => s.trim()).filter(Boolean)
-        row.what_to_try = arr
-        row.must_try = arr.join(', ')  // keep legacy string in sync
-    }
+    // What to try
+    if (d.what_to_try !== undefined) row.what_to_try = d.what_to_try
+    if (d.must_try !== undefined) row.must_try = d.must_try
 
     if (d.ai_keywords !== undefined)  row.ai_keywords = d.ai_keywords
     if (d.ai_context !== undefined)   row.ai_context = d.ai_context
     if (d.embedding !== undefined)    row.embedding = d.embedding
     if (d.status !== undefined)       row.status = d.status
+    if (d.moderation_note !== undefined) row.moderation_note = d.moderation_note
 
-    if (d.ai_enrichment_status !== undefined)      row.ai_enrichment_status = d.ai_enrichment_status
-    if (d.ai_enrichment_error !== undefined)        row.ai_enrichment_error = d.ai_enrichment_error
+    // AI Enrichment status
+    if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
+    if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
 
     // Michelin
     if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars
-    if (d.michelin_bib !== undefined)   row.michelin_bib = d.michelin_bib
+    if (d.michelin_bib !== undefined) row.michelin_bib = d.michelin_bib
 
-    // ── KG fields — Knowledge Graph enrichment ───────────────────────────────
+    // KG fields
     if (d.kg_cuisines !== undefined)   row.kg_cuisines = d.kg_cuisines
     if (d.kg_dishes !== undefined)     row.kg_dishes = d.kg_dishes
     if (d.kg_ingredients !== undefined) row.kg_ingredients = d.kg_ingredients
@@ -735,11 +702,10 @@ export async function getCategories() {
     const { data, error } = await supabase
         .from('locations')
         .select('category')
-        .eq('status', 'approved')
+        .in('status', ['approved', 'active'])
 
     if (error) {
-        console.warn('[locations.api] Failed to fetch categories, using mocks:', error.message)
-        return MOCK_CATEGORIES
+        safeWarn('[locations.api] Failed to fetch categories, using mocks:', error.message)
     }
 
     const unique = [...new Set((data ?? []).map(r => r.category).filter(Boolean))]
@@ -768,6 +734,180 @@ export async function getLocationsNearby(coords, radiusKm = 2) {
     return { data: filtered, total: filtered.length, hasMore: false }
 }
 
+// ─── Menu persistence ──────────────────────────────────────────────────────
+
+export async function getLocationMenu(locationId) {
+    if (!supabase) {
+        safeWarn('[locations.api] Supabase not configured, returning empty menu')
+    }
+
+    const { data, error } = await supabase
+        .from('location_dishes')
+        .select('*, dishes(*)')
+        .eq('location_id', locationId)
+
+    if (error) {
+        safeWarn('[locations.api] Failed to fetch menu:', error.message)
+        return []
+    }
+
+    return (data ?? []).map(ld => {
+        const dish = ld.dishes || {}
+        return {
+            id: dish.id,
+            name: dish.name,
+            description: dish.description,
+            price: ld.price,
+            category: dish.category,
+            is_signature: ld.is_signature,
+            available: ld.available,
+            vegetarian: dish.vegetarian,
+            vegan: dish.vegan,
+            gluten_free: dish.gluten_free,
+        }
+    })
+}
+
+export async function saveScannedMenu(locationId, dishes) {
+    if (!supabase) {
+        safeWarn('[locations.api] Supabase not configured, cannot save scanned menu')
+    }
+
+    const CATEGORY_MAP = {
+        appetizer: 'appetizer',
+        starters: 'appetizer',
+        starter: 'appetizer',
+        main: 'main',
+        mains: 'main',
+        'main course': 'main',
+        'main courses': 'main',
+        entree: 'main',
+        entrees: 'main',
+        dessert: 'dessert',
+        desserts: 'dessert',
+        drink: 'drink',
+        drinks: 'drink',
+        beverage: 'drink',
+        beverages: 'drink',
+        snack: 'snack',
+        snacks: 'snack',
+    }
+
+    let saved = 0
+    let duplicates = 0
+
+    try {
+        for (const dish of dishes) {
+            const rawCategory = (dish.category || '').toLowerCase().trim()
+            const category = CATEGORY_MAP[rawCategory] || 'main'
+            const dishName = (dish.name || '').trim()
+
+            if (!dishName) continue
+
+            // Try to find existing dish by name (case-insensitive)
+            const { data: existing, error: findError } = await supabase
+                .from('dishes')
+                .select('id')
+                .ilike('name', dishName)
+                .maybeSingle()
+
+            if (findError) {
+                safeWarn('[locations.api] Error finding dish:', findError.message)
+                continue
+            }
+
+            let dishId
+            if (existing?.id) {
+                dishId = existing.id
+                duplicates++
+            } else {
+                const { data: inserted, error: insertError } = await supabase
+                    .from('dishes')
+                    .insert({
+                        name: dishName,
+                        description: dish.description || '',
+                        category,
+                    })
+                    .select('id')
+                    .single()
+
+                if (insertError) {
+                    safeWarn('[locations.api] Error inserting dish:', insertError.message)
+                    continue
+                }
+                dishId = inserted.id
+                saved++
+            }
+
+            // Upsert into location_dishes
+            const { error: linkError } = await supabase
+                .from('location_dishes')
+                .upsert({
+                    location_id: locationId,
+                    dish_id: dishId,
+                    price: dish.price || '',
+                }, { onConflict: 'location_id,dish_id' })
+
+            if (linkError) {
+                safeWarn('[locations.api] Error linking dish to location:', linkError.message)
+            }
+        }
+    } catch (err) {
+        safeWarn('[locations.api] saveScannedMenu failed:', err.message)
+    }
+
+    return { saved, duplicates }
+}
+
+export async function deleteLocationDish(locationId, dishId) {
+    if (!supabase) {
+        safeWarn('[locations.api] Supabase not configured, cannot delete location dish')
+        return { success: false }
+    }
+
+    const { error } = await supabase
+        .from('location_dishes')
+        .delete()
+        .eq('location_id', locationId)
+        .eq('dish_id', dishId)
+
+    if (error) {
+        safeWarn('[locations.api] Failed to delete location dish:', error.message)
+        return { success: false }
+    }
+
+    return { success: true }
+}
+
+export async function updateLocationDish(locationId, dishId, updates) {
+    if (!supabase) {
+        safeWarn('[locations.api] Supabase not configured, cannot update location dish')
+        return { success: false }
+    }
+
+    const payload = {}
+    if (updates.price !== undefined) payload.price = updates.price
+    if (updates.is_signature !== undefined) payload.is_signature = updates.is_signature
+    if (updates.available !== undefined) payload.available = updates.available
+
+    if (Object.keys(payload).length === 0) {
+        return { success: true }
+    }
+
+    const { error } = await supabase
+        .from('location_dishes')
+        .update(payload)
+        .eq('location_id', locationId)
+        .eq('dish_id', dishId)
+
+    if (error) {
+        safeWarn('[locations.api] Failed to update location dish:', error.message)
+        return { success: false }
+    }
+
+    return { success: true }
+}
+
 export { normalise }
 
 export default {
@@ -780,4 +920,8 @@ export default {
     createLocation,
     updateLocation,
     deleteLocation,
+    getLocationMenu,
+    saveScannedMenu,
+    deleteLocationDish,
+    updateLocationDish,
 }

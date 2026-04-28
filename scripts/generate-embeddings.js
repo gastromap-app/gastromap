@@ -12,7 +12,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { config } from './src/shared/config/env.js'
+import * as dotenv from 'dotenv'
+
+// Load environment variables from .env
+dotenv.config()
+
+// Dynamic import to ensure dotenv.config() runs first
+const { config } = await import('../src/shared/config/env.js')
 
 // Parse command line arguments
 const args = process.argv.slice(2)
@@ -181,7 +187,7 @@ async function main() {
         const { data: locations, error } = await supabase
             .from('locations')
             .select('id, title, description, cuisine, city, country, vibe, tags, ai_context, insider_tip')
-            .eq('status', 'active')
+            .in('status', ['active', 'approved'])
 
         if (error) {
             console.error('❌ Error fetching locations:', error.message)

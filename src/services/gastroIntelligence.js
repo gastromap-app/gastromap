@@ -49,7 +49,7 @@ class GastroIntelligence {
                 features.forEach(f => {
                     if (this.user.preferences.features.some(p => p.toLowerCase() === f.toLowerCase())) score += 1;
                 });
-                if ((loc.rating ?? 0) >= 4.5) score += 1;
+                if ((loc.google_rating ?? loc.rating ?? 0) >= 4.5) score += 1;
 
                 return { ...loc, matchScore: score };
             }).sort((a, b) => b.matchScore - a.matchScore);
@@ -60,14 +60,14 @@ class GastroIntelligence {
         if (topMatch && (topMatch.matchScore ?? 0) > 0) {
             const topThree = filtered.slice(0, 3);
             return {
-                content: `Based on your taste profile, I recommend **${topMatch.title}** — rated ${topMatch.rating}★${topMatch.features?.length ? `, featuring ${topMatch.features.slice(0, 2).join(' & ')}` : ''}.${topThree.length > 1 ? ` Also check out ${topThree.slice(1).map(l => l.title).join(' and ')}.` : ''}`,
+                content: `Based on your taste profile, I recommend **${topMatch.title}** — rated ${topMatch.google_rating ?? topMatch.rating}★${topMatch.features?.length ? `, featuring ${topMatch.features.slice(0, 2).join(' & ')}` : ''}.${topThree.length > 1 ? ` Also check out ${topThree.slice(1).map(l => l.title).join(' and ')}.` : ''}`,
                 matches: topThree,
             };
         }
 
         if (isRecommendation && topMatch) {
             return {
-                content: `Here's a top pick: **${topMatch.title}**${topMatch.category ? ` (${topMatch.category})` : ''} — rated ${topMatch.rating ?? '?'}★. ${topMatch.description ?? ''}`,
+                content: `Here's a top pick: **${topMatch.title}**${topMatch.category ? ` (${topMatch.category})` : ''} — rated ${topMatch.google_rating ?? topMatch.rating ?? '?'}★. ${topMatch.description ?? ''}`,
                 matches: filtered.slice(0, 3),
             };
         }

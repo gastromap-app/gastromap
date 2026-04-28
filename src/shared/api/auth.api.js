@@ -11,12 +11,12 @@ import { config } from '@/shared/config/env'
 const USE_SUPABASE = config.supabase.isConfigured
 
 // ─── Admin emails (used as role fallback when DB profile not yet seeded) ───
-const ADMIN_EMAILS = ['admin@gastromap.com', 'alik2191@gmail.com']
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'admin@gastromap.com').split(',').map(e => e.trim());
 
 // ─── Mock users (fallback when Supabase not configured) ────────────────────
 const MOCK_USERS = [
     { id: 'admin1', name: 'Admin User', email: 'admin@gastromap.com', role: 'admin', avatar: null, createdAt: '2024-01-01T00:00:00Z' },
-    { id: 'admin2', name: 'Alik', email: 'alik2191@gmail.com', role: 'admin', avatar: null, createdAt: '2024-01-01T00:00:00Z' },
+    { id: 'admin-fallback', name: 'Admin', email: ADMIN_EMAILS[0], role: 'admin', avatar: null, createdAt: '2024-01-01T00:00:00Z' },
 ]
 
 // ─── Supabase helpers ──────────────────────────────────────────────────────

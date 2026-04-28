@@ -25,7 +25,7 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
     >
         <div className="flex justify-between items-start">
             <div className="flex-1 min-w-0">
-                <h3 className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-1.5 leading-none">{title}</h3>
+                <h3 className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest mb-1.5 leading-none">{title}</h3>
                 <p className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-none tracking-tight truncate">{value}</p>
             </div>
             <div className={cn(
@@ -41,9 +41,9 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
 // ─── Activity row ─────────────────────────────────────────────────────────────
 
 const ActivityRow = ({ item }) => (
-    <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-slate-800/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition-all">
+    <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-all">
         <div className="flex items-center gap-4 min-w-0">
-            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
+            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
                 {item.user_name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div className="min-w-0">
@@ -51,7 +51,7 @@ const ActivityRow = ({ item }) => (
                 <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide truncate leading-none">{item.action_text || item.activity_type}</p>
             </div>
         </div>
-        <span className="text-[10px] font-medium text-slate-300 dark:text-slate-500 whitespace-nowrap ml-3 shrink-0">
+        <span className="text-[10px] font-medium text-slate-300 dark:text-[hsl(220,10%,55%)] whitespace-nowrap ml-3 shrink-0">
             {formatDistanceToNow(item.created_at)}
         </span>
     </div>
@@ -60,13 +60,13 @@ const ActivityRow = ({ item }) => (
 // ─── Empty activity row ───────────────────────────────────────────────────────
 
 const EmptyRow = () => (
-    <div className="flex items-center gap-4 p-3 lg:p-4 bg-slate-50/60 dark:bg-slate-800/30 rounded-[18px]">
-        <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 flex items-center justify-center text-slate-300 shrink-0">
+    <div className="flex items-center gap-4 p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px]">
+        <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center text-slate-300 shrink-0">
             <Activity size={16} />
         </div>
         <div>
-            <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 leading-none mb-1">No activity yet</p>
-            <p className="text-[10px] text-slate-300 dark:text-slate-600 font-medium uppercase tracking-wide leading-none">Activity will appear here</p>
+            <p className="text-sm font-semibold text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none mb-1">No activity yet</p>
+            <p className="text-[10px] text-slate-300 dark:text-[hsl(220,10%,55%)] font-medium uppercase tracking-wide leading-none">Activity will appear here</p>
         </div>
     </div>
 )
@@ -113,15 +113,15 @@ const AdminDashboardPage = () => {
                 <div className="lg:col-span-1 space-y-5">
 
                     {/* Analytics Card */}
-                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <BarChart3 size={16} className="text-indigo-500" />
                                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Аналитика</h2>
                             </div>
                             <button
                                 onClick={() => setIsStatsCollapsed(!isStatsCollapsed)}
-                                className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400"
+                                className="p-1.5 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-all text-slate-400"
                             >
                                 {isStatsCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                             </button>
@@ -146,7 +146,7 @@ const AdminDashboardPage = () => {
                     </div>
 
                     {/* AI Insight Card */}
-                    <div className="bg-white dark:bg-slate-900/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-slate-800/50 p-5 shadow-sm relative overflow-hidden">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm relative overflow-hidden">
                         <div className="absolute -right-3 -bottom-3 opacity-[0.04] dark:opacity-[0.06] pointer-events-none">
                             <Bot size={88} />
                         </div>
@@ -157,7 +157,7 @@ const AdminDashboardPage = () => {
                                 </div>
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">GastroAI Insight</span>
                             </div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-snug mb-4">
+                            <p className="text-sm font-semibold text-slate-800 dark:text-[hsl(220,20%,90%)] leading-snug mb-4">
                                 Weekend brunch venues up 24% in popularity this week.
                             </p>
                             <button
@@ -178,8 +178,8 @@ const AdminDashboardPage = () => {
                     <LocationHierarchyExplorer />
 
                     {/* Recent Activity Card */}
-                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50">
+                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.03] rounded-[28px] lg:rounded-[32px] overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <Clock size={16} className="text-slate-400" />
                                 <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Последние действия</h2>

@@ -38,7 +38,8 @@ function getCategoryConfig(category) {
 function makeMarkerIcon(loc, highlighted = false) {
     const { emoji, color } = getCategoryConfig(loc.category)
     const size = highlighted ? 48 : 40
-    const ratingBg = loc.rating >= 4.7 ? '#2563eb' : '#374151'
+    const effectiveRating = loc.google_rating ?? loc.rating
+    const ratingBg = effectiveRating >= 4.7 ? '#2563eb' : '#374151'
 
     return L.divIcon({
         className: '',
@@ -60,7 +61,7 @@ function makeMarkerIcon(loc, highlighted = false) {
                     transform:rotate(45deg);
                     font-size:${highlighted ? 18 : 16}px;line-height:1;
                 ">${emoji}</div>
-                ${loc.rating ? `
+                ${effectiveRating ? `
                 <div style="
                     position:absolute;bottom:-6px;right:-6px;
                     transform:rotate(45deg);
@@ -70,7 +71,7 @@ function makeMarkerIcon(loc, highlighted = false) {
                     border:1.5px solid white;
                     box-shadow:0 2px 6px rgba(0,0,0,0.3);
                     white-space:nowrap;
-                ">★${loc.rating}</div>` : ''}
+                ">★${effectiveRating}</div>` : ''}
             </div>`,
         iconSize: [size, size],
         iconAnchor: [size / 4, size],

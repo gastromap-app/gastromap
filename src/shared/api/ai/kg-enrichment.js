@@ -82,7 +82,7 @@ function buildLocationContext(loc) {
         loc.special_labels?.length ? `Labels: ${loc.special_labels.join(', ')}` : null,
         loc.features?.length     ? `Features: ${loc.features.join(', ')}` : null,
         loc.price_level          ? `Price: ${loc.price_level}` : null,
-        loc.rating               ? `Rating: ${loc.rating}/5` : null,
+        (loc.google_rating ?? loc.rating) ? `Rating: ${loc.google_rating ?? loc.rating}/5` : null,
         loc.michelin_stars > 0   ? `Michelin stars: ${loc.michelin_stars}` : null,
         loc.michelin_bib         ? `Michelin Bib Gourmand` : null,
         loc.has_wifi             ? `Has WiFi` : null,
@@ -231,7 +231,7 @@ export async function enrichAllLocationsKGProfile({ force = false, onProgress = 
         .from('locations')
         .select('*')
         .eq('status', 'approved')
-        .order('rating', { ascending: false, nullsFirst: false })
+        .order('google_rating', { ascending: false, nullsFirst: false })
 
     if (error) throw new Error(`Failed to fetch locations: ${error.message}`)
 

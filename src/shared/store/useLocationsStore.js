@@ -18,14 +18,18 @@ import { MOCK_LOCATIONS } from '@/mocks/locations'
  */
 
 const DEFAULT_FILTERS = {
-    activeCategory: 'All',
+    activeCategories: [],
     searchQuery: '',
     activePriceLevels: [],
     minRating: null,
     activeVibes: [],
     activeBestTime: null,
     radius: 0,
-    sortBy: 'rating',
+    userLocation: null, // { lat, lng }
+    sortBy: 'google_rating',
+    activeCity: 'All',
+    activeCountry: 'All',
+    isOpenNow: false,
 }
 
 /** Compare price levels for sort: $ < $$ < $$$ */
@@ -33,27 +37,80 @@ const PRICE_ORDER = { '$': 1, '$$': 2, '$$$': 3 }
 
 // Best-time label groups for matching against location data
 const BEST_TIME_LABELS = {
-    morning: ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee'],
-    lunch:   ['Lunch', 'Business lunch', 'Midday'],
-    evening: ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining'],
+    morning:    ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee', 'Завтрак', 'Утро'],
+    day:        ['Lunch', 'Business lunch', 'Midday', 'Ланч', 'Обед', 'День'],
+    evening:    ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining', 'Ужин', 'Вечер'],
+    late_night: ['Night', 'Late night', 'Bar', 'Club', 'Nightlife', 'Ночь', 'Поздний ужин'],
 }
 
-function applyAllFilters(locations, filters) {
+/** 
+ * Helper to check if a location is currently open.
+ * Supports format "HH:mm - HH:mm" or "HH:mm-HH:mm"
+ */
+function isLocationOpen(openingHours) {
+    if (!openingHours) return true 
+    try {
+        const now = new Date()
+        const currentTime = now.getHours() * 60 + now.getMinutes()
+        
+        const parts = openingHours.split('-').map(p => p.trim())
+        if (parts.length !== 2) return true
+
+        const parseTime = (t) => {
+            const [h, m] = t.split(':').map(Number)
+            return h * 60 + m
+        }
+
+        const start = parseTime(parts[0])
+        const end = parseTime(parts[1])
+
+        if (end < start) {
+            // Over midnight
+            return currentTime >= start || currentTime <= end
+        }
+        return currentTime >= start && currentTime <= end
+    } catch (e) {
+        return true
+    }
+}
+
+
+export function applyAllFilters(locations, filters) {
     const {
-        activeCategory,
+        activeCategories,
         searchQuery,
         activePriceLevels,
         minRating,
         activeVibes,
         activeBestTime,
+        radius,
+        userLocation,
         sortBy,
+        activeCity,
+        activeCountry,
+        isOpenNow,
     } = filters
 
     let result = [...locations]
 
-    // ─── Category ────────────────────────────────────────────────────────────
-    if (activeCategory && activeCategory !== 'All') {
-        result = result.filter(loc => loc.category === activeCategory)
+    // ─── Categories (Multi-select) ───────────────────────────────────────────
+    if (activeCategories?.length > 0) {
+        result = result.filter(loc => activeCategories.includes(loc.category))
+    }
+
+    // ─── Open Now ────────────────────────────────────────────────────────────
+    if (isOpenNow) {
+        result = result.filter(loc => isLocationOpen(loc.openingHours || loc.hours))
+    }
+
+    // ─── Country ─────────────────────────────────────────────────────────────
+    if (activeCountry && activeCountry !== 'All') {
+        result = result.filter(loc => loc.country === activeCountry)
+    }
+
+    // ─── City ────────────────────────────────────────────────────────────────
+    if (activeCity && activeCity !== 'All') {
+        result = result.filter(loc => loc.city === activeCity)
     }
 
     // ─── Search ───────────────────────────────────────────────────────────────
@@ -81,7 +138,7 @@ function applyAllFilters(locations, filters) {
 
     // ─── Rating ──────────────────────────────────────────────────────────────
     if (minRating != null) {
-        result = result.filter(loc => (loc.rating ?? 0) >= minRating)
+        result = result.filter(loc => (loc.rating ?? loc.google_rating ?? 0) >= minRating)
     }
 
     // ─── Vibes / Labels ──────────────────────────────────────────────────────
@@ -95,13 +152,16 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.kg_cuisines) ? loc.kg_cuisines : []),
                 ...(Array.isArray(loc.kg_dishes) ? loc.kg_dishes : []),
                 ...(loc.cuisine ? [loc.cuisine] : []),
-            ]
-            return activeVibes.some(v => labels.includes(v))
+            ].map(l => String(l || '').toLowerCase().trim())
+
+            return activeVibes.some(v => {
+                const searchVal = String(v || '').toLowerCase().trim()
+                return labels.includes(searchVal)
+            })
         })
     }
 
     // ─── Best Time ───────────────────────────────────────────────────────────
-    // FIX: now actually applied (was UI-only before)
     if (activeBestTime) {
         const timeLabels = BEST_TIME_LABELS[activeBestTime] ?? []
         result = result.filter(loc => {
@@ -110,17 +170,40 @@ function applyAllFilters(locations, filters) {
                 ...(Array.isArray(loc.best_for) ? loc.best_for : []),
                 ...(Array.isArray(loc.features) ? loc.features : []),
                 ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
-            ]
-            return timeLabels.some(tl =>
-                labels.some(l => l?.toLowerCase().includes(tl.toLowerCase()))
+            ].map(l => String(l || '').toLowerCase().trim())
+
+            // Match by ID directly in best_for or by associated keywords
+            const hasIdMatch = Array.isArray(loc.best_for) && loc.best_for.includes(activeBestTime)
+            const hasKeywordMatch = timeLabels.some(tl =>
+                labels.some(l => l.includes(tl.toLowerCase()))
             )
+            return hasIdMatch || hasKeywordMatch
         })
+    }
+
+    // ─── Distance Calculation & Radius ────────────────────────────────────────
+    if (userLocation?.lat && userLocation?.lng) {
+        // 1. Calculate and attach distance to all items
+        result = result.map(loc => {
+            const lat = loc.lat ?? loc.latitude ?? loc.coordinates?.lat
+            const lng = loc.lng ?? loc.longitude ?? loc.coordinates?.lng
+            const distance = (lat != null && lng != null)
+                ? calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
+                : Infinity
+            return { ...loc, distance }
+        })
+
+        // 2. Filter by radius if set
+        if (radius > 0) {
+            result = result.filter(loc => loc.distance <= radius)
+        }
     }
 
     // ─── Sort ────────────────────────────────────────────────────────────────
     switch (sortBy) {
-        case 'rating':
-            result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        case 'rating': // Prioritize internal rating
+        case 'google_rating':
+            result.sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0))
             break
         case 'price_asc':
             result.sort(
@@ -137,11 +220,26 @@ function applyAllFilters(locations, filters) {
         case 'name':
             result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
             break
+        case 'newest':
+            result.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0))
+            break
         default:
             break
     }
 
     return result
+}
+
+/** Haversine formula to calculate distance in km */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371 // Earth's radius
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
 }
 
 // FIX ARCH-2: Do NOT seed with mocks in production — causes stale data flash
@@ -154,16 +252,35 @@ export const useLocationsStore = create((set, get) => ({
     initError: null,      // error message if last init failed (allows retry)
     filteredLocations: INITIAL_LOCATIONS,
     isLoading: false,
+    // FIX: Pagination state — load in pages to avoid huge payloads
+    currentPage: 0,
+    pageSize: 200,
+    hasMore: true,
+    isLoadingMore: false,
 
     ...DEFAULT_FILTERS,
 
     // ─── Filter setters ───────────────────────────────────────────────────
 
-    setCategory: (activeCategory) =>
-        set(state => ({
-            activeCategory,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategory }),
-        })),
+    setCategory: (cat) => set(state => ({
+        activeCategories: [cat],
+        filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: [cat] }),
+    })),
+
+    toggleCategory: (cat) => set(state => {
+        const next = state.activeCategories.includes(cat)
+            ? state.activeCategories.filter(c => c !== cat)
+            : [...state.activeCategories, cat]
+        return {
+            activeCategories: next,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: next }),
+        }
+    }),
+
+    setIsOpenNow: (isOpenNow) => set(state => ({
+        isOpenNow,
+        filteredLocations: applyAllFilters(state.locations, { ...state, isOpenNow }),
+    })),
 
     setSearchQuery: (searchQuery) =>
         set(state => ({
@@ -196,17 +313,36 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, activeBestTime }),
         })),
 
-    // FIX BUG-4: Radius setter — also re-apply filters to trigger UI update
+    // Set radius and re-filter
     setRadius: (radius) =>
         set(state => ({
             radius,
             filteredLocations: applyAllFilters(state.locations, { ...state, radius }),
         })),
 
+    // Set user location and re-filter
+    setUserLocation: (userLocation) =>
+        set(state => ({
+            userLocation,
+            filteredLocations: applyAllFilters(state.locations, { ...state, userLocation }),
+        })),
+
     setSortBy: (sortBy) =>
         set(state => ({
             sortBy,
             filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }),
+        })),
+
+    setCity: (activeCity) =>
+        set(state => ({
+            activeCity,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCity }),
+        })),
+
+    setCountry: (activeCountry) =>
+        set(state => ({
+            activeCountry,
+            filteredLocations: applyAllFilters(state.locations, { ...state, activeCountry }),
         })),
 
     /**
@@ -225,6 +361,43 @@ export const useLocationsStore = create((set, get) => ({
             ...DEFAULT_FILTERS,
             filteredLocations: state.locations,
         })),
+
+    getActiveFiltersCount: () => {
+        const state = get()
+        let count = 0
+        if (state.activeCategories?.length > 0) count++
+        if (state.searchQuery) count++
+        if (state.activePriceLevels?.length > 0) count++
+        if (state.minRating !== null) count++
+        if (state.activeVibes?.length > 0) count++
+        if (state.activeBestTime !== null) count++
+        if (state.radius > 0) count++
+        if (state.activeCity !== 'All') count++
+        if (state.activeCountry !== 'All') count++
+        if (state.isOpenNow) count++
+        return count
+    },
+
+    updateUserLocation: async () => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation not supported'))
+                return
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude
+                    const lng = pos.coords.longitude
+                    get().setUserLocation({ lat, lng })
+                    resolve({ lat, lng })
+                },
+                (err) => {
+                    reject(err)
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            )
+        })
+    },
 
     // ─── Data mutations ──────────────────────────────────────────────────
 
@@ -263,27 +436,57 @@ export const useLocationsStore = create((set, get) => ({
         // Allow retry if initialized but empty (network fail / status mismatch)
         if (get().isLoading) return
         if (get().isInitialized && get().locations.length > 0) return
-        set({ isLoading: true })
+        set({ isLoading: true, currentPage: 0, hasMore: true })
         try {
             const { getLocations } = await import('@/shared/api/locations.api')
-            const result = await getLocations({ limit: 500 })
+            const result = await getLocations({ limit: get().pageSize, offset: 0 })
             const data = result?.data ?? result
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
                 set((state) => ({
                     locations: data,
                     filteredLocations: applyAllFilters(data, state),
                     isLoading: false,
                     isInitialized: true,
                     initError: null,
+                    currentPage: 1,
+                    hasMore: data.length >= get().pageSize,
                 }))
             } else {
                 // Empty response is still a successful init — DB may have no data yet
-                set({ isLoading: false, isInitialized: true, initError: null })
+                set({ isLoading: false, isInitialized: true, initError: null, hasMore: false })
             }
         } catch (err) {
             // On error: do NOT set isInitialized=true — allow retry on next mount
             console.error('[useLocationsStore] initialize failed:', err.message)
             set({ isLoading: false, initError: err.message })
+        }
+    },
+
+    /** Load next page of locations (pagination). */
+    loadMore: async () => {
+        const { isLoadingMore, hasMore, pageSize, currentPage, locations } = get()
+        if (isLoadingMore || !hasMore) return
+        set({ isLoadingMore: true })
+        try {
+            const { getLocations } = await import('@/shared/api/locations.api')
+            const offset = currentPage * pageSize
+            const result = await getLocations({ limit: pageSize, offset })
+            const data = result?.data ?? result
+            if (Array.isArray(data) && data.length > 0) {
+                const merged = [...locations, ...data]
+                set((state) => ({
+                    locations: merged,
+                    filteredLocations: applyAllFilters(merged, state),
+                    currentPage: currentPage + 1,
+                    hasMore: data.length >= pageSize,
+                    isLoadingMore: false,
+                }))
+            } else {
+                set({ hasMore: false, isLoadingMore: false })
+            }
+        } catch (err) {
+            console.error('[useLocationsStore] loadMore failed:', err.message)
+            set({ isLoadingMore: false })
         }
     },
 

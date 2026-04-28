@@ -68,7 +68,7 @@ src/
 | `user_visits` | История посещений |
 | `reviews` | Отзывы (pending/published/rejected) |
 
-**Admin:** alik2191@gmail.com → role = 'admin'
+**Admin:** admin@example.com → role = 'admin' (configure via VITE_ADMIN_EMAILS)
 
 ---
 

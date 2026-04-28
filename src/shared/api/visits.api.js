@@ -9,7 +9,7 @@ export async function getUserVisits(userId) {
 
 export async function getUserVisitsWithLocations(userId) {
     if (!supabase) return []
-    const { data, error } = await supabase.from('user_visits').select('*, locations(title, image, category, rating, city)').eq('user_id', userId).order('visited_at', { ascending: false })
+    const { data, error } = await supabase.from('user_visits').select('*, locations(title, image, category, google_rating, city)').eq('user_id', userId).order('visited_at', { ascending: false })
     if (error) throw new ApiError(error.message, 500, 'FETCH_ERROR')
     return data || []
 }

@@ -1,4 +1,5 @@
 import React from 'react'
+import LocationImage from '@/components/ui/LocationImage'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
@@ -6,7 +7,6 @@ import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shar
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
-import LocationImage from '@/components/ui/LocationImage'
 
 // ─── Location card (compact horizontal) ──────────────────────────────────
 function SavedCard({ favorite, index, onRemove }) {
@@ -24,18 +24,18 @@ function SavedCard({ favorite, index, onRemove }) {
             className={`group relative flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
                 isDark
                     ? 'bg-white/5 border border-white/10 hover:bg-white/8'
-                    : 'bg-white border border-gray-100 hover:shadow-md'
+                    : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.06),0_10px_30px_rgba(15,23,42,0.08)]'
             }`}
         >
             {/* Image */}
             <Link to={`/location/${loc.id}`} className="flex-shrink-0">
                 <div className="w-20 h-20 rounded-xl overflow-hidden">
                     <LocationImage
-                        src={loc.image}
-                        alt={loc.title}
-                        width={200}
-                        className="transition-transform duration-500 group-hover:scale-110"
-                    />
+    src={loc.image}
+    alt={loc.title}
+    width={200}
+    className="transition-transform duration-500 group-hover:scale-110"
+/>
                 </div>
             </Link>
 
@@ -46,7 +46,7 @@ function SavedCard({ favorite, index, onRemove }) {
                         <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {loc.title}
                         </h3>
-                        <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <p className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/50' : 'text-gray-600'}`}>
                             {loc.cuisine} · {loc.category}
                         </p>
                     </div>
@@ -54,20 +54,20 @@ function SavedCard({ favorite, index, onRemove }) {
                     {/* Rating pill */}
                     <div className="flex-shrink-0 flex items-center gap-1 bg-blue-600/10 px-2 py-1 rounded-xl">
                         <Star size={10} className="text-blue-600 fill-blue-600" />
-                        <span className="text-[11px] font-black text-blue-600">{loc.rating}</span>
+                        <span className="text-[11px] font-black text-blue-600">{loc.google_rating ?? loc.rating}</span>
                     </div>
                 </div>
 
                 {/* Meta row */}
                 <div className="flex items-center gap-3 mt-2">
                     {(loc.price_level || loc.priceLevel) && (
-                        <span className={`text-[11px] font-bold ${isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className={`text-[11px] font-bold ${isDark ? 'text-white/40' : 'text-gray-600'}`}>
                             {loc.price_level || loc.priceLevel}
                         </span>
                     )}
                     {(loc.special_labels?.[0] || loc.vibe) && (
                         <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
-                            isDark ? 'bg-white/8 text-white/50' : 'bg-gray-100 text-gray-500'
+                            isDark ? 'bg-white/8 text-white/60' : 'bg-slate-100 text-slate-700'
                         }`}>
                             {loc.special_labels?.[0] || loc.vibe}
                         </span>
@@ -110,7 +110,7 @@ function EmptyState({ isDark }) {
             <h2 className={`text-2xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('saved.empty_title')}
             </h2>
-            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+            <p className={`text-sm font-medium leading-relaxed mb-8 max-w-xs ${isDark ? 'text-white/50' : 'text-slate-600'}`}>
                 {t('saved.empty_desc')}
             </p>
 
@@ -162,7 +162,7 @@ const SavedPage = () => {
                     </div>
                 )}
                 {!isLoading && favorites.length > 0 && (
-                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <p className={`text-sm font-medium mt-1 ${isDark ? 'text-white/50' : 'text-slate-600'}`}>
                         {t('saved.places_saved', { count: favorites.length })}
                     </p>
                 )}

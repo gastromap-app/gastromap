@@ -9,7 +9,7 @@ export function Skeleton({ className }) {
     return (
         <div
             className={cn(
-                'relative overflow-hidden bg-slate-200 dark:bg-slate-800 rounded-2xl',
+                'relative overflow-hidden bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-2xl',
                 'before:absolute before:inset-0',
                 'before:bg-gradient-to-r before:from-transparent before:via-white/40 dark:before:via-white/10 before:to-transparent',
                 'before:animate-[shimmer_1.5s_infinite]',
@@ -44,13 +44,14 @@ export function LocationCardDesktopSkeleton({ isDark }) {
 export function LocationCardMobileSkeleton({ isDark }) {
     return (
         <div className={cn(
-            'flex flex-col p-3 rounded-[32px] border',
+            'flex flex-col rounded-2xl overflow-hidden border animate-pulse',
             isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'
         )}>
-            <Skeleton className="h-48 w-full rounded-[24px] mb-3" />
-            <div className="px-1 pb-1 space-y-2.5">
-                <Skeleton className="h-4 w-2/3 rounded-xl" />
-                <Skeleton className="h-3 w-1/3 rounded-xl" />
+            <Skeleton className="h-28 w-full rounded-none" />
+            <div className="p-2.5 space-y-2">
+                <Skeleton className="h-3.5 w-3/4 rounded-xl" />
+                <Skeleton className="h-2.5 w-1/2 rounded-xl" />
+                <Skeleton className="h-2.5 w-1/3 rounded-xl" />
             </div>
         </div>
     )

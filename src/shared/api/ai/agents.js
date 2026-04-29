@@ -269,17 +269,23 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
 
         // Collect full location objects for UI cards.
         // search_locations + search_nearby → array of mapLocation results.
-        if ((toolCall.function.name === 'search_locations' || toolCall.function.name === 'search_nearby')
-            && Array.isArray(result)) {
-            let activeLocations = locations
-            if (!activeLocations?.length) {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                activeLocations = useLocationsStore.getState().locations
+        // We now handle both array and object { results: [] } formats.
+        if (toolCall.function.name === 'search_locations' || toolCall.function.name === 'search_nearby') {
+            const resultList = Array.isArray(result) ? result : (result?.results || [])
+            
+            if (resultList.length > 0) {
+                let activeLocations = locations
+                if (!activeLocations?.length) {
+                    try {
+                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+                        activeLocations = useLocationsStore.getState().locations
+                    } catch { activeLocations = [] }
+                }
+                usedLocations = resultList
+                    .map(r => activeLocations.find(l => l.id === r.id) || r)
+                    .filter(Boolean)
+                    .slice(0, 5)
             }
-            usedLocations = result
-                .map(r => activeLocations.find(l => l.id === r.id) || r)
-                .filter(Boolean)
-                .slice(0, 5)
         }
         if (toolCall.function.name === 'get_location_details' && result?.id) {
             let activeLocations = locations

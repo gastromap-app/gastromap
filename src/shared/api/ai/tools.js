@@ -24,6 +24,7 @@
 import { semanticSearch } from './search.js'
 import { supabase } from '../client.js'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
+import { getAIContextForQuery } from '../knowledge-graph.api.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -417,18 +418,31 @@ export async function executeTool(name, args, ctx = {}) {
             }
         }
 
-        const results = pool.slice(0, limit)
-        console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}.`)
+        // --- KG ENHANCEMENT (TDD) ---
+        // Fetch culinary context in parallel to avoid adding latency.
+        // We use the most descriptive field available as the query for KG.
+        const kgSearchQuery = keyword || category || (cuisine_types && cuisine_types[0]) || city || ''
+        const kgContextPromise = getAIContextForQuery(kgSearchQuery).catch(err => {
+            console.warn('[ai.tools] KG context fetch failed:', err.message)
+            return null
+        })
 
-        if (!results.length) {
-            return {
-                found: 0,
-                message: `No locations found matching the search criteria (city: ${city ?? 'any'}, category: ${category ?? 'any'}).`,
-                results: [],
-            }
+        const [poolResults, culinaryContext] = await Promise.all([
+            Promise.resolve(pool),
+            kgContextPromise
+        ])
+
+        const results = poolResults.slice(0, limit).map(mapLocation)
+        
+        console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
+
+        // Return object format for better extensibility
+        return {
+            results,
+            culinaryContext,
+            found: pool.length,
+            message: results.length ? null : `No locations found matching the search criteria.`
         }
-
-        return results.map(mapLocation)
     }
 
     // ── search_nearby ───────────────────────────────────────────────────────
@@ -527,16 +541,22 @@ export async function executeTool(name, args, ctx = {}) {
         }
 
         pool.sort((a, b) => (a.distance_meters ?? Infinity) - (b.distance_meters ?? Infinity))
-        const results = pool.slice(0, clampedLimit)
+        const poolResults = pool.slice(0, clampedLimit)
 
-        if (!results.length) {
-            return {
-                found: 0,
-                message: `No places within ${clampedRadius}m match the criteria.`,
-                results: [],
-            }
+        // --- KG ENHANCEMENT (TDD) ---
+        const kgSearchQuery = cuisine || category || ''
+        const culinaryContext = kgSearchQuery ? await getAIContextForQuery(kgSearchQuery).catch(() => null) : null
+
+        const results = poolResults.map(mapLocation)
+
+        console.log(`[ai.tools] ✅ Nearby search complete. Found ${pool.length} matches. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
+
+        return {
+            results,
+            culinaryContext,
+            found: pool.length,
+            message: results.length ? null : `No places within ${clampedRadius}m match the criteria.`
         }
-        return results.map(mapLocation)
     }
 
     // ── get_location_details ────────────────────────────────────────────────

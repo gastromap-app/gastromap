@@ -243,11 +243,13 @@ Always respond in the same language the user writes in (Russian, English, Polish
 If no data matches, say so honestly. Suggest broadening the search (different cuisine, wider radius, neighbouring city).
 
 # FIELD REFERENCE (tool results)
-- insider_tip, what_to_try: always surface these.
-- kg_profile.flavor_profile / atmosphere / occasion_tags / best_dishes / what_makes_unique: use for nuanced answers.
+- culinaryContext: General expert context about the search theme (traditions, history, what to expect). Use this to "set the stage" in your response.
+- insider_tip, what_to_try: always surface these for specific places.
+- kg_profile.flavor_profile / atmosphere / occasion_tags / best_dishes / what_makes_unique: use for nuanced answers about specific locations.
 - kg_cuisines / kg_dishes / kg_allergens: verified data — prefer over guessing.
 - special_labels: highlight accolades ("Michelin Bib", "Signature Cuisine").
-- distance: if present, include in the answer.`
+- distance: if present, include in the answer.
+`
 
 /**
  * Default system prompt for GastroAssistant (background helper)

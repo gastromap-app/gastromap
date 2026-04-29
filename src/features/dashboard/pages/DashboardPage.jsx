@@ -24,6 +24,7 @@ import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 import CategoryFilters from '../components/CategoryFilters'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
+import LazyImage from '@/components/ui/LazyImage'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -192,9 +193,9 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                         )}
                     </div>
                     {/* Price level — key decision signal for users */}
-                    {(loc.price_range || loc.price_level || loc.priceLevel) && (
+                    {loc.price_range && (
                         <span className={`text-[11px] font-bold tracking-tight ${isDark ? 'text-gray-400' : 'text-slate-700'}`}>
-                            {loc.price_range ?? loc.price_level ?? loc.priceLevel}
+                            {loc.price_range}
                         </span>
                     )}
                 </div>
@@ -578,9 +579,8 @@ const DashboardPage = () => {
                                         aria-label={t('dashboard.explore_country_aria', { country: country.name })}
                                         className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
                                     >
-                                        <img
+                                        <LazyImage
                                             src={country.image}
-                                            crossOrigin="anonymous"
                                             alt={country.name}
                                             className="w-full h-full object-cover"
                                         />
@@ -881,7 +881,12 @@ const DesktopDashboard = ({
                                     aria-label={t('dashboard.explore_country_aria', { country: country.name })}
                                     className="relative h-[180px] rounded-card overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform duration-200 text-left"
                                 >
-                                    <img src={country.image} alt={country.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    <LocationImage
+                                        src={country.image}
+                                        alt={country.name}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                        width={400}
+                                    />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                                     <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-full">
                                         {t('dashboard.new_badge', { count: country.newCount })}

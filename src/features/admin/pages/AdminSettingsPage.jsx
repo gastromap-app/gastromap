@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import LazyImage from '@/components/ui/LazyImage'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
     <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] p-6 lg:p-8 shadow-sm">
@@ -59,7 +60,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
                 className="h-32 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/[0.08] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 hover:border-indigo-400 transition-all group overflow-hidden relative"
             >
                 {value ? (
-                    <img src={value} alt="Logo preview" className="w-full h-full object-contain p-4" />
+                    <LazyImage src={value} alt="Logo preview" className="w-full h-full object-contain p-4" />
                 ) : (
                     <>
                         <ImageIcon size={24} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />

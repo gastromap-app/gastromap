@@ -46,7 +46,7 @@ const mockLocations = [
         city: 'Krakow',
         address: 'ul. Florianska 1',
         rating: 4.8,
-        priceLevel: '$$',
+        price_range: '$$',
         vibe: ['Cozy', 'Romantic'],
         features: ['outdoor seating', 'wifi'],
         best_for: ['date', 'family'],

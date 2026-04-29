@@ -104,7 +104,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                 country: item.country || '',
                 address: item.address || '',
                 description: item.description || '',
-                price_level: item.price_level || item.price_range || '$$',
+                price_range: item.price_range || item.price_level || '$$',
                 google_rating: parseFloat(item.rating) || 4.0,
                 status: 'pending',
                 photos: item.photos ? (Array.isArray(item.photos) ? item.photos : [item.photos]) : [],

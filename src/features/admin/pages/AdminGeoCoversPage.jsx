@@ -5,6 +5,7 @@ import { Upload, Trash2, Globe, CheckCircle2, AlertCircle, Link as LinkIcon, X, 
 import AdminPageHeader from '../components/AdminPageHeader'
 import { useGeoCovers, useUpsertGeoCoverMutation, useDeleteGeoCoverMutation } from '@/shared/api/queries'
 import { supabase } from '@/shared/api/client'
+import LazyImage from '@/components/ui/LazyImage'
 
 // ─── Static fallback data ─────────────────────────────────────────────────────
 const COUNTRIES = [
@@ -84,7 +85,7 @@ function GeoCoverCard({ item, cover, geoType }) {
                 onClick={() => !urlMode && inputRef.current?.click()}
             >
                 {currentImage ? (
-                    <img
+                    <LazyImage
                         src={currentImage}
                         alt={item.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

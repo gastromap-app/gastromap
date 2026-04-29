@@ -49,91 +49,9 @@ function getActiveAIConfig() {
 
 // ─── Tool definitions (OpenAI function calling format) ────────────────────
 
-const TOOLS = [
-    {
-        type: 'function',
-        function: {
-            name: 'search_locations',
-            description: 'Search gastro locations (restaurants, cafes, bars) by filters. ALWAYS call this tool before making any specific recommendations. Do not recommend places you have not retrieved via this tool.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    city: {
-                        type: 'string',
-                        description: 'City name, e.g. "Krakow"',
-                    },
-                    cuisine: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Cuisine types, e.g. ["French", "Italian", "Polish"]',
-                    },
-                    vibe: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Atmosphere vibes, e.g. ["Romantic", "Casual", "Sophisticated", "Energetic"]',
-                    },
-                    price_level: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Price levels: "$", "$$", "$$$", "$$$$"',
-                    },
-                    category: {
-                        type: 'string',
-                        description: 'Category: Restaurant, Cafe, Bar, Fine Dining, Street Food',
-                    },
-                    features: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Features, e.g. ["outdoor seating", "wifi", "pet-friendly", "river view"]',
-                    },
-                    best_for: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Occasion, e.g. ["date", "family", "business", "solo", "party", "anniversary"]',
-                    },
-                    dietary: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        description: 'Dietary needs, e.g. ["vegan", "vegetarian", "gluten-free"]',
-                    },
-                    min_rating: {
-                        type: 'number',
-                        description: 'Minimum rating (1–5)',
-                    },
-                    keyword: {
-                        type: 'string',
-                        description: 'Free-text keyword to match against name, description, tags, and hidden ai_keywords (e.g. "proposal spot", "jazz", "sunday brunch")',
-                    },
-                    michelin: {
-                        type: 'boolean',
-                        description: 'True to filter only Michelin-recognized places',
-                    },
-                    limit: {
-                        type: 'integer',
-                        description: 'Max results to return (default 5)',
-                    },
-                },
-            },
-        },
-    },
-    {
-        type: 'function',
-        function: {
-            name: 'get_location_details',
-            description: 'Get full details for a specific location by ID, including insider tips, dishes to try, and expert notes.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    location_id: {
-                        type: 'string',
-                        description: 'The location ID',
-                    },
-                },
-                required: ['location_id'],
-            },
-        },
-    },
-]
+// TOOLS are imported from ./ai/constants.js above.
+// No need to redefine them here to avoid price_level vs price_range conflicts.
+
 
 // ─── Client-side tool executor ────────────────────────────────────────────
 
@@ -142,18 +60,18 @@ async function executeTool(name, args) {
 
     if (name === 'search_locations') {
         const {
-            city, cuisine, vibe, price_level, category,
-            features, best_for, dietary, min_rating, keyword, michelin, limit = 5
+            city, cuisine_types, tags, price_range, category,
+            amenities, best_for, dietary_options, min_rating, keyword, michelin, limit = 5
         } = args
 
         // Hybrid Search Implementation
         // We construct a query string from available filters to help the semantic search
         const queryParts = []
         if (keyword) queryParts.push(keyword)
-        if (cuisine?.length) queryParts.push(cuisine.join(' '))
-        if (vibe?.length) queryParts.push(vibe.join(' '))
+        if (cuisine_types?.length) queryParts.push(cuisine_types.join(' '))
+        if (tags?.length) queryParts.push(tags.join(' '))
         if (best_for?.length) queryParts.push(best_for.join(' '))
-        if (features?.length) queryParts.push(features.join(' '))
+        if (amenities?.length) queryParts.push(amenities.join(' '))
         
         const queryText = queryParts.join(' ').trim() || 'best restaurants'
         
@@ -168,7 +86,7 @@ async function executeTool(name, args) {
                     category: l.category,
                     cuisine: l.cuisine,
                     vibe: l.vibe,
-                    price_level: l.price_level, // RPC returns snake_case
+                    price_range: l.price_range,
                     rating: l.rating,
                     address: l.address,
                     opening_hours: l.opening_hours || null,
@@ -202,30 +120,30 @@ async function executeTool(name, args) {
         if (category) {
             results = results.filter(l => l.category?.toLowerCase() === category.toLowerCase())
         }
-        if (cuisine?.length) {
+        if (cuisine_types?.length) {
             results = results.filter(l =>
-                cuisine.some(c => l.cuisine?.toLowerCase().includes(c.toLowerCase()))
+                cuisine_types.some(c => (l.cuisine_types || []).some(lc => lc.toLowerCase().includes(c.toLowerCase())))
             )
         }
-        if (vibe?.length) {
+        if (tags?.length) {
             results = results.filter(l => {
-                const locVibes = Array.isArray(l.vibe) ? l.vibe : [l.vibe]
-                return vibe.some(v =>
-                    locVibes.some(lv => lv?.toLowerCase().includes(v.toLowerCase()))
+                const locTags = Array.isArray(l.tags) ? l.tags : []
+                return tags.some(v =>
+                    locTags.some(lv => lv?.toLowerCase().includes(v.toLowerCase()))
                 )
             })
         }
-        if (price_level?.length) {
-            results = results.filter(l => price_level.includes(l.priceLevel))
+        if (price_range?.length) {
+            results = results.filter(l => price_range.includes(l.price_range))
         }
         if (min_rating) {
             results = results.filter(l => (l.google_rating ?? l.rating ?? 0) >= min_rating)
         }
-        if (features?.length) {
+        if (amenities?.length) {
             results = results.filter(l => {
-                const locFeatures = (l.features ?? []).map(f => f.toLowerCase())
-                return features.some(f =>
-                    locFeatures.some(lf => lf.includes(f.toLowerCase()))
+                const locAmenities = (l.amenities ?? []).map(f => f.toLowerCase())
+                return amenities.some(f =>
+                    locAmenities.some(lf => lf.includes(f.toLowerCase()))
                 )
             })
         }
@@ -237,10 +155,10 @@ async function executeTool(name, args) {
                 )
             })
         }
-        if (dietary?.length) {
+        if (dietary_options?.length) {
             results = results.filter(l => {
-                const locDietary = (l.dietary ?? []).map(d => d.toLowerCase())
-                return dietary.some(d =>
+                const locDietary = (l.dietary_options ?? l.dietary ?? []).map(d => d.toLowerCase())
+                return dietary_options.some(d =>
                     locDietary.some(ld => ld.includes(d.toLowerCase()))
                 )
             })
@@ -270,7 +188,7 @@ async function executeTool(name, args) {
             category: l.category,
             cuisine: l.cuisine,
             vibe: l.vibe,
-            price_level: l.priceLevel,
+            price_range: l.price_range,
             rating: l.google_rating ?? l.rating,
             address: l.address,
             opening_hours: l.openingHours,

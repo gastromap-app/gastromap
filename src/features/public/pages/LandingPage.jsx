@@ -1,4 +1,5 @@
 import React from 'react'
+import { LazyImage } from '@/components/ui/LazyImage'
 import { Link } from 'react-router-dom'
 import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -96,14 +97,12 @@ const BentoHero = () => {
                     <div className="lg:col-span-5 flex flex-col gap-4 md:gap-6">
                         {/* Immersive Photo Card */}
                         <div className="flex-1 bg-[#1C1C1E] rounded-[32px] md:rounded-[40px] relative overflow-hidden group min-h-[200px] md:min-h-[300px] animate-in fade-in zoom-in-95 duration-1000 fill-mode-both">
-                            <img
+                            <LazyImage
                                 src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1600&auto=format&fit=crop"
                                 alt="Hero Background"
-                                fetchpriority="high"
-                                crossOrigin="anonymous"
-                                loading="eager"
-                                decoding="async"
+                                priority={true}
                                 className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform [transition-duration:2000ms] ease-out"
+                                width={1600}
                             />
                             <div className="absolute bottom-6 left-6 right-6 z-10 flex items-end justify-between">
                                 <div className="bg-white/20 backdrop-blur-2xl border border-white/20 px-5 py-3 rounded-[24px] text-white/90">
@@ -139,7 +138,12 @@ const BentoHero = () => {
                                     transition={{ duration: 0.3 }}
                                     className="mt-6 flex gap-4 items-center"
                                 >
-                                    <img src={reviews[reviewIndex].img} alt="User" className="w-12 h-12 rounded-full ring-2 ring-black/5 dark:ring-white/10 object-cover" />
+                                    <LazyImage 
+                                        src={reviews[reviewIndex].img} 
+                                        alt="User" 
+                                        className="w-12 h-12 rounded-full ring-2 ring-black/5 dark:ring-white/10 object-cover" 
+                                        width={100}
+                                    />
                                     <div>
                                         <p className="text-sm font-medium text-black/80 dark:text-white/80 leading-snug line-clamp-2">
                                             "{reviews[reviewIndex].text}"
@@ -262,11 +266,21 @@ const BentoHero = () => {
                             <div className="relative flex gap-4">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-                                    <img src="https://i.pravatar.cc/100?img=5" alt="Friend" className="w-8 h-8 rounded-full border-2 border-white dark:border-[#1C1C1E] shadow-sm relative z-10" />
+                                    <LazyImage 
+                                        src="https://i.pravatar.cc/100?img=5" 
+                                        alt="Friend" 
+                                        className="w-8 h-8 rounded-full border-2 border-white dark:border-[#1C1C1E] shadow-sm relative z-10" 
+                                        width={50}
+                                    />
                                 </div>
                                 <div className="relative top-3">
                                     <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20" style={{ animationDelay: '1s' }}></div>
-                                    <img src="https://i.pravatar.cc/100?img=3" alt="Friend" className="w-8 h-8 rounded-full border-2 border-white dark:border-[#1C1C1E] shadow-sm relative z-10" />
+                                    <LazyImage 
+                                        src="https://i.pravatar.cc/100?img=3" 
+                                        alt="Friend" 
+                                        className="w-8 h-8 rounded-full border-2 border-white dark:border-[#1C1C1E] shadow-sm relative z-10" 
+                                        width={50}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -334,11 +348,11 @@ const CollectionPreview = () => (
                     { title: "Tokyo", sub: "Sushi Arai", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800&auto=format&fit=crop" }
                 ].map((item, i) => (
                     <motion.div key={i} variants={fadeInUp} className="group relative h-[350px] md:h-[480px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-[#1C1C1E] cursor-pointer">
-                        <img
+                        <LazyImage
                             src={item.img}
                             alt={item.title}
-                            loading="lazy"
                             className="absolute inset-0 w-full h-full object-cover transition-transform [transition-duration:2000ms] ease-out group-hover:scale-105 opacity-90"
+                            width={800}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 text-white">

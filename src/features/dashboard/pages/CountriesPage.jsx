@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
 import { MapPin, ChevronRight, Search, Home, AlertCircle, Globe } from 'lucide-react'
+import { LazyImage } from '@/components/ui/LazyImage'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useGeoCovers } from '@/shared/api/queries'
@@ -41,10 +42,11 @@ function CountryCard({ country, navigate, desktop = false }) {
             }`}
             aria-label={`Explore ${country.name}`}
         >
-            <img
+            <LazyImage
                 src={country.image}
                 alt={country.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                width={400}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             <div className={`absolute left-6 text-white ${desktop ? 'bottom-6' : 'bottom-5'}`}>

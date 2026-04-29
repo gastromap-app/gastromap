@@ -5,6 +5,8 @@ import { ChevronRight, MapPin, Star, Search, SlidersHorizontal, Home } from 'luc
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
+import { LazyImage } from '@/components/ui/LazyImage'
+import { LocationImage } from '@/components/ui/LocationImage'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -295,10 +297,11 @@ export function DrillDownExplorer({
                         >
                             {/* Country hero */}
                             <div className="relative h-40 overflow-hidden">
-                                <img
+                                <LazyImage
                                     src={selectedCountry?.image}
                                     alt={selectedCountry?.name}
                                     className="w-full h-full object-cover"
+                                    width={800}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                                 <div className="absolute bottom-4 left-5">
@@ -384,11 +387,11 @@ export function DrillDownExplorer({
                                         >
                                             {/* Image */}
                                             <div className="relative h-28 w-full overflow-hidden">
-                                                <img
-                                                    src={loc.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400'}
+                                                <LocationImage
+                                                    src={loc.image}
                                                     alt={loc.title}
                                                     className="w-full h-full object-cover"
-                                                    loading="lazy"
+                                                    width={400}
                                                 />
                                                 {/* Rating badge */}
                                                 <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
@@ -396,9 +399,9 @@ export function DrillDownExplorer({
                                                     <span className="text-[10px] font-bold text-white">{loc.google_rating ?? loc.rating ?? '—'}</span>
                                                 </div>
                                                 {/* Price badge */}
-                                                {loc.price_level && (
+                                                {loc.price_range && (
                                                     <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
-                                                        <span className="text-[10px] font-bold text-white">{loc.price_level}</span>
+                                                        <span className="text-[10px] font-bold text-white">{loc.price_range}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -468,8 +471,12 @@ export function CountryCards({ countries, onSelectCountry }) {
                     onClick={() => onSelectCountry(country)}
                     className="relative flex-shrink-0 w-[220px] h-[150px] rounded-[22px] overflow-hidden shadow-xl snap-center group text-left active:scale-95 transition-transform"
                 >
-                    <img src={country.image} crossOrigin="anonymous" alt={country.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <LazyImage 
+                        src={country.image} 
+                        alt={country.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        width={400}
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     {country.newCount > 0 && (
                         <div className="absolute top-3 left-3 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">

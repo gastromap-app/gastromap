@@ -60,7 +60,7 @@ describe('overpassApi', () => {
             expect(loc.coordinates).toHaveProperty('lng', 19.94)
             expect(loc).toHaveProperty('rating')
             expect(loc).toHaveProperty('image')
-            expect(loc).toHaveProperty('priceLevel')
+            expect(loc).toHaveProperty('price_range')
             expect(loc).toHaveProperty('vibe')
         })
 

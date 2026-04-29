@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { LazyImage } from '@/components/ui/LazyImage'
 import {
     Brain, UtensilsCrossed, Plus, Search,
     Edit2, Trash2, X, Save, Leaf,
@@ -573,7 +574,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                     return (
                                                         <div key={dish.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.02] opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.04]')}>
                                                             <div className="flex items-center gap-3">
-                                                                {dish.image && <img src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+                                                                <LazyImage src={dish.image} alt="" className="w-8 h-8 rounded-lg object-cover" width={50} />
                                                                 <div>
                                                                     <span className="text-sm font-medium text-slate-800 dark:text-[hsl(220,20%,90%)]">{dish.name}</span>
                                                                     {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-[hsl(220,20%,12%)] px-1.5 py-0.5 rounded-full">Already in KG</span>}
@@ -607,7 +608,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
                                                     return (
                                                         <div key={ing.id} className={cn('flex items-center justify-between py-2 px-3 rounded-xl border', already ? 'bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 border-slate-100 dark:border-white/[0.02] opacity-60' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.04]')}>
                                                             <div className="flex items-center gap-3">
-                                                                {ing.image && <img src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+                                                                <LazyImage src={ing.image} alt="" className="w-8 h-8 rounded-lg object-cover" width={50} />
                                                                 <div>
                                                                     <span className="text-sm font-medium text-slate-800 dark:text-[hsl(220,20%,90%)]">{ing.name}</span>
                                                                     {already && <span className="ml-2 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-[hsl(220,20%,12%)] px-1.5 py-0.5 rounded-full">Already in KG</span>}

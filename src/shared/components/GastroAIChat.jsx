@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useAIChat } from '@/hooks/useAIChat'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
+import LazyImage from '@/components/ui/LazyImage'
 
 /**
  * useGastroAI - backward-compatible wrapper around useAIChat.
@@ -316,12 +317,14 @@ export function ChatInterface({
                                                     : 'bg-white border border-gray-100'
                                             }`}
                                         >
-                                            <img
-                                                src={loc.image || loc.image_url}
-                                                alt={loc.title}
-                                                className="w-14 h-14 rounded-xl object-cover"
-                                                loading="lazy"
-                                            />
+                                            <div className="w-14 h-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 dark:border-white/5">
+                                                <LazyImage
+                                                    src={loc.image || loc.image_url}
+                                                    alt={loc.title}
+                                                    className="w-full h-full object-cover"
+                                                    transform={{ width: 120, height: 120 }}
+                                                />
+                                            </div>
                                             <div className="flex-1 min-w-0">
                                                 <h4 className={`font-bold text-sm truncate ${
                                                     transparent ? 'text-gray-900 dark:text-white' : 'text-gray-900'

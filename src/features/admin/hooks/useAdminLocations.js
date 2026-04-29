@@ -9,7 +9,7 @@ import {
     useAIQueryMutation, useCulinaryContextMutation,
     usePendingReviews, useUpdateReviewStatusMutation
 } from '@/shared/api/queries'
-import { applyAllFilters } from '@/shared/store/useLocationsStore'
+import { applyAllFilters } from '@/shared/utils/locationFilters'
 
 /**
  * Custom hook for Admin Locations page business logic
@@ -139,7 +139,7 @@ export const useAdminLocations = () => {
             insider_tip: '',
             must_try: '',
             what_to_try: [],
-            price_level: '$$',
+            price_range: '$$',
             website: '',
             phone: '',
             opening_hours: '',
@@ -235,9 +235,8 @@ export const useAdminLocations = () => {
             prepared.cuisine = loc.cuisine_types.join(', ')
         }
         
-        if (loc.price_range) {
-            prepared.price_level = loc.price_range
-        }
+        // price_range is already canonical, no mapping needed for UI
+
         
         // FIX: Do NOT overwrite vibe from tags — they are separate DB columns
         // vibe = atmosphere labels, tags = search keywords — different semantics
@@ -287,7 +286,7 @@ export const useAdminLocations = () => {
                     description:   data.description    ?? prev.description,
                     insider_tip:   data.insider_tip    ?? prev.insider_tip,
                     cuisine:       data.cuisine        ?? prev.cuisine,
-                    price_level:   data.price_level    ?? prev.price_level,
+                    price_range:   data.price_range    ?? data.price_level ?? prev.price_range,
                     opening_hours: data.opening_hours  ?? prev.opening_hours,
                     // Arrays — merge or replace
                     tags:          data.tags?.length       ? data.tags       : prev.tags,
@@ -431,10 +430,7 @@ export const useAdminLocations = () => {
             delete submissionData.cuisine
         }
         
-        if (submissionData.price_level) {
-            submissionData.price_range = submissionData.price_level
-            delete submissionData.price_level
-        }
+
         
         // vibe is a separate column — keep it as-is, also merge into tags for search
         if (submissionData.vibe?.length) {

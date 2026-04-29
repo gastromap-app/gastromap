@@ -355,7 +355,7 @@
     "group_bar_drinks": "Бар и Напитки",
     "group_atmosphere": "Атмосфера",
     "group_amenities_service": "Удобства и Сервис",
-    "group_awards_special": "Награды и Особое",
+    "group_awards_special": "Награды",
     "best_time_morning": "Утро",
     "best_time_day": "Ланч",
     "best_time_evening": "Вечер",
@@ -396,5 +396,9 @@
     "accessDenied": "Доступ запрещён. Только для администраторов.",
     "selectLocation": "Выберите заведение",
     "searchLocations": "Поиск заведений..."
+  },
+  "labels": {
+    "hidden_gem": "Скрытая жемчужина",
+    "hidden_gem_desc": "Уникальное место по мнению автора приложения"
   }
 }

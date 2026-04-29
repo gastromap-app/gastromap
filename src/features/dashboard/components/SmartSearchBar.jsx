@@ -5,6 +5,7 @@ import { Search, MapPin, Star, X } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
+import { translate } from '@/utils/translation'
 
 /**
  * SmartSearchBar
@@ -35,17 +36,21 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
     const suggestions = useMemo(() => {
         const q = value.trim().toLowerCase()
         if (q.length < 2) return []
+        
+        const qEn = translate(value).toLowerCase().trim()
+
         return locations
             .filter(l =>
-                l.title?.toLowerCase().includes(q) ||
-                l.category?.toLowerCase().includes(q) ||
-                (l.city || l.address || '').toLowerCase().includes(q) ||
-                l.cuisine?.toLowerCase().includes(q) ||
-                l.tags?.some(t => t.toLowerCase().includes(q)) ||
-                l.kg_dishes?.some(d => d.toLowerCase().includes(q)) ||
-                l.kg_cuisines?.some(c => c.toLowerCase().includes(q)) ||
-                l.ai_keywords?.some(k => k.toLowerCase().includes(q)) ||
-                l.description?.toLowerCase().includes(q)
+                (l.title?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(qEn)) ||
+                (l.category?.toLowerCase().includes(q) || l.category?.toLowerCase().includes(qEn)) ||
+                (l.city?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(qEn)) ||
+                (l.address?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(qEn)) ||
+                (l.cuisine?.toLowerCase().includes(q) || l.cuisine?.toLowerCase().includes(qEn)) ||
+                (l.tags?.some(t => t.toLowerCase().includes(q) || t.toLowerCase().includes(qEn))) ||
+                (l.kg_dishes?.some(d => d.toLowerCase().includes(q) || d.toLowerCase().includes(qEn))) ||
+                (l.kg_cuisines?.some(c => c.toLowerCase().includes(q) || c.toLowerCase().includes(qEn))) ||
+                (l.ai_keywords?.some(k => k.toLowerCase().includes(q) || k.toLowerCase().includes(qEn))) ||
+                (l.description?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(qEn))
             )
             .slice(0, 3)
     }, [value, locations])

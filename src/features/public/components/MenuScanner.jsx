@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Upload, X, Loader2, UtensilsCrossed, CheckCircle2, AlertCircle } from 'lucide-react'
+import { LazyImage } from '@/components/ui/LazyImage'
 import { useTheme } from '@/hooks/useTheme'
 
 /**
@@ -142,7 +143,7 @@ export function MenuScanner({ onDishesExtracted }) {
         >
           {previewUrl && (
             <div className="w-full max-h-48 rounded-2xl overflow-hidden">
-              <img src={previewUrl} alt="menu" className="w-full h-full object-cover" />
+              <LazyImage src={previewUrl} alt="menu" className="w-full h-full object-cover" priority={true} />
             </div>
           )}
           <div className="flex items-center gap-3">
@@ -190,7 +191,7 @@ export function MenuScanner({ onDishesExtracted }) {
           {/* Preview thumbnail */}
           {previewUrl && (
             <div className="w-full max-h-36 rounded-2xl overflow-hidden">
-              <img src={previewUrl} alt="scanned menu" className="w-full h-full object-cover" />
+              <LazyImage src={previewUrl} alt="scanned menu" className="w-full h-full object-cover" priority={true} />
             </div>
           )}
 

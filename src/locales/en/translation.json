@@ -299,6 +299,10 @@
     "add_another": "Add Another",
     "back_home": "Back to Dashboard"
   },
+  "labels": {
+    "hidden_gem": "Hidden Gem",
+    "hidden_gem_desc": "A unique place according to the app author"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong",

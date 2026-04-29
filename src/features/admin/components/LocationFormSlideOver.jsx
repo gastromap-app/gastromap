@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import PlacesAutocomplete from '@/shared/components/PlacesAutocomplete'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -8,13 +9,15 @@ import {
 } from 'lucide-react'
 import { compressImage, uploadFile } from '@/shared/api/storage.api'
 import { cn } from '@/lib/utils'
+import LazyImage from '@/components/ui/LazyImage'
 import {
     CATEGORIES_FULL as CATEGORIES,
     PRICE_LEVELS,
-    LABEL_GROUPS,
     LABEL_EMOJI_MAP,
+    getLabelEmoji,
     VISIT_TIMES,
 } from '@/shared/constants/taxonomy'
+import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
@@ -82,6 +85,7 @@ const LocationFormSlideOver = ({
     isImproving,
     setIsImproving,
 }) => {
+    const { t } = useTranslation()
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [newImageUrl, setNewImageUrl]  = useState('')
     const [isUploading, setIsUploading] = useState(false)
@@ -113,7 +117,7 @@ const LocationFormSlideOver = ({
             website:       place.website        || prev?.website       || '',
             google_rating: place.rating         ?? prev?.google_rating ?? null,
             rating:        prev?.rating         ?? place.rating        ?? null,
-            price_level:   place.price_level    || prev?.price_level   || '$$',
+            price_range:   place.price_range    || place.price_level   || prev?.price_range   || '$$',
             opening_hours: place.opening_hours  || prev?.opening_hours || '',
             description:   place.description    || prev?.description   || '',
             google_place_id: place.google_place_id || prev?.google_place_id || null,
@@ -215,9 +219,9 @@ const LocationFormSlideOver = ({
         })
     }
 
-    const toggleLabel = (label) => {
+    const toggleLabel = (labelValue) => {
         const cur = formData.special_labels || []
-        set('special_labels', cur.includes(label) ? cur.filter(l => l !== label) : [...cur, label])
+        set('special_labels', cur.includes(labelValue) ? cur.filter(l => l !== labelValue) : [...cur, labelValue])
     }
 
     const toggleTime = (id) => {
@@ -365,8 +369,8 @@ const LocationFormSlideOver = ({
                                                     <Field label="Ценовой уровень">
                                                         <div className="relative group">
                                                             <select
-                                                                value={formData.price_level || '$$'}
-                                                                onChange={e => set('price_level', e.target.value)}
+                                                                value={formData.price_range || '$$'}
+                                                                onChange={e => set('price_range', e.target.value)}
                                                                 className={cn(input, "appearance-none pr-10 cursor-pointer")}
                                                             >
                                                                 {PRICE_LEVELS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -601,7 +605,7 @@ const LocationFormSlideOver = ({
                                                 <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-3">
                                                     {photos.map((url, idx) => (
                                                         <div key={idx} className="relative group aspect-square rounded-xl sm:rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.08]">
-                                                            <img src={url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                            <LazyImage src={url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                                             <div className="absolute inset-0 bg-black/60 opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                                                                 <button
                                                                     onClick={() => set('image', url)}
@@ -741,16 +745,20 @@ const LocationFormSlideOver = ({
                                         <div className="space-y-4">
                                             <SectionHeader title="Метки и Теги" count={(formData.special_labels || []).length} />
                                             <div className="space-y-6">
-                                                {Object.entries(LABEL_GROUPS).map(([group, labels]) => (
+                                                {Object.entries(getLabelGroupsRu()).map(([group, items]) => (
                                                     <div key={group} className="space-y-3">
                                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">{group}</p>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {labels.map(label => {
-                                                                const active = (formData.special_labels || []).includes(label)
+                                                            {items.map(item => {
+                                                                const active = (formData.special_labels || []).includes(item.value)
+                                                                const emoji = getLabelEmoji(item.value)
+                                                                const isHiddenGem = item.value === 'Hidden Gem'
+                                                                
                                                                 return (
                                                                     <button
-                                                                        key={label}
-                                                                        onClick={() => toggleLabel(label)}
+                                                                        key={item.value}
+                                                                        onClick={() => toggleLabel(item.value)}
+                                                                        title={isHiddenGem ? t('labels.hidden_gem_desc') : undefined}
                                                                         className={cn(
                                                                             "px-4 py-2 rounded-xl text-[11px] font-bold border-2 transition-all flex items-center gap-2",
                                                                             active
@@ -758,8 +766,8 @@ const LocationFormSlideOver = ({
                                                                                 : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 text-slate-500 dark:text-[hsl(220,10%,55%)] border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                                                                         )}
                                                                     >
-                                                                        {LABEL_EMOJI_MAP[label] && <span>{LABEL_EMOJI_MAP[label]}</span>}
-                                                                        {label}
+                                                                        {emoji && <span>{emoji}</span>}
+                                                                        {item.label}
                                                                     </button>
                                                                 )
                                                             })}

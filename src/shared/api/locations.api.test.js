@@ -18,7 +18,7 @@ vi.mock('@/mocks/locations', () => ({
 
 // ─── Hoisted mock vars so they can be referenced in vi.mock factory ───────
 const { mockSelect, mockInsert, mockUpdate, mockDelete, mockEq, mockIlike, mockIn, mockGte,
-    mockOverlaps, mockOr, mockOrder, mockRange, mockSingle, mockUpsert } = vi.hoisted(() => ({
+    mockOverlaps, mockOr, mockOrder, mockRange, mockSingle, mockUpsert, mockTextSearch } = vi.hoisted(() => ({
     mockSelect: vi.fn(),
     mockInsert: vi.fn(),
     mockUpdate: vi.fn(),
@@ -33,6 +33,7 @@ const { mockSelect, mockInsert, mockUpdate, mockDelete, mockEq, mockIlike, mockI
     mockRange: vi.fn(),
     mockSingle: vi.fn(),
     mockUpsert: vi.fn(),
+    mockTextSearch: vi.fn(),
 }))
 
 const chainable = {
@@ -50,6 +51,7 @@ const chainable = {
     range: mockRange,
     single: mockSingle,
     upsert: mockUpsert,
+    textSearch: mockTextSearch,
 }
 
 vi.mock('./client', () => ({
@@ -118,7 +120,7 @@ describe('locations.api', () => {
     describe('getLocations', () => {
         it('returns normalised data and pagination info on success', async () => {
             const rawRow = {
-                id: '1', title: 'Cafe Test', rating: '4.5', price_level: '$$',
+                id: '1', title: 'Cafe Test', rating: '4.5', price_range: '$$',
                 city: 'Krakow', country: 'Poland', category: 'cafe', status: 'approved',
                 lat: '50.06', lng: '19.94',
             }
@@ -136,7 +138,7 @@ describe('locations.api', () => {
         it('filters by status=approved by default', async () => {
             setQueryResult({ data: [], error: null, count: 0 })
             await getLocations()
-            expect(mockEq).toHaveBeenCalledWith('status', 'approved')
+            expect(mockIn).toHaveBeenCalledWith('status', ['approved', 'active'])
         })
 
         it('bypasses status filter when all=true', async () => {
@@ -156,25 +158,25 @@ describe('locations.api', () => {
         it('applies city filter with ilike', async () => {
             setQueryResult({ data: [], error: null, count: 0 })
             await getLocations({ city: 'Krakow' })
-            expect(mockIlike).toHaveBeenCalledWith('city', 'Krakow')
+            expect(mockIlike).toHaveBeenCalledWith('city', '%Krakow%')
         })
 
         it('applies minRating filter', async () => {
             setQueryResult({ data: [], error: null, count: 0 })
             await getLocations({ minRating: 4 })
-            expect(mockGte).toHaveBeenCalledWith('rating', 4)
+            expect(mockGte).toHaveBeenCalledWith('google_rating', 4)
         })
 
-        it('applies priceLevel filter with in()', async () => {
+        it('applies price_range filter with in()', async () => {
             setQueryResult({ data: [], error: null, count: 0 })
-            await getLocations({ priceLevel: ['$$', '$$$'] })
-            expect(mockIn).toHaveBeenCalledWith('price_level', ['$$', '$$$'])
+            await getLocations({ price_range: ['$$', '$$$'] })
+            expect(mockIn).toHaveBeenCalledWith('price_range', ['$$', '$$$'])
         })
 
         it('applies text query filter', async () => {
             setQueryResult({ data: [], error: null, count: 0 })
             await getLocations({ query: 'pizza' })
-            expect(mockOr).toHaveBeenCalledWith('title.ilike.%pizza%,city.ilike.%pizza%')
+            expect(mockTextSearch).toHaveBeenCalledWith('fts', 'pizza', expect.any(Object))
         })
 
         it('falls back to mocks on Supabase error', async () => {
@@ -185,11 +187,11 @@ describe('locations.api', () => {
             expect(result).toHaveProperty('total')
         })
 
-        it('normalises legacy status active→approved', async () => {
+        it('accepts legacy status active', async () => {
             const rawRow = { id: '2', title: 'Bar', status: 'active', lat: 0, lng: 0 }
             setQueryResult({ data: [rawRow], error: null, count: 1 })
             const result = await getLocations()
-            expect(result.data[0].status).toBe('approved')
+            expect(result.data[0].status).toBe('active')
         })
     })
 
@@ -208,7 +210,7 @@ describe('locations.api', () => {
         it('filters by approved status in public mode', async () => {
             mockSingle.mockResolvedValue({ data: null, error: { message: 'not found' } })
             await getLocation('x')
-            expect(mockEq).toHaveBeenCalledWith('status', 'approved')
+            expect(mockIn).toHaveBeenCalledWith('status', ['approved', 'active'])
         })
 
         it('skips status filter in admin mode', async () => {
@@ -293,7 +295,7 @@ describe('locations.api', () => {
     describe('getCategories', () => {
         it('returns unique sorted categories with All prepended', async () => {
             const rows = [{ category: 'cafe' }, { category: 'restaurant' }, { category: 'cafe' }]
-            mockEq.mockResolvedValue({ data: rows, error: null })
+            setQueryResult({ data: rows, error: null })
 
             const result = await getCategories()
             expect(result[0]).toBe('All')

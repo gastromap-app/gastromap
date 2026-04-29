@@ -23,9 +23,10 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
  * @returns {Promise<{city: string, country: string, address: string}>}
  */
 async function reverseGeocode(lat, lng) {
-    const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lng}&format=json&accept-language=en`
+    const email = 'support@gastromap.app' // Contact email for Nominatim policy
+    const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lng}&format=json&accept-language=en&email=${encodeURIComponent(email)}`
     const res = await fetch(url, {
-        headers: { 'User-Agent': 'GastroMap/1.0' },
+        headers: { 'User-Agent': 'GastroMapApp/1.0 (https://gastromap.app)' },
     })
     if (!res.ok) throw new Error('Nominatim request failed')
     const data = await res.json()

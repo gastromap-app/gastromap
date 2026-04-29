@@ -51,10 +51,13 @@ function normalise(row) {
     const lng = Number(row.lng ?? 0)
 
     // Schema: title, rating, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
-    const image         = row.image_url ?? ''
+    const image         = row.image_url || null
     const rating        = Number(row.rating ?? 0)
     const googleRating  = Number(row.google_rating ?? 0)
-    const priceRange    = row.price_range ?? '$$'
+    
+    // Robust price handling: default to '$$'
+    const priceRange = row.price_range ?? row.price_level ?? row.priceLevel ?? '$$'
+    
     const cuisineTypes  = Array.isArray(row.cuisine_types) ? row.cuisine_types : []
 
     const status = row.status ?? 'approved'
@@ -88,8 +91,6 @@ function normalise(row) {
         google_rating: googleRating,
         google_user_ratings_total: row.google_user_ratings_total ?? 0,
 
-        price_level: priceRange,
-        priceLevel: priceRange,
         price_range: priceRange,
 
         opening_hours: row.opening_hours ?? '',
@@ -113,6 +114,14 @@ function normalise(row) {
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
+
+        // Performance metrics
+        views_count: row.views_count ?? 0,
+        saves_count: row.saves_count ?? 0,
+        visits_count: row.visits_count ?? 0,
+        comments_count: row.comments_count ?? 0,
+        trending_score: row.trending_score ?? 0,
+        trending_at: row.trending_at ?? null,
 
         insider_tip: row.insider_tip ?? '',
         what_to_try: Array.isArray(row.what_to_try) ? row.what_to_try : (row.must_try ? [row.must_try] : []),
@@ -151,10 +160,22 @@ export async function getLocations(filters = {}) {
     if (!USE_SUPABASE) return _mockGetLocations(filters)
 
     const { 
-        category, query, priceLevel, minRating, vibe, city, country, status, 
-        all = false, showAll = false, 
-        limit = 100, offset = 0 
+        category, 
+        price_range, 
+        minRating, 
+        city, 
+        country, 
+        query,
+        status,
+        vibe,
+        all = false, 
+        showAll = false, 
+        limit = 100, 
+        offset = 0,
+        bounds = null 
     } = filters
+
+    const effectivePriceRange = price_range
 
     const bypassStatus = all || showAll
 
@@ -164,8 +185,36 @@ export async function getLocations(filters = {}) {
         .from('locations')
         .select('*', { count: 'exact' })
 
-    // Try sorting by google_rating, fall back to no sort if column missing
-    q = q.order('google_rating', { ascending: false })
+    // ─── Bounding Box Filter (High Performance) ──────────────────────────
+    if (bounds) {
+        q = q
+            .gte('lat', bounds.sw.lat)
+            .lte('lat', bounds.ne.lat)
+            .gte('lng', bounds.sw.lng)
+            .lte('lng', bounds.ne.lng)
+    }
+
+    // ─── Sorting ─────────────────────────────────────────────────────────
+    const sortField = filters.sortBy || 'google_rating'
+    switch (sortField) {
+        case 'newest':
+            q = q.order('created_at', { ascending: false })
+            break
+        case 'name':
+            q = q.order('title', { ascending: true })
+            break
+        case 'price_asc':
+            q = q.order('price_range', { ascending: true })
+            break
+        case 'price_desc':
+            q = q.order('price_range', { ascending: false })
+            break
+        case 'google_rating':
+        case 'rating':
+        default:
+            q = q.order('google_rating', { ascending: false })
+            break
+    }
     
     q = q.range(offset, offset + (limit - 1))
 
@@ -186,12 +235,17 @@ export async function getLocations(filters = {}) {
     
     // Use google_rating for filtering if present
     if (minRating != null) q = q.gte('google_rating', minRating)
-    
-    if (priceLevel?.length) q = q.in('price_range', priceLevel)
+    const priceFilter = Array.isArray(effectivePriceRange) ? effectivePriceRange : (effectivePriceRange ? [effectivePriceRange] : [])
+    if (priceFilter.length > 0) q = q.in('price_range', priceFilter)
     if (vibe?.length) q = q.overlaps('vibe', vibe)
 
     if (query) {
-        q = q.or(`title.ilike.%${query}%,city.ilike.%${query}%`)
+        // Use the GIN-indexed fts column for high-performance search
+        // '.textSearch' uses the standard PostgreSQL full-text search
+        q = q.textSearch('fts', query, { 
+            type: 'websearch', // Allows standard search operators like quotes and minus
+            config: 'english'  // Or 'simple', 'russian' depending on your DB setup
+        })
     }
 
     const { data, error, count } = await q
@@ -653,8 +707,8 @@ function _mockGetLocations(filters = {}) {
     if (filters.minRating != null) {
         filtered = filtered.filter(l => l.rating >= filters.minRating)
     }
-    if (filters.priceLevel?.length) {
-        filtered = filtered.filter(l => filters.priceLevel.includes(l.priceLevel))
+    if (filters.price_range?.length) {
+        filtered = filtered.filter(l => filters.price_range.includes(l.price_range))
     }
     return {
         data: filtered,
@@ -712,26 +766,24 @@ export async function getCategories() {
     return ['All', ...unique.sort()]
 }
 
-/** Locations within radiusKm of given coordinates (Haversine filter). */
+/** Locations within radiusKm of given coordinates (Optimized using Bounding Box). */
 export async function getLocationsNearby(coords, radiusKm = 2) {
     if (!coords?.lat || !coords?.lng) return { data: [], total: 0, hasMore: false }
 
-    const { data: all } = await getLocations({ limit: 500 })
+    // ─── Calculate Bounding Box (Rough approximation: 1 deg ≈ 111km) ────────
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos(coords.lat * Math.PI / 180));
 
-    const R = 6371 // Earth radius in km
-    const filtered = (all ?? []).filter(loc => {
-        const dLat = (loc.coordinates.lat - coords.lat) * Math.PI / 180
-        const dLng = (loc.coordinates.lng - coords.lng) * Math.PI / 180
-        const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(coords.lat * Math.PI / 180) *
-            Math.cos(loc.coordinates.lat * Math.PI / 180) *
-            Math.sin(dLng / 2) ** 2
-        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return d <= radiusKm
-    })
+    const bounds = {
+        sw: { lat: coords.lat - latDelta, lng: coords.lng - lngDelta },
+        ne: { lat: coords.lat + latDelta, lng: coords.lng + lngDelta }
+    };
 
-    return { data: filtered, total: filtered.length, hasMore: false }
+    // Use server-side filtering via getLocations
+    return await getLocations({ 
+        bounds, 
+        limit: 100 
+    });
 }
 
 // ─── Menu persistence ──────────────────────────────────────────────────────
@@ -910,6 +962,12 @@ export async function updateLocationDish(locationId, dishId, updates) {
 
 export { normalise }
 
+export async function incrementView(locationId) {
+    if (!USE_SUPABASE) return
+    const { error } = await supabase.rpc('increment_location_view', { location_id: locationId })
+    if (error) safeError('[locations.api] Failed to increment view:', error.message)
+}
+
 export default {
     getLocations,
     getLocation,
@@ -924,4 +982,5 @@ export default {
     saveScannedMenu,
     deleteLocationDish,
     updateLocationDish,
+    incrementView,
 }

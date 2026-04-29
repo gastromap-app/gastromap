@@ -1,4 +1,5 @@
 import React from 'react'
+import { LazyImage } from '@/components/ui/LazyImage'
 import PageHeader from '@/components/layout/public/PageHeader'
 import { motion } from 'framer-motion'
 
@@ -31,10 +32,20 @@ const AboutPage = () => {
 
                         <div className="grid grid-cols-2 gap-6 my-12 not-prose">
                             <div className="bg-gray-100 rounded-[32px] h-64 overflow-hidden relative group">
-                                <img src="https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=2940&auto=format&fit=crop" alt="Team" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                <LazyImage 
+                                    src="https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=2940&auto=format&fit=crop" 
+                                    alt="Team" 
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                                    width={800}
+                                />
                             </div>
                             <div className="bg-gray-100 rounded-[32px] h-64 overflow-hidden relative group">
-                                <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2940&auto=format&fit=crop" alt="Office" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                <LazyImage 
+                                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2940&auto=format&fit=crop" 
+                                    alt="Office" 
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                                    width={800}
+                                />
                             </div>
                         </div>
 

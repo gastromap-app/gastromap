@@ -144,12 +144,12 @@ export const LABEL_GROUPS = [
     },
     {
         group:   'Awards & Special',
-        groupRu: 'Награды и Особое',
+        groupRu: 'Награды',
         items: [
-            'Michelin Guide', 'Michelin Star', 'Hookah', 'Late Dinner',
+            'Michelin Guide', 'Michelin Star', 'Hookah', 'Late Dinner', 'Hidden Gem',
         ],
         itemsRu: [
-            'Гид Мишлен', 'Звезда Мишлен', 'Кальян', 'Поздний ужин',
+            'Гид Мишлен', 'Звезда Мишлен', 'Кальян', 'Поздний ужин', 'Скрытая жемчужина',
         ],
     },
 ]
@@ -179,7 +179,13 @@ export function getAllLabelValues() {
  */
 export function getLabelGroupsRu() {
     return Object.fromEntries(
-        LABEL_GROUPS.map(g => [g.groupRu, [...g.itemsRu].sort()])
+        LABEL_GROUPS.map(g => [
+            g.groupRu,
+            g.items.map((en, idx) => ({
+                value: en,
+                label: g.itemsRu[idx]
+            })).sort((a, b) => a.label.localeCompare(b.label, 'ru'))
+        ])
     )
 }
 

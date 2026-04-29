@@ -55,6 +55,19 @@ function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
     )
 }
 
+function HiddenGemBadge() {
+    const { t } = useTranslation()
+    return (
+        <div 
+            title={t('labels.hidden_gem_desc')}
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400"
+        >
+            <span>💎</span>
+            <span>{t('labels.hidden_gem')}</span>
+        </div>
+    )
+}
+
 function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMenu, viewMode }) {
     return (
         <Menu as="div" className="relative">
@@ -228,6 +241,7 @@ const LocationListItem = ({
                             <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-white/[0.06] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400">
                                 {getCategoryLabel(loc.category, i18n.language)}
                             </Badge>
+                            {loc.special_labels?.includes('Hidden Gem') && <HiddenGemBadge />}
                             <StatusBadge status={loc.status} />
                         </div>
                     </div>
@@ -259,7 +273,12 @@ const LocationListItem = ({
                         <Building2 size={18} className="stroke-[2.5]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
+                            {loc.special_labels?.includes('Hidden Gem') && (
+                                <span title="Hidden Gem" className="text-[14px] leading-none mb-0.5">💎</span>
+                            )}
+                        </div>
                         <div className="flex items-center gap-2 mt-1.5">
                             <p className="text-[10px] text-slate-400 dark:text-[hsl(220,10%,55%)] uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
                             {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (

@@ -81,7 +81,7 @@ function buildLocationContext(loc) {
         loc.dietary?.length      ? `Dietary: ${loc.dietary.join(', ')}` : null,
         loc.special_labels?.length ? `Labels: ${loc.special_labels.join(', ')}` : null,
         loc.features?.length     ? `Features: ${loc.features.join(', ')}` : null,
-        loc.price_level          ? `Price: ${loc.price_level}` : null,
+        loc.price_range          ? `Price: ${loc.price_range}` : null,
         (loc.google_rating ?? loc.rating) ? `Rating: ${loc.google_rating ?? loc.rating}/5` : null,
         loc.michelin_stars > 0   ? `Michelin stars: ${loc.michelin_stars}` : null,
         loc.michelin_bib         ? `Michelin Bib Gourmand` : null,

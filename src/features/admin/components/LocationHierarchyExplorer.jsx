@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminLocationsQuery } from '@/shared/api/queries'
+import LazyImage from '@/components/ui/LazyImage'
 
 // Country flag + image map
 const COUNTRY_META = {
@@ -143,7 +144,7 @@ const LocationHierarchyExplorer = ({ className }) => {
                     <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-5">
                         <div className="flex gap-4">
                             {selectedLocation.image && (
-                                <img src={selectedLocation.image} alt={selectedLocation.title} className="w-20 h-20 rounded-2xl object-cover shrink-0" />
+                                <LazyImage src={selectedLocation.image} alt={selectedLocation.title} className="w-20 h-20 rounded-2xl object-cover shrink-0" />
                             )}
                             <div className="min-w-0">
                                 <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{selectedLocation.title}</h3>
@@ -182,7 +183,7 @@ const LocationHierarchyExplorer = ({ className }) => {
                                     className="relative rounded-[20px] overflow-hidden aspect-[4/3] group cursor-pointer"
                                 >
                                     {img ? (
-                                        <img src={img} alt={item.name || item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <LazyImage src={img} alt={item.name || item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                                     ) : (
                                         <div className="w-full h-full bg-slate-100 dark:bg-[hsl(220,20%,9%)] flex items-center justify-center">
                                             <MapPin size={24} className="text-slate-300" />

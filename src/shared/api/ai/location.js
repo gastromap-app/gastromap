@@ -185,7 +185,7 @@ Category: ${placesData.category}
 Address: ${placesData.address}
 Cuisine type (inferred from tags/types): ${(placesData.tags || []).join(', ') || 'unknown'}
 Rating: ${placesData.rating || 'N/A'}
-Price level: ${placesData.price_level || 'N/A'}
+Price level: ${placesData.price_range || placesData.price_level || 'N/A'}
 Original description (English): ${placesData.description || 'N/A'}
 Google types: ${(placesData._raw_types || []).join(', ')}
 
@@ -238,7 +238,7 @@ Return JSON with these exact fields:
   "address": "street address or null",
   "description": "2-3 sentences in Russian or null",
   "cuisine": "single cuisine type or null",
-  "price_level": "$|$$|$$$|$$$$|null",
+  "price_range": "$|$$|$$$|$$$$|null",
   "opening_hours": "hours string or null",
   "website": "URL or null",
   "phone": "phone with country code or null",

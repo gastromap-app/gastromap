@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { config } from '@/shared/config/env'
 
@@ -17,6 +18,46 @@ import { config } from '@/shared/config/env'
  * React Query кэширует: staleTime 1h, gcTime 24h.
  * Результат синхронизируется в Zustand store (filteredLocations обновится автоматически).
  */
+/**
+ * useInfiniteLocations — Hook for high-performance paginated loading.
+ * Uses server-side filtering and pagination.
+ */
+export function useInfiniteLocations(city, country, pageSize = 20) {
+    const filters = useLocationsStore(useShallow(s => ({
+        activeCategory: s.activeCategory,
+        searchQuery: s.searchQuery,
+        activePriceLevels: s.activePriceLevels,
+        minRating: s.minRating,
+        activeVibes: s.activeVibes,
+        sortBy: s.sortBy,
+        isOpenNow: s.isOpenNow
+    })))
+
+    return useInfiniteQuery({
+        queryKey: ['locations', 'infinite', city, country, filters],
+        queryFn: async ({ pageParam = 0 }) => {
+            const { getLocations } = await import('@/shared/api/locations.api')
+            return getLocations({
+                city,
+                country,
+                category: filters.activeCategory,
+                query: filters.searchQuery,
+                price_range: filters.activePriceLevels,
+                minRating: filters.minRating,
+                vibe: filters.activeVibes,
+                limit: pageSize,
+                offset: pageParam * pageSize,
+                // Server-side sort handled in API
+                sortBy: filters.sortBy
+            })
+        },
+        getNextPageParam: (lastPage, allPages) => {
+            return lastPage.hasMore ? allPages.length : undefined
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    })
+}
+
 export function useLocationsQuery(city, country) {
     const setLocations = useLocationsStore((s) => s.setLocations)
     const USE_SUPABASE = config.supabase.isConfigured

@@ -29,29 +29,30 @@ const GOOGLE_CDN_RE = /lh3\.googleusercontent\.com/
 const UNSPLASH_RE   = /images\.unsplash\.com/
 
 function resizeUrl(src, width) {
-    if (!src) return src
-    if (GOOGLE_CDN_RE.test(src)) {
-        return src.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
+    if (!src || typeof src !== 'string' || src.trim() === '') return null
+    const cleanSrc = src.trim()
+    if (GOOGLE_CDN_RE.test(cleanSrc)) {
+        return cleanSrc.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
     }
-    if (UNSPLASH_RE.test(src)) {
+    if (UNSPLASH_RE.test(cleanSrc)) {
         try {
-            const u = new URL(src)
+            const u = new URL(cleanSrc)
             u.searchParams.set('w', String(width))
             u.searchParams.set('q', '80')
             u.searchParams.set('auto', 'format')
             u.searchParams.set('fit', 'crop')
             return u.toString()
         } catch {
-            return src
+            return cleanSrc
         }
     }
-    return src
+    return cleanSrc
 }
 
 const DEFAULT_FALLBACK =
     'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop'
 
-export default function LocationImage({
+export function LocationImage({
     src,
     alt = '',
     className,
@@ -74,6 +75,11 @@ export default function LocationImage({
     const canFallbackToOriginal = !useOriginal && resized !== rawSrc
 
     useEffect(() => {
+        if (!rawSrc) {
+            setError(true)
+            return
+        }
+
         if (priority) return
         const el = wrapperRef.current
         if (!el) return
@@ -89,7 +95,7 @@ export default function LocationImage({
         )
         observer.observe(el)
         return () => observer.disconnect()
-    }, [priority])
+    }, [priority, rawSrc])
 
     // Сброс состояния при смене src
     useEffect(() => {
@@ -127,10 +133,10 @@ export default function LocationImage({
             )}
 
             {/* Основное изображение */}
-            {visible && !error && (
+            {visible && !error && typeof resized === 'string' && resized.length > 0 && (
                 <picture>
                     <img
-                        src={resized}
+                        src={resized || null}
                         alt={alt}
                         crossOrigin="anonymous"
                         decoding="async"
@@ -148,3 +154,5 @@ export default function LocationImage({
         </div>
     )
 }
+
+export default LocationImage

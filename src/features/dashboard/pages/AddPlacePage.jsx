@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { LazyImage } from '@/components/ui/LazyImage'
 import { useNavigate } from 'react-router-dom'
 import {
     MapPin, Sparkles, CheckCircle2, Lock, ChevronLeft, ChevronRight,
@@ -815,7 +816,7 @@ export default function AddPlacePage() {
                                 {/* Main photo */}
                                 <div className="relative h-48 bg-gradient-to-br from-indigo-100 dark:from-indigo-900/40 to-slate-200 dark:to-slate-800 overflow-hidden">
                                     {displayedPhotos[0] ? (
-                                        <img src={displayedPhotos[0]} alt="Cover" className="w-full h-full object-cover" />
+                                        <LazyImage src={displayedPhotos[0]} alt="Cover" className="w-full h-full object-cover" priority={true} width={800} />
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <ImageIcon size={32} className="text-slate-300 dark:text-[hsl(220,10%,55%)]" />
@@ -896,7 +897,7 @@ export default function AddPlacePage() {
                                         {/* AI photo (if no user photos) */}
                                         {isAiPhotoShowing && (
                                             <div className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
-                                                <img src={aiPhoto} alt="AI suggested" className="w-full h-full object-cover" />
+                                                <LazyImage src={aiPhoto} alt="AI suggested" className="w-full h-full object-cover" width={400} />
                                                 <div className="absolute inset-0 bg-black/20 flex items-end p-1.5">
                                                     <span className="text-[9px] font-bold text-white bg-black/40 backdrop-blur-sm rounded px-1.5 py-0.5">AI photo</span>
                                                 </div>
@@ -905,7 +906,7 @@ export default function AddPlacePage() {
                                         {/* User photos */}
                                         {userPhotos.map((p, i) => (
                                             <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08] group">
-                                                <img src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                                                <LazyImage src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" width={200} />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeUserPhoto(i)}

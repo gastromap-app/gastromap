@@ -60,9 +60,9 @@ function SavedCard({ favorite, index, onRemove }) {
 
                 {/* Meta row */}
                 <div className="flex items-center gap-3 mt-2">
-                    {(loc.price_level || loc.priceLevel) && (
+                    {loc.price_range && (
                         <span className={`text-[11px] font-bold ${isDark ? 'text-white/40' : 'text-gray-600'}`}>
-                            {loc.price_level || loc.priceLevel}
+                            {loc.price_range}
                         </span>
                     )}
                     {(loc.special_labels?.[0] || loc.vibe) && (

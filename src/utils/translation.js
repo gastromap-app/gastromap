@@ -4,7 +4,7 @@ export const LABEL_TRANSLATIONS = {
     "Бар и Напитки": "Bar & Drinks",
     "Атмосфера": "Atmosphere",
     "Удобства и Сервис": "Amenities & Service",
-    "Награды и Особое": "Awards & Special",
+    "Награды": "Awards & Special",
 
     // Cuisine & Menu
     "Авторская кухня": "Signature Cuisine",
@@ -76,6 +76,9 @@ export const LABEL_TRANSLATIONS = {
     "Звезда Мишлен": "Michelin Star",
     "Кальян": "Hookah",
     "Поздний ужин": "Late Dinner",
+    "Скрытая жемчужина": "Hidden Gem",
+
+
 
     // Times
     "Утро": "Morning",

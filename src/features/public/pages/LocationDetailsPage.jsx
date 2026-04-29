@@ -21,9 +21,9 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
-import LocationImage from '@/components/ui/LocationImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
-import { getLocationMenu, saveScannedMenu } from '@/shared/api/locations.api'
+import LocationImage from '@/components/ui/LocationImage'
+import { getLocationMenu, saveScannedMenu, incrementView } from '@/shared/api/locations.api'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
 import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
@@ -62,6 +62,15 @@ const LocationDetailsPage = () => {
             useLocationsStore.getState().initialize()
         }
     }, [storeLocations.length, storeIsLoading])
+
+    // PERF: Increment view count on load
+    useEffect(() => {
+        if (location?.id) {
+            incrementView(location.id).catch(err => {
+                console.warn('Failed to increment view:', err)
+            })
+        }
+    }, [location?.id])
 
     // Connect to real stores
     // FIX: DB is the source of truth for authenticated users; localStorage only for guests

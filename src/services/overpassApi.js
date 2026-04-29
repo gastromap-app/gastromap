@@ -158,7 +158,7 @@ function transformElement(element) {
         tags: tagsList,
         special_labels,
         openingHours: parseOpeningHours(tags.opening_hours),
-        priceLevel: mapPriceLevel(tags, category),
+        price_range: mapPriceLevel(tags, category),
         vibe: mapVibe(category, cuisine),
         features,
         phone: tags.phone ?? tags['contact:phone'] ?? null,

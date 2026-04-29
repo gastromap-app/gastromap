@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
+import { translate } from '@/utils/translation'
+import { applyAllFilters } from '@/shared/utils/locationFilters'
 
 /**
  * useLocationsStore — Single Source of Truth for location data.
@@ -19,6 +21,7 @@ import { MOCK_LOCATIONS } from '@/mocks/locations'
 
 const DEFAULT_FILTERS = {
     activeCategories: [],
+    activeCategory: 'All', // Added for backward compatibility with components using singular selection
     searchQuery: '',
     activePriceLevels: [],
     minRating: null,
@@ -30,216 +33,6 @@ const DEFAULT_FILTERS = {
     activeCity: 'All',
     activeCountry: 'All',
     isOpenNow: false,
-}
-
-/** Compare price levels for sort: $ < $$ < $$$ */
-const PRICE_ORDER = { '$': 1, '$$': 2, '$$$': 3 }
-
-// Best-time label groups for matching against location data
-const BEST_TIME_LABELS = {
-    morning:    ['Morning', 'Breakfast', 'Brunch', 'Cafe', 'Coffee', 'Завтрак', 'Утро'],
-    day:        ['Lunch', 'Business lunch', 'Midday', 'Ланч', 'Обед', 'День'],
-    evening:    ['Dinner', 'Evening', 'Date night', 'Bar', 'Fine Dining', 'Ужин', 'Вечер'],
-    late_night: ['Night', 'Late night', 'Bar', 'Club', 'Nightlife', 'Ночь', 'Поздний ужин'],
-}
-
-/** 
- * Helper to check if a location is currently open.
- * Supports format "HH:mm - HH:mm" or "HH:mm-HH:mm"
- */
-function isLocationOpen(openingHours) {
-    if (!openingHours) return true 
-    try {
-        const now = new Date()
-        const currentTime = now.getHours() * 60 + now.getMinutes()
-        
-        const parts = openingHours.split('-').map(p => p.trim())
-        if (parts.length !== 2) return true
-
-        const parseTime = (t) => {
-            const [h, m] = t.split(':').map(Number)
-            return h * 60 + m
-        }
-
-        const start = parseTime(parts[0])
-        const end = parseTime(parts[1])
-
-        if (end < start) {
-            // Over midnight
-            return currentTime >= start || currentTime <= end
-        }
-        return currentTime >= start && currentTime <= end
-    } catch (e) {
-        return true
-    }
-}
-
-
-export function applyAllFilters(locations, filters) {
-    const {
-        activeCategories,
-        searchQuery,
-        activePriceLevels,
-        minRating,
-        activeVibes,
-        activeBestTime,
-        radius,
-        userLocation,
-        sortBy,
-        activeCity,
-        activeCountry,
-        isOpenNow,
-    } = filters
-
-    let result = [...locations]
-
-    // ─── Categories (Multi-select) ───────────────────────────────────────────
-    if (activeCategories?.length > 0) {
-        result = result.filter(loc => activeCategories.includes(loc.category))
-    }
-
-    // ─── Open Now ────────────────────────────────────────────────────────────
-    if (isOpenNow) {
-        result = result.filter(loc => isLocationOpen(loc.openingHours || loc.hours))
-    }
-
-    // ─── Country ─────────────────────────────────────────────────────────────
-    if (activeCountry && activeCountry !== 'All') {
-        result = result.filter(loc => loc.country === activeCountry)
-    }
-
-    // ─── City ────────────────────────────────────────────────────────────────
-    if (activeCity && activeCity !== 'All') {
-        result = result.filter(loc => loc.city === activeCity)
-    }
-
-    // ─── Search ───────────────────────────────────────────────────────────────
-    // FIX: safe null-checks + correct field names (cuisine_types → kg_cuisines/cuisine)
-    if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        result = result.filter(loc =>
-            (loc.title?.toLowerCase().includes(q)) ||
-            (loc.description?.toLowerCase().includes(q)) ||
-            (loc.kg_cuisines?.some(c => c?.toLowerCase().includes(q))) ||
-            (loc.cuisine?.toLowerCase().includes(q)) ||
-            (loc.tags?.some(tag => tag?.toLowerCase().includes(q))) ||
-            (loc.kg_dishes?.some(d => d?.toLowerCase().includes(q)))
-        )
-    }
-
-    // ─── Price ───────────────────────────────────────────────────────────────
-    if (activePriceLevels?.length) {
-        result = result.filter(loc =>
-            activePriceLevels.includes(loc.price_range) ||
-            activePriceLevels.includes(loc.price_level) ||
-            activePriceLevels.includes(loc.priceLevel)
-        )
-    }
-
-    // ─── Rating ──────────────────────────────────────────────────────────────
-    if (minRating != null) {
-        result = result.filter(loc => (loc.rating ?? loc.google_rating ?? 0) >= minRating)
-    }
-
-    // ─── Vibes / Labels ──────────────────────────────────────────────────────
-    if (activeVibes?.length) {
-        result = result.filter(loc => {
-            const labels = [
-                ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
-                ...(Array.isArray(loc.features) ? loc.features : []),
-                ...(Array.isArray(loc.vibe) ? loc.vibe : (loc.vibe ? [loc.vibe] : [])),
-                ...(Array.isArray(loc.best_for) ? loc.best_for : []),
-                ...(Array.isArray(loc.kg_cuisines) ? loc.kg_cuisines : []),
-                ...(Array.isArray(loc.kg_dishes) ? loc.kg_dishes : []),
-                ...(loc.cuisine ? [loc.cuisine] : []),
-            ].map(l => String(l || '').toLowerCase().trim())
-
-            return activeVibes.some(v => {
-                const searchVal = String(v || '').toLowerCase().trim()
-                return labels.includes(searchVal)
-            })
-        })
-    }
-
-    // ─── Best Time ───────────────────────────────────────────────────────────
-    if (activeBestTime) {
-        const timeLabels = BEST_TIME_LABELS[activeBestTime] ?? []
-        result = result.filter(loc => {
-            const labels = [
-                loc.category ?? '',
-                ...(Array.isArray(loc.best_for) ? loc.best_for : []),
-                ...(Array.isArray(loc.features) ? loc.features : []),
-                ...(Array.isArray(loc.special_labels) ? loc.special_labels : []),
-            ].map(l => String(l || '').toLowerCase().trim())
-
-            // Match by ID directly in best_for or by associated keywords
-            const hasIdMatch = Array.isArray(loc.best_for) && loc.best_for.includes(activeBestTime)
-            const hasKeywordMatch = timeLabels.some(tl =>
-                labels.some(l => l.includes(tl.toLowerCase()))
-            )
-            return hasIdMatch || hasKeywordMatch
-        })
-    }
-
-    // ─── Distance Calculation & Radius ────────────────────────────────────────
-    if (userLocation?.lat && userLocation?.lng) {
-        // 1. Calculate and attach distance to all items
-        result = result.map(loc => {
-            const lat = loc.lat ?? loc.latitude ?? loc.coordinates?.lat
-            const lng = loc.lng ?? loc.longitude ?? loc.coordinates?.lng
-            const distance = (lat != null && lng != null)
-                ? calculateDistance(userLocation.lat, userLocation.lng, lat, lng)
-                : Infinity
-            return { ...loc, distance }
-        })
-
-        // 2. Filter by radius if set
-        if (radius > 0) {
-            result = result.filter(loc => loc.distance <= radius)
-        }
-    }
-
-    // ─── Sort ────────────────────────────────────────────────────────────────
-    switch (sortBy) {
-        case 'rating': // Prioritize internal rating
-        case 'google_rating':
-            result.sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0))
-            break
-        case 'price_asc':
-            result.sort(
-                (a, b) => (PRICE_ORDER[a.price_range ?? a.price_level] ?? 0) -
-                           (PRICE_ORDER[b.price_range ?? b.price_level] ?? 0)
-            )
-            break
-        case 'price_desc':
-            result.sort(
-                (a, b) => (PRICE_ORDER[b.price_range ?? b.price_level] ?? 0) -
-                           (PRICE_ORDER[a.price_range ?? a.price_level] ?? 0)
-            )
-            break
-        case 'name':
-            result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
-            break
-        case 'newest':
-            result.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0))
-            break
-        default:
-            break
-    }
-
-    return result
-}
-
-/** Haversine formula to calculate distance in km */
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371 // Earth's radius
-    const dLat = (lat2 - lat1) * Math.PI / 180
-    const dLon = (lon2 - lon1) * Math.PI / 180
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
 }
 
 // FIX ARCH-2: Do NOT seed with mocks in production — causes stale data flash
@@ -262,49 +55,57 @@ export const useLocationsStore = create((set, get) => ({
 
     // ─── Filter setters ───────────────────────────────────────────────────
 
-    setCategory: (cat) => set(state => ({
-        activeCategories: [cat],
-        filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: [cat] }),
-    })),
+    setCategory: async (cat) => {
+        set({ activeCategories: [cat], activeCategory: cat, isInitialized: false });
+        await get().initialize();
+    },
 
-    toggleCategory: (cat) => set(state => {
+    toggleCategory: async (cat) => {
+        const state = get();
         const next = state.activeCategories.includes(cat)
             ? state.activeCategories.filter(c => c !== cat)
-            : [...state.activeCategories, cat]
-        return {
-            activeCategories: next,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeCategories: next }),
-        }
-    }),
+            : [...state.activeCategories, cat];
+        const nextActive = next.length > 0 ? next[0] : 'All';
+        
+        set({ activeCategories: next, activeCategory: nextActive, isInitialized: false });
+        await get().initialize();
+    },
 
     setIsOpenNow: (isOpenNow) => set(state => ({
         isOpenNow,
         filteredLocations: applyAllFilters(state.locations, { ...state, isOpenNow }),
     })),
 
-    setSearchQuery: (searchQuery) =>
-        set(state => ({
-            searchQuery,
-            filteredLocations: applyAllFilters(state.locations, { ...state, searchQuery }),
-        })),
+    setSearchQuery: async (query) => {
+        if (get().searchQuery === query) return;
+        set({ searchQuery: query, isInitialized: false });
+        await get().initialize();
+    },
 
-    setPriceLevels: (activePriceLevels) =>
-        set(state => ({
-            activePriceLevels,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activePriceLevels }),
-        })),
+    setPriceLevels: async (activePriceLevels) => {
+        set({ activePriceLevels, isInitialized: false });
+        await get().initialize();
+    },
 
-    setMinRating: (minRating) =>
-        set(state => ({
-            minRating,
-            filteredLocations: applyAllFilters(state.locations, { ...state, minRating }),
-        })),
+    setMinRating: async (minRating) => {
+        set({ minRating, isInitialized: false });
+        await get().initialize();
+    },
 
-    setVibes: (activeVibes) =>
-        set(state => ({
-            activeVibes,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeVibes }),
-        })),
+    setVibes: async (activeVibes) => {
+        set({ activeVibes, isInitialized: false });
+        await get().initialize();
+    },
+
+    toggleVibe: async (vibe) => {
+        const state = get();
+        const next = state.activeVibes.includes(vibe)
+            ? state.activeVibes.filter(v => v !== vibe)
+            : [...state.activeVibes, vibe];
+        
+        set({ activeVibes: next, isInitialized: false });
+        await get().initialize();
+    },
 
     // FIX BUG-6: Best Time setter (was missing)
     setBestTime: (activeBestTime) =>
@@ -327,23 +128,20 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, userLocation }),
         })),
 
-    setSortBy: (sortBy) =>
-        set(state => ({
-            sortBy,
-            filteredLocations: applyAllFilters(state.locations, { ...state, sortBy }),
-        })),
+    setSortBy: async (sortBy) => {
+        set({ sortBy, isInitialized: false });
+        await get().initialize();
+    },
 
-    setCity: (activeCity) =>
-        set(state => ({
-            activeCity,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeCity }),
-        })),
+    setCity: async (activeCity) => {
+        set({ activeCity, isInitialized: false });
+        await get().initialize();
+    },
 
-    setCountry: (activeCountry) =>
-        set(state => ({
-            activeCountry,
-            filteredLocations: applyAllFilters(state.locations, { ...state, activeCountry }),
-        })),
+    setCountry: async (activeCountry) => {
+        set({ activeCountry, isInitialized: false });
+        await get().initialize();
+    },
 
     /**
      * Apply multiple filter changes at once — single set() call, one re-render.
@@ -352,7 +150,17 @@ export const useLocationsStore = create((set, get) => ({
     applyFilters: (updates = {}) =>
         set(state => {
             const next = { ...state, ...updates }
-            return { ...updates, filteredLocations: applyAllFilters(state.locations, next) }
+            // Sync activeCategory if activeCategories was updated
+            if (updates.activeCategories) {
+                updates.activeCategory = updates.activeCategories.length > 0 ? updates.activeCategories[0] : 'All'
+            }
+            
+            // Defensive check for the filtering utility function
+            const filtered = (typeof applyAllFilters === 'function') 
+                ? applyAllFilters(state.locations, next)
+                : state.locations;
+
+            return { ...updates, filteredLocations: filtered }
         }),
 
     /** Reset all filters to defaults — single re-render */
@@ -430,63 +238,132 @@ export const useLocationsStore = create((set, get) => ({
             return { locations, filteredLocations: applyAllFilters(locations, state) }
         }),
 
-    /** Load all locations from Supabase and populate the store. */
-    initialize: async () => {
-        // Skip only if: currently fetching OR already loaded with actual data
-        // Allow retry if initialized but empty (network fail / status mismatch)
-        if (get().isLoading) return
-        if (get().isInitialized && get().locations.length > 0) return
-        set({ isLoading: true, currentPage: 0, hasMore: true })
+    setBounds: (bounds) => {
+        set({ currentBounds: bounds });
+    },
+
+    fetchInBounds: async (bounds) => {
+        const state = get();
+        if (!state.isInitialized) return;
+
+        set({ isLoading: true });
         try {
-            const { getLocations } = await import('@/shared/api/locations.api')
-            const result = await getLocations({ limit: get().pageSize, offset: 0 })
-            const data = result?.data ?? result
+            const { getLocations } = await import('@/shared/api/locations.api');
+            const result = await getLocations({
+                category: state.activeCategory !== 'All' ? state.activeCategory : null,
+                city: state.activeCity !== 'All' ? state.activeCity : null,
+                country: state.activeCountry !== 'All' ? state.activeCountry : null,
+                query: state.searchQuery,
+                price_range: state.activePriceLevels,
+                minRating: state.minRating,
+                vibe: state.activeVibes,
+                sortBy: state.sortBy,
+                bounds,
+                limit: 500
+            });
+
+            const data = result?.data ?? result;
+
             if (Array.isArray(data)) {
-                set((state) => ({
+                set({ 
                     locations: data,
-                    filteredLocations: applyAllFilters(data, state),
+                    filteredLocations: data,
+                    isLoading: false 
+                });
+            } else {
+                set({ isLoading: false });
+            }
+        } catch (error) {
+            console.error('[useLocationsStore] fetchInBounds failed:', error.message);
+            set({ isLoading: false });
+        }
+    },
+
+    initialize: async (customFilters = {}) => {
+        const state = get();
+        if (state.isLoading) return;
+        
+        set({ isLoading: true, currentPage: 0, hasMore: true, locations: [], filteredLocations: [] });
+        
+        try {
+            const { getLocations } = await import('@/shared/api/locations.api');
+            const filters = {
+                category: state.activeCategory !== 'All' ? state.activeCategory : null,
+                city: state.activeCity !== 'All' ? state.activeCity : null,
+                country: state.activeCountry !== 'All' ? state.activeCountry : null,
+                query: state.searchQuery,
+                price_range: state.activePriceLevels,
+                minRating: state.minRating,
+                vibe: state.activeVibes,
+                sortBy: state.sortBy,
+                bounds: state.currentBounds,
+                limit: state.pageSize,
+                offset: 0
+            };
+
+            const result = await getLocations(filters);
+            const data = result?.data ?? result;
+            
+            if (Array.isArray(data)) {
+                set({
+                    locations: data,
+                    filteredLocations: applyAllFilters(data, get()),
                     isLoading: false,
                     isInitialized: true,
                     initError: null,
                     currentPage: 1,
-                    hasMore: data.length >= get().pageSize,
-                }))
+                    hasMore: result?.hasMore ?? data.length >= state.pageSize,
+                });
             } else {
-                // Empty response is still a successful init — DB may have no data yet
-                set({ isLoading: false, isInitialized: true, initError: null, hasMore: false })
+                set({ isLoading: false, isInitialized: true, initError: null, hasMore: false });
             }
         } catch (err) {
-            // On error: do NOT set isInitialized=true — allow retry on next mount
-            console.error('[useLocationsStore] initialize failed:', err.message)
-            set({ isLoading: false, initError: err.message })
+            console.error('[useLocationsStore] initialize failed:', err.message);
+            set({ isLoading: false, initError: err.message });
         }
     },
 
-    /** Load next page of locations (pagination). */
     loadMore: async () => {
-        const { isLoadingMore, hasMore, pageSize, currentPage, locations } = get()
-        if (isLoadingMore || !hasMore) return
-        set({ isLoadingMore: true })
+        const state = get();
+        if (state.isLoadingMore || !state.hasMore) return;
+        
+        set({ isLoadingMore: true });
+        
         try {
-            const { getLocations } = await import('@/shared/api/locations.api')
-            const offset = currentPage * pageSize
-            const result = await getLocations({ limit: pageSize, offset })
-            const data = result?.data ?? result
+            const { getLocations } = await import('@/shared/api/locations.api');
+            const offset = state.currentPage * state.pageSize;
+            const filters = {
+                category: state.activeCategory !== 'All' ? state.activeCategory : null,
+                city: state.activeCity !== 'All' ? state.activeCity : null,
+                country: state.activeCountry !== 'All' ? state.activeCountry : null,
+                query: state.searchQuery,
+                price_range: state.activePriceLevels,
+                minRating: state.minRating,
+                vibe: state.activeVibes,
+                sortBy: state.sortBy,
+                bounds: state.currentBounds,
+                limit: state.pageSize,
+                offset
+            };
+
+            const result = await getLocations(filters);
+            const data = result?.data ?? result;
+            
             if (Array.isArray(data) && data.length > 0) {
-                const merged = [...locations, ...data]
-                set((state) => ({
+                const merged = [...state.locations, ...data];
+                set({
                     locations: merged,
-                    filteredLocations: applyAllFilters(merged, state),
-                    currentPage: currentPage + 1,
-                    hasMore: data.length >= pageSize,
+                    filteredLocations: applyAllFilters(merged, get()),
+                    currentPage: state.currentPage + 1,
+                    hasMore: result?.hasMore ?? data.length >= state.pageSize,
                     isLoadingMore: false,
-                }))
+                });
             } else {
-                set({ hasMore: false, isLoadingMore: false })
+                set({ hasMore: false, isLoadingMore: false });
             }
         } catch (err) {
-            console.error('[useLocationsStore] loadMore failed:', err.message)
-            set({ isLoadingMore: false })
+            console.error('[useLocationsStore] loadMore failed:', err.message);
+            set({ isLoadingMore: false });
         }
     },
 

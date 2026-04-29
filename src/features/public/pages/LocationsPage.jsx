@@ -1,7 +1,9 @@
-import React, { useState, useEffect, memo, useMemo } from 'react'
+import React, { useState, useEffect, memo, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useVirtualizer } from '@tanstack/react-virtual'
+// import { useInfiniteLocations } from '@/hooks/useLocationsQuery' (Removed duplicate)
 import {
     MapPin, Search, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
@@ -12,13 +14,16 @@ import { useTheme } from '@/hooks/useTheme'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import FilterModal from '@/features/dashboard/components/FilterModal'
 const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab'))
+import { useShallow } from 'zustand/react/shallow'
+import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useInfiniteLocations, useLocationsQuery } from '@/hooks/useLocationsQuery'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
+import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
-import { useLocationsQuery } from '@/hooks/useLocationsQuery'
 import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 
 // ─── Category config from canonical filterOptions ─────────────────────────
@@ -46,7 +51,7 @@ function OpenBadge({ openingHours }) {
 }
 
 // ─── Mobile location card (compact vertical 2-column layout) ───────────────
-const MobileCard = memo(function MobileCard({ item }) {
+const MobileCard = memo(function MobileCard({ item, style }) {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -54,64 +59,105 @@ const MobileCard = memo(function MobileCard({ item }) {
     const saved = isFavorite(item.id)
 
     return (
-        <motion.div
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            initial="hidden"
-            animate="visible"
-            onClick={() => navigate(`/location/${item.id}`)}
-            className={`relative flex flex-col rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
-        >
-            {/* Image */}
-            <div className="relative h-28 w-full overflow-hidden">
-                <LazyImage
-                    src={item.image}
-                    alt={item.title}
-                    wrapperClassName="w-full h-full"
-                    className="w-full h-full object-cover"
-                />
-                {/* Rating badge */}
-                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
-                    <Star size={9} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[10px] font-bold text-white">{item.google_rating ?? item.rating ?? '—'}</span>
-                </div>
-                {/* Price badge */}
-                {(item.price_range ?? item.price_level ?? item.priceLevel) && (
-                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
-                        <span className="text-[10px] font-bold text-white">
-                            {item.price_range ?? item.price_level ?? item.priceLevel}
-                        </span>
+        <div style={style} className="p-1.5">
+            <motion.div
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                initial="hidden"
+                animate="visible"
+                onClick={() => navigate(`/location/${item.id}`)}
+                className={`relative flex flex-col h-full rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
+            >
+                {/* Image */}
+                <div className="relative h-28 w-full overflow-hidden">
+                    <LazyImage
+                        src={item.image}
+                        alt={item.title}
+                        wrapperClassName="w-full h-full"
+                        className="w-full h-full object-cover"
+                    />
+                    {/* Rating badge */}
+                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                        <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-[10px] font-bold text-white">{item.google_rating ?? item.rating ?? '—'}</span>
                     </div>
-                )}
-                {/* Favorite button */}
-                <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
-                    className={`absolute top-2 left-2 w-7 h-7 rounded-lg backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
-                        saved
-                            ? 'bg-red-500/80 text-white'
-                            : 'bg-black/40 text-white/80 hover:bg-black/60'
-                    }`}
-                >
-                    <Heart size={12} fill={saved ? 'currentColor' : 'none'} />
-                </button>
-            </div>
-
-            {/* Info section */}
-            <div className="p-2.5 flex flex-col flex-1">
-                <h4 className={`text-[13px] font-bold leading-tight line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {item.title}
-                </h4>
-
-                {/* Category / Cuisine */}
-                <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                    {item.cuisine || item.category}
-                </p>
-
-                {/* Open status */}
-                <div className="mt-auto pt-1.5">
-                    <OpenBadge openingHours={item.openingHours} />
+                    {/* Favorite button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
+                        className={`absolute top-2 left-2 w-7 h-7 rounded-lg backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
+                            saved
+                                ? 'bg-red-500/80 text-white'
+                                : 'bg-black/40 text-white/80 hover:bg-black/60'
+                        }`}
+                    >
+                        <Heart size={12} fill={saved ? 'currentColor' : 'none'} />
+                    </button>
                 </div>
-            </div>
-        </motion.div>
+
+                {/* Info section */}
+                <div className="p-2.5 flex flex-col flex-1">
+                    <h4 className={`text-[13px] font-bold leading-tight line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {item.title}
+                    </h4>
+                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        {item.cuisine || item.category}
+                    </p>
+                    <div className="mt-auto pt-1.5">
+                        <OpenBadge openingHours={item.openingHours} />
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    )
+})
+
+// ─── Mobile Virtualized Grid ─────────────────────────────────────────────
+const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({ 
+    items, 
+    parentRef 
+}) {
+    const columns = 2
+    const rows = useMemo(() => {
+        const result = []
+        for (let i = 0; i < items.length; i += columns) {
+            result.push(items.slice(i, i + columns))
+        }
+        return result
+    }, [items])
+
+    const rowVirtualizer = useVirtualizer({
+        count: rows.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 180, // Approximate height of a mobile row
+        overscan: 5,
+    })
+
+    return (
+        <div
+            style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+            }}
+        >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                    key={virtualRow.key}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="grid grid-cols-2 gap-0 px-2"
+                >
+                    {rows[virtualRow.index].map((item) => (
+                        <MobileCard key={item.id} item={item} />
+                    ))}
+                </div>
+            ))}
+        </div>
     )
 })
 
@@ -156,7 +202,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                     <h4 className={`text-xl font-black leading-tight group-hover:text-blue-600 transition-colors ${textStyle}`}>
                         {item.title}
                     </h4>
-                    <span className="text-blue-500 font-black text-sm flex-shrink-0">{item.price_level ?? item.priceLevel}</span>
+                    <span className="text-blue-500 font-black text-sm flex-shrink-0">{item.price_range}</span>
                 </div>
                 <p className={`text-[13px] font-bold ${subTextStyle}`}>{item.cuisine} · {item.category}</p>
 
@@ -176,6 +222,66 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
                 </div>
             </div>
         </motion.div>
+    )
+})
+
+// ─── Desktop Virtualized Grid ─────────────────────────────────────────────
+const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({ 
+    items, 
+    isDark, 
+    textStyle, 
+    subTextStyle,
+    parentRef 
+}) {
+    const columns = 4
+    const rows = useMemo(() => {
+        const result = []
+        for (let i = 0; i < items.length; i += columns) {
+            result.push(items.slice(i, i + columns))
+        }
+        return result
+    }, [items])
+
+    const rowVirtualizer = useVirtualizer({
+        count: rows.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 400, // height of a card + gap
+        overscan: 3,
+    })
+
+    return (
+        <div
+            style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+            }}
+        >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                    key={virtualRow.key}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-1"
+                >
+                    {rows[virtualRow.index].map((item) => (
+                        <DesktopCard
+                            key={item.id}
+                            item={item}
+                            isDark={isDark}
+                            textStyle={textStyle}
+                            subTextStyle={subTextStyle}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
     )
 })
 
@@ -235,73 +341,108 @@ const LocationsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    // Store
+    // Store state values
     const {
+        activeCategories,
         activeCategory,
-        searchQuery: storeQuery,
+        storeQuery,
         sortBy,
         minRating,
         activePriceLevels,
-        setSearchQuery: storeSetSearch,
-        setSortBy,
-        resetFilters,
-    } = useLocationsStore()
+    } = useLocationsStore(useShallow(s => ({
+        activeCategories: s.activeCategories,
+        activeCategory: s.activeCategory,
+        storeQuery: s.searchQuery,
+        sortBy: s.sortBy,
+        minRating: s.minRating,
+        activePriceLevels: s.activePriceLevels,
+    })))
+
+    // Store actions (stable)
+    const storeSetSearch = useLocationsStore(s => s.setSearchQuery)
+    const setSortBy = useLocationsStore(s => s.setSortBy)
+    const resetFilters = useLocationsStore(s => s.resetFilters)
 
     // Local search input → debounce → store
     const [localSearch, setLocalSearch] = useState(storeQuery)
     const debouncedSearch = useDebounce(localSearch, 300)
 
+    // Sync local input -> store query (debounced)
     useEffect(() => {
-        storeSetSearch(debouncedSearch)
-    }, [debouncedSearch, storeSetSearch])
+        if (debouncedSearch !== storeQuery) {
+            storeSetSearch(debouncedSearch)
+        }
+    }, [debouncedSearch, storeQuery, storeSetSearch])
+
+    // Sync store query -> local input (if updated from outside, like URL or deep links)
+    useEffect(() => {
+        if (storeQuery !== localSearch) {
+            setLocalSearch(storeQuery)
+        }
+    }, [storeQuery])
 
     // Sync from URL query param on mount
     useEffect(() => {
         const q = new URLSearchParams(window.location.search).get('q')
-        if (q) { setLocalSearch(q); storeSetSearch(q) }
-        return () => resetFilters()
-    }, [resetFilters, storeSetSearch])
-
-    // Fetch city-scoped locations; data used directly (NOT synced to global store)
-    const { isPending: isLoading, isError, data: cityData } = useLocationsQuery(city, country)
-
-    // REGRESSION FIX: use query data directly for city pages, not global store
-    // The global store holds ALL locations — filtering here by city avoids store pollution
-    const source = cityData ?? []
-    const q = localSearch?.toLowerCase()
-    const filtered = useMemo(() => source.filter(loc => {
-        const searchMatch = !q || loc.title?.toLowerCase().includes(q) || loc.category?.toLowerCase().includes(q)
-        const catMatch = activeCategory === 'All' || loc.category === activeCategory
-        const ratingMatch = !minRating || (loc.google_rating ?? loc.rating ?? 0) >= minRating
-        const priceMatch = activePriceLevels.length === 0 || activePriceLevels.includes(loc.price_level)
-        return searchMatch && catMatch && ratingMatch && priceMatch
-    }), [source, q, activeCategory, minRating, activePriceLevels])
-
-    const sortedFiltered = useMemo(() => {
-        const result = [...filtered]
-        // Apply sorting (same logic as useLocationsStore)
-        if (sortBy === 'google_rating') {
-            result.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
-        } else if (sortBy === 'name') {
-            result.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
-        } else if (sortBy === 'price_asc') {
-            result.sort((a, b) => (a.price_level || 0) - (b.price_level || 0))
-        } else if (sortBy === 'price_desc') {
-            result.sort((a, b) => (b.price_level || 0) - (a.price_level || 0))
+        if (q) { 
+            setLocalSearch(q)
+            storeSetSearch(q) 
         }
-        return result
-    }, [filtered, sortBy])
+    }, [storeSetSearch])
 
-    // Alias for template compatibility
-    const localFilteredLocations = sortedFiltered
+    // Cleanup filters on unmount only
+    useEffect(() => {
+        return () => resetFilters()
+    }, [resetFilters])
 
-    // ── Load More pagination (mobile) ────────────────────────────────
-    const [visibleCount, setVisibleCount] = useState(10)
+    // Fetch city-scoped locations with infinite scroll & server-side filtering
+    const { 
+        data: infiniteData, 
+        isPending: isLoading, 
+        isError, 
+        fetchNextPage, 
+        hasNextPage,
+        isFetchingNextPage
+    } = useInfiniteLocations(city, country, 24)
+
+    // Flatten pages into a single array for rendering
+    const localFilteredLocations = useMemo(() => {
+        const items = infiniteData?.pages?.flatMap(page => page.data) || []
+        // We still call applyAllFilters to handle distance calculation if userLocation is present
+        // and to handle any client-only flags (like is_open_now if not fully handled by server)
+        const filters = { 
+            searchQuery: storeQuery,
+            activeCategories,
+            activeCity: city,
+            activeCountry: country,
+            activePriceLevels,
+            minRating,
+            sortBy,
+        }
+        if (typeof applyAllFilters !== 'function') {
+            console.warn('[LocationsPage] applyAllFilters is not ready yet')
+            return items
+        }
+        return applyAllFilters(items, filters)
+    }, [infiniteData, storeQuery, activeCategories, city, country, activePriceLevels, minRating, sortBy])
+
+    // Infinite Scroll (Mobile Intersection Observer)
+    const mobileSentinelRef = useRef(null)
 
     useEffect(() => {
-        setVisibleCount(10)
-    }, [localFilteredLocations])
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage()
+            }
+        }, { threshold: 0.1, rootMargin: '400px' })
 
+        const el = mobileSentinelRef.current
+        if (el) observer.observe(el)
+        return () => observer.disconnect()
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+    const desktopParentRef = useRef(null)
+    const mobileScrollRef = useRef(null)
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sortOpen, setSortOpen] = useState(false)
@@ -321,7 +462,7 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto">
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={mobileScrollRef}>
                 {/* Header with search */}
                 <div className="sticky top-0 z-40 px-4 pt-20 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
                     <div className="flex gap-2">
@@ -365,28 +506,22 @@ const LocationsPage = () => {
                         <>
                             {/* Results counter */}
                             <p className={`text-center text-[12px] font-medium mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                {t('explore.showing_of', { shown: Math.min(visibleCount, localFilteredLocations.length), total: localFilteredLocations.length })}
+                                {t('explore.showing_of', { 
+                                    shown: localFilteredLocations.length, 
+                                    total: localFilteredLocations.length 
+                                })}
                             </p>
 
-                            <motion.div
-                                initial="hidden"
-                                animate="visible"
-                                variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } }}
-                                className="grid grid-cols-2 gap-3"
-                            >
-                                {localFilteredLocations.slice(0, visibleCount).map((item) => (
-                                    <MobileCard key={item.id} item={item} />
-                                ))}
-                            </motion.div>
+                            <VirtualizedMobileGrid 
+                                items={localFilteredLocations} 
+                                parentRef={mobileScrollRef} 
+                            />
 
-                            {/* Show more button */}
-                            {visibleCount < localFilteredLocations.length && (
-                                <button
-                                    onClick={() => setVisibleCount(prev => prev + 10)}
-                                    className={`w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] ${isDark ? 'bg-white/[0.06] text-white/70 hover:bg-white/[0.1]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-                                >
-                                    {t('explore.show_more')}
-                                </button>
+                            {/* Infinite scroll sentinel */}
+                            {hasNextPage && (
+                                <div ref={mobileSentinelRef} className="h-20 flex items-center justify-center">
+                                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
                             )}
                         </>
                     )}
@@ -396,7 +531,7 @@ const LocationsPage = () => {
             {/* ── DESKTOP VIEW ──────────────────────────────────────────── */}
             {/* Wraps in absolute+overflow-y-auto so the grid scrolls within the
                 fixed inset-0 root that is required by the mobile map/sheet layout. */}
-            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10">
+            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10" ref={desktopParentRef}>
                 <div className="w-full max-w-7xl mx-auto px-8 pt-24 pb-10">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
@@ -537,22 +672,13 @@ const LocationsPage = () => {
                         ) : localFilteredLocations.length === 0 ? (
                             <EmptyState query={localSearch} isDark={isDark} />
                         ) : (
-                            <motion.div
-                                initial="hidden"
-                                animate="visible"
-                                variants={{ visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }}
-                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-                            >
-                                {localFilteredLocations.map((item) => (
-                                    <DesktopCard
-                                        key={item.id}
-                                        item={item}
-                                        isDark={isDark}
-                                        textStyle={textStyle}
-                                        subTextStyle={subTextStyle}
-                                    />
-                                ))}
-                            </motion.div>
+                            <VirtualizedDesktopGrid
+                                items={localFilteredLocations}
+                                isDark={isDark}
+                                textStyle={textStyle}
+                                subTextStyle={subTextStyle}
+                                parentRef={desktopParentRef}
+                            />
                         )}
                     </div>
                 </motion.div>

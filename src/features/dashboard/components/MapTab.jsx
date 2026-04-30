@@ -151,6 +151,19 @@ function LocateMeButton() {
     )
 }
 
+// ─── Custom Cluster Icon ────────────────────────────────────────────────
+const createClusterCustomIcon = (cluster) => {
+    return L.divIcon({
+        html: `
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-black text-xs shadow-xl ring-2 ring-white/30 backdrop-blur-md transition-transform active:scale-95">
+                ${cluster.getChildCount()}
+            </div>
+        `,
+        className: 'custom-marker-cluster',
+        iconSize: L.point(40, 40, true),
+    })
+}
+
 const MapTab = () => {
     const locations = useLocationsStore(state => state.mapMarkers)
     const { userLocation } = useLocationsStore()
@@ -166,6 +179,7 @@ const MapTab = () => {
                 zoom={13}
                 scrollWheelZoom
                 zoomControl={false}
+                attributionControl={false}
                 style={{ height: '100%', width: '100%' }}
             >
                 <TileLayer
@@ -194,6 +208,7 @@ const MapTab = () => {
                 <MarkerClusterGroup
                     chunkedLoading
                     maxClusterRadius={60}
+                    iconCreateFunction={createClusterCustomIcon}
                 >
                     {locations.map(loc => (
                         <Marker 

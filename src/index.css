@@ -316,7 +316,7 @@
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
 }
 
-/* ─── Leaflet Popup Customization ────────────────────────────────────────── */
+/* ─── Leaflet Customization ──────────────────────────────────────────────── */
 
 .leaflet-popup-content-wrapper {
     @apply rounded-[22px] p-0 overflow-hidden shadow-2xl backdrop-blur-xl transition-all duration-300;
@@ -333,7 +333,7 @@
 
 .leaflet-popup-content {
     @apply m-0 !important;
-    width: 240px !important; /* Fixed width for better layout control */
+    width: 240px !important;
 }
 
 .leaflet-popup-tip-container {
@@ -344,15 +344,8 @@
     @apply bg-[#1c1c1e]/90;
 }
 
-/* Marker Cluster Styling */
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-    @apply backdrop-blur-md transition-all duration-300 hover:scale-110 !important;
-}
-
-.marker-cluster-small { background-color: rgba(59, 130, 246, 0.2) !important; }
-.marker-cluster-medium { background-color: rgba(59, 130, 246, 0.3) !important; }
-.marker-cluster-large { background-color: rgba(59, 130, 246, 0.4) !important; }
-
-.marker-cluster div {
-    @apply bg-blue-600 text-white font-black text-xs shadow-lg ring-2 ring-white/20 !important;
+/* Custom Marker Cluster reset */
+.custom-marker-cluster {
+    background: none !important;
+    border: none !important;
 }

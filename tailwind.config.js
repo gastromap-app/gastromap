@@ -38,12 +38,11 @@ export default {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
                 sm: 'calc(var(--radius) - 4px)',
-                // Semantic radius scale — prefer these over raw rounded-[Npx]
-                // to keep cards/sheets/inputs/pills consistent across surfaces.
-                input: '16px',   // form inputs, small controls
-                card:  '28px',   // location cards, list items
-                image: '24px',   // inner image blocks within cards
-                sheet: '32px',   // modals, slide-overs
+                // Semantic radius scale — unified for 2026 premium aesthetic
+                input: '12px',   // form inputs, small controls
+                image: '16px',   // photos, gallery items (rounded-2xl)
+                card:  '24px',   // must try, reviews, curator tips (rounded-3xl)
+                sheet: '28px',   // modals, large sections
                 pill:  '9999px', // chips, pills, round buttons
             },
             transitionDuration: {

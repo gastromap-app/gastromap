@@ -398,7 +398,7 @@ const LocationDetailsPage = () => {
                         "To experience the full magic, visit right before sunset. The lighting makes every photo look like a cinematic masterpiece."
                     </p>
                 </div>
-                <div className={`p-5 rounded-[32px] border relative overflow-hidden ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
+                <div className={`p-5 rounded-3xl border relative overflow-hidden ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
                     <UtensilsCrossed className="absolute top-4 right-4 text-blue-500 opacity-20" size={32} />
                     <div className="flex items-center gap-2 mb-3">
                         <Star size={16} className="text-blue-500" />
@@ -418,7 +418,7 @@ const LocationDetailsPage = () => {
 
                 {/* Bento Style Gallery Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-[300px] md:h-[600px]">
-                    <div className="col-span-2 md:col-span-6 rounded-[24px] md:rounded-[48px] overflow-hidden group cursor-pointer relative shadow-lg">
+                    <div className="col-span-2 md:col-span-6 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
                         <LocationImage
                             src={location.image}
                             alt={location.title}
@@ -428,19 +428,19 @@ const LocationDetailsPage = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
 
-                    <div className="col-span-1 md:col-span-3 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
+                    <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
                         <LazyImage src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
                     </div>
 
-                    <div className="col-span-1 md:col-span-3 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
+                    <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
                         <LazyImage src="https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
                     </div>
 
-                    <div className="col-span-1 md:col-span-4 rounded-[24px] md:rounded-[40px] overflow-hidden group cursor-pointer relative shadow-lg">
+                    <div className="col-span-1 md:col-span-4 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
                         <LazyImage src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
                     </div>
 
-                    <div className="col-span-1 md:col-span-8 rounded-[24px] md:rounded-[40px] overflow-hidden relative group cursor-pointer shadow-lg">
+                    <div className="col-span-1 md:col-span-8 rounded-3xl overflow-hidden relative group cursor-pointer shadow-lg">
                         <LazyImage src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
                         <div className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
                             <Camera size={24} className="mb-1" />
@@ -453,7 +453,7 @@ const LocationDetailsPage = () => {
 
             {/* 5. Connect & External Links */}
             <section className="pt-8 space-y-6">
-                <div className="flex flex-col md:flex-row gap-6 items-center justify-between p-10 rounded-[48px] border overflow-hidden relative group transition-all duration-700 hover:border-blue-500/30 ${isDark ? 'bg-white/[0.02] border-white/5 shadow-2xl shadow-blue-500/5' : 'bg-gray-50 border-gray-100 shadow-xl shadow-gray-200/50'}">
+                <div className={`flex flex-col md:flex-row gap-6 items-center justify-between p-10 rounded-3xl border overflow-hidden relative group transition-all duration-700 hover:border-blue-500/30 ${isDark ? 'bg-white/[0.02] border-white/5 shadow-2xl shadow-blue-500/5' : 'bg-gray-50 border-gray-100 shadow-xl shadow-gray-200/50'}`}>
                     <div className="absolute top-0 left-0 w-40 h-40 bg-blue-600/5 rounded-full -ml-20 -mt-20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                     <div className="space-y-4 text-center md:text-left relative z-10">
@@ -541,7 +541,7 @@ const LocationDetailsPage = () => {
 
                 {/* ── AI Menu Scanner (admin/moderator only) ──────────────── */}
                 {canScanMenu && (
-                    <div className={`p-6 rounded-[32px] border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
+                    <div className={`p-6 rounded-3xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-100 bg-gray-50'}`}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
                                 <Camera size={20} />
@@ -777,7 +777,7 @@ const LocationDetailsPage = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
                                 transition={{ delay: i * 0.05 }}
-                                className={`p-8 rounded-[40px] border ${cardBg}`}
+                                className={`p-8 rounded-3xl border ${cardBg}`}
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-4">
@@ -821,7 +821,7 @@ const LocationDetailsPage = () => {
 
     const renderNotes = () => (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className={`p-10 rounded-[48px] border overflow-hidden relative ${isDark ? 'bg-blue-600/[0.03] border-blue-500/10' : 'bg-blue-50/50 border-blue-100'}`}>
+            <div className={`p-10 rounded-3xl border overflow-hidden relative ${isDark ? 'bg-blue-600/[0.03] border-blue-500/10' : 'bg-blue-50/50 border-blue-100'}`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-3xl" />
 
                 <div className="relative z-10 space-y-6">

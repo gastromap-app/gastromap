@@ -882,12 +882,20 @@ const LocationDetailsPage = () => {
             className="min-h-screen relative"
             style={{ paddingBottom: 'calc(8.5rem + env(safe-area-inset-bottom))' }}
         >
-            {/* ── Fixed floating action bar (always accessible, above everything) ── */}
-            <div
-                className="fixed left-0 right-0 z-[120] pointer-events-none"
-                style={{ top: 0, paddingTop: 'calc(env(safe-area-inset-top) + 10px)' }}
+            {/* ── Unified Sticky Navigation Header ───────────────────────────────── */}
+            <header 
+                className="fixed top-0 left-0 right-0 z-[120] transition-all duration-300 ease-out"
+                style={{ paddingTop: 'env(safe-area-inset-top)' }}
             >
-                <div className="max-w-5xl mx-auto px-[4vw] flex justify-between items-center pointer-events-auto">
+                {/* Background Layer: Transitions from transparent to solid/glass */}
+                <div className={`absolute inset-0 transition-opacity duration-300 ${
+                    showCompactHeader 
+                        ? (isDark ? 'bg-[hsl(220,20%,3%)]/90 border-b border-white/10 opacity-100' : 'bg-white/90 border-b border-black/5 opacity-100')
+                        : 'opacity-0'
+                } backdrop-blur-2xl shadow-sm`} />
+
+                <div className="relative h-14 max-w-5xl mx-auto px-4 flex items-center justify-between">
+                    {/* Back Button */}
                     <button
                         onClick={() => {
                             if (window.history.length > 1) {
@@ -897,50 +905,66 @@ const LocationDetailsPage = () => {
                             }
                         }}
                         aria-label="Go back"
-                        className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            showCompactHeader
+                                ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                        }`}
                     >
                         <ArrowLeft size={20} />
                     </button>
-                    <div className="flex gap-2">
+
+                    {/* Centered Title: Only visible when scrolled */}
+                    <div className={`flex-1 px-4 text-center transition-all duration-300 transform ${
+                        showCompactHeader ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+                    }`}>
+                        <h2 className={`text-sm font-black truncate max-w-[180px] mx-auto ${textStyle}`}>
+                            {location.title}
+                        </h2>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 items-center">
                         <button
                             onClick={shareLocation}
                             aria-label="Share"
-                            className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                showCompactHeader
+                                    ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                    : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                            }`}
                         >
                             <Share2 size={18} />
                         </button>
                         <button
                             onClick={() => addVisited(location.id)}
                             aria-label={isVisited ? 'Visited' : 'Mark as visited'}
-                            className={`w-11 h-11 rounded-full backdrop-blur-xl border flex items-center justify-center shadow-lg active:scale-95 transition-all ${isVisited ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-emerald-600/30' : 'bg-black/45 border-white/15 text-white hover:bg-black/60'}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                isVisited 
+                                    ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-lg' 
+                                    : showCompactHeader
+                                        ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                        : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                            }`}
                         >
-                            <CheckCircle2 size={20} className={isVisited ? 'fill-white' : ''} />
+                            <CheckCircle2 size={18} className={isVisited ? 'fill-white' : ''} />
                         </button>
                         <button
                             onClick={() => toggleFavorite(location.id)}
                             aria-label={isSaved ? 'Remove from saved' : 'Save'}
-                            className={`w-11 h-11 rounded-full backdrop-blur-xl border flex items-center justify-center shadow-lg active:scale-95 transition-all ${isSaved ? 'bg-red-500 border-red-300/60 text-white shadow-red-500/30' : 'bg-black/45 border-white/15 text-white hover:bg-black/60'}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                isSaved 
+                                    ? 'bg-red-500 border-red-300/60 text-white shadow-lg' 
+                                    : showCompactHeader
+                                        ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                        : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                            }`}
                         >
                             <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
                         </button>
                     </div>
                 </div>
-            </div>
-
-            {/* ── Scroll-aware compact header (fades in after hero scrolls away) ── */}
-            <motion.div
-                initial={false}
-                animate={{ opacity: showCompactHeader ? 1 : 0, y: showCompactHeader ? 0 : -8 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className={`fixed top-0 left-0 right-0 z-[110] pointer-events-none ${showCompactHeader ? '' : 'pointer-events-none'}`}
-                style={{ paddingTop: 'env(safe-area-inset-top)' }}
-            >
-                <div className={`h-14 flex items-center px-16 md:px-20 border-b backdrop-blur-2xl shadow-sm ${isDark ? 'bg-[hsl(220,20%,3%)]/90 border-white/10' : 'bg-white/90 border-black/5'}`}>
-                    <h2 className={`text-sm font-bold truncate mx-auto max-w-[60%] ${textStyle}`}>
-                        {location.title}
-                    </h2>
-                </div>
-            </motion.div>
+            </header>
 
             {/* ── Share toast ────────────────────────────────────────────────────── */}
             <AnimatePresence>

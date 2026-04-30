@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
     Plus, Search, Filter, MoreHorizontal, Edit, Trash2,
     Download, Upload, ChevronRight, Globe, Building2, MapPin,
@@ -19,7 +20,6 @@ import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
 import { useAdminLocations } from '../hooks/useAdminLocations'
-import { useAdminLanguage } from '@/hooks/useI18n'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,7 +69,7 @@ import ListViewSection from '../components/ListViewSection'
 import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
-    const { t, i18n } = useAdminLanguage()
+    const { t, i18n } = useTranslation()
     const hook = useAdminLocations()
     
     const {
@@ -98,7 +98,7 @@ const AdminLocationsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const LABEL_GROUPS = getLabelGroupsRu() // auto-synced from filterOptions.js
+    const LABEL_GROUPS = getLabelGroupsRu()
 
     const mapLocations = useMemo(() =>
         filteredLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng),
@@ -114,10 +114,10 @@ const AdminLocationsPage = () => {
     }, [mapLocations])
 
     const BEST_TIMES = [
-        { id: 'morning', label: t('morning'), icon: Clock },
-        { id: 'day', label: t('day'), icon: Clock },
-        { id: 'evening', label: t('evening'), icon: Clock },
-        { id: 'late_night', label: t('late_night'), icon: Clock }
+        { id: 'morning', label: t('admin.morning'), icon: Clock },
+        { id: 'day', label: t('admin.day'), icon: Clock },
+        { id: 'evening', label: t('admin.evening'), icon: Clock },
+        { id: 'late_night', label: t('admin.late_night'), icon: Clock }
     ]
 
 
@@ -141,9 +141,9 @@ const AdminLocationsPage = () => {
             )}
 
             <AdminPageHeader
-                eyebrow={t('eyebrow', { defaultValue: 'Admin' })}
-                title={t('locations_title')}
-                subtitle={t('locations_subtitle')}
+                eyebrow={t('admin.admin_panel_label')}
+                title={t('admin.locations_title')}
+                subtitle={t('admin.locations_subtitle')}
                 actions={
                     <div className="flex items-center gap-2">
                         <div className="hidden sm:flex items-center gap-2">
@@ -152,7 +152,7 @@ const AdminLocationsPage = () => {
                                 className={adminBtnSecondary}
                             >
                                 <Upload size={16} />
-                                <span className="hidden lg:inline ml-1">{t('import')}</span>
+                                <span className="hidden lg:inline ml-1">{t('admin.import')}</span>
                             </button>
                             <button
                                 onClick={handleExport}
@@ -160,11 +160,11 @@ const AdminLocationsPage = () => {
                                 className={cn(adminBtnSecondary, "disabled:opacity-40")}
                             >
                                 <Download size={16} />
-                                <span className="hidden lg:inline ml-1">{isExporting ? t('exporting') : t('export')}</span>
+                                <span className="hidden lg:inline ml-1">{isExporting ? t('admin.exporting') : t('admin.export')}</span>
                             </button>
                             <button
                                 onClick={() => {
-                                    if (confirm(t('bulk_reindex_confirm'))) {
+                                    if (confirm(t('admin.bulk_reindex_confirm'))) {
                                         bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
                                     }
                                 }}
@@ -172,23 +172,23 @@ const AdminLocationsPage = () => {
                                 className={cn(adminBtnSecondary, "disabled:opacity-40")}
                             >
                                 <Sparkles size={16} className="text-indigo-500" />
-                                <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? 'Reindexing...' : 'Reindex'}</span>
+                                <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? t('admin.reindexing') : t('admin.ai_reindex')}</span>
                             </button>
                             <button
                                 onClick={() => {
-                                    const mode = confirm(t('bulk_embedding_confirm'))
+                                    const mode = confirm(t('admin.bulk_embedding_confirm'))
                                     bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
                                 }}
                                 disabled={bulkEmbeddingMutation.isPending}
                                 className={cn(adminBtnSecondary, "disabled:opacity-40")}
-                                title="Обновить векторные embeddings"
+                                title={t('admin.update_embeddings_title')}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
                                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                                     <polyline points="3.29 7 12 12 20.71 7"/>
                                     <line x1="12" y1="22" x2="12" y2="12"/>
                                 </svg>
-                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('embedding') : t('embeddings')}</span>
+                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('admin.embedding') : t('admin.embeddings')}</span>
                             </button>
                         </div>
                         <button
@@ -196,7 +196,7 @@ const AdminLocationsPage = () => {
                             className={adminBtnPrimary}
                         >
                             <Plus size={18} />
-                            <span className="hidden sm:inline ml-1">{t('new')}</span>
+                            <span className="hidden sm:inline ml-1">{t('admin.new')}</span>
                         </button>
                     </div>
                 }
@@ -259,8 +259,8 @@ const AdminLocationsPage = () => {
                             {pendingReviews.length === 0 ? (
                                 <div className="text-center py-20">
                                     <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)] mb-4" />
-                                    <p className="text-lg font-bold text-slate-400">{t('no_reviews_pending')}</p>
-                                    <p className="text-sm text-slate-400 mt-1">{t('all_reviews_checked')}</p>
+                                    <p className="text-lg font-bold text-slate-400">{t('admin.no_reviews_pending')}</p>
+                                    <p className="text-sm text-slate-400 mt-1">{t('admin.all_reviews_checked')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -296,13 +296,13 @@ const AdminLocationsPage = () => {
                                                     onClick={() => handleRejectReview(rev.id)}
                                                     className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(220,20%,9%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
                                                 >
-                                                    {t('reject')}
+                                                    {t('admin.reject')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleApproveReview(rev.id)}
                                                     className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
                                                 >
-                                                    {t('approve')}
+                                                    {t('admin.approve')}
                                                 </button>
                                             </div>
                                         </div>
@@ -327,7 +327,7 @@ const AdminLocationsPage = () => {
                             {mapLocations.length === 0 ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                                     <MapPin size={48} className="mb-3 opacity-30" />
-                                    <p className="text-sm font-bold">{t('no_locations_with_coords')}</p>
+                                    <p className="text-sm font-bold">{t('admin.no_locations_with_coords')}</p>
                                 </div>
                             ) : (
                                 <MapContainer

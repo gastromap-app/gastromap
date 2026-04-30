@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Users, MapPin, Eye, MessageSquare,
-    Clock, Bot, Plus, Download,
+    Clock, Bot,
     Activity, Sparkles,
     ChevronDown, ChevronUp, BarChart3,
-    ArrowRight, Upload
+    ArrowRight
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -99,11 +99,15 @@ const AdminDashboardPage = () => {
                 eyebrow="Admin"
                 title="Панель управления"
                 subtitle={<span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />Все системы работают в штатном режиме</span>}
-                actions={<>
-                    <button onClick={() => navigate('/admin/locations?import=true')} className={adminBtnSecondary}><Upload size={13}/> Импорт</button>
-                    <button onClick={() => navigate('/admin/locations?export=true')} className={adminBtnSecondary}><Download size={13}/> Экспорт</button>
-                    <button onClick={() => navigate('/admin/locations?create=true')} className={adminBtnPrimary}><Plus size={13}/> Создать</button>
-                </>}
+                actions={
+                    <button
+                        onClick={() => navigate('/admin/locations')}
+                        className={adminBtnSecondary}
+                    >
+                        <MapPin size={13} />
+                        <span className="hidden sm:inline ml-1">Локации</span>
+                    </button>
+                }
             />
 
             {/* Main Grid */}

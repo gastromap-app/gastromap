@@ -45,7 +45,7 @@ export function MainLayout() {
                     </Button>
                 )}
 
-                {!isAIGuide && <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
+                {!isAIGuide && !isLocationDetail && <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
             </div>
         </AuroraBackground>
     )

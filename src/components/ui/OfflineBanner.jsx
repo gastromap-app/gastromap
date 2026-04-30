@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WifiOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * OfflineBanner — показывается когда пользователь теряет соединение.
  * Исчезает автоматически когда сеть восстанавливается.
  */
 export const OfflineBanner = () => {
+    const { t } = useTranslation('pwa')
     const [isOffline, setIsOffline] = useState(!navigator.onLine)
 
     useEffect(() => {
@@ -39,7 +41,7 @@ export const OfflineBanner = () => {
                 >
                     <WifiOff size={15} className="text-orange-400 flex-shrink-0" />
                     <span className="text-sm font-medium text-slate-200">
-                        Нет соединения — показываем кэшированные данные
+                        {t('offline')}
                     </span>
                 </motion.div>
             )}

@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
-import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
+import { useTranslation } from 'react-i18next'
+import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useUserPrefsStore } from '@/features/auth/hooks/useUserPrefsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
@@ -36,6 +37,7 @@ import { useGeoStore } from '@/shared/store/useGeoStore'
  * }}
  */
 export function useAIChat() {
+    const { t } = useTranslation()
     const {
         messages,
         isTyping,
@@ -178,7 +180,7 @@ export function useAIChat() {
 
                 // Handle needs_geo: prompt for location access and retry once.
                 if (result.needsGeo) {
-                    updateLastMessage('assistant', '📍 Для поиска мест поблизости мне нужен доступ к вашей геолокации. Пожалуйста, разрешите доступ…')
+                    updateLastMessage('assistant', t('ai.geo_permission_request'))
                     try {
                         await requestGeo()
                         const retryGeo = {
@@ -197,7 +199,7 @@ export function useAIChat() {
                                 updateLastMessage('assistant', display || '…')
                             })
                             const retryClean = (retryResult.content || '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').replace(/\{"matches":\[.*?\]\}\s*$/s, '').trim()
-                            const finalMsg = updateLastMessage('assistant', retryClean || 'Я нашёл несколько мест для вас:', {
+                            const finalMsg = updateLastMessage('assistant', retryClean || t('ai.found_places'), {
                                 attachments: retryResult.attachments || retryResult.matches,
                                 matches: retryResult.matches,
                                 intent: retryResult.intent,
@@ -206,10 +208,10 @@ export function useAIChat() {
                                 saveChatMessage(currentSessionId, user.id, finalMsg)
                             }
                         } else {
-                            updateLastMessage('assistant', '📍 Не удалось получить геолокацию. Попробуйте указать город в запросе, например "кафе в Кракове".')
+                            updateLastMessage('assistant', t('ai.geo_failed_with_tip'))
                         }
                     } catch {
-                        updateLastMessage('assistant', '📍 Геолокация недоступна. Попробуйте указать город в запросе.')
+                        updateLastMessage('assistant', t('ai.geo_unavailable'))
                     }
                     setTyping(false)
                     return
@@ -221,7 +223,8 @@ export function useAIChat() {
                     .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
                     .trim()
 
-                const finalMsg = updateLastMessage('assistant', cleanContent || 'I found some places for you:', {
+                const foundMsgText = t('ai.found_places')
+                const finalMsg = updateLastMessage('assistant', cleanContent || foundMsgText, {
                     attachments: result.attachments || result.matches,
                     matches: result.matches,
                     intent: result.intent,
@@ -252,8 +255,8 @@ export function useAIChat() {
                 summarizeSession(activeSessionId, currentMessages, user?.id || null).catch(() => {})
             }
         } catch (err) {
-            setError(err.message ?? 'GastroGuide не отвечает. Попробуйте ещё раз.')
-            addMessage('assistant', 'Произошла ошибка. Попробуйте ещё раз.', { isError: true })
+            setError(err.message ?? t('ai.response_failed'))
+            addMessage('assistant', t('ai.general_error'), { isError: true })
         } finally {
             setTyping(false)
         }

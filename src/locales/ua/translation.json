@@ -313,6 +313,44 @@
     "add_another": "Додати Ще Одне",
     "back_home": "Повернутися на Головну"
   },
+  "labels": {
+    "hidden_gem": "Прихована перлина",
+    "hidden_gem_desc": "Унікальне місце на думку автора додатку"
+  },
+  "admin": {
+    "search_placeholder": "Пошук по {{count}} об'єктах...",
+    "found_count": "Знайдено: {{count}}",
+    "total_count": "Усього об'єктів: {{count}}",
+    "filters": "Фільтри",
+    "list_view": "Список",
+    "map_view": "Карта",
+    "sort": "Сортування",
+    "sort_options": {
+      "newest": "Спочатку нові",
+      "rating": "За рейтингом (наш)",
+      "google_rating": "За рейтингом (Google)",
+      "name": "За алфавітом",
+      "price_asc": "Дешевше",
+      "price_desc": "Дорожче"
+    },
+    "category": "Категорія",
+    "all_categories": "Всі категорії",
+    "country": "Країна",
+    "all_countries": "Всі країни",
+    "city": "Місто",
+    "all_cities": "Всі міста",
+    "price": "Ціна",
+    "min_rating": "Мін. Рейтинг: {{rating}}",
+    "any_rating": "Будь-який",
+    "vibes_features": "Атмосфера та особливості",
+    "reset_filters": "Скинути фільтри",
+    "tabs": {
+      "all": "Всі об'єкти",
+      "pending": "На модерації",
+      "active": "Активні",
+      "reviews": "Відгуки"
+    }
+  },
   "common": {
     "loading": "Завантаження…",
     "error": "Помилка",

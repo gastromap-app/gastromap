@@ -1,4 +1,21 @@
 {
+  "errors": {
+    "something_went_wrong": "Что-то пошло не так",
+    "unexpected_desc": "Произошла непредвиденная ошибка. Попробуйте обновить страницу.",
+    "retry": "Попробовать снова",
+    "go_home": "На главную",
+    "map_unavailable": "Карта недоступна",
+    "refresh": "Обновить",
+    "ai_unavailable": "GastroGuide временно недоступен"
+  },
+  "ai": {
+    "geo_permission_request": "📍 Для поиска мест поблизости мне нужен доступ к вашей геолокации. Пожалуйста, разрешите доступ…",
+    "found_places": "Я нашёл несколько мест для вас:",
+    "geo_failed_with_tip": "📍 Не удалось получить геолокацию. Попробуйте указать город в запросе, например \"кафе в Кракове\".",
+    "geo_unavailable": "📍 Геолокация недоступна. Попробуйте указать город в запросе.",
+    "response_failed": "GastroGuide не отвечает. Попробуйте ещё раз.",
+    "general_error": "Произошла ошибка. Попробуйте ещё раз."
+  },
   "language_settings": {
     "title": "Язык и Регион",
     "app_language_title": "Язык приложения",
@@ -400,5 +417,103 @@
   "labels": {
     "hidden_gem": "Скрытая жемчужина",
     "hidden_gem_desc": "Уникальное место по мнению автора приложения"
+  },
+  "admin": {
+    "morning": "Утро",
+    "day": "День",
+    "evening": "Вечер",
+    "late_night": "Поздняя ночь",
+    "search_placeholder": "Поиск по {{count}} объектам...",
+    "found_count": "Найдено: {{count}}",
+    "total_count": "Всего объектов: {{count}}",
+    "filters": "Фильтры",
+    "list_view": "Список",
+    "map_view": "Карта",
+    "sort": "Сортировка",
+    "sort_options": {
+      "newest": "Сначала новые",
+      "rating": "По рейтингу (наш)",
+      "google_rating": "По рейтингу (Google)",
+      "name": "По алфавиту",
+      "price_asc": "Дешевле",
+      "price_desc": "Дороже"
+    },
+    "category": "Категория",
+    "all_categories": "Все категории",
+    "country": "Страна",
+    "all_countries": "Все страны",
+    "city": "Город",
+    "all_cities": "Все города",
+    "price": "Цена",
+    "min_rating": "Мин. Рейтинг: {{rating}}",
+    "any_rating": "Любой",
+    "vibes_features": "Атмосфера и особенности",
+    "reset_filters": "Сбросить фильтры",
+    "tabs": {
+      "all": "Все объекты",
+      "pending": "На модерации",
+      "active": "Активные",
+      "reviews": "Отзывы"
+    },
+    "import": "Импорт",
+    "export": "Экспорт",
+    "exporting": "Экспорт...",
+    "reindex": "Reindex",
+    "reindexing": "Reindexing...",
+    "embeddings": "Embeddings",
+    "embedding": "Embedding...",
+    "new": "Новый",
+    "no_reviews_pending": "Нет отзывов на модерации",
+    "all_reviews_checked": "Все отзывы проверены",
+    "reject": "Отклонить",
+    "approve": "Одобрить",
+    "no_locations_with_coords": "Нет локаций с координатами",
+    "bulk_reindex_confirm": "Запустить фоновое индексирование всех объектов?",
+    "bulk_embedding_confirm": "Обновить только пустые embeddings?\n\nОК = только пустые\nОтмена = все локации",
+    "update_embeddings_title": "Обновить векторные embeddings",
+    "locations_title": "Локации",
+    "admin_panel_label": "Админ",
+    "ai_reindex": "AI Переиндексация",
+    "ai_reindexing": "AI...",
+    "locations_subtitle": "Управление базой данных ресторанов, кафе и гастро-точек.",
+    "data_load_error": "Ошибка загрузки данных",
+    "data_load_error_desc": "Не удалось загрузить данные из базы. Проверьте конфигурацию Supabase или сетевое соединение.",
+    "stats": {
+      "total_objects": "Всего объектов",
+      "pending_moderation": "На модерации",
+      "active_points": "Активные точки"
+    },
+    "actions": {
+      "title": "Действия",
+      "import_data": "Импорт данных",
+      "export_data": "Экспорт данных",
+      "cancel": "Отмена",
+      "new": "Новый",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "check": "Проверить",
+      "approve": "Одобрить",
+      "reject": "Отклонить"
+    },
+    "table": {
+      "object": "Объект",
+      "location": "Локация",
+      "rating": "Рейтинг",
+      "status": "Статус",
+      "no_data": "Нет данных",
+      "no_objects": "Нет объектов",
+      "no_objects_to_display": "Нет объектов для отображения"
+    },
+    "hierarchy": {
+      "geography": "География",
+      "countries": "{{count}} стран",
+      "cities": "Города",
+      "objects": "Объекты",
+      "details": "Детали"
+    },
+    "moderation": {
+      "queue_empty": "Очередь пуста",
+      "no_pending": "Нет объектов на модерации"
+    }
   }
 }

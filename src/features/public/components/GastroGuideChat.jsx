@@ -10,7 +10,6 @@ export default function GastroGuideChat({ isOpen, onClose }) {
     const navigate = useNavigate()
 
     const handleCardClick = (locationId) => {
-        onClose?.()
         navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }
 

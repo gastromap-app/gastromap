@@ -19,6 +19,7 @@ import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
 import { useAdminLocations } from '../hooks/useAdminLocations'
+import { useAdminLanguage } from '@/hooks/useI18n'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -68,6 +69,7 @@ import ListViewSection from '../components/ListViewSection'
 import { getLabelGroupsRu } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
+    const { t, i18n } = useAdminLanguage()
     const hook = useAdminLocations()
     
     const {
@@ -112,10 +114,10 @@ const AdminLocationsPage = () => {
     }, [mapLocations])
 
     const BEST_TIMES = [
-        { id: 'morning', label: 'Утро', icon: Clock },
-        { id: 'day', label: 'День', icon: Clock },
-        { id: 'evening', label: 'Вечер', icon: Clock },
-        { id: 'late_night', label: 'Поздняя ночь', icon: Clock }
+        { id: 'morning', label: t('morning'), icon: Clock },
+        { id: 'day', label: t('day'), icon: Clock },
+        { id: 'evening', label: t('evening'), icon: Clock },
+        { id: 'late_night', label: t('late_night'), icon: Clock }
     ]
 
 
@@ -139,9 +141,9 @@ const AdminLocationsPage = () => {
             )}
 
             <AdminPageHeader
-                eyebrow="Admin"
-                title="Locations"
-                subtitle="Manage restaurants, cafes, and gastro-spots database."
+                eyebrow={t('eyebrow', { defaultValue: 'Admin' })}
+                title={t('locations_title')}
+                subtitle={t('locations_subtitle')}
                 actions={
                     <div className="flex items-center gap-2">
                         <div className="hidden sm:flex items-center gap-2">
@@ -150,7 +152,7 @@ const AdminLocationsPage = () => {
                                 className={adminBtnSecondary}
                             >
                                 <Upload size={16} />
-                                <span className="hidden lg:inline ml-1">Импорт</span>
+                                <span className="hidden lg:inline ml-1">{t('import')}</span>
                             </button>
                             <button
                                 onClick={handleExport}
@@ -158,11 +160,11 @@ const AdminLocationsPage = () => {
                                 className={cn(adminBtnSecondary, "disabled:opacity-40")}
                             >
                                 <Download size={16} />
-                                <span className="hidden lg:inline ml-1">{isExporting ? 'Exporting...' : 'Экспорт'}</span>
+                                <span className="hidden lg:inline ml-1">{isExporting ? t('exporting') : t('export')}</span>
                             </button>
                             <button
                                 onClick={() => {
-                                    if (confirm('Запустить фоновое индексирование всех объектов?')) {
+                                    if (confirm(t('bulk_reindex_confirm'))) {
                                         bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
                                     }
                                 }}
@@ -174,7 +176,7 @@ const AdminLocationsPage = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    const mode = confirm('Обновить только пустые embeddings?\n\nОК = только пустые\nОтмена = все локации')
+                                    const mode = confirm(t('bulk_embedding_confirm'))
                                     bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
                                 }}
                                 disabled={bulkEmbeddingMutation.isPending}
@@ -186,7 +188,7 @@ const AdminLocationsPage = () => {
                                     <polyline points="3.29 7 12 12 20.71 7"/>
                                     <line x1="12" y1="22" x2="12" y2="12"/>
                                 </svg>
-                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? 'Embedding...' : 'Embeddings'}</span>
+                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('embedding') : t('embeddings')}</span>
                             </button>
                         </div>
                         <button
@@ -194,7 +196,7 @@ const AdminLocationsPage = () => {
                             className={adminBtnPrimary}
                         >
                             <Plus size={18} />
-                            <span className="hidden sm:inline ml-1">Новый</span>
+                            <span className="hidden sm:inline ml-1">{t('new')}</span>
                         </button>
                     </div>
                 }
@@ -257,8 +259,8 @@ const AdminLocationsPage = () => {
                             {pendingReviews.length === 0 ? (
                                 <div className="text-center py-20">
                                     <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)] mb-4" />
-                                    <p className="text-lg font-bold text-slate-400">Нет отзывов на модерации</p>
-                                    <p className="text-sm text-slate-400 mt-1">Все отзывы проверены</p>
+                                    <p className="text-lg font-bold text-slate-400">{t('no_reviews_pending')}</p>
+                                    <p className="text-sm text-slate-400 mt-1">{t('all_reviews_checked')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -285,7 +287,7 @@ const AdminLocationsPage = () => {
                                                     </div>
                                                     <p className="text-sm text-slate-600 dark:text-[hsl(220,10%,55%)] mt-2 line-clamp-2">{rev.review_text}</p>
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
-                                                        <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString('ru-RU')}
+                                                        <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : i18n.language)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -294,13 +296,13 @@ const AdminLocationsPage = () => {
                                                     onClick={() => handleRejectReview(rev.id)}
                                                     className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(220,20%,9%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
                                                 >
-                                                    Отклонить
+                                                    {t('reject')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleApproveReview(rev.id)}
                                                     className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
                                                 >
-                                                    Одобрить
+                                                    {t('approve')}
                                                 </button>
                                             </div>
                                         </div>
@@ -325,7 +327,7 @@ const AdminLocationsPage = () => {
                             {mapLocations.length === 0 ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                                     <MapPin size={48} className="mb-3 opacity-30" />
-                                    <p className="text-sm font-bold">Нет локаций с координатами</p>
+                                    <p className="text-sm font-bold">{t('no_locations_with_coords')}</p>
                                 </div>
                             ) : (
                                 <MapContainer

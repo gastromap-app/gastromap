@@ -2,6 +2,7 @@ import React from 'react'
 import { MapPin, Clock, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Компонент статистики локаций для AdminLocationsPage
@@ -10,23 +11,25 @@ import { cn } from '@/lib/utils'
  * @param {Array} props.pendingLocations - Список локаций в очереди
  */
 const LocationStats = ({ locationsList = [], pendingLocations = [] }) => {
+    const { t } = useTranslation()
+
     const stats = [
         { 
-            label: 'Всего объектов', 
+            label: t('admin.stats.total_objects'), 
             val: locationsList.length.toLocaleString(), 
             icon: MapPin, 
             color: 'text-indigo-600', 
             bg: 'bg-indigo-50 dark:bg-indigo-500/10' 
         },
         { 
-            label: 'На модерации', 
+            label: t('admin.stats.pending_moderation'), 
             val: pendingLocations.length.toLocaleString(), 
             icon: Clock, 
             color: 'text-amber-500', 
             bg: 'bg-amber-50 dark:bg-amber-500/10' 
         },
         { 
-            label: 'Активные точки', 
+            label: t('admin.stats.active_points'), 
             val: locationsList.filter(l => l.status === 'approved' || l.status === 'active').length.toLocaleString(), 
             icon: Zap, 
             color: 'text-emerald-500', 

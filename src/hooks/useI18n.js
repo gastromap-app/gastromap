@@ -12,12 +12,14 @@ import { changeLanguage } from '@/i18n/config'
 export function useI18n(namespace = 'common', isAdmin = false) {
     const { t, i18n: i18nInstance } = useTranslation(namespace)
 
-    // Авто-переключение языка на основе роли (только для admin-режима)
+    // Авто-переключение языка на основе роли отключено для поддержки мультиязычности в админке
+    /*
     useEffect(() => {
         if (isAdmin && i18nInstance.language !== 'ru') {
             changeLanguage('ru')
         }
     }, [isAdmin, i18nInstance])
+    */
 
     // Функция для явного переключения языка
     const setLanguage = (lng) => {

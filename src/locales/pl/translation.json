@@ -313,6 +313,104 @@
     "add_another": "Dodaj Kolejne",
     "back_home": "Wróć do Strony Głównej"
   },
+  "labels": {
+    "hidden_gem": "Ukryty klejnot",
+    "hidden_gem_desc": "Unikalne miejsce według autora aplikacji"
+  },
+  "admin": {
+    "search_placeholder": "Szukaj wśród {{count}} obiektów...",
+    "found_count": "Znaleziono: {{count}}",
+    "total_count": "Wszystkich obiektów: {{count}}",
+    "filters": "Filtry",
+    "list_view": "Lista",
+    "map_view": "Mapa",
+    "sort": "Sortowanie",
+    "sort_options": {
+      "newest": "Najpierw nowe",
+      "rating": "Według rankingu (nasz)",
+      "google_rating": "Według rankingu (Google)",
+      "name": "Alfabetycznie",
+      "price_asc": "Najtańsze",
+      "price_desc": "Najdroższe"
+    },
+    "category": "Kategoria",
+    "all_categories": "Wszystkie kategorie",
+    "country": "Kraj",
+    "all_countries": "Wszystkie kraje",
+    "city": "Miasto",
+    "all_cities": "Wszystkie miasta",
+    "price": "Cena",
+    "min_rating": "Min. Ocena: {{rating}}",
+    "any_rating": "Dowolna",
+    "vibes_features": "Atmosfera i cechy",
+    "reset_filters": "Resetuj filtry",
+    "tabs": {
+      "all": "Wszystkie obiekty",
+      "pending": "Do moderacji",
+      "active": "Aktywne",
+      "reviews": "Opinie"
+    },
+    "import": "Import",
+    "export": "Eksport",
+    "exporting": "Eksportowanie...",
+    "reindex": "Indeksowanie",
+    "reindexing": "Indeksowanie...",
+    "embeddings": "Embeddings",
+    "embedding": "Embedding...",
+    "new": "Nowy",
+    "no_reviews_pending": "Brak opinii do moderacji",
+    "all_reviews_checked": "Wszystkie opinie sprawdzone",
+    "reject": "Odrzuć",
+    "approve": "Zatwierdź",
+    "no_locations_with_coords": "Brak lokalizacji z współrzędnymi",
+    "bulk_reindex_confirm": "Uruchomić indeksowanie w tle dla wszystkich obiektów?",
+    "bulk_embedding_confirm": "Zaktualizować tylko puste embeddings?\n\nOK = tylko puste\nAnuluj = wszystkie lokalizacje",
+    "update_embeddings_title": "Zaktualizuj embeddings wektorowe",
+    "locations_title": "Lokalizacje",
+    "admin_panel_label": "Admin",
+    "ai_reindex": "Indeksowanie AI",
+    "ai_reindexing": "AI...",
+    "locations_subtitle": "Zarządzaj bazą danych restauracji, kawiarni i punktów gastronomicznych.",
+    "data_load_error": "Błąd ładowania danych",
+    "data_load_error_desc": "Nie udało się załadować danych z bazy. Sprawdź konfigurację Supabase lub połączenie sieciowe.",
+    "stats": {
+      "total_objects": "Wszystkie obiekty",
+      "pending_moderation": "Do moderacji",
+      "active_points": "Aktywne punkty"
+    },
+    "actions": {
+      "title": "Działania",
+      "import_data": "Import danych",
+      "export_data": "Eksport danych",
+      "cancel": "Anuluj",
+      "new": "Nowy",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "check": "Sprawdź",
+      "approve": "Zatwierdź",
+      "reject": "Odrzuć"
+    },
+    "table": {
+      "object": "Obiekt",
+      "location": "Lokalizacja",
+      "rating": "Ranking",
+      "status": "Status",
+      "no_data": "Brak danych",
+      "no_objects": "Brak obiektów",
+      "no_objects_to_display": "Brak obiektów do wyświetlenia"
+    },
+    "hierarchy": {
+      "geography": "Geografia",
+      "countries": "{{count}} krajów",
+      "cities": "Miasta",
+      "objects": "Obiekty",
+      "details": "Szczegóły"
+    },
+    "moderation": {
+      "queue_empty": "Kolejka jest pusta",
+      "no_pending": "Brak obiektów do moderacji"
+    }
+  },
   "common": {
     "loading": "Ładowanie…",
     "error": "Błąd",

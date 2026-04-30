@@ -4,6 +4,7 @@ import {
     Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal, MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ESTABLISHMENT_TYPES, LABEL_GROUPS } from '@/shared/config/filterOptions'
 
@@ -35,6 +36,7 @@ const LocationFilters = ({
     cities = [],
     countries = []
 }) => {
+    const { t, i18n } = useTranslation()
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false)
     const searchInputRef = useRef(null)
@@ -64,7 +66,10 @@ const LocationFilters = ({
 
     // Flatten all vibes for the filter list
     const allVibes = LABEL_GROUPS.flatMap(g => 
-        g.items.map((item, idx) => ({ id: item, label: g.itemsRu[idx] }))
+        g.items.map((item, idx) => ({ 
+            id: item, 
+            label: i18n.language === 'ru' ? g.itemsRu[idx] : item 
+        }))
     ).sort((a, b) => a.label.localeCompare(b.label))
 
     return (
@@ -99,7 +104,7 @@ const LocationFilters = ({
                                     <input
                                         ref={searchInputRef}
                                         type="text"
-                                        placeholder={`Поиск по ${totalCount || 0} объектам...`}
+                                        placeholder={t('admin.search_placeholder', { count: totalCount || 0 })}
                                         value={searchQuery}
                                         onChange={(e) => onSearchChange(e.target.value)}
                                         onBlur={() => !searchQuery && setIsSearchExpanded(false)}
@@ -120,7 +125,7 @@ const LocationFilters = ({
 
                     <div className="hidden md:block">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none">
-                            {searchQuery ? `Найдено: ${filteredCount}` : `Всего объектов: ${totalCount}`}
+                            {searchQuery ? t('admin.found_count', { count: filteredCount }) : t('admin.total_count', { count: totalCount })}
                         </p>
                     </div>
                 </div>
@@ -137,7 +142,7 @@ const LocationFilters = ({
                         )}
                     >
                         <SlidersHorizontal size={14} strokeWidth={2.5} />
-                        <span className="hidden xs:inline">Фильтры</span>
+                        <span className="hidden xs:inline">{t('admin.filters')}</span>
                         {(activeCategory !== 'All' || activePriceLevels.length > 0 || minRating !== null || activeVibes.length > 0 || activeCity !== 'All' || activeCountry !== 'All') && (
                             <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[8px] flex items-center justify-center">
                                 !
@@ -156,7 +161,7 @@ const LocationFilters = ({
                             )}
                         >
                             <ListIcon size={14} strokeWidth={2.5} />
-                            <span className="hidden xs:inline">Список</span>
+                            <span className="hidden xs:inline">{t('admin.list_view')}</span>
                         </button>
                         <button
                             onClick={() => onViewModeChange('map')}
@@ -168,7 +173,7 @@ const LocationFilters = ({
                             )}
                         >
                             <MapIcon size={14} strokeWidth={2.5} />
-                            <span className="hidden xs:inline">Карта</span>
+                            <span className="hidden xs:inline">{t('admin.map_view')}</span>
                         </button>
                     </div>
                 </div>
@@ -189,31 +194,31 @@ const LocationFilters = ({
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <SortAsc size={12} /> Сортировка
+                                        <SortAsc size={12} /> {t('admin.sort')}
                                     </label>
                                     <select 
                                         value={sortBy}
                                         onChange={(e) => onSortChange(e.target.value)}
                                         className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
-                                        <option value="newest">Сначала новые</option>
-                                        <option value="rating">По рейтингу (наш)</option>
-                                        <option value="google_rating">По рейтингу (Google)</option>
-                                        <option value="name">По алфавиту</option>
-                                        <option value="price_asc">Дешевле</option>
-                                        <option value="price_desc">Дороже</option>
+                                        <option value="newest">{t('admin.sort_options.newest')}</option>
+                                        <option value="rating">{t('admin.sort_options.rating')}</option>
+                                        <option value="google_rating">{t('admin.sort_options.google_rating')}</option>
+                                        <option value="name">{t('admin.sort_options.name')}</option>
+                                        <option value="price_asc">{t('admin.sort_options.price_asc')}</option>
+                                        <option value="price_desc">{t('admin.sort_options.price_desc')}</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <LayoutGrid size={12} /> Категория
+                                        <LayoutGrid size={12} /> {t('admin.category')}
                                     </label>
                                     <select 
                                         value={activeCategory}
                                         onChange={(e) => onCategoryChange(e.target.value)}
                                         className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
-                                        <option value="All">Все категории</option>
+                                        <option value="All">{t('admin.all_categories')}</option>
                                         {ESTABLISHMENT_TYPES.filter(t => t.id !== 'all').map(type => (
                                             <option key={type.id} value={type.id}>{type.labelRu || type.label}</option>
                                         ))}
@@ -225,14 +230,14 @@ const LocationFilters = ({
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <MapIcon size={12} /> Страна
+                                        <MapIcon size={12} /> {t('admin.country')}
                                     </label>
                                     <select 
                                         value={activeCountry}
                                         onChange={(e) => onCountryChange(e.target.value)}
                                         className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
-                                        <option value="All">Все страны</option>
+                                        <option value="All">{t('admin.all_countries')}</option>
                                         {countries.map(country => (
                                             <option key={country} value={country}>{country}</option>
                                         ))}
@@ -240,14 +245,14 @@ const LocationFilters = ({
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <MapIcon size={12} /> Город
+                                        <MapIcon size={12} /> {t('admin.city')}
                                     </label>
                                     <select 
                                         value={activeCity}
                                         onChange={(e) => onCityChange(e.target.value)}
                                         className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
-                                        <option value="All">Все города</option>
+                                        <option value="All">{t('admin.all_cities')}</option>
                                         {cities.map(city => (
                                             <option key={city} value={city}>{city}</option>
                                         ))}
@@ -259,7 +264,7 @@ const LocationFilters = ({
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <DollarSign size={12} /> Цена
+                                        <DollarSign size={12} /> {t('admin.price')}
                                     </label>
                                     <div className="flex gap-2">
                                         {['$', '$$', '$$$'].map(level => (
@@ -280,7 +285,7 @@ const LocationFilters = ({
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                        <Star size={12} /> Мин. Рейтинг: {minRating || 'Любой'}
+                                        <Star size={12} /> {minRating ? t('admin.min_rating', { rating: minRating }) : t('admin.min_rating', { rating: t('admin.any_rating') })}
                                     </label>
                                     <div className="flex gap-1">
                                         {[3, 3.5, 4, 4.5, 5].map(val => (
@@ -304,7 +309,7 @@ const LocationFilters = ({
                             {/* Vibes / Features */}
                             <div className="lg:col-span-2 space-y-3">
                                 <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                    <Tag size={12} /> Атмосфера и особенности
+                                    <Tag size={12} /> {t('admin.vibes_features')}
                                 </label>
                                 <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto no-scrollbar pr-2">
                                     {allVibes.map(vibe => (
@@ -338,7 +343,7 @@ const LocationFilters = ({
                                 }}
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 transition-colors py-2 flex items-center gap-2"
                             >
-                                <X size={12} strokeWidth={3} /> Сбросить фильтры
+                                <X size={12} strokeWidth={3} /> {t('admin.reset_filters')}
                             </button>
                         </div>
                     </motion.div>
@@ -349,10 +354,10 @@ const LocationFilters = ({
             <div className="px-4 lg:px-10 pb-5 flex items-center gap-3">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 pr-4 -mx-1 flex-1">
                     {[
-                        { id: 'all', label: 'Все объекты', icon: ListIcon },
-                        { id: 'pending', label: 'На модерации', icon: Clock },
-                        { id: 'active', label: 'Активные', icon: Zap },
-                        { id: 'reviews', label: 'Отзывы', icon: MessageSquare },
+                        { id: 'all', label: t('admin.tabs.all'), icon: ListIcon },
+                        { id: 'pending', label: t('admin.tabs.pending'), icon: Clock },
+                        { id: 'active', label: t('admin.tabs.active'), icon: Zap },
+                        { id: 'reviews', label: t('admin.tabs.reviews'), icon: MessageSquare },
                     ].map(tab => (
                         <button
                             key={tab.id}

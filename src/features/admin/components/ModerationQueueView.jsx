@@ -1,5 +1,6 @@
 import React from 'react'
 import { AlertCircle, Building2, MapPin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * ModerationQueueView
@@ -13,12 +14,14 @@ const ModerationQueueView = ({
     onApprove,
     onReject,
 }) => {
+    const { t } = useTranslation()
+
     if (pendingLocations.length === 0) {
         return (
             <div className="text-center py-20">
                 <AlertCircle size={48} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)] mb-4" />
-                <p className="text-lg font-bold text-slate-400">Очередь пуста</p>
-                <p className="text-sm text-slate-400 mt-1">Нет объектов на модерации</p>
+                <p className="text-lg font-bold text-slate-400">{t('admin.moderation.queue_empty')}</p>
+                <p className="text-sm text-slate-400 mt-1">{t('admin.moderation.no_pending')}</p>
             </div>
         )
     }
@@ -48,19 +51,19 @@ const ModerationQueueView = ({
                             onClick={() => onEdit(loc)}
                             className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-[hsl(220,20%,9%)] text-slate-900 dark:text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.08] active:scale-95 transition-all"
                         >
-                            Проверить
+                            {t('admin.actions.check')}
                         </button>
                         <button
                             onClick={() => onApprove(loc.id)}
                             className="flex-1 sm:px-6 py-3.5 bg-indigo-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all"
                         >
-                            Одобрить
+                            {t('admin.actions.approve')}
                         </button>
                         <button
                             onClick={() => onReject(loc.id)}
                             className="flex-1 sm:px-6 py-3.5 bg-white dark:bg-[hsl(220,20%,9%)] text-orange-500 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.08] active:scale-95 transition-all"
                         >
-                            Отклонить
+                            {t('admin.actions.reject')}
                         </button>
                     </div>
                 </div>

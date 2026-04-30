@@ -1,4 +1,28 @@
 {
+  "errors": {
+    "something_went_wrong": "Something went wrong",
+    "unexpected_desc": "An unexpected error occurred. Please try refreshing the page.",
+    "retry": "Try again",
+    "go_home": "Go Home",
+    "map_unavailable": "Map is unavailable",
+    "refresh": "Refresh",
+    "ai_unavailable": "GastroGuide is temporarily unavailable",
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection error. Please check your internet connection.",
+    "not_found": "Not found.",
+    "server": "Server error. Please try again later.",
+    "unauthorized": "Unauthorized."
+  },
+  "ai": {
+    "geo_permission_request": "📍 To find places nearby, I need access to your geolocation. Please allow access…",
+    "found_places": "I found some places for you:",
+    "geo_failed_with_tip": "📍 Failed to get geolocation. Try specifying a city in your request, e.g., \"cafe in Krakow\".",
+    "geo_unavailable": "📍 Geolocation is unavailable. Try specifying a city in your request.",
+    "response_failed": "GastroGuide is not responding. Please try again.",
+    "general_error": "An error occurred. Please try again.",
+    "placeholder": "Message GastroGuide…",
+    "typing": "GastroGuide is thinking…"
+  },
   "language_settings": {
     "title": "Language & Region",
     "app_language_title": "Application Language",
@@ -99,10 +123,6 @@
     "empty_title": "No visits yet",
     "empty_desc": "Open a place and tap \"Mark as Visited\" to track your food journey.",
     "start_cta": "Start exploring"
-  },
-  "ai": {
-    "placeholder": "Message GastroGuide…",
-    "typing": "GastroGuide is thinking…"
   },
   "onboarding": {
     "skip": "Skip",
@@ -387,18 +407,109 @@
     "selectLocation": "Select a location",
     "searchLocations": "Search locations..."
   },
-  "errors": {
-    "generic": "Something went wrong. Please try again.",
-    "network": "Connection error. Please check your internet connection.",
-    "not_found": "Not found.",
-    "server": "Server error. Please try again later.",
-    "unauthorized": "Unauthorized."
-  },
   "notifications": {
     "email_disabled": "Email notifications disabled",
     "email_enabled": "Email notifications enabled",
     "push_disabled": "Push notifications disabled",
     "push_enabled": "Push notifications enabled",
     "title": "Notifications"
+  },
+  "admin": {
+    "morning": "Morning",
+    "day": "Day",
+    "evening": "Evening",
+    "late_night": "Late Night",
+    "search_placeholder": "Search through {{count}} objects...",
+    "found_count": "Found: {{count}}",
+    "total_count": "Total objects: {{count}}",
+    "filters": "Filters",
+    "list_view": "List",
+    "map_view": "Map",
+    "sort": "Sort",
+    "sort_options": {
+      "newest": "Newest first",
+      "rating": "By rating (ours)",
+      "google_rating": "By rating (Google)",
+      "name": "Alphabetical",
+      "price_asc": "Cheapest",
+      "price_desc": "Most expensive"
+    },
+    "category": "Category",
+    "all_categories": "All categories",
+    "country": "Country",
+    "all_countries": "All countries",
+    "city": "City",
+    "all_cities": "All cities",
+    "price": "Price",
+    "min_rating": "Min. Rating: {{rating}}",
+    "any_rating": "Any",
+    "vibes_features": "Vibes and features",
+    "reset_filters": "Reset filters",
+    "tabs": {
+      "all": "All objects",
+      "pending": "Pending",
+      "active": "Active",
+      "reviews": "Reviews"
+    },
+    "import": "Import",
+    "export": "Export",
+    "exporting": "Exporting...",
+    "reindex": "Reindex",
+    "reindexing": "Reindexing...",
+    "embeddings": "Embeddings",
+    "embedding": "Embedding...",
+    "new": "New",
+    "no_reviews_pending": "No reviews pending moderation",
+    "all_reviews_checked": "All reviews checked",
+    "reject": "Reject",
+    "approve": "Approve",
+    "no_locations_with_coords": "No locations with coordinates",
+    "bulk_reindex_confirm": "Run background reindexing for all objects?",
+    "bulk_embedding_confirm": "Update only empty embeddings?\n\nOK = only empty\nCancel = all locations",
+    "update_embeddings_title": "Update vector embeddings",
+    "locations_title": "Locations",
+    "admin_panel_label": "Admin",
+    "ai_reindex": "AI Reindex",
+    "ai_reindexing": "AI...",
+    "locations_subtitle": "Manage the database of restaurants, cafes, and gastro-spots.",
+    "data_load_error": "Data load error",
+    "data_load_error_desc": "Failed to load data from database. Check Supabase configuration or network connection.",
+    "stats": {
+      "total_objects": "Total Objects",
+      "pending_moderation": "Pending Moderation",
+      "active_points": "Active Points"
+    },
+    "actions": {
+      "title": "Actions",
+      "import_data": "Import Data",
+      "export_data": "Export Data",
+      "cancel": "Cancel",
+      "new": "New",
+      "edit": "Edit",
+      "delete": "Delete",
+      "check": "Check",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "table": {
+      "object": "Object",
+      "location": "Location",
+      "rating": "Rating",
+      "status": "Status",
+      "no_data": "No data",
+      "no_objects": "No objects",
+      "no_objects_to_display": "No objects to display"
+    },
+    "hierarchy": {
+      "geography": "Geography",
+      "countries": "{{count}} countries",
+      "cities": "Cities",
+      "objects": "Objects",
+      "details": "Details"
+    },
+    "moderation": {
+      "queue_empty": "Queue is empty",
+      "no_pending": "No objects pending moderation"
+    }
   }
 }

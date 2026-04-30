@@ -29,14 +29,13 @@ import { MenuScanner } from '@/features/public/components/MenuScanner'
 import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
 import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 
-import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
+
 
 const LocationDetailsPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
     const routerLocation = useLocation()
-    const cameFromChat = routerLocation.state?.from === 'chat'
-    const { setIsChatOpen } = useAIChatStore()
+
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -883,15 +882,8 @@ const LocationDetailsPage = () => {
             >
                 <div className="max-w-5xl mx-auto px-[4vw] flex justify-between items-center pointer-events-auto">
                     <button
-                        onClick={() => {
-                            if (cameFromChat) {
-                                setIsChatOpen(true)
-                                navigate(-1)
-                            } else {
-                                navigate(-1)
-                            }
-                        }}
-                        aria-label={cameFromChat ? 'Back to chat' : 'Go back'}
+                        onClick={() => navigate(-1)}
+                        aria-label="Go back"
                         className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
                     >
                         <ArrowLeft size={20} />

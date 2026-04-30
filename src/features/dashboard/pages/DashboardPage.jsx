@@ -534,7 +534,7 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : geoStatus === 'denied' || geoStatus === 'error' ? (
-                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'}`}>
                                     <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={24} />
                                     <div className="text-center">
                                         <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
@@ -553,7 +553,7 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'}`}>
                                     <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={28} />
                                     <div className="text-center">
                                         <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
@@ -620,7 +620,7 @@ const DashboardPage = () => {
                                         : (
                                             /* Empty state — only shown after loading finishes */
                                             <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-card border ${
-                                                isDark ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-100'
+                                                isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'
                                             }`}>
                                                 <div className="text-4xl">🍽️</div>
                                                 <div className="text-center">
@@ -832,7 +832,7 @@ const DesktopDashboard = ({
                                 ))}
                             </div>
                         ) : geoStatus === 'denied' || geoStatus === 'error' ? (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200/70 shadow-sm'}`}>
                                 <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={28} />
                                 <div className="text-center">
                                     <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
@@ -856,7 +856,7 @@ const DesktopDashboard = ({
                                 ))}
                             </div>
                         ) : (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200/70 shadow-sm'}`}>
                                 <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={32} />
                                 <div className="text-center">
                                     <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>

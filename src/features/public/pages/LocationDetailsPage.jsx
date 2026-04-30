@@ -472,13 +472,20 @@ const LocationDetailsPage = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto relative z-10">
-                        <button className={`flex-1 sm:flex-none px-10 py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
-                            <Globe size={18} className="text-blue-500" />
+                        <button 
+                            disabled
+                            className={`flex-1 sm:flex-none px-10 py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-sm border transition-all cursor-not-allowed opacity-60 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-400'}`}
+                        >
+                            <Globe size={18} className="text-gray-400" />
                             {t('location.visit_website')}
                         </button>
-                        <button className="flex-1 sm:flex-none px-10 py-5 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black text-sm shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all">
+                        <button 
+                            disabled
+                            className="flex-1 sm:flex-none px-10 py-5 bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 rounded-2xl flex items-center justify-center gap-3 font-black text-sm cursor-not-allowed relative overflow-hidden"
+                        >
                             <ExternalLink size={18} />
                             {t('location.external_booking')}
+                            <span className="absolute top-1 right-2 text-[8px] font-black uppercase tracking-tighter opacity-70">Coming Soon</span>
                         </button>
                     </div>
                 </div>
@@ -928,7 +935,7 @@ const LocationDetailsPage = () => {
                 className={`fixed top-0 left-0 right-0 z-[110] pointer-events-none ${showCompactHeader ? '' : 'pointer-events-none'}`}
                 style={{ paddingTop: 'env(safe-area-inset-top)' }}
             >
-                <div className={`h-14 flex items-center px-16 md:px-20 border-b backdrop-blur-xl ${isDark ? 'bg-[hsl(220,20%,3%)]/85 border-white/10' : 'bg-white/85 border-black/5'}`}>
+                <div className={`h-14 flex items-center px-16 md:px-20 border-b backdrop-blur-2xl shadow-sm ${isDark ? 'bg-[hsl(220,20%,3%)]/90 border-white/10' : 'bg-white/90 border-black/5'}`}>
                     <h2 className={`text-sm font-bold truncate mx-auto max-w-[60%] ${textStyle}`}>
                         {location.title}
                     </h2>
@@ -999,32 +1006,48 @@ const LocationDetailsPage = () => {
 
             {/* ── Main Content ───────────────────────────────────────────────────── */}
             <div className="max-w-5xl mx-auto px-[4vw] relative z-30">
-                {/* Sticky tab bar */}
+                {/* Tab bar (non-sticky) */}
                 <div
-                    className="sticky z-40 -mx-[4vw] px-[4vw] py-3"
-                    style={{ top: 'calc(env(safe-area-inset-top) + 56px)' }}
+                    className="-mx-[4vw] px-[4vw] py-3"
                 >
                     <div className={`rounded-2xl backdrop-blur-xl border ${isDark ? 'bg-[hsl(220,20%,6%)]/85 border-white/[0.06]' : 'bg-white/85 border-black/5 shadow-sm'}`}>
                         <div
                             onScroll={handleScroll}
                             className="p-1.5 rounded-2xl flex gap-1 items-center overflow-x-auto scrollbar-hide w-full"
                         >
-                            {['Overview', 'Menu', 'Reviews', 'Photos', 'Notes'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`relative flex-shrink-0 px-5 md:px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all ${activeTab === tab ? 'text-white' : isDark ? 'text-white/60 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-                                >
-                                    {activeTab === tab && (
-                                        <motion.span
-                                            layoutId="activeTabPill"
-                                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-md shadow-blue-500/30"
-                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10">{tab}</span>
-                                </button>
-                            ))}
+                            {['Overview', 'Menu', 'Reviews', 'Photos', 'Notes'].map((tab) => {
+                                const isComingSoon = tab === 'Menu'
+                                return (
+                                    <button
+                                        key={tab}
+                                        onClick={() => !isComingSoon && setActiveTab(tab)}
+                                        className={`relative flex-shrink-0 px-5 md:px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                                            activeTab === tab 
+                                                ? 'text-white' 
+                                                : isComingSoon 
+                                                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                                                    : isDark ? 'text-white/60 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        {activeTab === tab && (
+                                            <motion.span
+                                                layoutId="activeTabPill"
+                                                className="absolute inset-0 bg-blue-600 rounded-xl shadow-md shadow-blue-500/30"
+                                                transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                                            />
+                                        )}
+                                        <span className="relative z-10 flex items-center gap-1.5">
+                                            {tab}
+                                            {isComingSoon && (
+                                                <div className="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-tighter bg-gray-200 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-gray-500 dark:text-gray-400">
+                                                    <Clock size={8} />
+                                                    <span>Soon</span>
+                                                </div>
+                                            )}
+                                        </span>
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>

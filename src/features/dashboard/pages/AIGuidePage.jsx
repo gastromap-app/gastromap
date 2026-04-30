@@ -19,24 +19,29 @@ const AIGuidePage = () => {
     const navigate = useNavigate()
     const scrollRef = useRef(null)
 
-    // Restore scroll or go to bottom on mount
+    // Scroll to bottom whenever messages change OR on mount
     useEffect(() => {
-        if (scrollRef.current) {
-            requestAnimationFrame(() => {
-                if (scrollRef.current) {
-                    if (lastScrollY > 0) {
-                        scrollRef.current.scrollTop = lastScrollY
-                    } else if (messages.length > 0) {
-                        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-                    }
-                }
-            })
-        }
+        if (!scrollRef.current) return
         
-        // Initial header state
+        const scrollToBottom = () => {
+            if (scrollRef.current) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            }
+        }
+
+        // Small timeout to ensure DOM has updated
+        const timer = setTimeout(scrollToBottom, 50)
+        return () => clearTimeout(timer)
+    }, [messages.length])
+
+    // Restore scroll on mount if we have a saved position
+    useEffect(() => {
+        if (lastScrollY > 0 && scrollRef.current) {
+            scrollRef.current.scrollTop = lastScrollY
+        }
         setHeaderScrolled(false)
         return () => setHeaderScrolled(false)
-    }, [messages.length]) // Trigger on messages load
+    }, [])
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop

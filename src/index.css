@@ -349,3 +349,15 @@
     background: none !important;
     border: none !important;
 }
+/* Force cluster icons to be circular and styled consistently */
+.leaflet-marker-icon.custom-marker-cluster > div {
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Hide Leaflet Attribution as requested */
+.leaflet-control-attribution {
+    display: none !important;
+}

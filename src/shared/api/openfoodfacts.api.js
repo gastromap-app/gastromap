@@ -1,40 +1,61 @@
-/**
- * Open Food Facts API - Lightweight Culinary Context
- * 
- * Used as a fallback for barcode lookups and basic ingredient search.
- */
-
-const BASE_URL = 'https://world.openfoodfacts.org/cgi/search.pl'
+import { supabase } from './client'
 
 /**
  * Searches Open Food Facts for a product or category.
- * Used to get alternate names (aliases) or basic categories.
+ * Strictly routed via Supabase Edge Function to bypass CORS.
  */
 export async function getOpenFoodFactsContext(cuisine = '', description = '') {
     const searchTerm = `${cuisine} ${description}`.trim()
     if (!searchTerm) return {}
 
+    // Versioning log to ensure we are running the latest code on Vercel
+    console.log('[OpenFoodFacts] 🛰️ [v2-proxy] Fetching context for:', searchTerm)
+
+    if (!supabase) {
+        console.warn('[OpenFoodFacts] ⚠️ Supabase not initialized, skipping external enrichment.')
+        return {}
+    }
+
     try {
-        const response = await fetch(`${BASE_URL}?search_terms=${encodeURIComponent(searchTerm)}&json=1&page_size=5`, {
-            headers: {
-                'User-Agent': 'GastroMap/2.0 (contact@gastromap.app)'
+        const { data, error } = await supabase.functions.invoke('off-proxy', {
+            body: { 
+                search_terms: searchTerm,
+                page_size: 5
             }
         })
 
-        if (!response.ok) return {}
+        if (error) {
+            // Handle edge cases where proxy might return 503 or 404
+            const isServiceDown = error.status === 503 || error.message?.includes('503')
+            if (isServiceDown) {
+                console.warn('[OpenFoodFacts] ⚠️ OFF Service Unavailable (503). Skipping context.')
+            } else {
+                console.warn('[OpenFoodFacts] ❌ Proxy invocation failed:', error.message)
+            }
+            return {}
+        }
 
-        const data = await response.json()
+        if (!data || !data.products) {
+            return {}
+        }
+
         const products = data.products || []
 
-        // Extract useful terms
+        // Extract useful terms (categories and ingredients)
         const categories = Array.from(new Set(
             products.flatMap(p => p.categories_tags || [])
                 .map(t => t.replace('en:', '').replace(/-/g, ' '))
         )).slice(0, 8)
 
         const terms = Array.from(new Set(
-            products.flatMap(p => p.ingredients_text_with_allergens_en?.split(', ') || [])
-        )).slice(0, 10).map(t => t.toLowerCase())
+            products.flatMap(p => [
+                ...(p.ingredients_text_en?.split(/[,;]/) || []),
+                ...(p.ingredients_text?.split(/[,;]/) || []),
+                ...(p.allergens_tags || []).map(a => a.replace('en:', ''))
+            ])
+        )).filter(t => t && t.length > 2)
+          .slice(0, 12)
+          .map(t => t.trim().toLowerCase())
 
         return {
             source: 'OpenFoodFacts',
@@ -43,7 +64,8 @@ export async function getOpenFoodFactsContext(cuisine = '', description = '') {
             brand_count: products.length
         }
     } catch (err) {
-        console.warn('[OpenFoodFacts] Fetch failed:', err.message)
+        // Non-critical failure
+        console.warn('[OpenFoodFacts] ⚠️ Global request error:', err.message)
         return {}
     }
 }
@@ -55,7 +77,8 @@ export async function getIngredientCulinaryContext(searchTerm = '') {
     const data = await getOpenFoodFactsContext(searchTerm, '')
     return {
         categories: data.categories || [],
-        allergens: data.potential_ingredients || [], // Using this as potential culinary tags
+        allergens: data.potential_ingredients || [],
         source: 'OpenFoodFacts'
     }
 }
+

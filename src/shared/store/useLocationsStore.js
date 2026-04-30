@@ -44,6 +44,7 @@ export const useLocationsStore = create((set, get) => ({
     isInitialized: false, // true after first successful full fetch (no city/country filter)
     initError: null,      // error message if last init failed (allows retry)
     filteredLocations: INITIAL_LOCATIONS,
+    mapMarkers: [],       // New: Specific locations currently visible/relevant to the map view
     isLoading: false,
     // FIX: Pagination state — load in pages to avoid huge payloads
     currentPage: 0,
@@ -265,9 +266,17 @@ export const useLocationsStore = create((set, get) => ({
             const data = result?.data ?? result;
 
             if (Array.isArray(data)) {
+                // Best Practice: Enrich global cache, but only update specific mapMarkers
+                const existingLocations = get().locations;
+                const locationsMap = new Map(existingLocations.map(loc => [loc.id, loc]));
+                data.forEach(loc => locationsMap.set(loc.id, loc));
+
+                const mergedLocations = Array.from(locationsMap.values());
+                
                 set({ 
-                    locations: data,
-                    filteredLocations: data,
+                    locations: mergedLocations,
+                    filteredLocations: applyAllFilters(mergedLocations, get()),
+                    mapMarkers: data, // Map only shows what was returned for these bounds
                     isLoading: false 
                 });
             } else {
@@ -283,7 +292,15 @@ export const useLocationsStore = create((set, get) => ({
         const state = get();
         if (state.isLoading) return;
         
-        set({ isLoading: true, currentPage: 0, hasMore: true, locations: [], filteredLocations: [] });
+        // Only clear if we don't have any locations yet to avoid flicker
+        const shouldClear = state.locations.length === 0;
+        
+        set({ 
+            isLoading: true, 
+            currentPage: 0, 
+            hasMore: true,
+            ...(shouldClear ? { locations: [], filteredLocations: [] } : {})
+        });
         
         try {
             const { getLocations } = await import('@/shared/api/locations.api');
@@ -308,6 +325,7 @@ export const useLocationsStore = create((set, get) => ({
                 set({
                     locations: data,
                     filteredLocations: applyAllFilters(data, get()),
+                    mapMarkers: data, // Sync map markers on full init
                     isLoading: false,
                     isInitialized: true,
                     initError: null,

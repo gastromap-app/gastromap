@@ -12,22 +12,34 @@ export function usePullToRefresh(onRefresh, { threshold = 64 } = {}) {
     const isDragging = useRef(false)
 
     const onTouchStart = useCallback((e) => {
-        // Only activate if scrolled to top
-        const el = e.currentTarget
-        if (el.scrollTop > 0) return
+        // Only activate if window is at the very top
+        if (window.scrollY > 0) return
+        
         startY.current = e.touches[0].clientY
         isDragging.current = true
     }, [])
 
     const onTouchMove = useCallback((e) => {
         if (!isDragging.current || startY.current === null) return
-        const el = e.currentTarget
-        if (el.scrollTop > 0) { isDragging.current = false; return }
+        
+        // If user scrolled down during the move, cancel the pull
+        if (window.scrollY > 0) {
+            isDragging.current = false
+            setPullDistance(0)
+            return
+        }
+
         const delta = e.touches[0].clientY - startY.current
-        if (delta > 0) {
+        
+        // Only trigger if pulling DOWN (delta > 0) and we are at the top
+        if (delta > 5) { // Added 5px deadzone to avoid jitter
             // Rubber-band easing: resistance increases as you pull more
-            const distance = Math.min(delta * 0.45, threshold * 1.5)
+            const distance = Math.min(delta * 0.4, threshold * 1.5)
             setPullDistance(distance)
+        } else if (delta < 0) {
+            // If swiping UP, cancel pull immediately
+            isDragging.current = false
+            setPullDistance(0)
         }
     }, [threshold])
 

@@ -142,38 +142,76 @@ export function robustParseJSON(text) {
             try {
                 return JSON.parse(surgicallyCleaned)
             } catch {
-                // Final fallback: Basic field extraction using regex for key fields
+                // 5.5. Handling truncated JSON (missing closing braces/brackets/quotes)
                 try {
-                    const result = {}
-                    const fields = [
-                        'name', 'title', 'category', 'cuisine', 'description',
-                        'city', 'country', 'address', 'insider_tip', 'phone',
-                        'website', 'opening_hours'
-                    ]
-                    for (const field of fields) {
-                        // Match "field": "value" (handles escaped quotes inside value)
-                        const regex = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i')
-                        const match = surgicallyCleaned.match(regex)
-                        if (match) {
-                            try {
-                                // Try to unescape common sequences
-                                result[field] = match[1]
-                                    .replace(/\\n/g, '\n')
-                                    .replace(/\\"/g, '"')
-                                    .replace(/\\\\/g, '\\')
-                            } catch {
-                                result[field] = match[1]
+                    const closed = closeTruncatedJSON(surgicallyCleaned)
+                    return JSON.parse(closed)
+                } catch {
+                    // Final fallback: Basic field extraction using regex for key fields
+                    try {
+                        const result = {}
+                        const fields = [
+                            'name', 'title', 'category', 'cuisine', 'description',
+                            'city', 'country', 'address', 'insider_tip', 'phone',
+                            'website', 'opening_hours', 'summary', 'keywords'
+                        ]
+                        for (const field of fields) {
+                            // Match "field": "value" or "field": ["value", "value"]
+                            const regex = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i')
+                            const match = surgicallyCleaned.match(regex)
+                            if (match) {
+                                result[field] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+                            } else if (field === 'keywords' || field === 'tags') {
+                                // Array match attempt
+                                const arrRegex = new RegExp(`"${field}"\\s*:\\s*\\[(.*?)\\]`, 'is')
+                                const arrMatch = surgicallyCleaned.match(arrRegex)
+                                if (arrMatch) {
+                                    result[field] = arrMatch[1].split(',').map(s => s.trim().replace(/^"|"$/g, ''))
+                                }
                             }
                         }
-                    }
-                    if (Object.keys(result).length > 0) return result
-                } catch { /* ignore */ }
+                        if (Object.keys(result).length > 0) return result
+                    } catch { /* ignore */ }
 
-                throw initialError // Return the most descriptive error if recovery fails
+                    throw initialError
+                }
             }
         }
     } catch (err) {
         console.warn('[GastroAI] Robust parse failed:', err.message)
         throw err
     }
+}
+
+/**
+ * Attempts to close an unterminated JSON string by adding missing quotes, brackets, and braces.
+ */
+function closeTruncatedJSON(json) {
+    let result = json.trim()
+    
+    // 1. Handle unclosed quotes
+    const quoteCount = (result.match(/"/g) || []).length
+    if (quoteCount % 2 !== 0) {
+        result += '"'
+    }
+
+    // 2. Count braces and brackets
+    const stack = []
+    for (let i = 0; i < result.length; i++) {
+        const char = result[i]
+        if (char === '{') stack.push('}')
+        else if (char === '[') stack.push(']')
+        else if (char === '}') {
+            if (stack[stack.length - 1] === '}') stack.pop()
+        } else if (char === ']') {
+            if (stack[stack.length - 1] === ']') stack.pop()
+        }
+    }
+
+    // 3. Close from inner to outer
+    while (stack.length > 0) {
+        result += stack.pop()
+    }
+
+    return result
 }

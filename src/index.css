@@ -315,3 +315,44 @@
     transform: scale(1.1);
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
 }
+
+/* ─── Leaflet Popup Customization ────────────────────────────────────────── */
+
+.leaflet-popup-content-wrapper {
+    @apply rounded-[22px] p-0 overflow-hidden shadow-2xl backdrop-blur-xl transition-all duration-300;
+    padding: 0 !important;
+}
+
+[data-theme='dark'] .leaflet-popup-content-wrapper {
+    @apply bg-[#1c1c1e]/90 border border-white/10 text-white;
+}
+
+[data-theme='light'] .leaflet-popup-content-wrapper {
+    @apply bg-white/95 border border-slate-200/50 text-slate-900;
+}
+
+.leaflet-popup-content {
+    @apply m-0 !important;
+    width: 240px !important; /* Fixed width for better layout control */
+}
+
+.leaflet-popup-tip-container {
+    @apply mt-[-1px] opacity-90;
+}
+
+[data-theme='dark'] .leaflet-popup-tip {
+    @apply bg-[#1c1c1e]/90;
+}
+
+/* Marker Cluster Styling */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    @apply backdrop-blur-md transition-all duration-300 hover:scale-110 !important;
+}
+
+.marker-cluster-small { background-color: rgba(59, 130, 246, 0.2) !important; }
+.marker-cluster-medium { background-color: rgba(59, 130, 246, 0.3) !important; }
+.marker-cluster-large { background-color: rgba(59, 130, 246, 0.4) !important; }
+
+.marker-cluster div {
+    @apply bg-blue-600 text-white font-black text-xs shadow-lg ring-2 ring-white/20 !important;
+}

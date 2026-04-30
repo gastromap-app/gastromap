@@ -205,7 +205,7 @@ const LocationFormSlideOver = ({
             }
         } catch (err) {
             console.error('[Upload] Error:', err)
-            alert('Ошибка при загрузке: ' + err.message)
+            alert(t('admin.locations.form.actions.upload_error', { message: err.message }))
         } finally {
             setIsUploading(false)
             if (e.target) e.target.value = '' // Reset input
@@ -274,17 +274,17 @@ const LocationFormSlideOver = ({
                         <div className="flex-1 min-w-0 mt-[env(safe-area-inset-top)] sm:mt-0">
                             <div className="flex items-center flex-wrap gap-2 sm:gap-3">
                                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
-                                    {formData.title || (isNew ? 'Новый объект' : 'Редактирование')}
+                                    {formData.title || (isNew ? t('admin.locations.form.title_new') : t('admin.locations.form.title_edit'))}
                                 </h2>
                                 <span className={cn(
                                     "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider",
                                     "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20"
                                 )}>
-                                    {isNew ? 'Черновик' : (formData.status || 'Active')}
+                                    {isNew ? t('admin.locations.form.status_draft') : (formData.status || 'Active')}
                                 </span>
                             </div>
                             <p className="text-xs text-slate-400 mt-2 uppercase tracking-[0.2em] font-black opacity-60">
-                                {isNew ? 'Создание записи в GastroMap' : `ID: ${selectedLocation.id.substring(0, 12)}`}
+                                {isNew ? t('admin.locations.form.creation_subtitle') : t('admin.locations.form.id_label', { id: selectedLocation.id.substring(0, 12) })}
                             </p>
                         </div>
                         <button
@@ -306,10 +306,10 @@ const LocationFormSlideOver = ({
                                         <div className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 p-5 sm:p-6 rounded-2xl sm:rounded-[32px] border border-slate-100 dark:border-white/[0.03] space-y-4">
                                             <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-indigo-600 dark:text-indigo-400">
                                                 <Wand2 size={14} className="sm:w-3.5 sm:h-3.5" />
-                                                Автозаполнение Google
+                                                {t('admin.locations.form.fields.google_autocomplete')}
                                                 {formData._source === 'google_places' && (
                                                     <span className="ml-auto flex items-center gap-1 text-[8px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold">
-                                                        <Zap size={8} fill="currentColor" /> Linked
+                                                        <Zap size={8} fill="currentColor" /> {t('admin.locations.form.fields.linked')}
                                                     </span>
                                                 )}
                                             </label>
@@ -317,18 +317,18 @@ const LocationFormSlideOver = ({
                                                 <div className="flex-1">
                                                     <PlacesAutocomplete
                                                         onPlaceSelected={handlePlaceSelected}
-                                                        placeholder="Введите название..."
+                                                        placeholder={t('admin.locations.form.fields.title_placeholder')}
                                                     />
                                                 </div>
                                                 {handleAIMagic && (
                                                     <button
                                                         onClick={() => {
-                                                            const query = prompt('Введите название заведения или URL для AI экстракции:')
+                                                            const query = prompt(t('admin.locations.form.actions.ai_extract_prompt'))
                                                             if (query) handleAIMagic(query)
                                                         }}
                                                         disabled={extractMutation?.isPending}
                                                         className="w-11 h-11 sm:w-auto sm:px-4 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center shrink-0"
-                                                        title="AI Magic Extraction"
+                                                        title={t('admin.locations.form.fields.ai_magic_extraction')}
                                                     >
                                                         {extractMutation?.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
                                                     </button>
@@ -338,20 +338,20 @@ const LocationFormSlideOver = ({
 
                                         {/* Основная информация */}
                                         <div className="space-y-6">
-                                            <SectionHeader title="Основные параметры" icon={Building2} iconColor="text-indigo-500" />
+                                            <SectionHeader title={t('admin.locations.form.sections.main')} icon={Building2} iconColor="text-indigo-500" />
                                             <div className="grid grid-cols-1 gap-5 sm:gap-6">
-                                                <Field label="Название заведения" required hint="Отображается на карте">
+                                                <Field label={t('admin.locations.form.fields.title')} required hint={t('admin.locations.form.fields.title_hint')}>
                                                     <input
                                                         type="text"
                                                         value={formData.title || ''}
                                                         onChange={e => set('title', e.target.value)}
                                                         className={input}
-                                                        placeholder="Напр. Hamsa Resto & Bar"
+                                                        placeholder={t('admin.locations.form.fields.title_placeholder')}
                                                     />
                                                 </Field>
                                                 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                                                    <Field label="Категория">
+                                                    <Field label={t('admin.locations.form.fields.category')}>
                                                         <div className="relative group">
                                                             <select
                                                                 value={CATEGORIES.find(c => c.toLowerCase() === (formData.category || '').toLowerCase()) || formData.category || 'Restaurant'}
@@ -366,7 +366,7 @@ const LocationFormSlideOver = ({
                                                             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
                                                         </div>
                                                     </Field>
-                                                    <Field label="Ценовой уровень">
+                                                    <Field label={t('admin.locations.form.fields.price')}>
                                                         <div className="relative group">
                                                             <select
                                                                 value={formData.price_range || '$$'}
@@ -381,7 +381,7 @@ const LocationFormSlideOver = ({
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                                                    <Field label="Тип кухни">
+                                                    <Field label={t('admin.locations.form.fields.cuisine')}>
                                                         <div className="relative group">
                                                             <select
                                                                 value={formData.cuisine || ''}
@@ -389,7 +389,7 @@ const LocationFormSlideOver = ({
                                                                 className={cn(input, "appearance-none pr-10 cursor-pointer")}
                                                                 disabled={cuisinesLoading}
                                                             >
-                                                                <option value="">— выбрать —</option>
+                                                                <option value="">{t('admin.locations.form.fields.select_cuisine')}</option>
                                                                 {cuisineOptions.map(c => (
                                                                     <option key={c.id} value={c.name}>
                                                                         {c.emoji} {c.name}
@@ -399,7 +399,7 @@ const LocationFormSlideOver = ({
                                                             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
                                                         </div>
                                                     </Field>
-                                                    <Field label="Внутренний рейтинг" hint="Наш Ground Truth">
+                                                    <Field label={t('admin.locations.form.fields.rating_internal')} hint={t('admin.locations.form.fields.rating_internal_hint')}>
                                                         <div className="relative group">
                                                             <Star size={14} className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", formData.rating ? "text-indigo-500" : "text-slate-400")} />
                                                             <input
@@ -411,7 +411,7 @@ const LocationFormSlideOver = ({
                                                             />
                                                         </div>
                                                     </Field>
-                                                    <Field label="Рейтинг Google" hint="Справочно">
+                                                    <Field label={t('admin.locations.form.fields.rating_google')} hint={t('admin.locations.form.fields.rating_google_hint')}>
                                                         <div className="relative opacity-80">
                                                             <Star size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" />
                                                             <input
@@ -425,7 +425,7 @@ const LocationFormSlideOver = ({
                                                     </Field>
                                                 </div>
 
-                                            <Field label="График работы">
+                                            <Field label={t('admin.locations.form.fields.working_hours')}>
                                                 <div className="relative">
                                                     <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                                     <input
@@ -433,7 +433,7 @@ const LocationFormSlideOver = ({
                                                         value={formData.opening_hours || ''}
                                                         onChange={e => set('opening_hours', e.target.value)}
                                                         className={cn(input, "pl-11")}
-                                                        placeholder="Пн-Вс: 10:00 - 23:00"
+                                                        placeholder={t('admin.locations.form.fields.working_hours_placeholder')}
                                                     />
                                                 </div>
                                             </Field>
@@ -442,9 +442,9 @@ const LocationFormSlideOver = ({
 
                                     {/* Локация и Контакты */}
                                     <div className="space-y-6">
-                                        <SectionHeader title="География и Контакты" icon={MapPin} iconColor="text-rose-500" />
+                                        <SectionHeader title={t('admin.locations.form.sections.geo')} icon={MapPin} iconColor="text-rose-500" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                                            <Field label="Город" required>
+                                            <Field label={t('admin.locations.form.fields.city')} required>
                                                 <input
                                                     type="text"
                                                     value={formData.city || ''}
@@ -453,7 +453,7 @@ const LocationFormSlideOver = ({
                                                     placeholder="Krakow"
                                                 />
                                             </Field>
-                                            <Field label="Страна">
+                                            <Field label={t('admin.locations.form.fields.country')}>
                                                 <input
                                                     type="text"
                                                     value={formData.country || ''}
@@ -464,7 +464,7 @@ const LocationFormSlideOver = ({
                                             </Field>
                                         </div>
 
-                                        <Field label="Полный адрес">
+                                        <Field label={t('admin.locations.form.fields.address')}>
                                             <input
                                                 type="text"
                                                 value={formData.address || ''}
@@ -475,7 +475,7 @@ const LocationFormSlideOver = ({
                                         </Field>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-5 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl sm:rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
-                                            <Field label="Широта">
+                                            <Field label={t('admin.locations.form.fields.lat')}>
                                                 <input
                                                     type="number" step="any"
                                                     value={formData.lat || ''}
@@ -484,7 +484,7 @@ const LocationFormSlideOver = ({
                                                     placeholder="50.0647"
                                                 />
                                             </Field>
-                                            <Field label="Долгота">
+                                            <Field label={t('admin.locations.form.fields.lng')}>
                                                 <input
                                                     type="number" step="any"
                                                     value={formData.lng || ''}
@@ -496,7 +496,7 @@ const LocationFormSlideOver = ({
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                                            <Field label="Веб-сайт">
+                                            <Field label={t('admin.locations.form.fields.website')}>
                                                 <div className="relative group">
                                                     <Globe size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                                                     <input
@@ -508,7 +508,7 @@ const LocationFormSlideOver = ({
                                                     />
                                                 </div>
                                             </Field>
-                                            <Field label="Телефон">
+                                            <Field label={t('admin.locations.form.fields.phone')}>
                                                 <div className="relative group">
                                                     <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                                                     <input
@@ -529,19 +529,19 @@ const LocationFormSlideOver = ({
                                     
                                     {/* Описание и Контент */}
                                     <div className="space-y-6">
-                                        <SectionHeader title="Контент и Описание" icon={Sparkles} iconColor="text-amber-500" />
+                                        <SectionHeader title={t('admin.locations.form.sections.content')} icon={Sparkles} iconColor="text-amber-500" />
                                         
-                                        <Field label="Описание заведения">
+                                        <Field label={t('admin.locations.form.fields.description')}>
                                             <div className="relative group">
                                                 <textarea
                                                     value={formData.description || ''}
                                                     onChange={e => set('description', e.target.value)}
                                                     rows={5}
                                                     className={cn(textarea, "pt-4")}
-                                                    placeholder="Опишите кухню, атмосферу и сценарии (напр. идеальное место для свидания или работы)..."
+                                                    placeholder={t('admin.locations.form.fields.description_placeholder')}
                                                 />
                                                 <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed italic">
-                                                    💡 <b>Совет:</b> Пишите живым языком. AI использует это поле для понимания атмосферы и поиска. Упомяните специализацию, интерьер и для кого это место (напр. "идеально для завтраков с ноутбуком"). Это напрямую влияет на качество семантического поиска.
+                                                    {t('admin.locations.form.fields.description_tip')}
                                                 </p>
                                                 {aiQueryMutation && (
                                                     <button
@@ -550,28 +550,28 @@ const LocationFormSlideOver = ({
                                                         className="absolute bottom-4 right-4 px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2 text-[11px] font-bold"
                                                     >
                                                         {isImproving === 'description'
-                                                            ? <><RefreshCw size={12} className="animate-spin" /> Улучшаем...</>
-                                                            : <><Sparkles size={12} /> AI Улучшить</>
+                                                            ? <><RefreshCw size={12} className="animate-spin" /> {t('admin.locations.form.actions.improving')}</>
+                                                            : <><Sparkles size={12} /> {t('admin.locations.form.actions.improve_ai')}</>
                                                         }
                                                     </button>
                                                 )}
                                             </div>
                                         </Field>
 
-                                        <Field label="Совет знатока (Insider Tip)">
+                                        <Field label={t('admin.locations.form.fields.insider_tip')}>
                                             <textarea
                                                 value={formData.insider_tip || ''}
                                                 onChange={e => set('insider_tip', e.target.value)}
                                                 rows={2}
                                                 className={textarea}
-                                                placeholder="Напр. Бронируйте столик у окна за 2 дня..."
+                                                placeholder={t('admin.locations.form.fields.insider_tip_placeholder')}
                                             />
                                         </Field>
 
-                                        <Field label="Хиты меню" hint="Enter для добавления">
+                                        <Field label={t('admin.locations.form.fields.menu_hits')} hint={t('admin.locations.form.fields.menu_hits_hint')}>
                                             <div className="space-y-3">
                                                 <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
-                                                    {whatToTry.length === 0 && <span className="text-[11px] text-slate-400 italic">Список пуст...</span>}
+                                                    {whatToTry.length === 0 && <span className="text-[11px] text-slate-400 italic">{t('admin.locations.form.fields.empty_list')}</span>}
                                                     {whatToTry.map((dish, i) => (
                                                         <motion.span
                                                             initial={{ scale: 0.8, opacity: 0 }}
@@ -589,7 +589,7 @@ const LocationFormSlideOver = ({
                                                 <input
                                                     type="text"
                                                     className={input}
-                                                    placeholder="Добавить блюдо..."
+                                                    placeholder={t('admin.locations.form.fields.menu_hits_placeholder')}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Enter') {
                                                             e.preventDefault()
@@ -637,7 +637,7 @@ const LocationFormSlideOver = ({
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center py-6 text-slate-400 space-y-2">
                                                     <Image size={24} strokeWidth={1} />
-                                                    <p className="text-[10px] font-medium">Нет загруженных фото</p>
+                                                    <p className="text-[10px] font-medium">{t('admin.locations.form.fields.no_photos')}</p>
                                                 </div>
                                             )}
 
@@ -674,10 +674,10 @@ const LocationFormSlideOver = ({
                                                     </div>
                                                     <div className="mt-4 text-center">
                                                         <span className="block text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-[hsl(220,20%,90%)]">
-                                                            {isUploading ? 'Загрузка файла...' : 'Загрузить фото'}
+                                                            {isUploading ? t('admin.locations.form.fields.uploading') : t('admin.locations.form.fields.upload_photo')}
                                                         </span>
                                                         <p className="mt-1 text-[9px] text-slate-400 font-medium">
-                                                            С диска или камеры телефона
+                                                            {t('admin.locations.form.fields.upload_hint')}
                                                         </p>
                                                     </div>
                                                     
@@ -699,7 +699,7 @@ const LocationFormSlideOver = ({
                                                             onChange={e => setNewImageUrl(e.target.value)}
                                                             onKeyDown={e => e.key === 'Enter' && addPhoto()}
                                                             className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)] shadow-sm pr-14")}
-                                                            placeholder="Или вставьте URL..."
+                                                            placeholder={t('admin.locations.form.fields.photo_url_placeholder')}
                                                         />
                                                         <button
                                                             onClick={addPhoto}
@@ -712,7 +712,7 @@ const LocationFormSlideOver = ({
                                                     <div className="px-1 flex items-start gap-2">
                                                         <Info size={12} className="text-slate-400 mt-0.5 shrink-0" />
                                                         <p className="text-[9px] text-slate-400 leading-tight">
-                                                            Вы можете добавить прямую ссылку на изображение из Google Maps или Instagram.
+                                                            {t('admin.locations.form.fields.photo_url_hint')}
                                                         </p>
                                                     </div>
                                             </div>
@@ -722,7 +722,7 @@ const LocationFormSlideOver = ({
                                     {/* Лучшее время и Лейблы */}
                                     <div className="space-y-8">
                                         <div className="space-y-4">
-                                            <SectionHeader title="Тайминг" icon={Clock} iconColor="text-sky-500" />
+                                            <SectionHeader title={t('admin.locations.form.sections.timing')} icon={Clock} iconColor="text-sky-500" />
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                                 {VISIT_TIMES.map(t => {
                                                     const active = (formData.best_for || []).includes(t.id)
@@ -747,9 +747,9 @@ const LocationFormSlideOver = ({
 
                                         <div className="space-y-4">
                                             <SectionHeader 
-                                                title="Метки и Теги" 
+                                                title={t('admin.locations.form.sections.tags')} 
                                                 count={(formData.special_labels || []).length}
-                                                subtitle="Выберите 3-5 наиболее точных меток. Это обучает AI понимать сценарии использования и вайб места."
+                                                subtitle={t('admin.locations.form.fields.tags_subtitle')}
                                             />
                                             <div className="space-y-6">
                                                 {Object.entries(getLabelGroupsRu()).map(([group, items]) => (
@@ -796,13 +796,13 @@ const LocationFormSlideOver = ({
                                                     <Zap size={16} className="text-indigo-600 dark:text-indigo-400" />
                                                 </div>
                                                 <div className="text-left">
-                                                    <span className="text-[12px] font-black uppercase tracking-widest block">AI Intelligence & Semantic Search</span>
-                                                    <p className="text-[9px] text-slate-400 font-medium italic">Данные выше (метки, повод, интерьер) индексируются AI для векторизации. Чем точнее выбор, тем релевантнее заведение будет в поиске для пользователя.</p>
+                                                    <span className="text-[12px] font-black uppercase tracking-widest block">{t('admin.locations.form.ai.intelligence_title')}</span>
+                                                    <p className="text-[9px] text-slate-400 font-medium italic">{t('admin.locations.form.ai.intelligence_subtitle')}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 {!isNew && !showAdvanced && (
-                                                    <span className="text-[9px] font-bold text-indigo-500 animate-pulse hidden sm:inline">Update available</span>
+                                                    <span className="text-[9px] font-bold text-indigo-500 animate-pulse hidden sm:inline">{t('admin.locations.form.actions.update_available')}</span>
                                                 )}
                                                 <ChevronDown size={18} className={cn("text-slate-400 transition-transform duration-300", showAdvanced && "rotate-180")} />
                                             </div>
@@ -823,7 +823,7 @@ const LocationFormSlideOver = ({
                                                             <div className="space-y-3">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                                                    <p className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">AI Context</p>
+                                                                    <p className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">{t('admin.locations.form.ai.context_title')}</p>
                                                                 </div>
                                                                 <div className="bg-white dark:bg-[hsl(220,20%,3%)]/40 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
                                                                     <p className="text-[12px] text-slate-600 dark:text-[hsl(220,10%,55%)] leading-relaxed italic">
@@ -834,7 +834,7 @@ const LocationFormSlideOver = ({
                                                         ) : (
                                                             <div className="py-4 text-center space-y-2">
                                                                 <Info size={16} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)]" />
-                                                                <p className="text-[11px] text-slate-400 italic">Нет накопленного AI контекста</p>
+                                                                <p className="text-[11px] text-slate-400 italic">{t('admin.locations.form.ai.no_context')}</p>
                                                             </div>
                                                         )}
 
@@ -848,17 +848,17 @@ const LocationFormSlideOver = ({
                                                                     >
                                                                         <Sparkles size={16} className={fullEnrichMutation?.isPending ? 'animate-spin' : ''} />
                                                                         {fullEnrichMutation?.isPending
-                                                                            ? 'Обогащаю данные...'
-                                                                            : '✨ Full Enrich'}
+                                                                            ? t('admin.locations.form.actions.enriching')
+                                                                            : t('admin.locations.form.actions.full_enrich')}
                                                                     </button>
                                                                     <p className="text-[9px] text-slate-400 text-center px-4">
-                                                                        AI-контекст + ключевые слова + KG-теги + векторный индекс — всё за одно нажатие
+                                                                        {t('admin.locations.form.actions.full_enrich_hint')}
                                                                     </p>
                                                                 </div>
                                                             ) : (
                                                                 <div className="py-2 text-center bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10">
                                                                     <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold px-4 py-2">
-                                                                        Интеллектуальный анализ станет доступен после первичного сохранения объекта.
+                                                                        {t('admin.locations.form.actions.enrich_available')}
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -881,14 +881,14 @@ const LocationFormSlideOver = ({
                                     onClick={onClose}
                                     className="flex-1 py-5 rounded-2xl sm:rounded-[24px] border-2 border-slate-100 dark:border-white/[0.06] text-slate-500 dark:text-[hsl(220,10%,55%)] text-xs sm:text-[13px] font-black hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] transition-all uppercase tracking-widest active:scale-[0.98]"
                                 >
-                                    Отмена
+                                    {t('admin.locations.form.actions.cancel')}
                                 </button>
                                 <button
                                     onClick={onSave}
                                     className="flex-[2] py-5 rounded-2xl sm:rounded-[24px] bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white text-xs sm:text-[13px] font-black shadow-2xl shadow-indigo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest"
                                 >
                                     <Save size={20} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
-                                    <span>{isNew ? 'Создать' : 'Сохранить'}</span>
+                                    <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
                                 </button>
                             </div>
                             {!isNew && onDelete && (
@@ -900,7 +900,7 @@ const LocationFormSlideOver = ({
                                     className="w-full py-4 rounded-2xl sm:rounded-[24px] border-2 border-rose-200 dark:border-rose-900/50 text-rose-500 dark:text-rose-400 text-xs sm:text-[13px] font-black hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     <Trash2 size={16} strokeWidth={2.5} />
-                                    <span>Удалить локацию</span>
+                                    <span>{t('admin.locations.form.actions.delete_location')}</span>
                                 </button>
                             )}
                         </div>

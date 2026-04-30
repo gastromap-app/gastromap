@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import { Link } from 'react-router-dom'
-import { Star, LocateFixed } from 'lucide-react'
+import { Star, LocateFixed, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import MarkerClusterGroup from 'react-leaflet-cluster'
+import LocationImage from '@/components/ui/LocationImage'
 
 // ─── Fix Leaflet default icon paths ──────────────────────────────────────
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -151,7 +152,7 @@ function LocateMeButton() {
 }
 
 const MapTab = () => {
-    const locations = useLocationsStore(state => state.filteredLocations)
+    const locations = useLocationsStore(state => state.mapMarkers)
     const { userLocation } = useLocationsStore()
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -201,26 +202,50 @@ const MapTab = () => {
                             icon={makeMarkerIcon(loc)}
                         >
                             <Popup className="custom-popup">
-                                <div className="p-1 min-w-[200px]">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
-                                            {getCategoryConfig(loc.category).emoji} {loc.category}
-                                        </span>
-                                        {(loc.google_rating || loc.rating) && (
-                                            <div className="flex items-center gap-1 text-xs font-black text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">
-                                                <Star className="w-3 h-3 fill-current" />
-                                                {loc.google_rating || loc.rating}
-                                            </div>
-                                        )}
+                                <div className="flex flex-col w-full group">
+                                    {/* Image Section */}
+                                    <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                        <LocationImage 
+                                            src={loc.image_url} 
+                                            alt={loc.name || loc.title}
+                                            width={400}
+                                            wrapperClassName="h-full"
+                                        />
+                                        
+                                        {/* Top Badges Overlay */}
+                                        <div className="absolute top-2 inset-x-2 flex justify-between items-start pointer-events-none">
+                                            <span className="flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
+                                                {getCategoryConfig(loc.category).emoji} {loc.category}
+                                            </span>
+                                            
+                                            {(loc.google_rating || loc.rating) && (
+                                                <div className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md rounded-full border border-black/5 dark:border-white/10 shadow-sm">
+                                                    <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                                                    <span className="text-[10px] font-black text-slate-900 dark:text-white">
+                                                        {loc.google_rating || loc.rating}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-1">{loc.name || loc.title}</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{loc.address}</p>
-                                    <Link 
-                                        to={`/location/${loc.id}`}
-                                        className="block w-full text-center py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors"
-                                    >
-                                        {t('common.viewDetails')}
-                                    </Link>
+
+                                    {/* Content Section */}
+                                    <div className="p-3">
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate mb-0.5 leading-tight">
+                                            {loc.name || loc.title}
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-3">
+                                            {loc.address}
+                                        </p>
+
+                                        <Link 
+                                            to={`/location/${loc.id}`}
+                                            className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+                                        >
+                                            <Navigation size={12} />
+                                            {t('common.viewDetails', 'View Details')}
+                                        </Link>
+                                    </div>
                                 </div>
                             </Popup>
                         </Marker>

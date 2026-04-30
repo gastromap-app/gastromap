@@ -1,0 +1,104 @@
+{
+    "admin": {
+        "locations": {
+            "title": "Location Management",
+            "add_new": "Add Location",
+            "edit": "Edit",
+            "delete": "Delete",
+            "search": "Search locations...",
+            "filters": {
+                "all": "All",
+                "active": "Active",
+                "inactive": "Inactive",
+                "pending": "Pending"
+            },
+            "columns": {
+                "name": "Name",
+                "city": "City",
+                "cuisine": "Cuisine",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "confirm_delete": "Are you sure you want to delete {{name}}?",
+            "created_success": "Location successfully created",
+            "updated_success": "Location successfully updated",
+            "deleted_success": "Location successfully deleted",
+            "form": {
+                "title_new": "New Location",
+                "title_edit": "Edit Location",
+                "status_draft": "Draft",
+                "creation_subtitle": "Creating record in GastroMap",
+                "id_label": "ID: {{id}}",
+                "sections": {
+                    "main": "Basic Parameters",
+                    "geo": "Geography & Contacts",
+                    "content": "Content & Description",
+                    "timing": "Timing",
+                    "tags": "Labels & Tags"
+                },
+                "fields": {
+                    "title": "Venue Name",
+                    "title_hint": "Displayed on map",
+                    "title_placeholder": "Enter name...",
+                    "google_autocomplete": "Google Autocomplete",
+                    "linked": "Linked",
+                    "ai_magic_extraction": "AI Magic Extraction",
+                    "category": "Category",
+                    "price": "Price Level",
+                    "cuisine": "Cuisine Type",
+                    "select_cuisine": "— select —",
+                    "rating_internal": "Internal Rating",
+                    "rating_internal_hint": "Our Ground Truth",
+                    "rating_google": "Google Rating",
+                    "rating_google_hint": "Reference only",
+                    "working_hours": "Working Hours",
+                    "working_hours_placeholder": "Mon-Sun: 10:00 - 23:00",
+                    "city": "City",
+                    "country": "Country",
+                    "address": "Full Address",
+                    "lat": "Latitude",
+                    "lng": "Longitude",
+                    "website": "Website",
+                    "phone": "Phone",
+                    "description": "Venue Description",
+                    "description_placeholder": "Describe cuisine, atmosphere and scenarios (e.g. ideal for dates or work)...",
+                    "description_tip": "💡 Tip: Write in natural language. AI uses this field to understand the vibe and for search. Mention specialization, interior and target audience. This directly affects semantic search quality.",
+                    "insider_tip": "Insider Tip",
+                    "insider_tip_placeholder": "E.g. Book a window table 2 days in advance...",
+                    "menu_hits": "Menu Hits",
+                    "menu_hits_hint": "Enter to add",
+                    "menu_hits_placeholder": "Add dish...",
+                    "empty_list": "List is empty...",
+                    "no_photos": "No photos uploaded",
+                    "upload_photo": "Upload Photo",
+                    "uploading": "Uploading file...",
+                    "upload_hint": "From disk or phone camera",
+                    "photo_url_placeholder": "Or paste URL...",
+                    "photo_url_hint": "You can add a direct link to an image from Google Maps or Instagram.",
+                    "tags_subtitle": "Select 3-5 most accurate labels. This trains the AI to understand usage scenarios and the vibe of the place."
+                },
+                "actions": {
+                    "create": "Create",
+                    "save": "Save",
+                    "cancel": "Cancel",
+                    "delete_location": "Delete Location",
+                    "improving": "Improving...",
+                    "improve_ai": "AI Improve",
+                    "enriching": "Enriching data...",
+                    "full_enrich": "✨ Full Enrich",
+                    "full_enrich_hint": "AI context + keywords + KG tags + vector index — all in one click",
+                    "enrich_available": "AI analysis will become available after the initial save.",
+                    "update_available": "Update available",
+                    "ai_extract_prompt": "Enter venue name or URL for AI extraction:",
+                    "upload_error": "Upload error: {{message}}"
+                },
+                "ai": {
+                    "intelligence_title": "AI Intelligence & Semantic Search",
+                    "intelligence_subtitle": "The data above (labels, occasion, interior) is indexed by AI for vectorization. The more accurate the selection, the more relevant the venue will be in search.",
+                    "context_title": "AI Context",
+                    "no_context": "No AI context accumulated"
+                }
+            }
+        }
+    }
+}

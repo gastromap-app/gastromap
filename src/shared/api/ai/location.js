@@ -22,8 +22,8 @@ export async function generateLocationSemanticSummary(location, extraContext = n
     const { apiKey } = getActiveAIConfig()
     if (!apiKey) return { summary: location.description || '', keywords: [] }
 
-    // 1. Enrich with Culinary context (Spoonacular + OpenFoodFacts)
-    // Both are optional — failures are non-blocking
+    // 1. Enrich with Culinary context (Spoonacular)
+    // Optional — failures are non-blocking
     let culinaryContext = ''
     try {
         const { enrichCulinaryTerm, isSpoonacularAvailable } = await import('../spoonacular.api')
@@ -31,29 +31,20 @@ export async function generateLocationSemanticSummary(location, extraContext = n
 
         const queryTerm = location.cuisine_types?.[0] || location.category
         
-        // Only call Spoonacular if key is present and quota not exhausted
-        const spoonPromise = isSpoonacularAvailable()
-            ? enrichCulinaryTerm(queryTerm).catch(err => {
-                console.warn('[ai.location] Spoonacular unavailable:', err.message)
-                return null
-              })
-            : Promise.resolve(null)
-
-        const [spoonData, offData] = await Promise.all([
-            spoonPromise,
-            getIngredientCulinaryContext(queryTerm).catch(() => null)
+        // Parallel fetch for Spoonacular and OpenFoodFacts
+        const [spoonData, offData] = await Promise.allSettled([
+            isSpoonacularAvailable() ? enrichCulinaryTerm(queryTerm) : Promise.resolve(null),
+            getIngredientCulinaryContext(queryTerm)
         ])
 
-        if (spoonData?.data) {
-            culinaryContext += `\nCULINARY DATA (Dishes/Ingredients): ${JSON.stringify(spoonData.data)}`
+        if (spoonData.status === 'fulfilled' && spoonData.value?.data) {
+            culinaryContext += `\nCULINARY DATA (Dishes/Ingredients): ${JSON.stringify(spoonData.value.data)}`
         }
-        if (offData && offData.categories) {
-            const categoriesStr = Array.isArray(offData.categories) ? offData.categories.join(', ') : String(offData.categories)
-            const allergensStr = Array.isArray(offData.allergens) ? offData.allergens.join(', ') : (offData.allergens ? String(offData.allergens) : '')
-            culinaryContext += `\nFOOD FACTS: Categories: ${categoriesStr}` + (allergensStr ? `, Allergens: ${allergensStr}` : '')
+
+        if (offData.status === 'fulfilled' && offData.value) {
+            culinaryContext += `\nFOOD PRODUCT DATA (OFF): ${JSON.stringify(offData.value)}`
         }
     } catch (err) {
-        // Culinary enrichment is optional — never block semantic summary generation
         console.warn('[ai.location] Culinary enrichment skipped:', err.message)
     }
 
@@ -92,9 +83,13 @@ export async function generateLocationSemanticSummary(location, extraContext = n
 
     try {
         const { response } = await fetchOpenRouter([
-            { role: 'system', content: 'You are a culinary data expert. Respond in JSON.' },
+            { role: 'system', content: 'You are a culinary data expert. Respond in valid JSON only.' },
             { role: 'user', content: prompt }
-        ], { stream: false, withTools: false })
+        ], { 
+            stream: false, 
+            withTools: false,
+            max_tokens: 1024 // Increased to prevent truncation
+        })
 
         const data = await response.json()
         const text = data.choices?.[0]?.message?.content || '{}'

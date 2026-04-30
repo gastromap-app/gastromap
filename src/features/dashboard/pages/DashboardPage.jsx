@@ -525,7 +525,7 @@ const DashboardPage = () => {
                                 isDark={isDark}
                             />
                             
-                            {(geoStatus === 'loading' || geoStatus === 'idle' || isLoading) ? (
+                            {(geoStatus === 'loading' || geoStatus === 'idle' || (isLoading && nearbyLocations.length === 0)) ? (
                                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
                                     {Array.from({ length: 3 }).map((_, i) => (
                                         <div key={i} className="snap-center flex-shrink-0">
@@ -605,7 +605,7 @@ const DashboardPage = () => {
                                 isDark={isDark}
                             />
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {isLoading
+                                {(isLoading && recommended.length === 0)
                                     ? Array.from({ length: 3 }).map((_, i) => (
                                         <div key={i} className="snap-center flex-shrink-0">
                                             <DashboardCardSkeleton isDark={isDark} />
@@ -648,7 +648,7 @@ const DashboardPage = () => {
                                 isDark={isDark}
                             />
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {isLoading
+                                {(isLoading && trending.length === 0)
                                     ? Array.from({ length: 3 }).map((_, i) => (
                                         <div key={i} className="snap-center flex-shrink-0">
                                             <DashboardCardSkeleton isDark={isDark} />

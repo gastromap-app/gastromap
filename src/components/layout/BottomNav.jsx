@@ -29,7 +29,7 @@ export function BottomNav() {
                 exit={{ y: 20, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 120, damping: 18 }}
                 className="fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none"
-                style={{ bottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+                style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
             >
                     <nav
                         className={cn(

@@ -7,25 +7,34 @@ import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { usePWA } from '@/hooks/usePWA'
 import { LanguageSelector } from '@/features/shared/components/LanguageSelector'
+import { useUIStore } from '@/shared/store/useUIStore'
 
 export function UniversalHeader() {
     const { t } = useTranslation()
     const { theme, toggleTheme } = useTheme()
     const { user: authUser } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
+    const { isHeaderScrolled: storeIsScrolled, setHeaderScrolled } = useUIStore()
     const user = authUser || null
     const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'
 
-    const [isScrolled, setIsScrolled] = useState(false)
+    const [localIsScrolled, setLocalIsScrolled] = useState(false)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef(null)
 
+    // Sync local and store scroll states
+    const isScrolled = storeIsScrolled || localIsScrolled
+
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20)
+            const scrolled = window.scrollY > 20
+            setLocalIsScrolled(scrolled)
+            // We don't necessarily update the store here to avoid loops, 
+            // but we could if we wanted to broadcast window scroll.
         }
-        window.addEventListener('scroll', handleScroll)
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        handleScroll()
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 

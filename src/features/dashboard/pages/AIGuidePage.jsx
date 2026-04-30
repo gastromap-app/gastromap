@@ -3,33 +3,47 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
 import { useAIChatStore } from '@/shared/store/useAIChatStore'
+import { useUIStore } from '@/shared/store/useUIStore'
 
 // BottomNav: height=64px, bottom=calc(12px + env(safe-area-inset-bottom))
 // Input bar sits just above it with extra breathing room
-const INPUT_BOTTOM = 'calc(76px + env(safe-area-inset-bottom))'
-const SCROLL_PADDING_BOTTOM = 'calc(160px + env(safe-area-inset-bottom))'
+const INPUT_BOTTOM = 'calc(68px + env(safe-area-inset-bottom, 12px))'
+const SCROLL_PADDING_BOTTOM = 'calc(150px + env(safe-area-inset-bottom, 12px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const { lastScrollY, setLastScrollY } = useAIChatStore()
+    const { setHeaderScrolled } = useUIStore()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     const scrollRef = useRef(null)
 
-    // Restore scroll on mount
+    // Restore scroll or go to bottom on mount
     useEffect(() => {
-        if (scrollRef.current && lastScrollY > 0) {
+        if (scrollRef.current) {
             requestAnimationFrame(() => {
                 if (scrollRef.current) {
-                    scrollRef.current.scrollTop = lastScrollY
+                    if (lastScrollY > 0) {
+                        scrollRef.current.scrollTop = lastScrollY
+                    } else if (messages.length > 0) {
+                        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+                    }
                 }
             })
         }
-    }, [lastScrollY])
+        
+        // Initial header state
+        setHeaderScrolled(false)
+        return () => setHeaderScrolled(false)
+    }, [messages.length]) // Trigger on messages load
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop
+        
+        // Sync with global header
+        setHeaderScrolled(scrollTop > 10)
+        
         if (scrollTop > 0) {
             setLastScrollY(scrollTop)
         }

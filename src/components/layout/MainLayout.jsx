@@ -23,7 +23,7 @@ export function MainLayout() {
 
     return (
         <AuroraBackground theme={theme}>
-            <div className="flex flex-col min-h-screen text-foreground relative">
+            <div className="flex flex-col min-h-dvh text-foreground relative">
                 {!isLocationDetail && <UniversalHeader />}
                 <main
                     className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24'} md:pb-0`}

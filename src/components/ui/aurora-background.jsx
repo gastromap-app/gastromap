@@ -27,7 +27,7 @@ const AuroraBackground = ({ theme = 'light', children, className }) => {
     }, [isLight])
 
     return (
-        <div className={cn(`relative w-full h-full min-h-screen ${bgClass} transition-colors duration-1000`, className)}>
+        <div className={cn(`relative w-full h-full min-h-dvh ${bgClass} transition-colors duration-1000`, className)}>
             {/* Ambient Background Blobs */}
             <div className="fixed inset-0 pointer-events-none transform-gpu overflow-hidden">
                 {/* Blob 1 (Top Left) */}

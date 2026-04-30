@@ -48,10 +48,15 @@ export const useAIChatStore = create(
             isTyping: false,       // assistant is generating
             error: null,
             sessionId: null,
+            isChatOpen: false,    // UI visibility state
 
             // ─── Actions ─────────────────────────────────────────────────
 
             setSessionId: (sessionId) => set({ sessionId }),
+
+            setIsChatOpen: (isChatOpen) => set({ isChatOpen }),
+
+            toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
 
             loadHistory: (sessionId, messages) => set({
                 sessionId,
@@ -137,7 +142,11 @@ export const useAIChatStore = create(
             name: 'ai-chat-storage',
             version: 2,
             // Only persist messages and sessionId
-            partialize: (state) => ({ messages: state.messages, sessionId: state.sessionId }),
+            partialize: (state) => ({ 
+                messages: state.messages, 
+                sessionId: state.sessionId,
+                isChatOpen: state.isChatOpen 
+            }),
             migrate: (persistedState, version) => {
                 if (!persistedState) return persistedState
                 // v1 → v2: move legacy `matches` into `attachments`

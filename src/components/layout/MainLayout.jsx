@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { UniversalHeader } from './UniversalHeader'
@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { useTheme } from '@/hooks/useTheme'
+import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
 
 export function MainLayout() {
     const { theme } = useTheme()
-    const [isChatOpen, setIsChatOpen] = useState(false)
+    const { isChatOpen, setIsChatOpen } = useAIChatStore()
     const location = useLocation()
     const isMap = location.pathname === '/map'
     const isAIGuide = location.pathname === '/ai-guide'
@@ -34,7 +35,7 @@ export function MainLayout() {
                 <BottomNav />
 
                 {/* AI Floating Action Button (Desktop Only) */}
-                {!isChatOpen && (
+                {!isChatOpen && !isAIGuide && (
                     <Button
                         size="lg"
                         className="fixed bottom-8 right-8 z-40 rounded-full w-14 h-14 shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300 hidden md:flex"
@@ -44,7 +45,7 @@ export function MainLayout() {
                     </Button>
                 )}
 
-                <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+                {!isAIGuide && <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
             </div>
         </AuroraBackground>
     )

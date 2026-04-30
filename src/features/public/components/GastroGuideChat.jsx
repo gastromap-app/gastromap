@@ -11,7 +11,7 @@ export default function GastroGuideChat({ isOpen, onClose }) {
 
     const handleCardClick = (locationId) => {
         onClose?.()
-        navigate(`/location/${locationId}`)
+        navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }
 
     if (!isOpen) return null

@@ -41,7 +41,12 @@ export async function analyzeQuery(message, context = {}) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
+            let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
+
+            // Inject strict off-topic instruction if intent detection flagged it
+            if (intent === 'off_topic') {
+                systemPrompt += '\n\nIMPORTANT: The user message appears to be OFF-TOPIC. Strictly follow the BOUNDARIES & GUARDRAILS and decline this request using the provided template.'
+            }
 
             const messages = [
                 { role: 'system', content: systemPrompt },
@@ -123,7 +128,13 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
-            const systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
+            let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
+            
+            // Inject strict off-topic instruction if intent detection flagged it
+            if (intent === 'off_topic') {
+                systemPrompt += '\n\nIMPORTANT: The user message appears to be OFF-TOPIC. Strictly follow the BOUNDARIES & GUARDRAILS and decline this request using the provided template.'
+            }
+
             const messages = [
                 { role: 'system', content: systemPrompt },
                 ...historyMessages,

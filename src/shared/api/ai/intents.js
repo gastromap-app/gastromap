@@ -14,40 +14,44 @@
  */
 
 const NEARBY_RE =
-    /\b(рядом|рядышком|поблизости|поруч|неподалеку|недалеко|ближайш|near\s?(?:me|by|here)|around\s?here|w\s?pobli[żz]u|obok|niedaleko|bl[iy]sko)\b/i
+    /(рядом|рядышком|поблизости|поруч|неподалеку|недалеко|ближайш|near\s?(?:me|by|here)|around\s?here|w\s?pobli[żz]u|obok|niedaleko|bl[iy]sko)/i
 
 const FILTER_RE =
-    /\b(recommend|where|best|find|eat|drink|cafe|coffee|dinner|lunch|breakfast|date|romantic|cozy|хочу|найди|посоветуй|порекомендуй|где|лучший|хорошее|restaurant|бар|ресторан|кафе|пицца|суши|итальянск|polec|szukam|restauracja|kawiarnia)\b/i
+    /(recommend|where|best|find|eat|drink|cafe|coffee|dinner|lunch|breakfast|date|romantic|cozy|хочу|найди|посоветуй|порекомендуй|где|лучший|хорошее|restaurant|бар|ресторан|кафе|пицца|суши|итальянск|polec|szukam|restauracja|kawiarnia)/i
 
 const FOLLOW_UP_RE =
-    /\b(подробнее|расскажи|расскажи\s+больше|а\s+что\s+там|tell\s+me\s+more|more\s+about|what\s+about|первое|второе|третье|the\s+first|the\s+second|опиши|details|szczeg[oó][lł]|powiedz\s+wi[eę]cej)\b/i
+    /(подробнее|расскажи|расскажи\s+больше|а\s+что\s+там|tell\s+me\s+more|more\s+about|what\s+about|первое|второе|третье|the\s+first|the\s+second|опиши|details|szczeg[oó][lł]|powiedz\s+wi[eę]cej)/i
 
 const COMPARE_RE =
-    /\b(лучше|уютнее|дешевле|дороже|вкуснее|compare|сравни|which\s+is\s+better|vs\b|versus|который|która|lepiej|por[oó]wn|w\s+kt[oó]rym)\b/i
+    /(лучше|уютнее|дешевле|дороже|вкуснее|compare|сравни|which\s+is\s+better|vs\b|versus|который|która|lepiej|por[oó]wn|w\s+kt[oó]rym)/i
 
 const CARD_RE =
-    /\b(покажи\s+карточку|show\s+card|карточк[уа]|open\s+card|pokaż\s+kartę)\b/i
+    /(покажи\s+карточку|show\s+card|карточк[уа]|open\s+card|pokaż\s+kartę)/i
 
 const INFO_RE =
-    /\b(open|close|hours|menu|price|book|reservation|phone|address|открыт|закрыт|часы|меню|цена|бронь|телефон|адрес|godziny|otwarcie|cena|rezerwacja)\b/i
+    /(open|close|hours|menu|price|book|reservation|phone|address|открыт|закрыт|часы|меню|цена|бронь|телефон|адрес|godziny|otwarcie|cena|rezerwacja)/i
+
+const OFF_TOPIC_RE =
+    /(politics|coding|programming|javascript|python|react|weather|news|war|military|crypto|bitcoin|math|calculate|translate|language\s+model|jailbreak|ignore\s+previous|act\s+as|кто\s+президент|кто\s+такой|столица|линукс|программ|код|скрипт|политик|войн|погод|новост|математик|крипт|биткоин|вычисли|переведи|забудь\s+инструкции|действуй\s+как)/i
 
 /**
  * Analyze user intent from their query text.
  *
  * @param {string} text - User query
- * @returns {'search_nearby' | 'search_by_filter' | 'follow_up' | 'compare' | 'card_request' | 'meta'} - Detected intent
+ * @returns {'search_nearby' | 'search_by_filter' | 'follow_up' | 'compare' | 'card_request' | 'off_topic' | 'meta'} - Detected intent
  */
 export function detectIntent(text) {
     if (!text) return 'meta'
     const q = text.toLowerCase()
 
-    // Order matters — more specific patterns first.
-    if (NEARBY_RE.test(q))    return 'search_nearby'
-    if (COMPARE_RE.test(q))   return 'compare'
-    if (CARD_RE.test(q))      return 'card_request'
-    if (FOLLOW_UP_RE.test(q)) return 'follow_up'
-    if (FILTER_RE.test(q))    return 'search_by_filter'
-    if (INFO_RE.test(q))      return 'search_by_filter' // info about a place still triggers a search
+    // Order matters — specific off-topic check first to enforce guardrails
+    if (OFF_TOPIC_RE.test(q))  return 'off_topic'
+    if (NEARBY_RE.test(q))     return 'search_nearby'
+    if (COMPARE_RE.test(q))    return 'compare'
+    if (CARD_RE.test(q))       return 'card_request'
+    if (FOLLOW_UP_RE.test(q))  return 'follow_up'
+    if (FILTER_RE.test(q))     return 'search_by_filter'
+    if (INFO_RE.test(q))       return 'search_by_filter' 
 
     return 'meta'
 }

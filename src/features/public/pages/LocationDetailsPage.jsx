@@ -878,10 +878,7 @@ const LocationDetailsPage = () => {
     )
 
     return (
-        <PageTransition
-            className="min-h-screen relative"
-            style={{ paddingBottom: 'calc(8.5rem + env(safe-area-inset-bottom))' }}
-        >
+        <div className="relative min-h-screen">
             {/* ── Unified Sticky Navigation Header ───────────────────────────────── */}
             <header 
                 className="fixed top-0 left-0 right-0 z-[120] transition-all duration-300 ease-out"
@@ -965,6 +962,11 @@ const LocationDetailsPage = () => {
                     </div>
                 </div>
             </header>
+
+            <PageTransition
+                className="relative"
+                style={{ paddingBottom: 'calc(8.5rem + env(safe-area-inset-bottom))' }}
+            >
 
             {/* ── Share toast ────────────────────────────────────────────────────── */}
             <AnimatePresence>
@@ -1085,6 +1087,8 @@ const LocationDetailsPage = () => {
                 </div>
             </div>
 
+            </PageTransition>
+
             {/* ── Sticky bottom CTA bar (above BottomNav) ─────────────────────────── */}
             <div
                 className="fixed left-0 right-0 z-[50] pointer-events-none px-4"
@@ -1121,7 +1125,7 @@ const LocationDetailsPage = () => {
                     </div>
                 </div>
             </div>
-        </PageTransition>
+        </div>
     )
 }
 

@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import { Link } from 'react-router-dom'
-import { Star } from 'lucide-react'
+import { Star, LocateFixed } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import MarkerClusterGroup from 'react-leaflet-cluster'
@@ -94,6 +94,63 @@ function MapBoundsHandler() {
     return null
 }
 
+// ─── Locate Me Control ───────────────────────────────────────────────────
+function LocateMeButton() {
+    const map = useMap()
+    const { updateUserLocation } = useLocationsStore()
+    const [isLocating, setIsLocating] = React.useState(false)
+    const { t } = useTranslation()
+
+    const handleLocate = async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        setIsLocating(true)
+        try {
+            const loc = await updateUserLocation()
+            map.flyTo([loc.lat, loc.lng], 15, {
+                animate: true,
+                duration: 1.5
+            })
+        } catch (error) {
+            console.error('[MapTab] Geolocation error:', error)
+        } finally {
+            setIsLocating(false)
+        }
+    }
+
+    return (
+        <div 
+            className="leaflet-control leaflet-bottom leaflet-right mb-24 md:mb-6 mr-4 z-[1000]" 
+            style={{ pointerEvents: 'auto' }}
+        >
+            <button
+                onClick={handleLocate}
+                disabled={isLocating}
+                className={`
+                    flex items-center justify-center
+                    w-12 h-12 rounded-2xl
+                    bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl
+                    border border-white/20 dark:border-gray-800
+                    shadow-[0_8px_32px_rgba(0,0,0,0.15)]
+                    text-gray-800 dark:text-white
+                    hover:scale-110 active:scale-90
+                    transition-all duration-300
+                    group
+                    ${isLocating ? 'opacity-80 cursor-wait' : 'opacity-100 cursor-pointer'}
+                `}
+                title={t('map.locate_me')}
+            >
+                <LocateFixed 
+                    className={`w-6 h-6 transition-all duration-500 
+                        ${isLocating ? 'animate-spin text-blue-500' : 'group-hover:rotate-[15deg] group-hover:scale-110'}
+                    `} 
+                />
+            </button>
+        </div>
+    )
+}
+
 const MapTab = () => {
     const locations = useLocationsStore(state => state.filteredLocations)
     const { userLocation } = useLocationsStore()
@@ -120,6 +177,7 @@ const MapTab = () => {
                 />
 
                 <MapBoundsHandler />
+                <LocateMeButton />
 
                 {userLocation && (
                     <Marker 

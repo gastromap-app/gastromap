@@ -475,7 +475,8 @@
     "fine_dining": "Fine Dining"
   },
   "map": {
-    "you_are_here": "Jesteś tutaj"
+    "you_are_here": "Jesteś tutaj",
+    "locate_me": "Znajdź mnie"
   },
   "menuScanner": {
     "title": "Skaner menu",

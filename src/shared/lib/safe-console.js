@@ -3,7 +3,7 @@
  * Prevents "console.log is not a function" errors when console is undefined or overridden
  */
 
-const noop = () => {}
+
 
 /**
  * Safely call console method, falling back to noop if not available

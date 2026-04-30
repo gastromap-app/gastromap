@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Camera, User, Mail, UserCircle, Save, Utensils, Sparkles, Heart } from 'lucide-react'
+import { ArrowLeft, Camera, User, Mail, Save, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useTranslation } from 'react-i18next'
@@ -8,33 +8,26 @@ import { useUserPreferences, useUpdatePreferencesMutation } from '@/shared/api/q
 
 const ProfileEditPage = () => {
     const { t } = useTranslation()
+    const navigate = useNavigate()
+    const { theme } = useTheme()
     const { user: authUser, updateUserProfile } = useAuthStore()
     const { data: preferences = {}, isLoading: loadingPrefs } = useUserPreferences(authUser?.id)
     const updatePrefs = useUpdatePreferencesMutation()
 
-    // FIX: Redirect to login if not authenticated — never show fake data
-    if (!authUser) {
-        navigate('/login', { replace: true })
-        return null
-    }
-    const user = authUser
-
-    const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const navigate = useNavigate()
 
-    const [formData, setFormData] = useState({
-        name: user.name,
-        email: user.email,
-        bio: user.bio || 'Food enthusiast traveling the world for the best flavors.',
-        preferences: user.preferences || {
-            longTerm: {
-                atmospherePreference: '',
-                features: '',
-                foodieDNA: ''
-            }
+    // All state hooks must be unconditional — called before any return
+    const [formData, setFormData] = useState(() => ({
+        name: authUser?.name ?? '',
+        email: authUser?.email ?? '',
+        bio: authUser?.bio || 'Food enthusiast traveling the world for the best flavors.',
+        preferences: authUser?.preferences || {
+            longTerm: { atmospherePreference: '', features: '', foodieDNA: '' }
         }
-    })
+    }))
+
+    const [saveError, setSaveError] = useState('')
+    const [saveLoading, setSaveLoading] = useState(false)
 
     // Initialize form from Supabase preferences when loaded
     useEffect(() => {
@@ -52,13 +45,17 @@ const ProfileEditPage = () => {
         }
     }, [preferences, loadingPrefs])
 
-    const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
-    const inputBg = isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"
+    // Guard: redirect if not authenticated (after all hooks are called)
+    if (!authUser) {
+        navigate('/login', { replace: true })
+        return null
+    }
+    const user = authUser
 
-    const [saveError, setSaveError] = React.useState('')
-    const [saveLoading, setSaveLoading] = React.useState(false)
+    const textStyle = isDark ? 'text-white' : 'text-gray-900'
+    const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
+    const cardBg = isDark ? 'bg-[#1f2128]/80 border-white/5' : 'bg-white border-gray-100'
+    const inputBg = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
 
     const handleSave = async () => {
         setSaveError('')

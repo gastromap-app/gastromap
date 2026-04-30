@@ -17,7 +17,7 @@ const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab')
 import { useShallow } from 'zustand/react/shallow'
 import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useInfiniteLocations, useLocationsQuery } from '@/hooks/useLocationsQuery'
+import { useInfiniteLocations } from '@/hooks/useLocationsQuery'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useDebounce } from '@/hooks/useDebounce'
 import { applyAllFilters } from '@/shared/utils/locationFilters'

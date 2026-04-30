@@ -34,15 +34,6 @@ if (USE_SUPABASE) {
 // AND admin-form aliases (name, price_range, opening_hours, image_url, …)
 // so neither the public Explore page nor AdminLocationsPage needs a remap.
 
-// ── Google CDN resize helper ────────────────────────────────────────────────
-// Для Google Photos заменяем размерный суффикс =wXXX на =wW-h-k-no.
-function resizeGoogleCdn(url, width = 800) {
-    if (!url) return url
-    if (/lh3\.googleusercontent\.com/.test(url)) {
-        return url.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
-    }
-    return url
-}
 
 function normalise(row) {
     if (!row) return null;
@@ -391,8 +382,8 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     if (shouldTranslate) {
         safeLog('[locations.api] Starting background enrichment/translation for updated location:', id)
         
-        // Use a self-executing async function for background work
-        (async () => {
+        // Use a self-executing async function for background work (fire-and-forget)
+        void (async () => {
             const dispatchStatus = (type, status) => {
                 window.dispatchEvent(new CustomEvent('bg-task-status', { 
                     detail: { id, type, status } 

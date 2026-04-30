@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
-import { translate } from '@/utils/translation'
+
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 
 /**
@@ -279,7 +279,7 @@ export const useLocationsStore = create((set, get) => ({
         }
     },
 
-    initialize: async (customFilters = {}) => {
+    initialize: async (_customFilters = {}) => {
         const state = get();
         if (state.isLoading) return;
         

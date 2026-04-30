@@ -1081,7 +1081,7 @@ export async function syncKGToLocations(onProgress) {
                 await supabase.from('location_vibes').insert(
                     kgMatches.vibes.map(v => ({ location_id: loc.id, vibe_id: v.id }))
                 )
-            } catch (e) { /* ignore individual sync errors in batch */ }
+            } catch { /* ignore individual sync errors in batch */ }
         }
 
         if (onProgress) onProgress(i + 1, locations.length)

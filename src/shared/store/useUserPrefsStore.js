@@ -141,7 +141,7 @@ export const useUserPrefsStore = create(
                         }))
                         return !!onboardingCompleted
                     }
-                } catch (error) {
+                } catch {
                     // Silent fail for background sync
                 }
                 return false

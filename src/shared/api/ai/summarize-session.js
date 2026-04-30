@@ -70,23 +70,6 @@ Output ONLY the summary paragraph, no preamble.`
 }
 
 /**
- * Extract mentioned location IDs from a message list.
- */
-function extractLocationIds(messages) {
-    const ids = new Set()
-    for (const m of messages) {
-        const cards = m.attachments || m.matches || []
-        for (const c of cards) {
-            if (c?.id) ids.add(c.id)
-        }
-        if (Array.isArray(m.mentionedLocationIds)) {
-            for (const id of m.mentionedLocationIds) ids.add(id)
-        }
-    }
-    return [...ids]
-}
-
-/**
  * Summarize a chat session and persist the summary to Supabase.
  * Only runs when there are enough messages to warrant compression.
  *

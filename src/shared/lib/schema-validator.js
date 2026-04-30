@@ -62,8 +62,32 @@ export const DEPRECATED_COLUMNS = {
 };
 
 /**
- * Filters payload to only include valid DB columns
- * Prevents PostgREST schema cache errors
+ * Deeply sanitizes values to prevent XSS
+ */
+function sanitizeValue(value) {
+    if (typeof value === 'string') {
+        // Basic but effective XSS protection: strip HTML tags and dangerous attributes
+        return value
+            .replace(/<[^>]*>?/gm, '') // Remove HTML tags
+            .replace(/on\w+="[^"]*"/gm, '') // Remove inline events
+            .trim();
+    }
+    if (Array.isArray(value)) {
+        return value.map(sanitizeValue);
+    }
+    if (value !== null && typeof value === 'object') {
+        const cleaned = {};
+        for (const [k, v] of Object.entries(value)) {
+            cleaned[k] = sanitizeValue(v);
+        }
+        return cleaned;
+    }
+    return value;
+}
+
+/**
+ * Filters payload to only include valid DB columns and sanitizes values
+ * Prevents PostgREST schema cache errors and Stored XSS
  */
 export function sanitizePayload(payload, validColumns = VALID_LOCATION_COLUMNS) {
     const sanitized = {};
@@ -71,12 +95,12 @@ export function sanitizePayload(payload, validColumns = VALID_LOCATION_COLUMNS) 
     
     for (const [key, value] of Object.entries(payload)) {
         if (validColumns.has(key)) {
-            sanitized[key] = value;
+            sanitized[key] = sanitizeValue(value);
         } else if (DEPRECATED_COLUMNS[key]) {
             // Remap deprecated column to canonical name
             const canonical = DEPRECATED_COLUMNS[key];
             if (canonical) {
-                sanitized[canonical] = value;
+                sanitized[canonical] = sanitizeValue(value);
             }
             removed.push(`${key}→${canonical}`);
         } else {

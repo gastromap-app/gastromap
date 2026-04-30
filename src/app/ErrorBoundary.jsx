@@ -105,7 +105,6 @@ function DefaultErrorUI({ error, onReset }) {
  * Compact fallback for a single route — keeps the shell (nav, layout) visible.
  */
 export function RouteErrorFallback({ error, reset }) {
-    const { t } = useTranslation()
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 p-8 text-center">
             <div className="w-16 h-16 rounded-[28px] bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">

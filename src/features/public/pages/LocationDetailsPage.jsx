@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -34,7 +34,7 @@ import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 const LocationDetailsPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    const routerLocation = useLocation()
+
 
     const { t } = useTranslation()
     const { theme } = useTheme()

@@ -64,7 +64,7 @@ async function loadFromSupabase() {
             return null
         }
         return data?.value
-    } catch (err) {
+    } catch {
         return null
     }
 }

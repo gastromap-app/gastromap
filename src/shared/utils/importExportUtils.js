@@ -109,7 +109,7 @@ export const processImportedRow = (row) => {
         } else if (jsonFields.includes(field)) {
             try {
                 processed[field] = JSON.parse(value)
-            } catch (e) {
+            } catch {
                 processed[field] = []
             }
         } else if (numericFields.includes(field)) {

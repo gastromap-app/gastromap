@@ -37,7 +37,7 @@ export function isLocationOpen(openingHours) {
             return currentTime >= start || currentTime <= end
         }
         return currentTime >= start && currentTime <= end
-    } catch (err) {
+    } catch {
         return true
     }
 }

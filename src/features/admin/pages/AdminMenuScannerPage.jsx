@@ -35,14 +35,7 @@ const AdminMenuScannerPage = () => {
     const [isSavingScan, setIsSavingScan] = useState(false)
     const [toast, setToast] = useState(null)
 
-    // ─── Role guard ─────────────────────────────────────────────────────────
-    if (!user || user.role !== 'admin') {
-        return (
-            <div className="p-8 text-center text-red-500">
-                Access Denied. Admins only.
-            </div>
-        )
-    }
+    const isAuthorized = !!user && user.role === 'admin'
 
     // ─── Location search ────────────────────────────────────────────────────
     let searchTimeout = null
@@ -171,9 +164,16 @@ const AdminMenuScannerPage = () => {
     }
 
     // ─── Render helpers ─────────────────────────────────────────────────────
-    const cardBg = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subText = isDark ? 'text-white/50' : 'text-gray-500'
+
+    if (!isAuthorized) {
+        return (
+            <div className="p-8 text-center text-red-500">
+                Access Denied. Admins only.
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 lg:space-y-10 pb-12 font-sans">

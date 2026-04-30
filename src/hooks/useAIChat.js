@@ -82,11 +82,14 @@ export function useAIChat() {
         return () => { mounted = false };
     }, [user?.id, loadHistory]);
 
+const MAX_CHAT_INPUT_LENGTH = 3000
+
     const sendMessage = useCallback(async (text) => {
-        if (!text?.trim() || isTyping) return
+        const cleanedText = text?.trim().slice(0, MAX_CHAT_INPUT_LENGTH)
+        if (!cleanedText || isTyping) return
 
         clearError()
-        const userMsg = addMessage('user', text.trim())
+        const userMsg = addMessage('user', cleanedText)
         setTyping(true)
 
         // DB Persistence: Ensure session and save user message
@@ -168,7 +171,7 @@ export function useAIChat() {
                     locationsCount: locations?.length,
                 })
 
-                const result = await analyzeQueryStream(text.trim(), context, (chunk) => {
+                const result = await analyzeQueryStream(cleanedText, context, (chunk) => {
                     accumulated += chunk
                     // Strip all tool-call artifacts from live display
                     const display = accumulated
@@ -190,7 +193,7 @@ export function useAIChat() {
                         if (retryGeo.lat && retryGeo.lng) {
                             const retryCtx = { ...context, geo: retryGeo }
                             accumulated = ''
-                            const retryResult = await analyzeQueryStream(text.trim(), retryCtx, (chunk) => {
+                            const retryResult = await analyzeQueryStream(cleanedText, retryCtx, (chunk) => {
                                 accumulated += chunk
                                 const display = accumulated
                                     .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
@@ -235,7 +238,7 @@ export function useAIChat() {
                 }
             } else {
                 // ── Local engine fallback (no API key, no proxy — dev only) ──
-                const response = await analyzeQuery(text.trim(), context)
+                const response = await analyzeQuery(cleanedText, context)
                 const finalMsg = addMessage('assistant', response.content, {
                     attachments: response.attachments || response.matches,
                     matches: response.matches,

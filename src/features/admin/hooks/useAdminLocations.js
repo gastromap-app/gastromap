@@ -60,7 +60,7 @@ export const useAdminLocations = () => {
     // Background tasks listener with UI feedback
     useEffect(() => {
         const handleBgTask = (e) => {
-            const { type, status, id } = e.detail
+            const { type, status } = e.detail
             
             const taskNames = {
                 'ai-enrichment': 'AI Обогащение',

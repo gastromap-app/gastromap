@@ -809,9 +809,9 @@ const LocationDetailsPage = () => {
     }
 
     const renderPhotos = () => (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
             {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-square rounded-[32px] overflow-hidden group cursor-pointer relative bg-gray-100">
+                <div key={i} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100">
                     <LazyImage src={`https://images.unsplash.com/photo-${1517248135467 + i}-4c7edcad34c4?q=80&w=400&fit=crop`} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="gallery" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -1085,46 +1085,42 @@ const LocationDetailsPage = () => {
                     {activeTab === 'Photos' && renderPhotos()}
                     {activeTab === 'Notes' && renderNotes()}
                 </div>
-            </div>
 
-            </PageTransition>
-
-            {/* ── Sticky bottom CTA bar (above BottomNav) ─────────────────────────── */}
-            <div
-                className="fixed left-0 right-0 z-[50] pointer-events-none px-4"
-                style={{ bottom: 'calc(5.75rem + env(safe-area-inset-bottom))' }}
-            >
-                <div className="max-w-md mx-auto pointer-events-auto">
-                    <div className={`flex gap-2 p-2 rounded-[22px] border backdrop-blur-2xl shadow-2xl ${isDark ? 'bg-black/70 border-white/10 shadow-black/50' : 'bg-white/95 border-slate-200/80 shadow-slate-900/15'}`}>
-                        {location?.phone && (
+                {/* ── Action bar (Now in flow, at the bottom of content) ─────────────────── */}
+                <div className="py-12 px-4 border-t border-gray-100 dark:border-white/5 mt-12 mb-8">
+                    <div className="max-w-md mx-auto">
+                        <div className={`flex gap-2 p-2 rounded-[22px] border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100 shadow-sm'}`}>
+                            {location?.phone && (
+                                <button
+                                    onClick={callNumber}
+                                    aria-label="Call"
+                                    className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-white text-slate-800 hover:bg-slate-200 border border-gray-100 shadow-xs'}`}
+                                >
+                                    <Phone size={15} />
+                                    <span className="hidden xs:inline">Call</span>
+                                </button>
+                            )}
                             <button
-                                onClick={callNumber}
-                                aria-label="Call"
-                                className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
+                                onClick={openInMaps}
+                                aria-label="Get directions"
+                                className="flex-[1.3] min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/30 transition-all active:scale-95"
                             >
-                                <Phone size={15} />
-                                <span className="hidden xs:inline">Call</span>
+                                <Navigation size={15} />
+                                Directions
                             </button>
-                        )}
-                        <button
-                            onClick={openInMaps}
-                            aria-label="Get directions"
-                            className="flex-[1.3] min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/30 transition-all active:scale-95"
-                        >
-                            <Navigation size={15} />
-                            Directions
-                        </button>
-                        <button
-                            onClick={shareLocation}
-                            aria-label="Share"
-                            className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
-                        >
-                            <Share2 size={15} />
-                            <span className="hidden xs:inline">Share</span>
-                        </button>
+                            <button
+                                onClick={shareLocation}
+                                aria-label="Share"
+                                className={`flex-1 min-h-[46px] flex items-center justify-center gap-1.5 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-white text-slate-800 hover:bg-slate-200 border border-gray-100 shadow-xs'}`}
+                            >
+                                <Share2 size={15} />
+                                <span className="hidden xs:inline">Share</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+            </PageTransition>
         </div>
     )
 }

@@ -538,8 +538,11 @@ const LocationFormSlideOver = ({
                                                     onChange={e => set('description', e.target.value)}
                                                     rows={5}
                                                     className={cn(textarea, "pt-4")}
-                                                    placeholder="Расскажите о кухне, атмосфере и уникальности..."
+                                                    placeholder="Опишите кухню, атмосферу и сценарии (напр. идеальное место для свидания или работы)..."
                                                 />
+                                                <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed italic">
+                                                    💡 <b>Совет:</b> Пишите живым языком. AI использует это поле для понимания атмосферы и поиска. Упомяните специализацию, интерьер и для кого это место (напр. "идеально для завтраков с ноутбуком"). Это напрямую влияет на качество семантического поиска.
+                                                </p>
                                                 {aiQueryMutation && (
                                                     <button
                                                         onClick={handleImproveDesc}
@@ -743,7 +746,11 @@ const LocationFormSlideOver = ({
                                         </div>
 
                                         <div className="space-y-4">
-                                            <SectionHeader title="Метки и Теги" count={(formData.special_labels || []).length} />
+                                            <SectionHeader 
+                                                title="Метки и Теги" 
+                                                count={(formData.special_labels || []).length}
+                                                subtitle="Выберите 3-5 наиболее точных меток. Это обучает AI понимать сценарии использования и вайб места."
+                                            />
                                             <div className="space-y-6">
                                                 {Object.entries(getLabelGroupsRu()).map(([group, items]) => (
                                                     <div key={group} className="space-y-3">
@@ -789,8 +796,8 @@ const LocationFormSlideOver = ({
                                                     <Zap size={16} className="text-indigo-600 dark:text-indigo-400" />
                                                 </div>
                                                 <div className="text-left">
-                                                    <span className="text-[12px] font-black uppercase tracking-widest block">AI Intelligence</span>
-                                                    <p className="text-[9px] text-slate-400 font-medium">Контекстный анализ и семантика</p>
+                                                    <span className="text-[12px] font-black uppercase tracking-widest block">AI Intelligence & Semantic Search</span>
+                                                    <p className="text-[9px] text-slate-400 font-medium italic">Данные выше (метки, повод, интерьер) индексируются AI для векторизации. Чем точнее выбор, тем релевантнее заведение будет в поиске для пользователя.</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">

@@ -104,10 +104,24 @@ enrichLocationFull(locationId)
         │       └─ buildEmbedText(location) — конкатенирует поля:
         │               title | category | cuisine | description
         │               tags | vibe | features | best_for | ai_keywords
+        │               special_labels | must_try | what_to_try
+        │               kg_cuisines | kg_dishes | kg_ingredients | kg_allergens
         │               ai_context (первые 500 символов)
         │           → generateEmbedding(text) → float[] (768 dims)
         └─ updateLocation(id, { embedding })   ← сохраняем вектор в pgvector
 ```
+
+---
+
+## Как добавить новые поля в AI-цикл
+
+Если вы добавляете новые поля в таблицу `locations` (например, `interior_style` или `service_quality`), выполните следующие шаги:
+
+1.  **Обновите векторизацию**: Добавьте поле в функцию `buildEmbedText` в файле `src/shared/api/ai/search.js`. Это позволит AI "чувствовать" данные в семантическом поиске.
+2.  **Обновите KG Matching**: Если поле должно мапиться на Граф Знаний, добавьте его в `textToMatch` в функции `matchLocationWithKG` (`src/shared/api/knowledge-graph.api.js`).
+3.  **Обновите FTS (БД)**: Обновите колонку `fts` в Supabase, чтобы полнотекстовый поиск учитывал новые данные.
+4.  **Запустите переиндексацию**: Для существующих локаций нужно запустить **✨ Full Enrich** в админке.
+
 
 > **Почему Step 3 последовательный?**
 > Вектор строится на основе `ai_context` и `ai_keywords`, которые обновляются в шагах 1 и 2.
@@ -142,22 +156,21 @@ enrichLocationFull(locationId)
 
 ---
 
-### Схема полей Supabase
+### Схема полей Supabase (Актуальная)
 
-| Поле | Тип | Шаг |
-|------|-----|-----|
-| `ai_context` | `text` | Step 1 |
-| `ai_keywords` | `text[]` | Step 1 + Step 2 merge |
-| `ai_enrichment_status` | `text` | Step 1 |
-| `ai_enrichment_last_attempt` | `timestamptz` | Step 1 |
-| `kg_cuisines` | `text[]` | Step 2 |
-| `kg_dishes` | `text[]` | Step 2 |
-| `kg_ingredients` | `text[]` | Step 2 |
-| `kg_allergens` | `text[]` | Step 2 (derived) |
-| `kg_enriched_at` | `timestamptz` | Step 2 |
-| `embedding` | `vector(768)` | Step 3 |
+| Поле | Тип | Роль в AI |
+|------|-----|-----------|
+| `ai_context` | `text` | Смысловое описание (LLM) |
+| `ai_keywords` | `text[]` | Плоский список тегов для поиска (LLM + KG) |
+| `kg_cuisines` | `text[]` | Связанные кухни из KG |
+| `kg_dishes` | `text[]` | Связанные блюда из KG |
+| `kg_ingredients` | `text[]` | Связанные ингредиенты из KG |
+| `kg_allergens` | `text[]` | Выведенные аллергены |
+| `embedding` | `vector(768)` | Вектор для семантического поиска |
+| `fts` | `tsvector` | Индекс для полнотекстового поиска (Generated) |
 
-> **FTS** (`fts` tsvector) обновляется **автоматически** через Supabase-триггер.
+> **FTS** обновляется **автоматически** через определение колонки в БД.
+
 
 ---
 

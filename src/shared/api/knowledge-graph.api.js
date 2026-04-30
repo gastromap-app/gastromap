@@ -871,6 +871,7 @@ export async function matchLocationWithKG(location, preloaded = {}) {
         location.title,
         location.description,
         location.cuisine,
+        location.must_try,
         ...(location.tags || []),
         ...(location.special_labels || []),
         ...(location.what_to_try || [])
@@ -956,6 +957,7 @@ export async function syncKGForLocation(locationId) {
         ...kgMatches.cuisines,
         ...kgMatches.dishes,
         ...kgMatches.ingredients,
+        ...kgMatches.vibes.map(v => v.name)
     ]))
 
     // Filter out establishment types from kg_cuisines — those belong in `category` only

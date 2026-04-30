@@ -116,11 +116,19 @@ function buildEmbedText(loc) {
         loc.cuisine,
         loc.description,
     ]
-    for (const field of ['tags', 'vibe', 'features', 'best_for', 'ai_keywords']) {
+    // Base tags and AI keywords
+    for (const field of ['tags', 'vibe', 'features', 'best_for', 'special_labels', 'ai_keywords']) {
         const v = loc[field]
         if (Array.isArray(v) && v.length) parts.push(v.join(' '))
         else if (typeof v === 'string' && v) parts.push(v)
     }
+
+    // Knowledge Graph specific fields for deep culinary knowledge
+    for (const field of ['kg_cuisines', 'kg_dishes', 'kg_ingredients', 'kg_allergens']) {
+        const v = loc[field]
+        if (Array.isArray(v) && v.length) parts.push(`${field.replace('kg_', '')}: ${v.join(', ')}`)
+    }
+
     if (loc.ai_context) parts.push(loc.ai_context.slice(0, 500))
     return parts.filter(Boolean).join(' | ')
 }

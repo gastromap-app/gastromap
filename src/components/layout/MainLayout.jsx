@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { useTheme } from '@/hooks/useTheme'
-import { useAIChatStore } from '@/shared/hooks/useAIChatStore'
+import { useAIChatStore } from '@/shared/store/useAIChatStore'
 
 export function MainLayout() {
     const { theme } = useTheme()

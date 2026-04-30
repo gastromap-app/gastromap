@@ -4,12 +4,37 @@ import { useNavigate } from 'react-router-dom'
 import { Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
+import { useAIChatStore } from '@/shared/store/useAIChatStore'
 
 export default function GastroGuideChat({ isOpen, onClose }) {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
+    const { lastScrollY, setLastScrollY } = useAIChatStore()
     const navigate = useNavigate()
+    const scrollContainerRef = React.useRef(null)
+
+    // Restore scroll on mount
+    React.useEffect(() => {
+        if (isOpen && scrollContainerRef.current && lastScrollY > 0) {
+            const container = scrollContainerRef.current
+            // Use a small delay to ensure content is rendered
+            requestAnimationFrame(() => {
+                container.scrollTop = lastScrollY
+            })
+        }
+    }, [isOpen, lastScrollY])
+
+    const handleScroll = (e) => {
+        const scrollTop = e.currentTarget.scrollTop
+        if (scrollTop > 0) {
+            setLastScrollY(scrollTop)
+        }
+    }
 
     const handleCardClick = (locationId) => {
+        // Position is already being saved by handleScroll, but let's be sure
+        if (scrollContainerRef.current) {
+            setLastScrollY(scrollContainerRef.current.scrollTop)
+        }
         navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }
 
@@ -41,7 +66,11 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                     </div>
 
                     {/* Chat Interface - Scrollable Messages */}
-                    <div className="flex-1 overflow-y-auto">
+                    <div 
+                        ref={scrollContainerRef}
+                        onScroll={handleScroll}
+                        className="flex-1 overflow-y-auto"
+                    >
                         <ChatInterface
                             messages={messages}
                             isTyping={isTyping}
@@ -49,6 +78,7 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                             onCardClick={handleCardClick}
                             geoStatus={geoStatus}
                             requestGeo={requestGeo}
+                            scrollContainerRef={scrollContainerRef}
                         />
                     </div>
 

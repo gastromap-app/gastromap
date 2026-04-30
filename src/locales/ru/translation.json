@@ -394,7 +394,8 @@
     "fine_dining": "Fine Dining"
   },
   "map": {
-    "you_are_here": "Вы здесь"
+    "you_are_here": "Вы здесь",
+    "locate_me": "Найти меня"
   },
   "menuScanner": {
     "title": "Сканер меню",

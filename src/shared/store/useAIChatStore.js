@@ -49,12 +49,15 @@ export const useAIChatStore = create(
             error: null,
             sessionId: null,
             isChatOpen: false,    // UI visibility state
+            lastScrollY: 0,       // Persist scroll position for restoration
 
             // ─── Actions ─────────────────────────────────────────────────
 
             setSessionId: (sessionId) => set({ sessionId }),
 
             setIsChatOpen: (isChatOpen) => set({ isChatOpen }),
+
+            setLastScrollY: (lastScrollY) => set({ lastScrollY }),
 
             toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
 
@@ -145,7 +148,8 @@ export const useAIChatStore = create(
             partialize: (state) => ({ 
                 messages: state.messages, 
                 sessionId: state.sessionId,
-                isChatOpen: state.isChatOpen 
+                isChatOpen: state.isChatOpen,
+                lastScrollY: state.lastScrollY
             }),
             migrate: (persistedState, version) => {
                 if (!persistedState) return persistedState

@@ -882,7 +882,13 @@ const LocationDetailsPage = () => {
             >
                 <div className="max-w-5xl mx-auto px-[4vw] flex justify-between items-center pointer-events-auto">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            if (window.history.length > 1) {
+                                navigate(-1)
+                            } else {
+                                navigate('/')
+                            }
+                        }}
                         aria-label="Go back"
                         className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/15 text-white flex items-center justify-center shadow-lg hover:bg-black/60 active:scale-95 transition-all"
                     >

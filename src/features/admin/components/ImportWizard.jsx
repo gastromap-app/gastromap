@@ -1,3 +1,5 @@
+import React, { useState, useRef } from 'react'
+import {
     ArrowRight, Sparkles, Loader2, Database, Download, FileSpreadsheet
 } from 'lucide-react'
 import { downloadCSVTemplate, processImportedRow } from '@/shared/utils/importExportUtils'
@@ -52,126 +54,95 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
         return fields
     }
 
-    const parseFile = (file) => {
+    const parseFile = (selectedFile) => {
         setIsParsing(true)
         const reader = new FileReader()
         reader.onload = (e) => {
             const content = e.target.result
-            // Simple CSV/JSON parser logic for demo
-            setTimeout(() => {
-                try {
-                    if (file.name.endsWith('.json')) {
-                        const data = JSON.parse(content)
-                        setFullData(data)
-                        setPreviewData(data.slice(0, 5))
-                    } else {
-                        // Quote-aware CSV parser
-                        const lines = content.split('\n').filter(l => l.trim())
-                        const headers = parseCSVLine(lines[0])
-                        const allData = lines.slice(1).map(line => {
-                            const values = parseCSVLine(line)
-                            return headers.reduce((obj, header, i) => {
-                                obj[header.trim()] = values[i]?.trim()
-                                return obj
-                            }, {})
-                        })
-                        setFullData(allData)
-                        setPreviewData(allData.slice(0, 5))
+            const lines = content.split('\n')
+            if (lines.length < 2) {
+                setIsParsing(false)
+                return
+            }
+
+            const headers = parseCSVLine(lines[0])
+            const rows = lines.slice(1).filter(line => line.trim()).map(line => {
+                const values = parseCSVLine(line)
+                const row = {}
+                headers.forEach((header, index) => {
+                    if (header) {
+                        row[header.toLowerCase().replace(/ /g, '_')] = values[index] || ''
                     }
-                    setStep(2)
-                } catch (err) {
-                    alert('Error parsing file: ' + err.message)
-                } finally {
-                    setIsParsing(false)
-                }
-            }, 1000)
+                })
+                return row
+            })
+
+            setFullData(rows)
+            setPreviewData(rows.slice(0, 5))
+            setIsParsing(false)
+            setStep(2)
         }
-        reader.readAsText(file)
+        reader.readAsText(selectedFile)
     }
 
-    const startImport = async () => {
+    const handleImport = async () => {
         setIsImporting(true)
-        setImportProgress(0)
-
-        // Process items and write to Supabase
-        const { supabase } = await import('@/shared/api/client')
-        const processed = []
+        let successCount = 0
 
         for (let i = 0; i < fullData.length; i++) {
-            const item = fullData[i]
-            // Use utility to process all fields correctly
-            const processedItem = processImportedRow(item)
-            
-            // Default values and safety checks
-            // Default values and safety checks
-            if (!processedItem.title && !processedItem.name) processedItem.title = 'Untitled'
-            if (!processedItem.category) processedItem.category = 'restaurant'
-            if (!processedItem.status) processedItem.status = 'pending'
-            
-            // If ID is not a valid UUID or is missing, remove it so DB generates a new one
-            if (!processedItem.id || processedItem.id === 'NEW' || processedItem.id.length < 10) {
-                delete processedItem.id
-            }
-            
-            processed.push(processedItem)
-            setImportProgress(Math.round(((i + 1) / fullData.length) * 70))
-        }
-
-        // Batch insert to Supabase
-        if (supabase && processed.length > 0) {
             try {
-                const BATCH = 20
-                for (let b = 0; b < processed.length; b += BATCH) {
-                    await supabase.from('locations').upsert(processed.slice(b, b + BATCH), { onConflict: 'id' })
-                    setImportProgress(70 + Math.round(((b + BATCH) / processed.length) * 30))
-                }
+                const row = fullData[i]
+                const locationData = processImportedRow(row)
+                
+                await addLocation(locationData)
+                successCount++
+                setImportProgress(Math.round(((i + 1) / fullData.length) * 100))
             } catch (err) {
-                console.error('[ImportWizard] Supabase insert error:', err)
+                console.error('Import error for row', i, err)
             }
         }
-
-        // Also add to local store for immediate UI update
-        processed.forEach(item => addLocation(item))
 
         setIsImporting(false)
-        setStep(3)
-        if (onImportComplete) onImportComplete()
+        if (onImportComplete) onImportComplete(successCount)
+        onClose()
     }
 
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={onClose}
-                className="absolute inset-0 bg-slate-950/40 backdrop-blur-md"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-
+            
             <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative bg-white dark:bg-[hsl(220,20%,6%)] w-full max-w-2xl rounded-[32px] md:rounded-[48px] shadow-2xl overflow-hidden border border-slate-200 dark:border-white/[0.06]"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="p-6 md:p-8 border-b border-slate-100 dark:border-white/[0.06] flex justify-between items-center bg-slate-50/50 dark:bg-[hsl(220,20%,3%)]/20">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Database className="w-5 h-5 text-indigo-500" />
-                            Import Locations
-                        </h2>
-                        <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1 uppercase tracking-widest font-bold">Step {step} of 3</p>
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                            <Database className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Import Locations</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Step {step} of 3</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-[hsl(220,20%,12%)] rounded-xl transition-colors text-slate-400">
-                        <X size={20} />
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
+                        <ArrowRight className="w-5 h-5 rotate-45" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 md:p-10">
+                <div className="flex-1 overflow-y-auto p-6">
                     <AnimatePresence mode="wait">
                         {step === 1 && (
                             <motion.div
@@ -181,34 +152,62 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-6"
                             >
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="border-2 border-dashed border-slate-200 dark:border-white/[0.06] rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center gap-4 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/20 transition-all cursor-pointer group"
-                                >
-                                    <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-3xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
-                                        {isParsing ? <Loader2 className="w-8 h-8 animate-spin" /> : <Upload className="w-8 h-8" />}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="p-6 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors flex flex-col items-center justify-center text-center space-y-4 bg-gray-50/30 dark:bg-gray-800/30">
+                                        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                                            <FileSpreadsheet className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 dark:text-white">Upload CSV File</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Select your locations database file</p>
+                                        </div>
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            accept=".csv"
+                                            className="hidden"
+                                        />
+                                        <Button 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isParsing}
+                                            className="rounded-xl"
+                                        >
+                                            {isParsing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                            Choose File
+                                        </Button>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="font-bold text-slate-900 dark:text-white text-lg">Click or drag locations file</p>
-                                        <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1">Supports .csv and .json formats</p>
+
+                                    <div className="p-6 rounded-3xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 space-y-4">
+                                        <div className="flex items-center gap-3 text-blue-600">
+                                            <Download className="w-5 h-5" />
+                                            <h3 className="font-bold">Template</h3>
+                                        </div>
+                                        <p className="text-sm text-blue-700/70 dark:text-blue-300/70 leading-relaxed">
+                                            Download our unified template to ensure all fields are correctly mapped to the database.
+                                        </p>
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={downloadCSVTemplate}
+                                            className="w-full rounded-xl border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                        >
+                                            Download CSV Template
+                                        </Button>
                                     </div>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        ref={fileInputRef}
-                                        onChange={handleFileChange}
-                                        accept=".csv,.json"
-                                    />
                                 </div>
-                                <div className="flex justify-center gap-4">
-                                    <Button 
-                                        variant="outline" 
-                                        className="rounded-full gap-2 text-xs uppercase tracking-widest font-bold h-12 px-6"
-                                        onClick={downloadCSVTemplate}
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download Template
-                                    </Button>
+
+                                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl">
+                                    <div className="flex gap-3">
+                                        <div className="text-amber-600">⚠️</div>
+                                        <div className="text-sm text-amber-800 dark:text-amber-200">
+                                            <p className="font-bold mb-1">Required Format:</p>
+                                            <ul className="list-disc list-inside space-y-1 opacity-80">
+                                                <li>First row must contain headers</li>
+                                                <li>Required: name, category, address, lat, lng</li>
+                                                <li>Optional: rating, phone, website, description</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
@@ -221,31 +220,29 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-6"
                             >
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <FileText className="w-5 h-5 text-indigo-500" />
-                                        <span className="font-bold text-slate-900 dark:text-white">{file?.name}</span>
-                                        <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] uppercase">{previewData.length}+ items detected</Badge>
-                                    </div>
-                                    <button onClick={() => setStep(1)} className="text-[10px] font-bold uppercase text-slate-400 hover:text-indigo-500 tracking-widest">Change File</button>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="font-bold text-gray-900 dark:text-white">Data Preview ({fullData.length} locations)</h3>
+                                    <Badge variant="outline" className="rounded-lg">Top 5 rows shown</Badge>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.06] overflow-hidden">
-                                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                        <table className="w-full text-left text-[11px]">
-                                            <thead className="bg-slate-100 dark:bg-[hsl(220,20%,9%)] sticky top-0">
+                                <div className="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 font-medium">
                                                 <tr>
-                                                    {previewData[0] && Object.keys(previewData[0]).map(key => (
-                                                        <th key={key} className="px-4 py-2 font-bold uppercase text-slate-500 dark:text-[hsl(220,10%,55%)] tracking-wider whitespace-nowrap">{key}</th>
-                                                    ))}
+                                                    <th className="px-4 py-3">Name</th>
+                                                    <th className="px-4 py-3">Category</th>
+                                                    <th className="px-4 py-3">Address</th>
+                                                    <th className="px-4 py-3">Lat/Lng</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                                 {previewData.map((row, i) => (
-                                                    <tr key={i}>
-                                                        {Object.values(row).map((val, j) => (
-                                                            <td key={j} className="px-4 py-3 text-slate-600 dark:text-[hsl(220,10%,55%)] truncate max-w-[150px]">{val?.toString() || '—'}</td>
-                                                        ))}
+                                                    <tr key={i} className="text-gray-700 dark:text-gray-300">
+                                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{row.name}</td>
+                                                        <td className="px-4 py-3">{row.category}</td>
+                                                        <td className="px-4 py-3 truncate max-w-[200px]">{row.address}</td>
+                                                        <td className="px-4 py-3 text-gray-400">{row.lat}, {row.lng}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -253,71 +250,102 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-[24px] border border-indigo-500/10 flex items-center justify-between group cursor-pointer" onClick={() => setEnrichmentEnabled(!enrichmentEnabled)}>
-                                    <div className="flex items-center gap-4">
-                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", enrichmentEnabled ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-200 dark:bg-[hsl(220,20%,9%)] text-slate-400")}>
-                                            <Sparkles className={cn("w-5 h-5", enrichmentEnabled && "animate-pulse")} />
+                                <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-600 text-white">
+                                            <Sparkles className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-slate-900 dark:text-white">GastroAI Enrichment</p>
-                                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">Auto-fill coordinates, ratings and opening hours</p>
+                                            <p className="font-bold text-blue-900 dark:text-blue-100">AI Enrichment</p>
+                                            <p className="text-xs text-blue-700/70 dark:text-blue-300/70">Automatically generate descriptions and tags</p>
                                         </div>
                                     </div>
-                                    <div className={cn("w-12 h-6 rounded-full relative transition-colors duration-300", enrichmentEnabled ? "bg-indigo-500" : "bg-slate-200 dark:bg-[hsl(220,20%,9%)]")}>
-                                        <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300", enrichmentEnabled ? "left-7" : "left-1")} />
+                                    <div 
+                                        onClick={() => setEnrichmentEnabled(!enrichmentEnabled)}
+                                        className={cn(
+                                            "w-12 h-6 rounded-full transition-colors relative cursor-pointer",
+                                            enrichmentEnabled ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-700"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                                            enrichmentEnabled ? "left-7" : "left-1"
+                                        )} />
                                     </div>
                                 </div>
 
-                                {isImporting && (
-                                    <div className="w-full bg-slate-100 dark:bg-[hsl(220,20%,9%)] h-1.5 rounded-full overflow-hidden mt-6">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${importProgress}%` }}
-                                            className="h-full bg-indigo-600"
-                                        />
-                                    </div>
-                                )}
-
-                                <Button
-                                    disabled={isImporting}
-                                    onClick={startImport}
-                                    className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[20px] h-14 font-bold text-xs uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all mt-4"
-                                >
-                                    {isImporting ? (
-                                        <div className="flex items-center gap-3">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Enriching Data ({importProgress}%)
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-3">
-                                            <ArrowRight className="w-4 h-4" />
-                                            Execute Import
-                                        </div>
-                                    )}
-                                </Button>
+                                <div className="flex gap-3">
+                                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl flex-1">Back</Button>
+                                    <Button onClick={() => setStep(3)} className="rounded-xl flex-1">Continue</Button>
+                                </div>
                             </motion.div>
                         )}
 
                         {step === 3 && (
                             <motion.div
                                 key="step3"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex flex-col items-center py-10 space-y-6"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="text-center py-12 space-y-6"
                             >
-                                <div className="w-24 h-24 bg-green-50 dark:bg-green-500/10 rounded-[32px] flex items-center justify-center text-green-500">
-                                    <CheckCircle2 size={48} />
-                                </div>
-                                <div className="text-center">
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">Import Success!</h3>
-                                    <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-2 font-medium">{fullData.length} locations added to database.</p>
-                                </div>
-                                <Button
-                                    onClick={onClose}
-                                    className="px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full h-12 font-bold text-xs uppercase tracking-widest"
-                                >
-                                    Finish
-                                </Button>
+                                {!isImporting ? (
+                                    <>
+                                        <div className="w-20 h-20 rounded-3xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 mx-auto">
+                                            <Database className="w-10 h-10" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Ready to Import</h3>
+                                            <p className="text-gray-500 dark:text-gray-400 mt-2">
+                                                We are about to import {fullData.length} locations to your database.
+                                                {enrichmentEnabled && " AI enrichment is enabled."}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-3 max-w-sm mx-auto">
+                                            <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl flex-1">Back</Button>
+                                            <Button onClick={handleImport} className="rounded-xl flex-1">Start Import</Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="relative w-32 h-32 mx-auto">
+                                            <svg className="w-full h-full transform -rotate-90">
+                                                <circle
+                                                    cx="64" cy="64" r="60"
+                                                    stroke="currentColor"
+                                                    strokeWidth="8"
+                                                    fill="transparent"
+                                                    className="text-gray-100 dark:text-gray-800"
+                                                />
+                                                <circle
+                                                    cx="64" cy="64" r="60"
+                                                    stroke="currentColor"
+                                                    strokeWidth="8"
+                                                    fill="transparent"
+                                                    strokeDasharray={377}
+                                                    strokeDashoffset={377 - (377 * importProgress) / 100}
+                                                    className="text-blue-600 transition-all duration-300"
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-2xl font-black text-gray-900 dark:text-white">{importProgress}%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Importing Data...</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please do not close this window</p>
+                                        </div>
+                                        <div className="max-w-xs mx-auto">
+                                            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                                <motion.div 
+                                                    className="h-full bg-blue-600"
+                                                    animate={{ width: `${importProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>

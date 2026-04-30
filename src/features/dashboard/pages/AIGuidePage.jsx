@@ -2,38 +2,42 @@ import React, { useRef, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
+import { useAIChatStore } from '@/shared/store/useAIChatStore'
 
-// BottomNav: height=64px, bottom=calc(12px + safe-area-inset-bottom)
-// Input sits just above it: 64 + 12 = 76px + safe-area
-// BottomNav: height=64px. We want input bar right above it.
-// BottomNav: height=64px, bottom=calc(12px + safe-area-inset-bottom)
-// Input sits just above it: 64 + 12 = 76px + safe-area
-// We set INPUT_BOTTOM slightly higher (82px) for better breathing room
+// BottomNav: height=64px, bottom=calc(12px + env(safe-area-inset-bottom))
+// Input bar sits just above it with extra breathing room
 const INPUT_BOTTOM = 'calc(76px + env(safe-area-inset-bottom))'
 const SCROLL_PADDING_BOTTOM = 'calc(160px + env(safe-area-inset-bottom))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
+    const { lastScrollY, setLastScrollY } = useAIChatStore()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     const scrollRef = useRef(null)
 
-    // Scroll restoration: save position before navigating away, restore on mount.
+    // Restore scroll on mount
     useEffect(() => {
-        const savedY = sessionStorage.getItem('gastroguide_scroll_y')
-        if (savedY && scrollRef.current) {
+        if (scrollRef.current && lastScrollY > 0) {
             requestAnimationFrame(() => {
-                scrollRef.current.scrollTop = Number(savedY)
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = lastScrollY
+                }
             })
-            sessionStorage.removeItem('gastroguide_scroll_y')
         }
-    }, [])
+    }, [lastScrollY])
+
+    const handleScroll = (e) => {
+        const scrollTop = e.currentTarget.scrollTop
+        if (scrollTop > 0) {
+            setLastScrollY(scrollTop)
+        }
+    }
 
     const handleCardClick = (locationId) => {
-        // Persist scroll position for restoration when the user comes back.
         if (scrollRef.current) {
-            sessionStorage.setItem('gastroguide_scroll_y', String(scrollRef.current.scrollTop))
+            setLastScrollY(scrollRef.current.scrollTop)
         }
         navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }
@@ -57,6 +61,7 @@ const AIGuidePage = () => {
             {/* THE single scroll container */}
             <div
                 ref={scrollRef}
+                onScroll={handleScroll}
                 data-lenis-prevent
                 className="relative z-10 flex-1 overflow-y-auto scroll-smooth overscroll-contain"
                 style={{ 

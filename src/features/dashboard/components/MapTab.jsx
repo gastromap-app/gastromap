@@ -121,8 +121,7 @@ function LocateMeButton() {
 
     return (
         <div 
-            className="leaflet-control leaflet-bottom leaflet-right mb-24 md:mb-6 mr-4 z-[1000]" 
-            style={{ pointerEvents: 'auto' }}
+            className="absolute bottom-28 right-4 z-[1000] md:bottom-8 md:right-6 pointer-events-auto"
         >
             <button
                 onClick={handleLocate}

@@ -10,6 +10,7 @@ import {
     usePendingReviews, useUpdateReviewStatusMutation
 } from '@/shared/api/queries'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
+import { exportLocationsToCSV } from '@/shared/utils/importExportUtils'
 
 /**
  * Custom hook for Admin Locations page business logic
@@ -82,22 +83,27 @@ export const useAdminLocations = () => {
     }, [])
 
     const handleExport = async () => {
+        if (!locationsList || locationsList.length === 0) {
+            setToast({ message: 'Нет данных для экспорта', type: 'error' })
+            return
+        }
+
         setIsExporting(true)
         try {
-            const { supabase } = await import('@/shared/api/client')
-            const { data } = await supabase.from('locations')
-                .select('*')
-                .order('created_at', { ascending: false })
-            const json = JSON.stringify(data || [], null, 2)
-            const blob = new Blob([json], { type: 'application/json' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `gastromap-locations-${new Date().toISOString().split('T')[0]}.json`
-            a.click()
-            URL.revokeObjectURL(url)
+            // We use the full locationsList from the database for export
+            // Or we could use filteredLocations if user wants to export only current view
+            // Let's export filtered results if search/filters are active, otherwise all
+            const dataToExport = filteredLocations.length > 0 ? filteredLocations : locationsList
+            
+            exportLocationsToCSV(dataToExport)
+            
+            setToast({ 
+                message: `Экспортировано ${dataToExport.length} локаций`, 
+                type: 'success' 
+            })
         } catch (err) {
             console.error('[Export] error:', err)
+            setToast({ message: 'Ошибка при экспорте данных', type: 'error' })
         } finally {
             setIsExporting(false)
         }

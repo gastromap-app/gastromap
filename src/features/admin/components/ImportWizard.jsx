@@ -1,8 +1,6 @@
-import React, { useState, useRef } from 'react'
-import {
-    X, Upload, FileText, CheckCircle2, AlertCircle,
-    ArrowRight, Sparkles, Loader2, Database, Download
+    ArrowRight, Sparkles, Loader2, Database, Download, FileSpreadsheet
 } from 'lucide-react'
+import { downloadCSVTemplate, processImportedRow } from '@/shared/utils/importExportUtils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -13,6 +11,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
     const [step, setStep] = useState(1)
     const [file, setFile] = useState(null)
     const [previewData, setPreviewData] = useState([])
+    const [fullData, setFullData] = useState([])
     const [isParsing, setIsParsing] = useState(false)
     const [isImporting, setIsImporting] = useState(false)
     const [enrichmentEnabled, setEnrichmentEnabled] = useState(true)
@@ -62,19 +61,22 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
             setTimeout(() => {
                 try {
                     if (file.name.endsWith('.json')) {
-                        setPreviewData(JSON.parse(content).slice(0, 5))
+                        const data = JSON.parse(content)
+                        setFullData(data)
+                        setPreviewData(data.slice(0, 5))
                     } else {
                         // Quote-aware CSV parser
-                        const lines = content.split('\n')
+                        const lines = content.split('\n').filter(l => l.trim())
                         const headers = parseCSVLine(lines[0])
-                        const data = lines.slice(1, 6).map(line => {
+                        const allData = lines.slice(1).map(line => {
                             const values = parseCSVLine(line)
                             return headers.reduce((obj, header, i) => {
                                 obj[header.trim()] = values[i]?.trim()
                                 return obj
                             }, {})
                         })
-                        setPreviewData(data)
+                        setFullData(allData)
+                        setPreviewData(allData.slice(0, 5))
                     }
                     setStep(2)
                 } catch (err) {
@@ -95,23 +97,24 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
         const { supabase } = await import('@/shared/api/client')
         const processed = []
 
-        for (let i = 0; i < previewData.length; i++) {
-            const item = previewData[i]
-            let enrichedItem = {
-                title: item.title || item.name || 'Untitled',
-                category: item.category || 'restaurant',
-                city: item.city || '',
-                country: item.country || '',
-                address: item.address || '',
-                description: item.description || '',
-                price_range: item.price_range || item.price_level || '$$',
-                google_rating: parseFloat(item.rating) || 4.0,
-                status: 'pending',
-                photos: item.photos ? (Array.isArray(item.photos) ? item.photos : [item.photos]) : [],
-                ...(item.lat && item.lng ? { lat: parseFloat(item.lat), lng: parseFloat(item.lng) } : {}),
+        for (let i = 0; i < fullData.length; i++) {
+            const item = fullData[i]
+            // Use utility to process all fields correctly
+            const processedItem = processImportedRow(item)
+            
+            // Default values and safety checks
+            // Default values and safety checks
+            if (!processedItem.title && !processedItem.name) processedItem.title = 'Untitled'
+            if (!processedItem.category) processedItem.category = 'restaurant'
+            if (!processedItem.status) processedItem.status = 'pending'
+            
+            // If ID is not a valid UUID or is missing, remove it so DB generates a new one
+            if (!processedItem.id || processedItem.id === 'NEW' || processedItem.id.length < 10) {
+                delete processedItem.id
             }
-            processed.push(enrichedItem)
-            setImportProgress(Math.round(((i + 1) / previewData.length) * 70))
+            
+            processed.push(processedItem)
+            setImportProgress(Math.round(((i + 1) / fullData.length) * 70))
         }
 
         // Batch insert to Supabase
@@ -119,7 +122,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
             try {
                 const BATCH = 20
                 for (let b = 0; b < processed.length; b += BATCH) {
-                    await supabase.from('locations').insert(processed.slice(b, b + BATCH))
+                    await supabase.from('locations').upsert(processed.slice(b, b + BATCH), { onConflict: 'id' })
                     setImportProgress(70 + Math.round(((b + BATCH) / processed.length) * 30))
                 }
             } catch (err) {
@@ -198,7 +201,11 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                     />
                                 </div>
                                 <div className="flex justify-center gap-4">
-                                    <Button variant="outline" className="rounded-full gap-2 text-xs uppercase tracking-widest font-bold h-12 px-6">
+                                    <Button 
+                                        variant="outline" 
+                                        className="rounded-full gap-2 text-xs uppercase tracking-widest font-bold h-12 px-6"
+                                        onClick={downloadCSVTemplate}
+                                    >
                                         <Download className="w-4 h-4" />
                                         Download Template
                                     </Button>
@@ -303,7 +310,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white leading-none">Import Success!</h3>
-                                    <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-2 font-medium">{previewData.length} locations added and verified with GastroAI.</p>
+                                    <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mt-2 font-medium">{fullData.length} locations added to database.</p>
                                 </div>
                                 <Button
                                     onClick={onClose}

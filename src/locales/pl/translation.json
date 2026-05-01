@@ -180,7 +180,8 @@
     "open_now": "Teraz otwarte",
     "currently_serving": "Obecnie obsługujące",
     "no_nearby_places": "Brak miejsc w pobliżu",
-    "no_nearby_desc": "Nie ma miejsc w odległości 1 km od Twojej lokalizacji."
+    "no_nearby_desc": "Nie ma miejsc w odległości 1 km od Twojej lokalizacji.",
+    "test_mode_disclaimer": "*aplikacja działa w trybie testowym i mogą wystąpić przerwy w działaniu. z góry przepraszamy."
   },
   "profile": {
     "admin_panel": "Panel administratora",

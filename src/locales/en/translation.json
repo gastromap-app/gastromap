@@ -200,7 +200,8 @@
     "recent_activity": "Recent Activity",
     "welcome": "Welcome, {{name}}!",
     "no_nearby_places": "No Places Nearby",
-    "no_nearby_desc": "There are no places within 1km of your current location."
+    "no_nearby_desc": "There are no places within 1km of your current location.",
+    "test_mode_disclaimer": "*the application is in test mode and there may be service interruptions. we apologize in advance."
   },
   "profile": {
     "edit": "Edit",

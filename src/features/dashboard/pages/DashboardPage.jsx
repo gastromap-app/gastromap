@@ -315,10 +315,11 @@ const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
 
 // ─── FOOTER DISCLAIMER ────────────────────────────────────────────────────────
 const FooterDisclaimer = ({ isDark }) => {
+    const { t } = useTranslation()
     return (
         <div className="mt-12 mb-8 px-4 text-center">
             <p className={`text-[10px] leading-relaxed opacity-50 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-                *приложение работает в тестовом режиме и могут быть перебои с работой. приносим свои извинения заранее.
+                {t('dashboard.test_mode_disclaimer')}
             </p>
         </div>
     )

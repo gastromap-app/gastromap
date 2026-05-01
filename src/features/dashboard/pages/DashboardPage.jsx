@@ -313,6 +313,17 @@ const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
     )
 }
 
+// ─── FOOTER DISCLAIMER ────────────────────────────────────────────────────────
+const FooterDisclaimer = ({ isDark }) => {
+    return (
+        <div className="mt-12 mb-8 px-4 text-center">
+            <p className={`text-[10px] leading-relaxed opacity-50 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                *приложение работает в тестовом режиме и могут быть перебои с работой. приносим свои извинения заранее.
+            </p>
+        </div>
+    )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 const DashboardPage = () => {
@@ -690,6 +701,7 @@ const DashboardPage = () => {
                         )}
 
                         <ManifestoSection isDark={isDark} />
+                        <FooterDisclaimer isDark={isDark} />
                     </div>
                 </div>
 
@@ -976,6 +988,7 @@ const DesktopDashboard = ({
                     {/* Manifesto Section Integrated */}
                     <div className="pt-12 pb-12 border-t border-white/[0.05]">
                         <ManifestoSection isDark={isDark} />
+                        <FooterDisclaimer isDark={isDark} />
                     </div>
                 </motion.div>
             )}

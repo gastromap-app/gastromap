@@ -139,6 +139,8 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const debouncedSearch = useDebounce(searchQuery, 300)
+    const storeSearchQuery = useLocationsStore(state => state.searchQuery)
 
     useEffect(() => {
         if (!useLocationsStore.getState().isInitialized) initialize()
@@ -147,6 +149,23 @@ const DashboardPage = () => {
     useEffect(() => {
         if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
     }, [geoLat, geoLng])
+
+    // Sync search input with store
+    useEffect(() => {
+        useLocationsStore.getState().setSearchQuery(debouncedSearch)
+    }, [debouncedSearch])
+
+    useEffect(() => {
+        if (storeSearchQuery !== searchQuery && !debouncedSearch) {
+            setSearchQuery(storeSearchQuery || '')
+        }
+    }, [storeSearchQuery])
+
+    // Pull-to-refresh
+    const handleRefresh = async () => {
+        await useLocationsStore.getState().reinitialize()
+    }
+    const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
 
     const countries = useMemo(() => {
         const countryMap = {}
@@ -210,141 +229,216 @@ const DashboardPage = () => {
 
     return (
         <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
-            {/* ── Mobile Layout ─────────────────────────────────────────────── */}
-            <div className="md:hidden space-y-6 px-4 pt-4 pb-20">
+            <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
-                        {/* Explore by Country */}
-                        <div className="space-y-4">
-                            <SectionHeader
-                                title={t('dashboard.explore_countries')}
-                                subtitle={t('dashboard.culinary_traditions')}
-                                onSeeAll={() => navigate('/explore')}
-                                isDark={isDark}
-                            />
+            {/* ── Mobile Layout ─────────────────────────────────────────────── */}
+            <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+
+                {/* Greeting */}
+                <div className="px-5 mb-5">
+                    <p className={`text-[13px] font-medium mb-0.5 ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{greeting}</p>
+                    <h1 className={`text-[26px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {firstName} <span className="text-blue-600">✦</span>
+                    </h1>
+                </div>
+
+                {/* Search + filter */}
+                <div className="px-5 mb-5 space-y-5">
+                    <SmartSearchBar
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFilter={() => setIsFilterOpen(true)}
+                        placeholder={t('dashboard.search_placeholder')}
+                    />
+                    <CategoryFilters isDark={isDark} />
+                </div>
+
+                {/* Pull-to-refresh indicator */}
+                <PullRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} />
+
+                {/* Feed content */}
+                <div className="space-y-6 pb-10 px-5" {...pullHandlers}>
+                    {/* Nearby Locations */}
+                    <div className="space-y-4">
+                        <SectionHeader
+                            title={t('dashboard.nearby_locations', 'Locations Nearby')}
+                            subtitle={t('dashboard.within_distance', 'Within 1 km')}
+                            onSeeAll={() => {
+                                useLocationsStore.getState().setRadius(1)
+                                navigate('/explore')
+                            }}
+                            isDark={isDark}
+                        />
+                        {(geoStatus === 'loading' || geoStatus === 'idle' || (isLoading && nearbyLocations.length === 0)) ? (
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {countries.map((country) => (
-                                    <button
-                                        key={country.slug}
-                                        onClick={() => handleSelectCountry(country)}
-                                        aria-label={t('dashboard.explore_country_aria', { country: country.name })}
-                                        className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
-                                    >
-                                        <LazyImage
-                                            src={country.image}
-                                            alt={country.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                                        <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                            {t('dashboard.new_badge', { count: country.newCount })}
-                                        </div>
-                                        <div className="absolute bottom-3.5 left-4">
-                                            <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
-                                        </div>
-                                    </button>
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="snap-center flex-shrink-0">
+                                        <DashboardCardSkeleton isDark={isDark} />
+                                    </div>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Recommended */}
-                        <div className="space-y-4">
-                            <SectionHeader
-                                title={currentCity && currentCity !== 'Unknown'
-                                    ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
-                                    : t('dashboard.recommended')}
-                                subtitle={t('dashboard.perfect_spots')}
-                                onSeeAll={() => navigate('/explore')}
-                                isDark={isDark}
-                            />
-                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {(isLoading && recommended.length === 0)
-                                    ? Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="snap-center flex-shrink-0">
-                                            <DashboardCardSkeleton isDark={isDark} />
-                                        </div>
-                                    ))
-                                    : recommended.length > 0
-                                        ? recommended.map((loc) => (
-                                            <div key={loc.id} className="snap-center">
-                                                <LocationCardMobile location={loc} type="recommended" onClick={() => navigate(`/location/${loc.id}`)} />
-                                            </div>
-                                        ))
-                                        : (
-                                            /* Empty state — only shown after loading finishes */
-                                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-card border ${
-                                                isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'
-                                            }`}>
-                                                <div className="text-4xl">🍽️</div>
-                                                <div className="text-center">
-                                                    <p className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.empty_title')}</p>
-                                                    <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.empty_desc')}</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => navigate('/dashboard/add-place')}
-                                                    className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform"
-                                                >
-                                                    + {t('dashboard.empty_cta')}
-                                                </button>
-                                            </div>
-                                        )
-                                }
+                        ) : geoStatus === 'denied' || geoStatus === 'error' ? (
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
+                                <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={24} />
+                                <div className="text-center">
+                                    <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
+                                    <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.location_desc', 'Please allow location access to see places near you.')}</p>
+                                </div>
+                                <button onClick={requestGeo} className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform">
+                                    {t('dashboard.enable_location', 'Enable Location')}
+                                </button>
                             </div>
-                        </div>
-
-                        {/* Trending */}
-                        <div className="space-y-4">
-                            <SectionHeader
-                                title={currentCity && currentCity !== 'Unknown'
-                                    ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
-                                    : t('dashboard.trending')}
-                                subtitle={t('dashboard.hot_spots')}
-                                onSeeAll={() => navigate('/explore')}
-                                isDark={isDark}
-                            />
+                        ) : nearbyLocations.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {(isLoading && trending.length === 0)
-                                    ? Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="snap-center flex-shrink-0">
-                                            <DashboardCardSkeleton isDark={isDark} />
-                                        </div>
-                                    ))
-                                    : trending.map((loc) => (
-                                        <div key={loc.id} className="snap-center">
-                                            <LocationCardMobile location={loc} type="trending" onClick={() => navigate(`/location/${loc.id}`)} />
-                                        </div>
-                                    ))
-                                }
+                                {nearbyLocations.map((loc) => (
+                                    <div key={loc.id} className="snap-center">
+                                        <LocationCardMobile location={loc} type="nearby" onClick={() => navigate(`/location/${loc.id}`)} />
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-
-                        {/* Open Now */}
-                        {openNowLocations.length > 0 && (
-                            <div className="space-y-4">
-                                <SectionHeader
-                                    title={t('dashboard.open_now')}
-                                    subtitle={t('dashboard.currently_serving')}
-                                    onSeeAll={() => {
-                                        useLocationsStore.getState().setIsOpenNow(true)
-                                        navigate('/explore')
-                                    }}
-                                    isDark={isDark}
-                                />
-                                <div className="flex gap-4 overflow-x-auto pb-6 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                    {openNowLocations.slice(0, 5).map((loc) => (
-                                        <div key={loc.id} className="snap-center">
-                                            <LocationCardMobile location={loc} type="nearby" onClick={() => navigate(`/location/${loc.id}`)} />
-                                        </div>
-                                    ))}
+                        ) : (
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
+                                <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={28} />
+                                <div className="text-center">
+                                    <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
+                                    <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
                                 </div>
                             </div>
                         )}
+                    </div>
 
-                        <ManifestoSection isDark={isDark} />
-                        <FooterDisclaimer isDark={isDark} />
+                    {/* Explore by Country */}
+                    <div className="space-y-4">
+                        <SectionHeader
+                            title={t('dashboard.explore_countries')}
+                            subtitle={t('dashboard.culinary_traditions')}
+                            onSeeAll={() => navigate('/explore')}
+                            isDark={isDark}
+                        />
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                            {countries.map((country) => (
+                                <button
+                                    key={country.slug}
+                                    onClick={() => handleSelectCountry(country)}
+                                    aria-label={t('dashboard.explore_country_aria', { country: country.name })}
+                                    className="relative flex-shrink-0 w-[200px] h-[140px] rounded-card overflow-hidden snap-center active:scale-[0.97] transition-transform duration-200 text-left"
+                                >
+                                    <LazyImage
+                                        src={country.image}
+                                        alt={country.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                    <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                        {t('dashboard.new_badge', { count: country.newCount })}
+                                    </div>
+                                    <div className="absolute bottom-3.5 left-4">
+                                        <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Recommended */}
+                    <div className="space-y-4">
+                        <SectionHeader
+                            title={currentCity && currentCity !== 'Unknown'
+                                ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
+                                : t('dashboard.recommended')}
+                            subtitle={t('dashboard.perfect_spots')}
+                            onSeeAll={() => navigate('/explore')}
+                            isDark={isDark}
+                        />
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                            {(isLoading && recommended.length === 0)
+                                ? Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="snap-center flex-shrink-0">
+                                        <DashboardCardSkeleton isDark={isDark} />
+                                    </div>
+                                ))
+                                : recommended.length > 0
+                                    ? recommended.map((loc) => (
+                                        <div key={loc.id} className="snap-center">
+                                            <LocationCardMobile location={loc} type="recommended" onClick={() => navigate(`/location/${loc.id}`)} />
+                                        </div>
+                                    ))
+                                    : (
+                                        <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-card border ${
+                                            isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'
+                                        }`}>
+                                            <div className="text-4xl">🍽️</div>
+                                            <div className="text-center">
+                                                <p className={`text-[14px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.empty_title')}</p>
+                                                <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{t('dashboard.empty_desc')}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => navigate('/dashboard/add-place')}
+                                                className="mt-1 px-4 py-2 rounded-pill bg-blue-600 text-white text-[12px] font-bold active:scale-95 transition-transform"
+                                            >
+                                                + {t('dashboard.empty_cta')}
+                                            </button>
+                                        </div>
+                                    )
+                            }
+                        </div>
+                    </div>
+
+                    {/* Trending */}
+                    <div className="space-y-4">
+                        <SectionHeader
+                            title={currentCity && currentCity !== 'Unknown'
+                                ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
+                                : t('dashboard.trending')}
+                            subtitle={t('dashboard.hot_spots')}
+                            onSeeAll={() => navigate('/explore')}
+                            isDark={isDark}
+                        />
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                            {(isLoading && trending.length === 0)
+                                ? Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="snap-center flex-shrink-0">
+                                        <DashboardCardSkeleton isDark={isDark} />
+                                    </div>
+                                ))
+                                : trending.map((loc) => (
+                                    <div key={loc.id} className="snap-center">
+                                        <LocationCardMobile location={loc} type="trending" onClick={() => navigate(`/location/${loc.id}`)} />
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+
+                    {/* Open Now */}
+                    {openNowLocations.length > 0 && (
+                        <div className="space-y-4">
+                            <SectionHeader
+                                title={t('dashboard.open_now')}
+                                subtitle={t('dashboard.currently_serving')}
+                                onSeeAll={() => {
+                                    useLocationsStore.getState().setIsOpenNow(true)
+                                    navigate('/explore')
+                                }}
+                                isDark={isDark}
+                            />
+                            <div className="flex gap-4 overflow-x-auto pb-6 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                {openNowLocations.slice(0, 5).map((loc) => (
+                                    <div key={loc.id} className="snap-center">
+                                        <LocationCardMobile location={loc} type="nearby" onClick={() => navigate(`/location/${loc.id}`)} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <ManifestoSection isDark={isDark} />
+                    <FooterDisclaimer isDark={isDark} />
                 </div>
+            </div>
 
-                {/* Desktop Layout */}
-                <div className="hidden md:block">
+            {/* Desktop Layout */}
+            <div className="hidden md:block">
                     <DesktopDashboard
                         isDark={isDark}
                         text={text}

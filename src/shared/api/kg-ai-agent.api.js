@@ -525,8 +525,15 @@ function clientDedup(items, existingCuisines, existingDishes, existingIngredient
     const duplicates = { cuisines: [], dishes: [], ingredients: [] }
     const filtered   = { cuisines: [], dishes: [], ingredients: [] }
 
+    // Helper: checks if an item has a valid non-empty name
+    const hasValidName = (item) => item && typeof item.name === 'string' && item.name.trim().length > 0
+
     // 1. Cuisines
     for (const c of (items.cuisines || [])) {
+        if (!hasValidName(c)) {
+            console.warn('[KG clientDedup] Skipping cuisine — missing or empty name:', JSON.stringify(c))
+            continue
+        }
         const n = normalize(c.name)
         if (exC.has(n)) { duplicates.cuisines.push(c.name) }
         else { filtered.cuisines.push(c); exC.add(n) }
@@ -534,6 +541,10 @@ function clientDedup(items, existingCuisines, existingDishes, existingIngredient
 
     // 2. Dishes
     for (const d of (items.dishes || [])) {
+        if (!hasValidName(d)) {
+            console.warn('[KG clientDedup] Skipping dish — missing or empty name:', JSON.stringify(d))
+            continue
+        }
         const n = normalize(d.name)
         if (exD.has(n)) { duplicates.dishes.push(d.name) }
         else { filtered.dishes.push(d); exD.add(n) }
@@ -541,6 +552,10 @@ function clientDedup(items, existingCuisines, existingDishes, existingIngredient
 
     // 3. Ingredients
     for (const i of (items.ingredients || [])) {
+        if (!hasValidName(i)) {
+            console.warn('[KG clientDedup] Skipping ingredient — missing or empty name:', JSON.stringify(i))
+            continue
+        }
         const n = normalize(i.name)
         if (exI.has(n)) { duplicates.ingredients.push(i.name) }
         else { filtered.ingredients.push(i); exI.add(n) }
@@ -745,6 +760,24 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             parsed.items.ingredients = parsed.items.ingredients || []
             parsed.skipped           = parsed.skipped        || { cuisines: [], dishes: [], ingredients: [] }
             parsed.model             = model
+
+            // ── Pre-dedup sanitization: drop AI objects with missing/empty name ─
+            // Some free-tier models return partial JSON or objects without name.
+            // We log them and strip them here before any further processing.
+            const sanitizeItems = (arr, label) => {
+                if (!Array.isArray(arr)) return []
+                return arr.filter(item => {
+                    const valid = item && typeof item.name === 'string' && item.name.trim().length > 0
+                    if (!valid) {
+                        console.warn(`[KG Agent] Dropping invalid ${label} item from AI response (missing name):`, JSON.stringify(item))
+                    }
+                    return valid
+                })
+            }
+            parsed.items.cuisines    = sanitizeItems(parsed.items.cuisines,    'cuisine')
+            parsed.items.dishes      = sanitizeItems(parsed.items.dishes,      'dish')
+            parsed.items.ingredients = sanitizeItems(parsed.items.ingredients, 'ingredient')
+            // ─────────────────────────────────────────────────────────────────────
 
             // ── Client-side safety dedup ──────────────────────────────────────
             const { filtered, duplicates } = clientDedup(

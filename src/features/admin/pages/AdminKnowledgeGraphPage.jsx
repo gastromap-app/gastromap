@@ -886,6 +886,15 @@ const AdminKnowledgeGraphPage = () => {
 
     // ── AI Agent save handler ─────────────────────────────────────────────────
     const handleAgentSave = useCallback(async (type, data) => {
+        // Guard: reject items without a valid name before they reach the API.
+        // This is the last line of defence — KGAIAgent.validateItem and
+        // clientDedup should already have filtered these out earlier.
+        if (!data || typeof data.name !== 'string' || !data.name.trim()) {
+            const received = JSON.stringify(data)
+            console.error(`[handleAgentSave] Blocked save — missing name for type "${type}". Received:`, received)
+            throw new Error(`missing or empty "name" field (type: ${type})`)
+        }
+
         // Используем прямые API функции вместо мутаций React Query
         // чтобы избежать side effects (invalidateQueries, onError toast и т.д.)
         // которые могут прерывать batch save.

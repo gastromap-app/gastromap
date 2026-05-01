@@ -211,7 +211,7 @@
     "new_badge": "{{count}} Нових",
     "places_count": "{{count}} місць",
     "nearby_locations": "Локації поруч",
-    "within_distance": "В радіусі 10 км",
+    "within_distance": "В радіусі 1 км",
     "open_now": "Відкрито зараз",
     "currently_serving": "Працюють в даний момент",
     "no_nearby_places": "Поруч немає місць",

@@ -211,7 +211,7 @@
     "new_badge": "{{count}} Nowych",
     "places_count": "{{count}} miejsc",
     "nearby_locations": "Lokalizacje w pobliżu",
-    "within_distance": "W promieniu 10 km",
+    "within_distance": "W promieniu 1 km",
     "open_now": "Teraz otwarte",
     "currently_serving": "Obecnie obsługujące",
     "no_nearby_places": "Brak miejsc w pobliżu",

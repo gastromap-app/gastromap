@@ -227,7 +227,7 @@
     "new_badge": "{{count}} New",
     "places_count": "{{count}} places",
     "nearby_locations": "Nearby Locations",
-    "within_distance": "Within 10 km distance",
+    "within_distance": "Within 1 km distance",
     "open_now": "Open Now",
     "currently_serving": "Currently serving",
     "quick_stats": "Quick Stats",

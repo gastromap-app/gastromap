@@ -4,30 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-/**
- * Strips console.* calls in production builds to reduce bundle size
- * and prevent leaking debug logs to end users.
- */
-function removeConsolePlugin() {
-  return {
-    name: 'remove-console',
-    transform(code, id) {
-      if (process.env.NODE_ENV !== 'production') return null
-      if (!/\.(js|jsx|ts|tsx)$/.test(id)) return null
-      if (id.includes('node_modules')) return null
-
-      // Remove console.* calls (but keep console.error in case we want them)
-      const cleaned = code.replace(/console\.(log|warn|info|debug|trace)\([^)]*\);?/g, '')
-      return cleaned === code ? null : { code: cleaned, map: null }
-    },
-  }
-}
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    removeConsolePlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png', 'offline.html'],
@@ -155,6 +135,9 @@ export default defineConfig({
       }
     })
   ],
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
     rollupOptions: {
       output: {

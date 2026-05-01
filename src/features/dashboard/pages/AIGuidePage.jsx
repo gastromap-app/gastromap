@@ -13,7 +13,7 @@ const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
-    const { lastScrollY, setLastScrollY } = useAIChatStore()
+    const { setLastScrollY } = useAIChatStore()
     const { setHeaderScrolled } = useUIStore()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
@@ -34,14 +34,11 @@ const AIGuidePage = () => {
         return () => clearTimeout(timer)
     }, [messages.length])
 
-    // Restore scroll on mount if we have a saved position
+    // Reset header state on mount
     useEffect(() => {
-        if (lastScrollY > 0 && scrollRef.current) {
-            scrollRef.current.scrollTop = lastScrollY
-        }
         setHeaderScrolled(false)
         return () => setHeaderScrolled(false)
-    }, [lastScrollY, setHeaderScrolled])
+    }, [setHeaderScrolled])
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop

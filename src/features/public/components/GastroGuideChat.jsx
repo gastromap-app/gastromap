@@ -9,24 +9,19 @@ import { AppHeader } from '@/components/layout/AppHeader'
 
 export default function GastroGuideChat({ isOpen, onClose }) {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
-    const { lastScrollY, setLastScrollY } = useAIChatStore()
+    const { setLastScrollY } = useAIChatStore()
     const navigate = useNavigate()
     const scrollContainerRef = React.useRef(null)
 
-    // Restore scroll or go to bottom on mount
+    // Always scroll to bottom (last message) when chat opens
     React.useEffect(() => {
-        if (isOpen && scrollContainerRef.current) {
+        if (isOpen && scrollContainerRef.current && messages.length > 0) {
             const container = scrollContainerRef.current
-            
             requestAnimationFrame(() => {
-                if (lastScrollY > 0) {
-                    container.scrollTop = lastScrollY
-                } else if (messages.length > 0) {
-                    container.scrollTop = container.scrollHeight
-                }
+                container.scrollTop = container.scrollHeight
             })
         }
-    }, [isOpen, messages.length, lastScrollY])
+    }, [isOpen, messages.length])
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop

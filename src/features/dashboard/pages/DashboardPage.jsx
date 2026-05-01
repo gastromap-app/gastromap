@@ -188,6 +188,11 @@ const DashboardPage = () => {
         if (hour < 18) return t('dashboard.greeting_afternoon', { name: firstName })
         return t('dashboard.greeting_evening', { name: firstName })
     }, [firstName, t])
+    const cityTagline = useMemo(() => {
+        return currentCity && currentCity !== 'Unknown'
+            ? t('dashboard.explore_today', { city: currentCity })
+            : t('dashboard.explore_today_fallback')
+    }, [currentCity, t])
     const [activeTab, setActiveTab] = useState('all')
     const handleSelectCountry = useCallback((country) => {
         useLocationsStore.getState().setCountry(country.name)
@@ -226,6 +231,7 @@ const DashboardPage = () => {
                     <h1 className={`text-[26px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {firstName} <span className="text-blue-600">✦</span>
                     </h1>
+                    <p className={`text-[13px] font-medium mt-1 ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{cityTagline}</p>
                 </div>
 
                 {/* Search + filter */}
@@ -430,6 +436,7 @@ const DashboardPage = () => {
                         text={text}
                         sub={sub}
                         greeting={greeting}
+                        cityTagline={cityTagline}
                         firstName={firstName}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
@@ -458,7 +465,7 @@ const DashboardPage = () => {
 // ─── DESKTOP DASHBOARD ─────────────────────────────────────────────────────────
 
 const DesktopDashboard = ({
-    isDark, text, sub, greeting, firstName,
+    isDark, text, sub, greeting, cityTagline, firstName,
     searchQuery, setSearchQuery, setIsFilterOpen,
     activeTab, setActiveTab, geoStatus, isLoading,
     requestGeo, nearbyLocations, countries, handleSelectCountry,
@@ -484,15 +491,19 @@ const DesktopDashboard = ({
                     <div className="absolute -top-10 -left-10 w-[300px] h-[200px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
                 )}
                 {visitCount > 1 && currentCity && currentCity !== 'Unknown' ? (
-                    <h1 className={`text-[32px] font-bold tracking-tight leading-tight mb-5 ${text} relative`}>
-                        {greeting} <span className="text-blue-500">✦</span>
-                    </h1>
+                    <>
+                        <h1 className={`text-[32px] font-bold tracking-tight leading-tight mb-1 ${text} relative`}>
+                            {greeting} <span className="text-blue-500">✦</span>
+                        </h1>
+                        <p className={`text-[15px] font-medium ${sub} mb-5 relative`}>{cityTagline}</p>
+                    </>
                 ) : (
                     <>
                         <p className={`text-[15px] font-medium ${sub} mb-0.5 relative`}>{greeting}</p>
-                        <h1 className={`text-[40px] font-bold tracking-tight leading-none mb-5 ${text} relative`}>
+                        <h1 className={`text-[40px] font-bold tracking-tight leading-none mb-1 ${text} relative`}>
                             {firstName} <span className="text-blue-500">✦</span>
                         </h1>
+                        <p className={`text-[15px] font-medium ${sub} mb-5 relative`}>{cityTagline}</p>
                     </>
                 )}
 

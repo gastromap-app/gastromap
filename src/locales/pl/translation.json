@@ -184,6 +184,8 @@
     "greeting_afternoon": "Dzień dobry",
     "greeting_evening": "Dobry wieczór",
     "tagline": "Odkrywaj najlepsze miejsca kulinarne",
+    "explore_today": "Odkryj, co jest dzisiaj w {{city}}",
+    "explore_today_fallback": "Odkryj, co jest dzisiaj w Twoim mieście",
     "search_placeholder": "Szukaj restauracji, kuchni, miejsc…",
     "search_btn": "Szukaj",
     "explore_countries": "Odkrywaj Kraje",

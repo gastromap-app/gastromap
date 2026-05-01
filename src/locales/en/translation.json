@@ -200,6 +200,8 @@
     "greeting_afternoon": "Good Afternoon",
     "greeting_evening": "Good Evening",
     "tagline": "What are we eating today?",
+    "explore_today": "Explore what's available today in {{city}}",
+    "explore_today_fallback": "Explore what's available today in your city",
     "search_placeholder": "Sushi, Pasta, or 'Best burger'…",
     "search_btn": "Search",
     "explore_countries": "Explore by Country",

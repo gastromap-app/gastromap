@@ -201,6 +201,8 @@
     "greeting_afternoon": "Добрый день",
     "greeting_evening": "Добрый вечер",
     "tagline": "Открывайте лучшие кулинарные места",
+    "explore_today": "Исследуйте, что есть сегодня в {{city}}",
+    "explore_today_fallback": "Исследуйте, что есть сегодня в вашем городе",
     "search_placeholder": "Искать рестораны, кухню, места…",
     "search_btn": "Поиск",
     "explore_countries": "Исследовать Страны",

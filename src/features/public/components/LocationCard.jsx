@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Link } from 'react-router-dom'
-import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
+import { useFavorites } from '@/hooks/useFavorites'
 import { translate } from '@/utils/translation'
 import LazyImage from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
@@ -17,7 +17,7 @@ import { getDisplayRating } from '@/utils/ratingUtils'
 export default function LocationCard({ location }) {
     const { i18n } = useTranslation()
     const navigate = useNavigate()
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { isFavorite, toggleFavorite } = useFavorites()
     const isFav = isFavorite(location.id)
 
     // Calculate Ground Truth Rating

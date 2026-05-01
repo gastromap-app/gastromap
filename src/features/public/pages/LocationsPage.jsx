@@ -18,7 +18,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useInfiniteLocations } from '@/hooks/useLocationsQuery'
-import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
+import { useFavorites } from '@/hooks/useFavorites'
 import { useDebounce } from '@/hooks/useDebounce'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
@@ -55,7 +55,7 @@ const MobileCard = memo(function MobileCard({ item, style }) {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { isFavorite, toggleFavorite } = useFavorites()
     const saved = isFavorite(item.id)
 
     return (
@@ -165,7 +165,7 @@ const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({
 // ─── Desktop location card ────────────────────────────────────────────────
 const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subTextStyle }) {
     const navigate = useNavigate()
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { isFavorite, toggleFavorite } = useFavorites()
     const saved = isFavorite(item.id)
 
     return (

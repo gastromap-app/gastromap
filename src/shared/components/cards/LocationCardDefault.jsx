@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import { LazyImage } from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
-import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
+import { useFavorites } from '@/hooks/useFavorites'
 
 /**
  * Default location card — rich preview with photo, rating, favorites,
@@ -17,7 +17,7 @@ export function LocationCardDefault({
     imageHeight = 'h-48',
 }) {
     const navigate = useNavigate()
-    const { isFavorite, toggleFavorite } = useFavoritesStore()
+    const { isFavorite, toggleFavorite } = useFavorites()
     const isFav = isFavorite(location.id)
 
     const image = location.image || location.image_url

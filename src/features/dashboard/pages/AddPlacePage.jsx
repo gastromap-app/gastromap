@@ -269,7 +269,7 @@ export default function AddPlacePage() {
     const [draftRestored, setDraftRestored] = useState(Boolean(initialDraft))
 
     // ── Form data ─────────────────────────────────────────────────────────
-    const [form, setForm] = useState(initialDraft?.form ?? EMPTY_FORM)
+    const [form, setForm] = useState(initialDraft?.form ?? INITIAL_STATE)
 
     // Persist draft on every form/step change (debounced)
     useEffect(() => {
@@ -512,7 +512,7 @@ export default function AddPlacePage() {
     function reset() {
         clearDraft()
         setDraftRestored(false)
-        setForm(EMPTY_FORM)
+        setForm(INITIAL_STATE)
         userPhotos.forEach((p) => URL.revokeObjectURL(p.preview))
         setUserPhotos([])
         setAiPhoto(null)
@@ -544,7 +544,7 @@ export default function AddPlacePage() {
                     <button
                         onClick={() => {
                             clearDraft()
-                            setForm(EMPTY_FORM)
+                            setForm(INITIAL_STATE)
                             setStep(0)
                             setDraftRestored(false)
                         }}

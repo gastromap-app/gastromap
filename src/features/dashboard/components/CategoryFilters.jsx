@@ -55,7 +55,7 @@ const CategoryFilters = ({ isDark }) => {
                                         : `${filter.activeBg} ${filter.activeBorder} text-gray-900 shadow-md`
                                     : isDark
                                         ? 'bg-white/[0.03] text-white/70 border-white/[0.06] hover:bg-white/[0.08] hover:text-white'
-                                        : 'bg-white text-gray-600 border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300 hover:text-gray-900'
+                                        : 'bg-white text-gray-600 border-slate-200/50 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300 hover:text-gray-900'
                             }`}
                         >
                             <filter.icon 

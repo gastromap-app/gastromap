@@ -54,8 +54,8 @@ const ProfileEditPage = () => {
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
-    const cardBg = isDark ? 'bg-[#1f2128]/80 border-white/5' : 'bg-white border-gray-100'
-    const inputBg = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+    const cardBg = isDark ? 'bg-[#1f2128]/80 border-white/5' : 'bg-white border-slate-200/50'
+    const inputBg = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-slate-200/50'
 
     const handleSave = async () => {
         setSaveError('')
@@ -131,7 +131,7 @@ const ProfileEditPage = () => {
                                 type="email"
                                 value={formData.email}
                                 readOnly
-                                className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all bg-gray-100 border-gray-200 cursor-not-allowed opacity-60 ${textStyle}`}
+                                className={`w-full pl-12 pr-4 py-4 rounded-2xl text-sm font-bold outline-none border transition-all bg-gray-100 border-slate-200/50 cursor-not-allowed opacity-60 ${textStyle}`}
                                 placeholder={t('profile_edit.email_placeholder')}
                             />
                         </div>

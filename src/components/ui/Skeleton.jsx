@@ -25,13 +25,13 @@ export function LocationCardDesktopSkeleton({ isDark }) {
     return (
         <div className={cn(
             'flex flex-col p-4 rounded-[40px] border',
-            isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'
+            isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-slate-200/50 shadow-xl shadow-gray-200/50'
         )}>
             <Skeleton className="h-56 mb-5 rounded-[28px]" />
             <div className="space-y-3 px-2">
                 <Skeleton className="h-6 w-3/4 rounded-xl" />
                 <Skeleton className="h-4 w-1/2 rounded-xl" />
-                <div className={cn('pt-4 border-t', isDark ? 'border-white/5' : 'border-gray-50')}>
+                <div className={cn('pt-4 border-t', isDark ? 'border-white/5' : 'border-slate-200/50')}>
                     <Skeleton className="h-4 w-1/3 rounded-xl" />
                 </div>
             </div>
@@ -45,7 +45,7 @@ export function LocationCardMobileSkeleton({ isDark }) {
     return (
         <div className={cn(
             'flex flex-col rounded-2xl overflow-hidden border animate-pulse',
-            isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'
+            isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-slate-200/50'
         )}>
             <Skeleton className="h-28 w-full rounded-none" />
             <div className="p-2.5 space-y-2">

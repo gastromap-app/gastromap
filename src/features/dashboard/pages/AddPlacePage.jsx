@@ -64,12 +64,12 @@ const COUNTRIES = [
 
 const MAX_PHOTOS = 5
 
-const EMPTY_FORM = {
     name: '', country: '', country_code: '', city: '', address: '',
     category: 'restaurant', website_url: '',
     description: '', price_range: '',
     outdoor_seating: false, pet_friendly: false,
     must_try: '', insider_tip: '',
+    lat: null, lng: null,
 }
 
 const DRAFT_STORAGE_KEY = 'gastromap.addplace.draft.v1'
@@ -303,6 +303,8 @@ export default function AddPlacePage() {
             country_code: s.countryCode,
             city:         s.city,
             address:      s.street,
+            lat:          s.lat,
+            lng:          s.lon,
         }))
         setPlaceSuggestions([])
     }
@@ -473,12 +475,29 @@ export default function AddPlacePage() {
                 ...(isAiPhotoShowing || photoUrls.length === 0 ? (aiPhoto ? [aiPhoto] : []) : []),
             ]
 
-            await createSubmission({
-                ...form,
-                user_id: user?.id,
-                photos,
-                ai_photo_url: aiPhoto || null,
-            })
+            // ── Map fields to match DB schema (user_submissions table) ──
+            const submissionPayload = {
+                user_id:      user?.id,
+                title:        form.name,
+                description:  form.description,
+                address:      form.address,
+                city:         form.city,
+                country:      form.country,
+                country_code: form.country_code,
+                category:     form.category,
+                price_level:  form.price_range?.length || 1, // Map '$$' -> 2
+                images:       photos,
+                must_try:     form.must_try ? [form.must_try] : [], // Convert to array
+                insider_tip:  form.insider_tip,
+                lat:          form.lat ? parseFloat(form.lat) : null,
+                lng:          form.lng ? parseFloat(form.lng) : null,
+                outdoor_seating: form.outdoor_seating,
+                pet_friendly:    form.pet_friendly,
+                website_url:     form.website_url,
+                ai_photo_url:    aiPhoto || null,
+            }
+
+            await createSubmission(submissionPayload)
             setDone(true)
         } catch (err) {
             console.error('[AddPlacePage] Submit error:', err)

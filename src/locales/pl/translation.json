@@ -47,6 +47,7 @@
     "notes": "Notatki",
     "view_details": "Zobacz szczegóły →",
     "book_table": "Zarezerwuj stolik",
+    "booking": "Rezerwacja",
     "get_directions": "Jak dojechać",
     "hours_today": "Godziny dziś",
     "contact": "Kontakt",
@@ -495,5 +496,16 @@
     "accessDenied": "Brak dostępu. Tylko dla administratorów.",
     "selectLocation": "Wybierz lokal",
     "searchLocations": "Szukaj lokali..."
+  },
+  "manifesto": {
+    "title_eyebrow": "MANIFEST",
+    "title": "Podróże w Poszukiwaniu Smaku",
+    "description": "GastroMap to projekt zrodzony z osobistej pasji do podróży i poszukiwania idealnych lokalizacji. Stworzyłem tę aplikację za darmo, ponieważ wierzę, że użyteczne narzędzia powinny być dostępne dla każdego.",
+    "creator_story": "Obecnie rozwijam GastroMap samodzielnie. Twój wkład — czy to nowa lokalizacja, czy wsparcie projektu — pomaga aplikacji rosnąć.",
+    "signature": "Z poważaniem, @Alikovit",
+    "add_place": "Dodaj Miejsce",
+    "donate": "Wesprzyj Projekt",
+    "join_title": "Dołącz do podróży",
+    "join_description": "Pomóż nam zbudować najbardziej autentyczną mapę kulinarną."
   }
 }

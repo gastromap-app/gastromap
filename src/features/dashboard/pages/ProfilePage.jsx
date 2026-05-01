@@ -28,13 +28,13 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
                 />
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                    className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
+                    className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-slate-200/50 text-gray-900'}`}
                 >
                     <h3 className="text-2xl font-bold mb-2">{t('profile.feedback_title')}</h3>
                     <p className={`text-sm mb-6 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{t('profile.feedback_desc')}</p>
 
                     <textarea
-                        className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                        className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-slate-200/50 text-gray-900'}`}
                         placeholder={t('profile.feedback_placeholder')}
                     />
 
@@ -250,7 +250,7 @@ const ProfilePage = () => {
                         contributions.map((item, idx) => (
                             <div
                                 key={item.id}
-                                className={`flex items-center justify-between p-4 ${idx !== contributions.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                className={`flex items-center justify-between p-4 ${idx !== contributions.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
@@ -431,7 +431,7 @@ const ProfilePage = () => {
                                 <button
                                     key={idx}
                                     onClick={() => item.action ? item.action() : navigate(item.link)}
-                                    className={`w-full flex items-center justify-between p-4 transition-colors ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : itemHover} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-100') : ''}`}
+                                    className={`w-full flex items-center justify-between p-4 transition-colors ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : itemHover} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
                                 >
                                     <div className="flex items-center gap-3.5">
                                         <div className={`p-2 rounded-xl ${item.highlight ? (isDark ? 'bg-indigo-500/15 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-600')}`}>

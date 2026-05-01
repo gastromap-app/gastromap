@@ -39,11 +39,12 @@ async function test() {
     console.log('Dishes found:', (dishes || []).length);
   }
 
-  const { data: ingredients, error: iError } = await supabase.from('ingredients').select('*').limit(5);
-  if (iError) {
-    console.error('Ingredients error:', iError);
+  const { data: profiles, error: pError } = await supabase.from('user_profiles').select('*').limit(10);
+  if (pError) {
+    console.error('Profiles error:', pError);
   } else {
-    console.log('Ingredients found:', (ingredients || []).length);
+    console.log('Profiles found:', (profiles || []).length);
+    profiles.forEach(p => console.log(`- ${p.email} (Role: ${p.role})`));
   }
 }
 

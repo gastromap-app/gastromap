@@ -21,10 +21,13 @@ export async function createSubmission(payload) {
         // Dev fallback — simulate success
         return { id: 'mock-' + Date.now(), ...payload, status: 'pending', created_at: new Date().toISOString() }
     }
+    
+    // We send the payload as-is. 
+    // Default values like 'status' and 'created_at' are handled by the database.
     return unwrap(
         await supabase
             .from('user_submissions')
-            .insert({ ...payload, status: 'pending', submitter_confirmed: true })
+            .insert(payload)
             .select()
             .single()
     )

@@ -71,6 +71,7 @@
     "notes": "Notes",
     "view_details": "View details →",
     "book_table": "Book a Table",
+    "booking": "Booking",
     "get_directions": "Get Directions",
     "hours_today": "Hours Today",
     "contact": "Contact",
@@ -512,5 +513,16 @@
       "queue_empty": "Queue is empty",
       "no_pending": "No objects pending moderation"
     }
+  },
+  "manifesto": {
+    "title_eyebrow": "MANIFESTO",
+    "title": "Travels in Search of Taste",
+    "description": "GastroMap is a project born from a personal passion for travel and the search for perfect locations. I made this app free because I believe useful tools should be accessible to everyone.",
+    "creator_story": "I am currently developing GastroMap on my own. Your contribution — whether it's a new location or supporting the project — helps the app grow.",
+    "signature": "Best regards, @Alikovit",
+    "add_place": "Add Place",
+    "donate": "Support Project",
+    "join_title": "Join the journey",
+    "join_description": "Help us build the most authentic food map."
   }
 }

@@ -126,13 +126,31 @@ export function usePendingLocations() {
 export function useUpdateLocationStatusMutation() {
     const qc = useQueryClient()
     return useMutation({
-        mutationFn: async ({ id, status, moderationNote }) => {
+        mutationFn: async ({ id, status, moderationNote, source, itemData }) => {
+            if (source === 'submission') {
+                const { approveSubmission, rejectSubmission } = await import('../submissions.api')
+                if (status === 'approved') {
+                    // Promote submission to location
+                    // Filter out UI-only and internal fields
+                    const { 
+                        id: _id, user_id: _uid, submitted_at: _sat, status: _s, 
+                        source: _src, queueType: _qt, name: _n, type: _t, date: _d, 
+                        insiderTip: _it, mustTry: _mt, adminComment: _ac,
+                        ...locationData 
+                    } = itemData
+                    
+                    return approveSubmission(id, locationData)
+                } else {
+                    return rejectSubmission(id, moderationNote || 'Changes requested')
+                }
+            }
+
             const { updateLocation } = await import('../locations.api')
             const payload = { status }
             if (moderationNote !== undefined) payload.moderation_note = moderationNote
             return updateLocation(id, payload)
         },
-        onSuccess: (data, { id, status }) => {
+        onSuccess: (data, { id, status, source }) => {
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: queryKeys.locations.pending })
             qc.invalidateQueries({ queryKey: queryKeys.admin.stats })
@@ -140,17 +158,20 @@ export function useUpdateLocationStatusMutation() {
             qc.invalidateQueries({ queryKey: queryKeys.locations.top(5) })
             qc.invalidateQueries({ queryKey: queryKeys.admin.cityStats })
             
-            // Sync to Zustand store
-            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                if (status === 'approved' || status === 'active') {
+            // Sync to Zustand store if approved
+            if (status === 'approved' || status === 'active') {
+                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                     import('../locations.api').then(({ normalise }) => {
                         const loc = normalise(data)
                         if (loc) useLocationsStore.getState().addLocation(loc)
                     })
-                } else {
+                })
+            } else if (source !== 'submission') {
+                // For direct location deletions/rejections
+                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                     useLocationsStore.getState().deleteLocation(id)
-                }
-            })
+                })
+            }
         },
     })
 }

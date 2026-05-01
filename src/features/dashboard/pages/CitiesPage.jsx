@@ -114,7 +114,7 @@ const CitiesPage = () => {
                 </div>
 
                 {/* Search */}
-                <div className={`flex items-center h-14 px-5 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-100 shadow-xl shadow-blue-500/5'}`}>
+                <div className={`flex items-center h-14 px-5 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200/50 shadow-xl shadow-blue-500/5'}`}>
                     <Search size={20} className="text-blue-500 mr-3" />
                     <input
                         type="text"
@@ -194,7 +194,7 @@ const CitiesPage = () => {
                             ))}
                         </div>
 
-                        <nav className={`flex items-center px-4 py-2 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-gray-100'}`}>
+                        <nav className={`flex items-center px-4 py-2 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-slate-200/50'}`}>
                             <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
                                 <Home size={12} /><span>Dashboard</span>
                             </Link>

@@ -25,6 +25,7 @@ import { SmartSearchBar } from '../components/SmartSearchBar'
 import CategoryFilters from '../components/CategoryFilters'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import LazyImage from '@/components/ui/LazyImage'
+import ManifestoSection from '../components/ManifestoSection'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
             className={`flex-shrink-0 ${isNearby ? 'w-[140px]' : 'w-[240px]'} rounded-[16px] overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-200 ${
                 isDark
                     ? 'bg-[#1c1c1e] border border-white/8'
-                    : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.06)]'
+                    : 'bg-white border border-slate-200/50 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.06)]'
             }`}
         >
             {/* Image */}
@@ -166,11 +167,11 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
             {/* Content */}
             <div className={isNearby ? 'px-3 py-2.5' : 'px-4 py-3.5'}>
                 <h4 className={`font-bold leading-tight truncate ${isNearby ? 'text-[13px]' : 'text-[14px]'} ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {loc.title || 'Unknown Place'}
+                    {String(loc.title || '')}
                 </h4>
                 {/* Subtitle: real data — cuisine + city, not a generic fallback */}
                 <p className={`${isNearby ? 'text-[11px]' : 'text-[12px]'} mt-0.5 truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-                    {[loc.cuisine, loc.city].filter(Boolean).join(' · ') || loc.category || ''}
+                    {String([loc.cuisine, loc.city].filter(Boolean).join(' · ') || loc.category || '')}
                 </p>
 
                 {/* Footer row: best time icons + price + label chip */}
@@ -188,7 +189,7 @@ const LocationCardMobile = ({ loc, type = 'recommended' }) => {
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 isDark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-600'
                             }`}>
-                                {translate(loc.special_labels[0])}
+                                {translate(loc.special_labels[0]) || ''}
                             </span>
                         )}
                     </div>
@@ -274,9 +275,9 @@ const MapDiscoveryPanel = ({ height = 'h-[calc(100vh-260px)]', setIsFilterOpen }
             </div>
 
             {/* Map */}
-            <div className={`relative ${height} rounded-card overflow-hidden ${isDark ? 'border border-white/6' : 'border border-gray-100 shadow-sm'}`}>
+            <div className={`relative ${height} rounded-card overflow-hidden ${isDark ? 'border border-white/6' : 'border border-slate-200/50 shadow-sm'}`}>
                 <div className={`absolute top-3 left-3 z-[500] px-3 py-1.5 rounded-pill text-[11px] font-semibold backdrop-blur-md pointer-events-none ${
-                    isDark ? 'bg-black/60 text-white/80 border border-white/15' : 'bg-white/90 text-gray-700 border border-gray-200/60'
+                    isDark ? 'bg-black/60 text-white/80 border border-white/15' : 'bg-white/90 text-gray-700 border border-slate-200/50'
                 }`}>
                     {t('dashboard.places_count', { count: filteredLocations.length })}
                 </div>
@@ -330,6 +331,7 @@ const DashboardPage = () => {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [activeTab, setActiveTab] = useState('overview')
     // FIX: Use reactive store subscription instead of getState() in render
     const storeSearchQuery = useLocationsStore(s => s.searchQuery)
 
@@ -400,9 +402,9 @@ const DashboardPage = () => {
     )
 
     // FIX: Trending now uses recency (created_at / updated_at) + rating, not just rating
+    const now = Date.now()
     const trending = useMemo(() => {
         const topIds = new Set(recommended.map(l => l.id))
-        const now = Date.now()
         const DAY = 86_400_000
         return [...filteredLocations]
             .filter(l => !topIds.has(l.id))
@@ -420,6 +422,8 @@ const DashboardPage = () => {
 
     const firstName = user?.name?.split(' ')[0] || 'there'
     const greeting = getGreeting(t)
+    const text = isDark ? 'text-white' : 'text-gray-900'
+    const sub = isDark ? 'text-gray-400' : 'text-slate-600'
 
     // ─── NEW SECTIONS LOGIC ───────────────────────────────────────────────
     
@@ -469,7 +473,7 @@ const DashboardPage = () => {
                 const end = parseTime(parts[1])
                 if (end < start) return currentTime >= start || currentTime <= end
                 return currentTime >= start && currentTime <= end
-            } catch (e) { return true }
+            } catch { return true }
         }
 
         return filteredLocations
@@ -512,7 +516,7 @@ const DashboardPage = () => {
                     <PullRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} />
 
                     {/* Feed content — map is available on separate MapPage */}
-                    <div className="space-y-8 pb-14 px-5" {...pullHandlers}>
+                    <div className="space-y-6 pb-10 px-5" {...pullHandlers}>
                         {/* Nearby Locations */}
                         <div className="space-y-4">
                             <SectionHeader
@@ -534,7 +538,7 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : geoStatus === 'denied' || geoStatus === 'error' ? (
-                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'}`}>
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
                                     <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={24} />
                                     <div className="text-center">
                                         <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
@@ -553,7 +557,7 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'}`}>
+                                <div className={`w-full flex flex-col items-center justify-center gap-3 py-6 px-6 rounded-card border ${isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
                                     <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={28} />
                                     <div className="text-center">
                                         <p className={`text-[13px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
@@ -620,7 +624,7 @@ const DashboardPage = () => {
                                         : (
                                             /* Empty state — only shown after loading finishes */
                                             <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-card border ${
-                                                isDark ? 'bg-white/[0.03] border-white/8' : 'bg-white border-slate-200/70 shadow-sm'
+                                                isDark ? 'bg-white/[0.03] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'
                                             }`}>
                                                 <div className="text-4xl">🍽️</div>
                                                 <div className="text-center">
@@ -675,35 +679,44 @@ const DashboardPage = () => {
                                     }}
                                     isDark={isDark}
                                 />
-                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                    {openNowLocations.map((loc) => (
+                                <div className="flex gap-4 overflow-x-auto pb-6 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                    {openNowLocations.slice(0, 5).map((loc) => (
                                         <div key={loc.id} className="snap-center">
-                                            <LocationCardMobile loc={loc} type="open_now" />
+                                            <LocationCardMobile loc={loc} type="nearby" />
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+
+                        <ManifestoSection isDark={isDark} />
                     </div>
                 </div>
 
-                {/* ── DESKTOP ── */}
-                <div className="hidden md:flex flex-col px-[10px] pt-24 pb-6">
+                {/* Desktop Layout */}
+                <div className="hidden md:block">
                     <DesktopDashboard
-                        locations={locations}
-                        recommended={recommended}
-                        trending={trending}
-                        nearbyLocations={nearbyLocations}
-                        geoStatus={geoStatus}
-                        requestGeo={requestGeo}
-                        openNowLocations={openNowLocations}
-                        authUser={user}
-                        countries={countries}
-                        theme={theme}
-                        setIsFilterOpen={setIsFilterOpen}
+                        isDark={isDark}
+                        text={text}
+                        sub={sub}
+                        greeting={greeting}
+                        firstName={firstName}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
+                        setIsFilterOpen={setIsFilterOpen}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        geoStatus={geoStatus}
+                        isLoading={isLoading}
+                        requestGeo={requestGeo}
+                        nearbyLocations={nearbyLocations}
+                        countries={countries}
                         handleSelectCountry={handleSelectCountry}
+                        recommended={recommended}
+                        trending={trending}
+                        openNowLocations={openNowLocations}
+                        navigate={navigate}
+                        t={t}
                     />
                 </div>
             </div>
@@ -711,29 +724,18 @@ const DashboardPage = () => {
     )
 }
 
-// ─── DESKTOP DASHBOARD ────────────────────────────────────────────────────────
+// ─── DESKTOP DASHBOARD ─────────────────────────────────────────────────────────
 
 const DesktopDashboard = ({
-    _locations, recommended, trending, nearbyLocations = [], openNowLocations = [],
-    geoStatus, requestGeo,
-    authUser, countries, theme,
-    setIsFilterOpen, searchQuery = '', setSearchQuery = () => {},
-    handleSelectCountry,
+    isDark, text, sub, greeting, firstName,
+    searchQuery, setSearchQuery, setIsFilterOpen,
+    activeTab, setActiveTab, geoStatus, isLoading,
+    requestGeo, nearbyLocations, countries, handleSelectCountry,
+    recommended, trending, openNowLocations, navigate, t
 }) => {
-    const { t } = useTranslation()
-    const navigate = useNavigate()
-    const isLoading = useLocationsStore(s => s.isLoading)
-    const isDark = theme === 'dark'
-    const [activeTab, setActiveTab] = useState('overview')
-    const greeting = getGreeting(t)
-    const firstName = authUser?.name?.split(' ')[0] || 'there'
-
-    const text = isDark ? 'text-[hsl(220,20%,96%)]' : 'text-gray-900'
-    const sub  = isDark ? 'text-[hsl(220,10%,55%)]' : 'text-gray-500'
-
     const cardClass = isDark
         ? 'bg-[hsl(220,20%,6%)] border border-white/[0.06] rounded-sheet'
-        : 'bg-white border border-slate-200/70 rounded-sheet shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.06)]'
+        : 'bg-white border border-slate-200/50 rounded-sheet shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.06)]'
 
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },
@@ -741,21 +743,21 @@ const DesktopDashboard = ({
     }
 
     return (
-        <div className="pb-20 max-w-6xl mx-auto w-full">
+        <div className="pb-20 max-w-6xl mx-auto w-full px-4">
 
             {/* Hero */}
-            <div className="mt-10 mb-8 relative">
+            <div className="mt-8 mb-6 relative">
                 {/* Blue glow behind hero */}
                 {isDark && (
                     <div className="absolute -top-10 -left-10 w-[300px] h-[200px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
                 )}
-                <p className={`text-[15px] font-medium ${sub} mb-1 relative`}>{greeting}</p>
-                <h1 className={`text-[42px] font-bold tracking-tight leading-none mb-6 ${text} relative`}>
+                <p className={`text-[15px] font-medium ${sub} mb-0.5 relative`}>{greeting}</p>
+                <h1 className={`text-[40px] font-bold tracking-tight leading-none mb-5 ${text} relative`}>
                     {firstName} <span className="text-blue-500">✦</span>
                 </h1>
 
                 {/* Search + Filters */}
-                <div className="mb-8 space-y-6">
+                <div className="mb-6 space-y-5">
                     <div className="max-w-2xl">
                         <SmartSearchBar
                             value={searchQuery}
@@ -811,7 +813,7 @@ const DesktopDashboard = ({
                     initial="hidden"
                     animate="visible"
                     variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                    className="space-y-12"
+                    className="space-y-10"
                 >
                     {/* Nearby Locations */}
                     <motion.div variants={itemVariants} className="space-y-5 pb-8 border-b border-white/[0.05]">
@@ -832,7 +834,7 @@ const DesktopDashboard = ({
                                 ))}
                             </div>
                         ) : geoStatus === 'denied' || geoStatus === 'error' ? (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200/70 shadow-sm'}`}>
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
                                 <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={28} />
                                 <div className="text-center">
                                     <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
@@ -856,7 +858,7 @@ const DesktopDashboard = ({
                                 ))}
                             </div>
                         ) : (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200/70 shadow-sm'}`}>
+                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
                                 <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={32} />
                                 <div className="text-center">
                                     <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
@@ -971,6 +973,10 @@ const DesktopDashboard = ({
                             </div>
                         </motion.div>
                     )}
+                    {/* Manifesto Section Integrated */}
+                    <div className="pt-12 pb-12 border-t border-white/[0.05]">
+                        <ManifestoSection isDark={isDark} />
+                    </div>
                 </motion.div>
             )}
         </div>
@@ -986,7 +992,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClic
         return (
             <div
                 onClick={onClick}
-                className={`${cardClass} flex overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200 h-[100px] border ${isDark ? 'border-white/5 bg-[#1c1c1e]' : 'border-slate-200/60 bg-white'} rounded-[16px]`}
+                className={`${cardClass} flex overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200 h-[100px] border ${isDark ? 'border-white/5 bg-[#1c1c1e]' : 'border-slate-200/50 bg-white'} rounded-[16px]`}
             >
                 <div className="relative w-[110px] shrink-0 overflow-hidden">
                     <LocationImage
@@ -1005,7 +1011,7 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClic
                         {item.title}
                     </h4>
                     <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>
-                        {[item.cuisine, item.city].filter(Boolean).join(' · ') || item.category || ''}
+                        {String([item.cuisine, item.city].filter(Boolean).join(' · ') || item.category || '')}
                     </p>
                     {item._distance !== undefined && (
                         <div className={`mt-1.5 text-[11px] font-medium flex items-center gap-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
@@ -1052,19 +1058,21 @@ const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClic
 
         <div className="p-4">
             <h4 className={`text-[15px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {item.title}
+                {String(item.title || '')}
             </h4>
-            <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{item.subtitle}</p>
+            <p className={`text-[12px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>
+                {String([item.cuisine, item.city].filter(Boolean).join(' · ') || item.category || '')}
+            </p>
             {item.special_labels?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {item.special_labels.slice(0, 3).map(label => (
+                    {item.special_labels.slice(0, 3).map((label, i) => (
                         <span
-                            key={label}
+                            key={typeof label === 'string' ? label : i}
                             className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                                 isDark ? 'bg-white/8 text-white/60' : 'bg-slate-100 text-slate-700'
                             }`}
                         >
-                            {translate(label)}
+                            {typeof label === 'string' ? translate(label) : ''}
                         </span>
                     ))}
                 </div>

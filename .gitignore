@@ -67,3 +67,7 @@ htmlcov/
 # IDE worktrees
 .claude/worktrees/
 .qoder/repowiki/
+
+# Agent Skills (Local Only)
+.agent/skills/open-design/
+DESIGN.md

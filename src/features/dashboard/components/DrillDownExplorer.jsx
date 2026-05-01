@@ -193,7 +193,7 @@ export function DrillDownExplorer({
     const subStyle  = isDark ? 'text-gray-400' : 'text-gray-500'
     const cardStyle = isDark
         ? 'bg-white/5 border border-white/10 hover:bg-white/10'
-        : 'bg-white border border-gray-100 shadow-sm hover:shadow-md'
+        : 'bg-white border border-slate-200/50 shadow-sm hover:shadow-md'
 
     if (level === 'home') return null // Parent renders its own content
 
@@ -219,7 +219,7 @@ export function DrillDownExplorer({
         >
             {/* ── TOP BAR: Breadcrumbs + Search + Filter ── */}
             <div
-                className={`flex-shrink-0 px-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-gray-100'}`}
+                className={`flex-shrink-0 px-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-slate-200/50'}`}
                 style={{ paddingTop: '4.5rem' /* clears UniversalHeader (~64px) + 8px breathing room */ }}
             >
                 {/* Breadcrumbs */}
@@ -256,7 +256,7 @@ export function DrillDownExplorer({
                 {/* Search + Filter */}
                 <div className="flex gap-2">
                     <div className={`flex-1 flex items-center h-11 px-4 rounded-2xl border ${
-                        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'
+                        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200/50 shadow-sm'
                     }`}>
                         <Search size={15} className="text-blue-500 mr-2.5 flex-shrink-0" />
                         <input
@@ -348,7 +348,7 @@ export function DrillDownExplorer({
                             className="absolute inset-0 overflow-y-auto"
                         >
                             {/* City header */}
-                            <div className={`px-4 pt-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-gray-100'}`}>
+                            <div className={`px-4 pt-4 pb-3 border-b ${isDark ? 'border-white/8' : 'border-slate-200/50'}`}>
                                 <h2 className={`text-xl font-black ${textStyle}`}>📍 {selectedCity}</h2>
                                 <p className={`text-xs mt-0.5 ${subStyle}`}>
                                     {cityLocations.length} place{cityLocations.length !== 1 ? 's' : ''} found

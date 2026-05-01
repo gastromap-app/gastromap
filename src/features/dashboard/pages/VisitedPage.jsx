@@ -179,7 +179,7 @@ const VisitedPage = () => {
                         <div
                             key={i}
                             className={`flex gap-4 p-4 rounded-2xl ${
-                                isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-100'
+                                isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-slate-200/50'
                             }`}
                         >
                             <div className={`w-20 h-20 rounded-xl animate-pulse ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />

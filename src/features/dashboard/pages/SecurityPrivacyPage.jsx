@@ -14,7 +14,7 @@ const SecurityPrivacyPage = () => {
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-100"
+    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-slate-200/50"
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
     const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 3000) }

@@ -1041,21 +1041,28 @@ const LocationDetailsPage = () => {
                             onScroll={handleScroll}
                             className="p-1.5 rounded-2xl flex gap-1 items-center overflow-x-auto scrollbar-hide w-full"
                         >
-                            {['Overview', 'Menu', 'Reviews', 'Photos', 'Notes'].map((tab) => {
-                                const isComingSoon = tab === 'Menu'
+                            {[
+                                { id: 'Overview', label: t('location.overview') },
+                                { id: 'Menu',     label: t('location.menu') },
+                                { id: 'Booking',  label: t('location.booking') },
+                                { id: 'Reviews',  label: t('location.reviews') },
+                                { id: 'Photos',   label: t('location.photos') },
+                                { id: 'Notes',    label: t('location.notes') }
+                            ].map((tab) => {
+                                const isComingSoon = ['Menu', 'Booking'].includes(tab.id)
                                 return (
                                     <button
-                                        key={tab}
-                                        onClick={() => !isComingSoon && setActiveTab(tab)}
+                                        key={tab.id}
+                                        onClick={() => !isComingSoon && setActiveTab(tab.id)}
                                         className={`relative flex-shrink-0 px-5 md:px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
-                                            activeTab === tab 
+                                            activeTab === tab.id 
                                                 ? 'text-white' 
                                                 : isComingSoon 
                                                     ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                                                     : isDark ? 'text-white/60 hover:text-white' : 'text-gray-600 hover:text-gray-900'
                                         }`}
                                     >
-                                        {activeTab === tab && (
+                                        {activeTab === tab.id && (
                                             <motion.span
                                                 layoutId="activeTabPill"
                                                 className="absolute inset-0 bg-blue-600 rounded-xl shadow-md shadow-blue-500/30"
@@ -1063,7 +1070,7 @@ const LocationDetailsPage = () => {
                                             />
                                         )}
                                         <span className="relative z-10 flex items-center gap-1.5">
-                                            {tab}
+                                            {tab.label}
                                             {isComingSoon && (
                                                 <div className="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-tighter bg-gray-200 dark:bg-white/10 px-1.5 py-0.5 rounded-full text-gray-500 dark:text-gray-400">
                                                     <Clock size={8} />

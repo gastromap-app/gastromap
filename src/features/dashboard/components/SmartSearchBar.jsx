@@ -152,7 +152,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                         className={`absolute top-[calc(100%+8px)] left-0 right-12 z-50 rounded-2xl overflow-hidden shadow-2xl border ${
                             isDark
                                 ? 'bg-[hsl(220,20%,6%)] border-white/[0.06]'
-                                : 'bg-white border-gray-100'
+                                : 'bg-white border-slate-200/50'
                         }`}
                         style={{ boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.6)' : '0 16px 48px rgba(0,0,0,0.12)' }}
                     >

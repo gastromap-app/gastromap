@@ -227,10 +227,10 @@ export async function getPendingLocations() {
     if (!supabase) return mockPendingLocations
     // Check both locations table (direct entries) and user_submissions
     const [locsRes, subsRes] = await Promise.all([
-        supabase.from('locations').select('id, title, category, city, created_at, status, insider_tip, what_to_try, tags, moderation_note')
+        supabase.from('locations').select('id, title, category, city, created_at, status, insider_tip, what_to_try, tags, moderation_note, address, country, lat, lng, price_range, cuisine_types, image_url, google_place_id')
             .in('status', ['pending', 'revision_requested'])
             .order('created_at', { ascending: false }),
-        supabase.from('user_submissions').select('id, title, category, city, submitted_at, status, user_id')
+        supabase.from('user_submissions').select('*')
             .eq('status', 'pending')
             .order('submitted_at', { ascending: false })
     ])

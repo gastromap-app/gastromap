@@ -78,7 +78,9 @@ export default function AdminModerationPage() {
             } else {
                 await updateLocationStatus.mutateAsync({
                     id: item.id,
-                    status: 'approved'
+                    status: 'approved',
+                    source: item.source,
+                    itemData: item
                 })
             }
             setSelectedItem(null)
@@ -102,7 +104,9 @@ export default function AdminModerationPage() {
                 await updateLocationStatus.mutateAsync({
                     id: item.id,
                     status: 'revision_requested',
-                    moderationNote: revisionNote
+                    moderationNote: revisionNote,
+                    source: item.source,
+                    itemData: item
                 })
             }
             setSelectedItem(null)

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/hooks/useTheme'
 
 /**
@@ -18,19 +17,17 @@ export function AppHeader({
 }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const [isScrolled, setIsScrolled] = useState(false)
+    const [isScrolledInternal, setIsScrolledInternal] = useState(false)
+    const isScrolled = manualIsScrolled !== undefined ? manualIsScrolled : isScrolledInternal
 
     // Listen to scroll if scrollRef is provided
     useEffect(() => {
-        if (manualIsScrolled !== undefined) {
-            setIsScrolled(manualIsScrolled)
-            return
-        }
+        if (manualIsScrolled !== undefined) return
 
         const container = scrollRef?.current || window
         const handleScroll = () => {
             const scrollTop = scrollRef?.current ? scrollRef.current.scrollTop : window.scrollY
-            setIsScrolled(scrollTop > 20)
+            setIsScrolledInternal(scrollTop > 20)
         }
 
         container.addEventListener('scroll', handleScroll)

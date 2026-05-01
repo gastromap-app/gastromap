@@ -174,8 +174,9 @@ const DashboardPage = () => {
         if (!geoLat || !geoLng) return []
         return filteredLocations
             .map(loc => ({ ...loc, _dist: calculateDistance(geoLat, geoLng, loc.lat, loc.lng) }))
-            .filter(l => l._dist < 10)
+            .filter(l => l._dist < 1)
             .sort((a, b) => a._dist - b._dist)
+            .slice(0, 10)
     }, [filteredLocations, geoLat, geoLng])
 
     // ── Missing variables for mobile & desktop layouts ──────────────────────
@@ -600,7 +601,7 @@ const DesktopDashboard = ({
                             </div>
                         ) : nearbyLocations.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {nearbyLocations.slice(0, 3).map((item) => (
+                                {nearbyLocations.map((item) => (
                                     <DesktopCard
                                         key={item.id}
                                         item={item}

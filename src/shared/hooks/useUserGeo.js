@@ -13,6 +13,8 @@
  */
 import { useCallback, useEffect } from 'react'
 import { useGeoStore } from '@/shared/store/useGeoStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
+import { trackUserLocation } from '@/shared/api/user.api'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
 
@@ -45,8 +47,9 @@ async function reverseGeocode(lat, lng) {
  * @param {{ autoRequest?: boolean }} [options]
  */
 export function useUserGeo({ autoRequest = false } = {}) {
-    const { lat, lng, city, country, address, status, error, setCoords, setLocation, setStatus, setError } =
+    const { lat, lng, city, country, address, status, error, setCoords, setLocation, setStatus, setError, setVisitData } =
         useGeoStore()
+    const { user } = useAuthStore()
 
     const requestGeo = useCallback(() => {
         if (status === 'loading' || status === 'granted') return
@@ -68,6 +71,21 @@ export function useUserGeo({ autoRequest = false } = {}) {
                     const location = await reverseGeocode(latitude, longitude)
                     setLocation(location)
                     console.log(`[GeoLocation] User city detected: ${location.city}, ${location.country}`)
+
+                    // Track location in history if user is authenticated
+                    if (user?.id && location.city && location.city !== 'Unknown') {
+                        trackUserLocation(user.id, location.city, location.country)
+                            .then(data => {
+                                if (data) {
+                                    console.log(`[GeoLocation] Location history updated. Visit count: ${data.visit_count}`)
+                                    setVisitData({ 
+                                        visitCount: data.visit_count, 
+                                        lastVisitedAt: data.last_visited_at 
+                                    })
+                                }
+                            })
+                            .catch(err => console.error('[GeoLocation] Failed to track location history:', err))
+                    }
                 } catch (err) {
                     console.warn('[GeoLocation] Reverse geocoding failed:', err.message)
                     // Don't fail the whole flow — coords are still available

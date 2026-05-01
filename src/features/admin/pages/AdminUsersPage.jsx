@@ -4,7 +4,7 @@ import {
     Mail, Shield, Calendar, ChevronRight, X,
     ArrowUpRight, Clock, Star, MapPin, Building2, Zap,
     CheckCircle2, Ban, KeyRound, ChevronDown, Heart,
-    UtensilsCrossed, Wallet, Leaf, AlertCircle
+    UtensilsCrossed, Wallet, Leaf, AlertCircle, History
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,7 +14,8 @@ import {
     useProfiles,
     useUpdateProfileRoleMutation,
     useUpdateUserStatusMutation,
-    useUserDetails
+    useUserDetails,
+    useUserLocationHistory
 } from '@/shared/api/queries'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
@@ -49,6 +50,7 @@ const AdminUsersPage = () => {
 
     const { data: profiles = [], isLoading: loadingProfiles } = useProfiles()
     const { data: userDetails, isLoading: loadingUserDetails } = useUserDetails(selectedUser?.id)
+    const { data: locationHistory, isLoading: loadingHistory } = useUserLocationHistory(selectedUser?.id)
     const updateProfileRole = useUpdateProfileRoleMutation()
     const updateStatus = useUpdateUserStatusMutation()
     const { user: currentUser } = useAuthStore()
@@ -534,57 +536,102 @@ const AdminUsersPage = () => {
                                     <div className="py-6 text-center text-slate-400 text-sm font-semibold">Loading details...</div>
                                 ) : (
                                     <>
-                                        {/* DNA Preferences */}
-                                        <div className="space-y-4">
+                                                              <div className="space-y-4">
                                             <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
                                                 <UtensilsCrossed size={12} /> DNA Preferences
                                             </h4>
-                                            {(!preferences.favorite_cuisines?.length && !preferences.vibe_preference?.length && !preferences.price_range?.length && !preferences.dietary_restrictions?.length) ? (
+                                            {(!preferences.favorite_cuisines?.length && !preferences.vibe_preference?.length && !preferences.price_range?.length && !preferences.dietary_restrictions?.length && !preferences.foodie_dna) ? (
                                                 <div className="text-[13px] font-medium text-slate-400 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                     No preferences configured
                                                 </div>
                                             ) : (
-                                                <div className="space-y-4 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
-                                                    {preferences.favorite_cuisines?.length > 0 && (
-                                                        <div>
-                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Favorite Cuisines</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {preferences.favorite_cuisines.map((c, i) => (
-                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold">{c}</span>
-                                                                ))}
-                                                            </div>
+                                                <div className="space-y-6 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[32px] p-6 border border-slate-100 dark:border-white/[0.03]">
+                                                    {preferences.foodie_dna && (
+                                                        <div className="p-4 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
+                                                            <p className="text-[10px] font-bold uppercase text-indigo-500 tracking-widest mb-2 flex items-center gap-2">
+                                                                <Zap size={10} /> AI Foodie DNA
+                                                            </p>
+                                                            <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                                                                "{preferences.foodie_dna}"
+                                                            </p>
                                                         </div>
                                                     )}
-                                                    {preferences.vibe_preference?.length > 0 && (
-                                                        <div>
-                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Vibe Preferences</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {preferences.vibe_preference.map((v, i) => (
-                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-bold">{v}</span>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        {preferences.favorite_cuisines?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Favorite Cuisines</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {preferences.favorite_cuisines.map((c, i) => (
+                                                                        <span key={i} className="px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold">{c}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {preferences.vibe_preference?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Vibe Preferences</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {preferences.vibe_preference.map((v, i) => (
+                                                                        <span key={i} className="px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-bold">{v}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {preferences.price_range?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Price Range</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {preferences.price_range.map((p, i) => (
+                                                                        <span key={i} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">{p}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {preferences.dietary_restrictions?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Dietary Restrictions</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {preferences.dietary_restrictions.map((d, i) => (
+                                                                        <span key={i} className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold">{d}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2 mb-4">
+                                                            <History size={12} /> Location History
+                                                        </h4>
+                                                        {loadingHistory ? (
+                                                            <div className="py-4 text-center text-slate-400 text-xs italic">Loading history...</div>
+                                                        ) : !locationHistory?.length ? (
+                                                            <div className="text-[13px] font-medium text-slate-400 bg-slate-100/50 dark:bg-white/[0.02] rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
+                                                                No location history recorded
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2 bg-slate-100/50 dark:bg-white/[0.02] rounded-2xl p-4 border border-slate-100 dark:border-white/[0.03] max-h-60 overflow-y-auto custom-scrollbar">
+                                                                {locationHistory.map((h, i) => (
+                                                                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-200/50 dark:border-white/[0.03] last:border-0">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-white/[0.05] flex items-center justify-center text-slate-400">
+                                                                                <MapPin size={14} />
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-[12px] font-bold text-slate-700 dark:text-slate-200">{h.city}</p>
+                                                                                <p className="text-[10px] text-slate-400">{h.country}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <p className="text-[11px] font-bold text-indigo-500">{h.visit_count} visits</p>
+                                                                            <p className="text-[9px] text-slate-400 font-medium">{formatDate(h.last_visited_at)}</p>
+                                                                        </div>
+                                                                    </div>
                                                                 ))}
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                    {preferences.price_range?.length > 0 && (
-                                                        <div>
-                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Price Range</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {preferences.price_range.map((p, i) => (
-                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">{p}</span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {preferences.dietary_restrictions?.length > 0 && (
-                                                        <div>
-                                                            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Dietary Restrictions</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {preferences.dietary_restrictions.map((d, i) => (
-                                                                    <span key={i} className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold">{d}</span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -636,6 +683,47 @@ const AdminUsersPage = () => {
                                                 {favorites.length === 0 && (
                                                     <p className="text-[13px] font-medium text-slate-400 mt-3">No favorites yet</p>
                                                 )}
+                                            </div>
+                                        </div>
+
+                                        {/* Location History (Admin Only) */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                                <MapPin size={12} className="text-indigo-500" /> Location History (Admin View)
+                                            </h4>
+                                            <div className="bg-white dark:bg-[hsl(220,20%,9%)]/50 rounded-3xl p-6 border border-slate-100 dark:border-white/[0.06] shadow-sm">
+                                                {loadingHistory ? (
+                                                    <div className="py-4 text-center text-slate-400 text-xs">Loading history...</div>
+                                                ) : !locationHistory?.length ? (
+                                                    <div className="py-4 text-center text-slate-400 text-xs">No locations tracked yet</div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {locationHistory.map((h, i) => (
+                                                            <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-transparent hover:border-indigo-500/10 transition-all">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                                                        <Building2 size={14} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[13px] font-bold text-slate-900 dark:text-white leading-none">{h.city}</p>
+                                                                        <p className="text-[10px] text-slate-400 mt-1">{h.country || 'Unknown Country'}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <div className="flex items-center gap-1 justify-end">
+                                                                        <span className="text-[13px] font-black text-indigo-600 dark:text-indigo-400">{h.visit_count}</span>
+                                                                        <span className="text-[9px] font-bold uppercase text-slate-400">visits</span>
+                                                                    </div>
+                                                                    <p className="text-[9px] text-slate-400 mt-0.5">Last: {formatDate(h.last_visited_at)}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/[0.04] flex items-center gap-2">
+                                                    <Shield size={10} className="text-amber-500" />
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">This data is only visible to admins</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </>

@@ -8,9 +8,11 @@ import { Sparkles } from 'lucide-react'
 import AuroraBackground from '@/components/ui/aurora-background'
 import { useTheme } from '@/hooks/useTheme'
 import { useAIChatStore } from '@/shared/store/useAIChatStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 export function MainLayout() {
     const { theme } = useTheme()
+    const { user } = useAuthStore()
     const { isChatOpen, setIsChatOpen } = useAIChatStore()
     const location = useLocation()
     const isMap = location.pathname === '/map'
@@ -45,7 +47,7 @@ export function MainLayout() {
                     </Button>
                 )}
 
-                {!isAIGuide && !isLocationDetail && <GastroGuideChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
+                {!isAIGuide && !isLocationDetail && <GastroGuideChat key={user?.id || 'guest'} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
             </div>
         </AuroraBackground>
     )

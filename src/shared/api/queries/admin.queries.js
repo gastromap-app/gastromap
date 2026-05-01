@@ -83,6 +83,18 @@ export function useUserDetails(userId) {
     })
 }
 
+export function useUserLocationHistory(userId) {
+    return useQuery({
+        queryKey: queryKeys.user.locationHistory(userId),
+        queryFn: async () => {
+            const { getUserLocationHistory } = await import('../user.api')
+            return getUserLocationHistory(userId)
+        },
+        enabled: !!userId,
+        staleTime: 60_000, // History doesn't change often
+    })
+}
+
 // ─── Moderation ─────────────────────────────────────────────────────────────
 
 export function usePendingReviews() {

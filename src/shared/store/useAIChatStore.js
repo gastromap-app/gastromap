@@ -48,6 +48,7 @@ export const useAIChatStore = create(
             isTyping: false,       // assistant is generating
             error: null,
             sessionId: null,
+            userId: null,         // Track which user this history belongs to
             isChatOpen: false,    // UI visibility state
             lastScrollY: 0,       // Persist scroll position for restoration
 
@@ -61,8 +62,9 @@ export const useAIChatStore = create(
 
             toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
 
-            loadHistory: (sessionId, messages) => set({
+            loadHistory: (sessionId, messages, userId) => set({
                 sessionId,
+                userId,
                 messages: (messages || []).map(normalizeMessage),
             }),
 
@@ -128,7 +130,7 @@ export const useAIChatStore = create(
 
             clearError: () => set({ error: null }),
 
-            clearHistory: () => set({ messages: [], error: null, sessionId: null }),
+            clearHistory: () => set({ messages: [], error: null, sessionId: null, userId: null }),
 
             /**
              * Keep only the last N messages to avoid hitting context limits.
@@ -148,6 +150,7 @@ export const useAIChatStore = create(
             partialize: (state) => ({ 
                 messages: state.messages, 
                 sessionId: state.sessionId,
+                userId: state.userId,
                 isChatOpen: state.isChatOpen,
                 lastScrollY: state.lastScrollY
             }),

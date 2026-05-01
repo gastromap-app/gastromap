@@ -147,6 +147,7 @@
   },
   "dashboard": {
     "welcome": "Вітаємо, {{name}}!",
+    "welcome_back": "Привіт, {{name}}! Раді бачити тебе знову в {{city}}!",
     "quick_stats": "Швидка статистика",
     "recent_activity": "Остання активність",
     "greeting_morning": "Доброго ранку",

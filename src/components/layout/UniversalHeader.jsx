@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal, LogOut } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
@@ -12,7 +12,7 @@ import { useUIStore } from '@/shared/store/useUIStore'
 export function UniversalHeader() {
     const { t } = useTranslation()
     const { theme, toggleTheme } = useTheme()
-    const { user: authUser } = useAuthStore()
+    const { user: authUser, logout } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
     const { isHeaderScrolled: storeIsScrolled, setHeaderScrolled } = useUIStore()
     const user = authUser || null
@@ -115,6 +115,18 @@ export function UniversalHeader() {
                                     <LanguageSelector className="" />
                                 </div>
 
+                                {/* Desktop Sign Out */}
+                                <button
+                                    onClick={async () => {
+                                        await logout();
+                                        window.location.href = '/login';
+                                    }}
+                                    className={`hidden sm:flex items-center gap-2 p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle} text-red-500 hover:bg-red-500/10`}
+                                    title={t('profile.sign_out')}
+                                >
+                                    <LogOut size={18} />
+                                </button>
+
                                 {/* Mobile overflow menu */}
                                 <div className="relative sm:hidden" ref={menuRef}>
                                     <button
@@ -161,6 +173,18 @@ export function UniversalHeader() {
                                                     </button>
                                                 )}
                                                 <LanguageSelector variant="menuItem" isDark={isDark} />
+                                                <div className={`h-px my-1 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                                                <button
+                                                    onClick={async () => {
+                                                        setIsMenuOpen(false);
+                                                        await logout();
+                                                        window.location.href = '/login';
+                                                    }}
+                                                    className={`w-full min-h-11 flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 ${isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}
+                                                >
+                                                    <LogOut size={18} />
+                                                    {t('profile.sign_out')}
+                                                </button>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

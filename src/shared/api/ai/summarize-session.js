@@ -22,7 +22,7 @@ const SUMMARIZE_THRESHOLD = 15 // Only summarize when there are 15+ messages
  * Returns a concise paragraph with key preferences, mentioned locations, and open threads.
  *
  * @param {Array} messages - Full message objects from the store
- * @returns {Promise<string|null>} Summary text, or null if failed
+ * @returns {Promise<{summary: string, foodieDNA: string}|null>} Summary data, or null if failed
  */
 async function generateSummary(messages) {
     if (!messages?.length) return null
@@ -40,29 +40,39 @@ async function generateSummary(messages) {
         .join('\n')
 
     const systemPrompt = `You are a concise summarizer for a food/restaurant chatbot conversation.
-Produce a short paragraph (2-4 sentences) capturing:
-  1. The user's preferences and dietary restrictions mentioned.
-  2. Specific locations discussed (with names).
-  3. Any open questions or unresolved needs.
-  4. The language the user spoke (ru/en/pl/ua).
-Output ONLY the summary paragraph, no preamble.`
+Analyze the conversation and extract:
+1. A short summary paragraph (2-4 sentences) capturing key preferences, mentioned locations, and open threads.
+2. "Foodie DNA": A comma-separated list of the user's PERMANENT food preferences, dietary restrictions, favorite cuisines, and vibes they like. Focus on what we learned about the user themselves.
+
+IMPORTANT: Output your response ONLY as a valid JSON object with these keys: "summary", "foodieDNA".
+No preamble, no markdown blocks, just the raw JSON.`
 
     try {
         const { response } = await fetchOpenRouter(
             [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Summarize this conversation:\n\n${transcript}` },
+                { role: 'user', content: `Summarize this conversation and extract DNA:\n\n${transcript}` },
             ],
             {
                 stream: false,
                 withTools: false,
                 temperature: 0.3,
-                maxTokens: 256,
+                maxTokens: 512,
                 cascade: MODEL_CASCADE,
             }
         )
         const data = await response.json()
-        return data.choices?.[0]?.message?.content?.trim() || null
+        const content = data.choices?.[0]?.message?.content?.trim() || null
+        if (!content) return null
+
+        try {
+            // Support both raw JSON and json-markdown-wrapped responses
+            const jsonStr = content.replace(/^```json\s*|```$/g, '').trim()
+            return JSON.parse(jsonStr)
+        } catch (e) {
+            console.warn('[summarize] Failed to parse JSON from LLM:', e.message)
+            return { summary: content, foodieDNA: '' }
+        }
     } catch (err) {
         console.warn('[summarize] LLM summary generation failed:', err.message)
         return null
@@ -75,14 +85,16 @@ Output ONLY the summary paragraph, no preamble.`
  *
  * @param {string} sessionId - Chat session UUID
  * @param {Array} messages - Full message objects from the store
- * @returns {Promise<{ summary: string|null, skipped: boolean }>}
+ * @returns {Promise<{ summary: string|null, foodieDNA: string|null, skipped: boolean }>}
  */
 export async function summarizeSession(sessionId, messages, userId = null) {
-    if (!supabase || !sessionId) return { summary: null, skipped: true }
-    if (!messages || messages.length < SUMMARIZE_THRESHOLD) return { summary: null, skipped: true }
+    if (!supabase || !sessionId) return { summary: null, foodieDNA: null, skipped: true }
+    if (!messages || messages.length < SUMMARIZE_THRESHOLD) return { summary: null, foodieDNA: null, skipped: true }
 
-    const summaryText = await generateSummary(messages)
-    if (!summaryText) return { summary: null, skipped: false }
+    const result = await generateSummary(messages)
+    if (!result) return { summary: null, foodieDNA: null, skipped: false }
+
+    const { summary: summaryText, foodieDNA } = result
 
     try {
         const { error } = await supabase
@@ -91,6 +103,7 @@ export async function summarizeSession(sessionId, messages, userId = null) {
                 session_id: sessionId,
                 user_id: userId,
                 summary: summaryText,
+                foodie_dna: foodieDNA, // Store extracted DNA in history too
                 covers_up_to: new Date().toISOString(),
                 messages_covered: messages.length,
                 updated_at: new Date().toISOString(),
@@ -103,7 +116,7 @@ export async function summarizeSession(sessionId, messages, userId = null) {
         console.warn('[summarize] DB error:', err.message)
     }
 
-    return { summary: summaryText, skipped: false }
+    return { summary: summaryText, foodieDNA, skipped: false }
 }
 
 /**

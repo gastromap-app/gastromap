@@ -22,6 +22,10 @@ export const useGeoStore = create((set) => ({
     country: null,
     address: null,
 
+    // Visit statistics for the current city
+    visitCount: 0,
+    lastVisitedAt: null,
+
     // Status
     status: 'idle', // 'idle' | 'loading' | 'granted' | 'denied' | 'error'
     error: null,
@@ -35,6 +39,8 @@ export const useGeoStore = create((set) => ({
 
     setStatus: (status) => set({ status }),
     setError: (error) => set({ error, status: 'error' }),
+    
+    setVisitData: ({ visitCount, lastVisitedAt }) => set({ visitCount, lastVisitedAt }),
 
     reset: () => {
         sessionStorage.removeItem(SESSION_KEY)

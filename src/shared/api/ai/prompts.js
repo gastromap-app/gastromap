@@ -55,6 +55,8 @@ ${geoLine}
 - Foodie DNA (Taste Profile): ${userData.foodieDNA || 'Developing taste profile'}
 - Past Experiences & Reviews:
 ${userData.userExperience || 'No direct review history yet.'}
+- Location History (Cities Visited):
+${userData.locationHistory?.length ? userData.locationHistory.map(h => `  * ${h.city}${h.country ? `, ${h.country}` : ''}: ${h.visits} visits (last: ${new Date(h.lastVisited).toLocaleDateString()})`).join('\n') : '  * No location history yet.'}
 - Recent Search Interests: ${userData.recentInterests?.join(', ') || 'General explorer'}
 ` : ''
 

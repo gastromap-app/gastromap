@@ -13,6 +13,7 @@ import { summarizeSession } from '@/shared/api/ai/summarize-session'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { useEffect } from 'react'
 import { useGeoStore } from '@/shared/store/useGeoStore'
+import { getUserLocationHistory } from '@/shared/api/user.api'
 
 
 /**
@@ -69,18 +70,35 @@ export function useAIChat() {
     useEffect(() => {
         let mounted = true;
         if (user?.id) {
+            // Isolation check: if the local storage belongs to another user (or no user), clear it immediately
+            const state = useAIChatStore.getState();
+            if (state.userId !== user.id) {
+                console.log('[AI Guide] User mismatch or missing ID in chat store, clearing history for isolation');
+                clearHistory();
+                // Stamp it immediately so the next check passes
+                useAIChatStore.setState({ userId: user.id });
+            }
+
             fetchChatHistory(user.id).then(history => {
-                if (mounted && history?.sessionId) {
-                    const currentMessages = useAIChatStore.getState().messages;
-                    // Overwrite if local is empty or we have a different session
-                    if (currentMessages.length === 0 || useAIChatStore.getState().sessionId !== history.sessionId) {
-                        loadHistory(history.sessionId, history.messages);
+                if (mounted) {
+                    if (history?.sessionId) {
+                        const currentMessages = useAIChatStore.getState().messages;
+                        // Overwrite if local is empty or we have a different session
+                        if (currentMessages.length === 0 || useAIChatStore.getState().sessionId !== history.sessionId) {
+                            loadHistory(history.sessionId, history.messages, user.id);
+                        }
+                    } else {
+                        // If no history found on server, ensure store is stamped with current user
+                        useAIChatStore.setState({ userId: user.id });
                     }
                 }
             }).catch(err => console.error('Failed to load chat history', err));
+        } else if (!user) {
+            // If logged out, clear history
+            clearHistory();
         }
         return () => { mounted = false };
-    }, [user?.id, loadHistory]);
+    }, [user?.id, loadHistory, clearHistory]);
 
 const MAX_CHAT_INPUT_LENGTH = 3000
 
@@ -97,8 +115,10 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         if (user?.id && !currentSessionId) {
             const session = await createChatSession(user.id);
             if (session) {
+                setSessionId(session.id);
                 currentSessionId = session.id;
-                setSessionId(currentSessionId);
+                // Ensure userId is stamped in the store for isolation
+                useAIChatStore.setState({ userId: user.id });
             }
         }
         if (user?.id && currentSessionId) {
@@ -108,18 +128,31 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         // Build conversation history for multi-turn context (rolling window of last 10 turns)
         // (history variable removed — context.history uses messages.slice(-10) directly)
 
-        // Fetch user reviews for deep personalization if authenticated
+        // Fetch user reviews and location history for deep personalization if authenticated
         let userExperience = []
+        let locationHistory = []
         if (user?.id) {
             try {
-                const reviews = await getUserReviews(user.id)
+                // Run in parallel for speed
+                const [reviews, history] = await Promise.all([
+                    getUserReviews(user.id).catch(() => []),
+                    getUserLocationHistory(user.id).catch(() => [])
+                ])
+                
                 userExperience = reviews.map(r => ({
                     location: r.locations?.title,
                     rating: r.rating,
                     text: r.review_text?.slice(0, 100) // Keep it concise for prompt
                 }))
+
+                locationHistory = history.map(h => ({
+                    city: h.city,
+                    country: h.country,
+                    visits: h.visit_count,
+                    lastVisited: h.last_visited_at
+                }))
             } catch {
-                console.warn('[useAIChat] Failed to fetch user reviews for context')
+                console.warn('[useAIChat] Failed to fetch personalization data (reviews/history)')
             }
         }
 
@@ -133,6 +166,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 .map(l => l.title),
             recentInterests: prefs.frequentSearches || [],
             userExperience,
+            locationHistory, // New: injected into the prompt via buildSystemPrompt
             foodieDNA: prefs.foodieDNA || '',
             // Geolocation context — filled when user grants browser permission
             userCity: userCity || null,
@@ -254,8 +288,15 @@ const MAX_CHAT_INPUT_LENGTH = 3000
             // Fire-and-forget: summarize session when it grows large.
             const currentMessages = useAIChatStore.getState().messages
             const activeSessionId = useAIChatStore.getState().sessionId
-            if (activeSessionId && currentMessages.length >= 15) {
-                summarizeSession(activeSessionId, currentMessages, user?.id || null).catch(() => {})
+            if (activeSessionId && currentMessages.length >= 10 && user?.id) {
+                summarizeSession(activeSessionId, currentMessages, user.id).then(res => {
+                    if (res && res.foodieDNA) {
+                        // Sync to local store AND Supabase
+                        const { updatePrefs } = useUserPrefsStore.getState();
+                        updatePrefs({ foodie_dna: res.foodieDNA });
+                        console.log('GastroGuide: Syncing updated Foodie DNA to preferences');
+                    }
+                }).catch(e => console.error('GastroGuide: Session summary failed', e));
             }
         } catch (err) {
             setError(err.message ?? t('ai.response_failed'))

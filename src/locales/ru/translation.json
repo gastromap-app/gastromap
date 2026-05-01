@@ -163,7 +163,8 @@
     "sign_in": "Войти"
   },
   "dashboard": {
-    "welcome": "Приветствуем, {{name}}!",
+    "welcome": "Добро пожаловать, {{name}}!",
+    "welcome_back": "Привет, {{name}}! Рады видеть тебя снова в {{city}}!",
     "quick_stats": "Быстрая статистика",
     "recent_activity": "Последняя активность",
     "greeting_morning": "Доброе утро",

@@ -41,6 +41,7 @@ async function syncToSupabase(prefs) {
                     vibe_preferences:     prefs.vibePreference    || [],
                     dietary_restrictions: prefs.dietaryRestrictions || [],
                     price_range:     prefs.priceRange?.length ? prefs.priceRange[0] : null,
+                    foodie_dna:      prefs.foodieDNA || '',
                     last_updated:    new Date().toISOString(),
                 }, { onConflict: 'user_id' })
         ])
@@ -114,7 +115,7 @@ export const useUserPrefsStore = create(
                     // Fetch from both profiles (new source of truth) and user_preferences (legacy)
                     const [profileRes, prefsRes] = await Promise.all([
                         supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
-                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range').eq('user_id', userId).maybeSingle()
+                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna').eq('user_id', userId).maybeSingle()
                     ])
 
                     // If we get a 400, the table or column is probably missing — ignore and use local
@@ -137,6 +138,7 @@ export const useUserPrefsStore = create(
                                 vibePreference:      up?.vibe_preferences       || state.prefs.vibePreference,
                                 dietaryRestrictions: up?.dietary_restrictions   || state.prefs.dietaryRestrictions,
                                 priceRange:          up?.price_range ? [up.price_range] : state.prefs.priceRange,
+                                foodieDNA:           up?.foodie_dna           || state.prefs.foodieDNA,
                             },
                         }))
                         return !!onboardingCompleted

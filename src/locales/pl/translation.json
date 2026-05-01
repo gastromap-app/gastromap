@@ -147,6 +147,7 @@
   },
   "dashboard": {
     "welcome": "Witaj, {{name}}!",
+    "welcome_back": "Cześć, {{name}}! Miło Cię widzieć ponownie w {{city}}!",
     "quick_stats": "Szybkie statystyki",
     "recent_activity": "Ostatnia aktywność",
     "greeting_morning": "Dzień dobry",

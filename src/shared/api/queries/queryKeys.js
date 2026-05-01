@@ -48,6 +48,7 @@ export const queryKeys = {
     // ─── User & Preferences ───
     user: {
         preferences: (userId) => ['user-preferences', userId],
+        locationHistory: (userId) => ['user-location-history', userId],
     },
 
     // ─── AI & Knowledge Graph ───

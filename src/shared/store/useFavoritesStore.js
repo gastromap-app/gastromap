@@ -16,7 +16,9 @@ export const useFavoritesStore = create(
                 }
             },
 
-            isFavorite: (id) => get().favoriteIds.includes(id)
+            isFavorite: (id) => get().favoriteIds.includes(id),
+
+            reset: () => set({ favoriteIds: [] })
         }),
         {
             name: 'favorites-storage', // unique name

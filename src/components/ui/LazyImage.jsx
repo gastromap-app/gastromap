@@ -21,10 +21,12 @@ export function LazyImage({
     wrapperClassName,
     rootMargin = '200px',
     transform = { width: 800, quality: 80 }, // Default transformations
+    priority = false,
     ...rest
 }) {
     const wrapperRef = useRef(null)
-    const [isVisible, setIsVisible] = useState(false)
+    // Start visible immediately if priority is set (LCP images)
+    const [isVisible, setIsVisible] = useState(priority)
     const [isLoaded, setIsLoaded] = useState(false)
     const [hasError, setHasError] = useState(false)
 
@@ -80,7 +82,7 @@ export function LazyImage({
 
         observer.observe(el)
         return () => observer.disconnect()
-    }, [rootMargin, src])
+    }, [rootMargin, src, priority])
 
     return (
         <div ref={wrapperRef} className={cn('relative w-full h-full overflow-hidden', wrapperClassName)}>

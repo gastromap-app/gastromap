@@ -5,22 +5,40 @@
  * Populated by useUserGeo hook once (on first request), then
  * accessible by both the Map AND the AI Chat without re-requesting.
  *
- * City is cached in sessionStorage so we don't hit the geocoding
- * API on every page refresh (coordinates are re-fetched each session).
+ * City is cached in localStorage with a 7-day TTL so we don't hit
+ * the geocoding API on every page refresh.
  */
 import { create } from 'zustand'
 
-const SESSION_KEY = 'gastro_user_city'
+const CACHE_KEY = 'gastro_geo_cache'
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+function getCachedGeo() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        if (!parsed.timestamp || Date.now() - parsed.timestamp > CACHE_TTL_MS) {
+            localStorage.removeItem(CACHE_KEY)
+            return null
+        }
+        return parsed
+    } catch {
+        return null
+    }
+}
+
+const cached = getCachedGeo()
 
 export const useGeoStore = create((set) => ({
     // Coordinates
-    lat: null,
-    lng: null,
+    lat: cached?.lat ?? null,
+    lng: cached?.lng ?? null,
 
     // Reverse-geocoded location
-    city: sessionStorage.getItem(SESSION_KEY) || null,
-    country: null,
-    address: null,
+    city: cached?.city ?? null,
+    country: cached?.country ?? null,
+    address: cached?.address ?? null,
 
     // Visit statistics for the current city
     visitCount: 0,
@@ -32,18 +50,21 @@ export const useGeoStore = create((set) => ({
 
     setCoords: (lat, lng) => set({ lat, lng }),
 
-    setLocation: ({ city, country, address }) => {
-        if (city) sessionStorage.setItem(SESSION_KEY, city)
-        set({ city, country, address })
+    setLocation: ({ city, country, address, lat, lng }) => {
+        if (city) {
+            const cache = { city, country, address, lat, lng, timestamp: Date.now() }
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache))
+        }
+        set({ city, country, address, lat, lng })
     },
 
     setStatus: (status) => set({ status }),
     setError: (error) => set({ error, status: 'error' }),
-    
+
     setVisitData: ({ visitCount, lastVisitedAt }) => set({ visitCount, lastVisitedAt }),
 
     reset: () => {
-        sessionStorage.removeItem(SESSION_KEY)
+        localStorage.removeItem(CACHE_KEY)
         set({ lat: null, lng: null, city: null, country: null, address: null, status: 'idle', error: null })
     },
 }))

@@ -44,7 +44,7 @@ export function LocationCardDesktopSkeleton({ isDark }) {
 export function LocationCardMobileSkeleton({ isDark }) {
     return (
         <div className={cn(
-            'flex flex-col rounded-2xl overflow-hidden border animate-pulse',
+            'flex flex-col rounded-2xl overflow-hidden border',
             isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-slate-200/50'
         )}>
             <Skeleton className="h-28 w-full rounded-none" />
@@ -86,11 +86,11 @@ export function CityCardSkeleton({ desktop = false }) {
             'relative overflow-hidden rounded-[28px]',
             desktop ? 'h-64 rounded-[32px]' : 'h-48'
         )}>
-            <Skeleton className="absolute inset-0 rounded-none" />
+            <Skeleton className="absolute inset-0 rounded-none dark:bg-[hsl(220,20%,12%)]" />
             {/* Simulate text overlay at the bottom */}
             <div className="absolute bottom-5 left-6 space-y-2">
-                <Skeleton className="h-6 w-32 rounded-xl bg-white/20" />
-                <Skeleton className="h-4 w-20 rounded-xl bg-white/10" />
+                <Skeleton className="h-6 w-32 rounded-xl bg-white/40 dark:bg-white/20" />
+                <Skeleton className="h-4 w-20 rounded-xl bg-white/25 dark:bg-white/10" />
             </div>
         </div>
     )

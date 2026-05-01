@@ -36,6 +36,52 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
     },
   },
+  // Architecture boundary: features may NOT import from other features.
+  // Each feature is isolated; shared code lives in src/shared/ or src/lib/.
+  {
+    files: ['src/features/admin/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['warn', {
+        patterns: [{
+          group: ['@/features/auth/**', '@/features/dashboard/**', '@/features/public/**'],
+          message: 'Cross-feature imports are forbidden. Move shared code to src/shared/ or src/lib/.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/features/auth/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['warn', {
+        patterns: [{
+          group: ['@/features/admin/**', '@/features/dashboard/**', '@/features/public/**'],
+          message: 'Cross-feature imports are forbidden. Move shared code to src/shared/ or src/lib/.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/features/dashboard/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['warn', {
+        patterns: [{
+          group: ['@/features/admin/**', '@/features/auth/**', '@/features/public/**'],
+          message: 'Cross-feature imports are forbidden. Move shared code to src/shared/ or src/lib/.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/features/public/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['warn', {
+        patterns: [{
+          group: ['@/features/admin/**', '@/features/auth/**', '@/features/dashboard/**'],
+          message: 'Cross-feature imports are forbidden. Move shared code to src/shared/ or src/lib/.',
+        }],
+      }],
+    },
+  },
   // Test files: relax certain rules that are common patterns in tests
   {
     files: ['**/*.test.{js,jsx}', '**/__tests__/**/*.{js,jsx}'],

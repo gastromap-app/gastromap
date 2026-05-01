@@ -17,6 +17,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { trackUserLocation } from '@/shared/api/user.api'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
+const IP_API_URL = 'https://ipapi.co/json/'
 
 /**
  * Reverse geocode lat/lng to a human-readable location using Nominatim.
@@ -44,6 +45,28 @@ async function reverseGeocode(lat, lng) {
 }
 
 /**
+ * Fallback geolocation using IP address (free, no API key).
+ * @returns {Promise<{lat: number, lng: number, city: string, country: string, address: string}>}
+ */
+async function fetchGeoByIP() {
+    const res = await fetch(IP_API_URL, {
+        headers: { 'User-Agent': 'GastroMapApp/1.0' },
+    })
+    if (!res.ok) throw new Error('IP geolocation request failed')
+    const data = await res.json()
+
+    const city = data.city || data.region || 'Unknown'
+    const country = data.country_name || ''
+    return {
+        lat: data.latitude,
+        lng: data.longitude,
+        city,
+        country,
+        address: `${city}, ${country}`,
+    }
+}
+
+/**
  * @param {{ autoRequest?: boolean }} [options]
  */
 export function useUserGeo({ autoRequest = false } = {}) {
@@ -51,71 +74,84 @@ export function useUserGeo({ autoRequest = false } = {}) {
         useGeoStore()
     const { user } = useAuthStore()
 
-    const requestGeo = useCallback(() => {
+    const requestGeo = useCallback(async () => {
         if (status === 'loading' || status === 'granted') return
-        if (!navigator.geolocation) {
-            setError('Geolocation is not supported by this browser')
-            return
-        }
 
         setStatus('loading')
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords
-                setCoords(latitude, longitude)
-                setStatus('granted')
+        // Helper to finalize location and track history
+        const finalizeLocation = async (latitude, longitude, location) => {
+            setCoords(latitude, longitude)
+            setLocation({ ...location, lat: latitude, lng: longitude })
+            setStatus('granted')
 
-                // Reverse geocode to get human-readable city name
+            if (user?.id && location.city && location.city !== 'Unknown') {
                 try {
-                    const location = await reverseGeocode(latitude, longitude)
-                    setLocation(location)
-                    console.log(`[GeoLocation] User city detected: ${location.city}, ${location.country}`)
-
-                    // Track location in history if user is authenticated
-                    if (user?.id && location.city && location.city !== 'Unknown') {
-                        trackUserLocation(user.id, location.city, location.country)
-                            .then(data => {
-                                if (data) {
-                                    console.log(`[GeoLocation] Location history updated. Visit count: ${data.visit_count}`)
-                                    setVisitData({ 
-                                        visitCount: data.visit_count, 
-                                        lastVisitedAt: data.last_visited_at 
-                                    })
-                                }
-                            })
-                            .catch(err => console.error('[GeoLocation] Failed to track location history:', err))
+                    const data = await trackUserLocation(user.id, location.city, location.country)
+                    if (data) {
+                        setVisitData({
+                            visitCount: data.visit_count,
+                            lastVisitedAt: data.last_visited_at,
+                        })
                     }
-                } catch (err) {
-                    console.warn('[GeoLocation] Reverse geocoding failed:', err.message)
-                    // Don't fail the whole flow — coords are still available
-                    setLocation({ city: 'Unknown', country: null, address: 'Near your current position' })
+                } catch {
+                    // Silently ignore tracking errors — they shouldn't break UX
                 }
-            },
-            (err) => {
-                const messages = {
-                    1: 'Location access denied by user. Please enable in browser settings.',
-                    2: 'Location unavailable. The device could not determine your position (Check GPS/Signal).',
-                    3: 'Location request timed out. Retrying with lower accuracy...',
-                }
-                const msg = messages[err.code] || 'Unknown geolocation error'
-                console.warn(`[GeoLocation] Error ${err.code}: ${msg}`)
-                
-                // Special case: If it was a timeout, we could retry once automatically
-                if (err.code === 3 && !navigator.onLine) {
-                    setError('You are offline. Geolocation requires internet.')
-                } else {
-                    setError(msg)
-                }
-                
-                setStatus('denied')
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000, // Increase to 10s for better stability
-                maximumAge: 0, // Force fresh location
             }
-        )
+        }
+
+        // Try browser geolocation first
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords
+                    try {
+                        const location = await reverseGeocode(latitude, longitude)
+                        await finalizeLocation(latitude, longitude, location)
+                    } catch {
+                        // Reverse geocoding failed but coords are valid
+                        await finalizeLocation(latitude, longitude, {
+                            city: 'Unknown',
+                            country: null,
+                            address: 'Near your current position',
+                        })
+                    }
+                },
+                async (_err) => {
+                    // Browser geolocation failed — try IP fallback
+                    try {
+                        const ipGeo = await fetchGeoByIP()
+                        await finalizeLocation(ipGeo.lat, ipGeo.lng, {
+                            city: ipGeo.city,
+                            country: ipGeo.country,
+                            address: ipGeo.address,
+                        })
+                    } catch {
+                        const msg = 'Unable to determine your location. Please check your connection or enable location access.'
+                        setError(msg)
+                        setStatus('denied')
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0,
+                }
+            )
+        } else {
+            // No browser geolocation support — try IP fallback immediately
+            try {
+                const ipGeo = await fetchGeoByIP()
+                await finalizeLocation(ipGeo.lat, ipGeo.lng, {
+                    city: ipGeo.city,
+                    country: ipGeo.country,
+                    address: ipGeo.address,
+                })
+            } catch {
+                setError('Geolocation is not supported by this browser')
+                setStatus('denied')
+            }
+        }
     }, [status, setCoords, setLocation, setStatus, setError, user, setVisitData])
 
     // Auto-request on mount if enabled

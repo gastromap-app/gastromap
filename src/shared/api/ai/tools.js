@@ -25,6 +25,7 @@ import { semanticSearch } from './search.js'
 import { supabase } from '../client.js'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { getAIContextForQuery } from '../knowledge-graph.api.js'
+import { calculateDistance } from '@/lib/geo.js'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -42,19 +43,8 @@ function norm(str) {
 }
 
 /** Calculate distance in meters between two points using Haversine formula. */
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // metres
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // in metres
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+    return calculateDistance(lat1, lon1, lat2, lon2, 'm')
 }
 
 /** Check if a location's city matches a normalized city query. */
@@ -516,7 +506,7 @@ export async function executeTool(name, args, ctx = {}) {
             const lat = l.lat ?? l.latitude
             const lng = l.lng ?? l.longitude
             if (lat == null || lng == null) return false
-            const dist = calculateDistance(geo.lat, geo.lng, lat, lng)
+            const dist = calculateDistanceMeters(geo.lat, geo.lng, lat, lng)
             if (dist > clampedRadius) return false
             l.distance_meters = dist
             return true

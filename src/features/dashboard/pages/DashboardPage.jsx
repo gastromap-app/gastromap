@@ -24,6 +24,8 @@ import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 import CategoryFilters from '../components/CategoryFilters'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
+import { calculateDistance } from '@/lib/geo.js'
+import { LocationCardDefault, LocationCardNearby } from '@/shared/components/cards'
 import LazyImage from '@/components/ui/LazyImage'
 import ManifestoSection from '../components/ManifestoSection'
 import FilterModal from '../components/FilterModal'
@@ -32,41 +34,7 @@ const MapTab = React.lazy(() => import('../components/MapTab'))
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────
 
-// DesktopDashboard and DesktopCard are defined at the bottom of this file.
-
-const LocationCardMobile = ({ location, onClick, type }) => {
-    return (
-        <button 
-            onClick={onClick}
-            className={`flex-shrink-0 ${type === 'nearby' ? 'w-[140px]' : 'w-[240px]'} bg-white dark:bg-gray-900 rounded-[16px] overflow-hidden border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all`}
-        >
-            <div className={`h-[120px] w-full bg-gray-200 dark:bg-gray-700`}>
-                <img src={location.image} alt={location.title} className="h-full w-full object-cover" />
-            </div>
-            <div className="p-3 text-left">
-                <h3 className="font-bold text-gray-900 dark:text-white truncate text-sm">{location.title}</h3>
-                <p className="text-xs text-gray-500 truncate mt-1">{location.city}</p>
-            </div>
-        </button>
-    )
-}
-
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 999999
-    const nLat1 = Number(String(lat1).replace(',', '.'))
-    const nLon1 = Number(String(lon1).replace(',', '.'))
-    const nLat2 = Number(String(lat2).replace(',', '.'))
-    const nLon2 = Number(String(lon2).replace(',', '.'))
-    if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return 999999
-    const R = 6371 
-    const dLat = (nLat2 - nLat1) * (Math.PI / 180)
-    const dLon = (nLon2 - nLon1) * (Math.PI / 180)
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(nLat1 * (Math.PI / 180)) * Math.cos(nLat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-}
 
 const COUNTRY_IMAGES = {
     poland: 'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop',
@@ -286,7 +254,7 @@ const DashboardPage = () => {
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
                                 {nearbyLocations.map((loc) => (
                                     <div key={loc.id} className="snap-center">
-                                        <LocationCardMobile location={loc} type="nearby" onClick={() => navigate(`/location/${loc.id}`)} />
+                                        <LocationCardNearby location={loc} />
                                     </div>
                                 ))}
                             </div>
@@ -354,7 +322,7 @@ const DashboardPage = () => {
                                 : recommended.length > 0
                                     ? recommended.map((loc) => (
                                         <div key={loc.id} className="snap-center">
-                                            <LocationCardMobile location={loc} type="recommended" onClick={() => navigate(`/location/${loc.id}`)} />
+                                            <LocationCardDefault location={loc} className="flex-shrink-0 w-[240px]" imageHeight="h-[120px]" />
                                         </div>
                                     ))
                                     : (
@@ -397,7 +365,7 @@ const DashboardPage = () => {
                                 ))
                                 : trending.map((loc) => (
                                     <div key={loc.id} className="snap-center">
-                                        <LocationCardMobile location={loc} type="trending" onClick={() => navigate(`/location/${loc.id}`)} />
+                                        <LocationCardDefault location={loc} className="flex-shrink-0 w-[240px]" imageHeight="h-[120px]" />
                                     </div>
                                 ))
                             }
@@ -419,7 +387,7 @@ const DashboardPage = () => {
                             <div className="flex gap-4 overflow-x-auto pb-6 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
                                 {openNowLocations.slice(0, 5).map((loc) => (
                                     <div key={loc.id} className="snap-center">
-                                        <LocationCardMobile location={loc} type="nearby" onClick={() => navigate(`/location/${loc.id}`)} />
+                                        <LocationCardDefault location={loc} className="flex-shrink-0 w-[240px]" imageHeight="h-[120px]" />
                                     </div>
                                 ))}
                             </div>
@@ -474,10 +442,6 @@ const DesktopDashboard = ({
     recommended, trending, openNowLocations, navigate, t,
     visitCount = 0, currentCity = 'Unknown'
 }) => {
-    const cardClass = isDark
-        ? 'bg-[hsl(220,20%,6%)] border border-white/[0.06] rounded-sheet'
-        : 'bg-white border border-slate-200/50 rounded-sheet shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_28px_rgba(15,23,42,0.06)]'
-
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
@@ -602,14 +566,7 @@ const DesktopDashboard = ({
                         ) : nearbyLocations.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {nearbyLocations.map((item) => (
-                                    <DesktopCard
-                                        key={item.id}
-                                        item={item}
-                                        cardClass={cardClass}
-                                        isDark={isDark}
-                                        type="nearby"
-                                        onClick={() => navigate(`/location/${item.id}`)}
-                                    />
+                                    <LocationCardNearby key={item.id} location={item} />
                                 ))}
                             </div>
                         ) : (
@@ -670,13 +627,7 @@ const DesktopDashboard = ({
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {recommended.map((item) => (
-                                <DesktopCard
-                                    key={item.id}
-                                    item={item}
-                                    cardClass={cardClass}
-                                    isDark={isDark}
-                                    onClick={() => navigate(`/location/${item.id}`)}
-                                />
+                                <LocationCardDefault key={item.id} location={item} />
                             ))}
                         </div>
                     </motion.div>
@@ -691,14 +642,7 @@ const DesktopDashboard = ({
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {trending.map((item) => (
-                                <DesktopCard
-                                    key={item.id}
-                                    item={item}
-                                    cardClass={cardClass}
-                                    isDark={isDark}
-                                    isTrending
-                                    onClick={() => navigate(`/location/${item.id}`)}
-                                />
+                                <LocationCardDefault key={item.id} location={item} />
                             ))}
                         </div>
                     </motion.div>
@@ -717,13 +661,7 @@ const DesktopDashboard = ({
                             />
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {openNowLocations.slice(0, 3).map((item) => (
-                                    <DesktopCard
-                                        key={item.id}
-                                        item={item}
-                                        cardClass={cardClass}
-                                        isDark={isDark}
-                                        onClick={() => navigate(`/location/${item.id}`)}
-                                    />
+                                    <LocationCardDefault key={item.id} location={item} />
                                 ))}
                             </div>
                         </motion.div>
@@ -735,83 +673,6 @@ const DesktopDashboard = ({
                     </div>
                 </motion.div>
             )}
-        </div>
-    )
-}
-
-// ─── DESKTOP CARD ─────────────────────────────────────────────────────────────
-
-const DesktopCard = ({ item, cardClass, isDark, isTrending = false, type, onClick }) => {
-    const isNearby = type === 'nearby'
-
-    if (isNearby) {
-        return (
-            <div
-                onClick={onClick}
-                className={`${cardClass} flex overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200 h-[100px] border ${isDark ? 'border-white/5 bg-[#1c1c1e]' : 'border-slate-200/50 bg-white'} rounded-[16px]`}
-            >
-                <div className="relative w-[110px] shrink-0 overflow-hidden">
-                    <LocationImage
-                        src={item.image}
-                        alt={item.title}
-                        width={200}
-                        className="transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-full">
-                        <Star size={8} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-[9px] font-bold text-white">{item.rating ?? item.google_rating}</span>
-                    </div>
-                </div>
-                <div className="p-3 flex flex-col justify-center overflow-hidden w-full">
-                    <h4 className={`text-[14px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {item.title}
-                    </h4>
-                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>
-                        {String([item.cuisine, item.city].filter(Boolean).join(' · ') || item.category || '')}
-                    </p>
-                    {item._distance !== undefined && (
-                        <div className={`mt-1.5 text-[11px] font-medium flex items-center gap-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                            <MapPin size={10} />
-                            {item._distance < 1 ? `${Math.round(item._distance * 1000)} m` : `${item._distance.toFixed(1)} km`}
-                        </div>
-                    )}
-                </div>
-            </div>
-        )
-    }
-
-    // Standard card for recommended / trending / open-now
-    return (
-        <div
-            onClick={onClick}
-            className={`${cardClass} overflow-hidden cursor-pointer group active:scale-[0.99] transition-transform duration-200`}
-        >
-            <div className="relative aspect-[16/10] overflow-hidden">
-                <LocationImage
-                    src={item.image}
-                    alt={item.title}
-                    width={600}
-                    className="transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-full">
-                    <Star size={8} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[9px] font-bold text-white">{item.rating ?? item.google_rating}</span>
-                </div>
-                {isTrending && (
-                    <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                        Trending
-                    </div>
-                )}
-            </div>
-            <div className="p-3.5">
-                <h4 className={`text-[15px] font-semibold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {item.title}
-                </h4>
-                <p className={`text-[12px] mt-1 truncate ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>
-                    {String([item.category, item.city].filter(Boolean).join(' · '))}
-                </p>
-            </div>
         </div>
     )
 }

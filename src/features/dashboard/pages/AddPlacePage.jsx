@@ -64,6 +64,7 @@ const COUNTRIES = [
 
 const MAX_PHOTOS = 5
 
+const INITIAL_STATE = {
     name: '', country: '', country_code: '', city: '', address: '',
     category: 'restaurant', website_url: '',
     description: '', price_range: '',

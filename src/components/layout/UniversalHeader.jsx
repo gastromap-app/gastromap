@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { usePWA } from '@/hooks/usePWA'
-import { LanguageSelector } from '@/features/shared/components/LanguageSelector'
+import { LanguageSelector } from '@/shared/components/LanguageSelector'
 import { useUIStore } from '@/shared/store/useUIStore'
 
 export function UniversalHeader() {

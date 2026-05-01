@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import LocationImage from '@/components/ui/LocationImage'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MapPin, Star, X } from 'lucide-react'
@@ -21,17 +22,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
     const [focused, setFocused] = useState(false)
     const containerRef = useRef(null)
 
-    // Close on outside click
-    useEffect(() => {
-        const handler = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target)) {
-                setOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handler)
-        document.addEventListener('touchstart', handler)
-        return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler) }
-    }, [])
+    useClickOutside(containerRef, () => setOpen(false))
 
     const suggestions = useMemo(() => {
         const q = value.trim().toLowerCase()

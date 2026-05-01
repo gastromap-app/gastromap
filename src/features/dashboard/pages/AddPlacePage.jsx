@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LazyImage } from '@/components/ui/LazyImage'
 import { useNavigate } from 'react-router-dom'
@@ -154,11 +155,7 @@ function AutocompleteInput({
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
 
-    useEffect(() => {
-        function close(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-        document.addEventListener('mousedown', close)
-        return () => document.removeEventListener('mousedown', close)
-    }, [])
+    useClickOutside(ref, () => setOpen(false))
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect

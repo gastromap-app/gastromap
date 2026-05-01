@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal, LogOut } from 'lucide-react'
@@ -38,20 +39,7 @@ export function UniversalHeader() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
-    useEffect(() => {
-        if (!isMenuOpen) return
-        const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) {
-                setIsMenuOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        document.addEventListener('touchstart', handleClickOutside)
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-            document.removeEventListener('touchstart', handleClickOutside)
-        }
-    }, [isMenuOpen])
+    useClickOutside(menuRef, () => setIsMenuOpen(false), isMenuOpen)
 
     const glassStyle = isDark
         ? "bg-white/[0.04] border-white/[0.06] text-[hsl(220,20%,96%)] hover:bg-white/[0.08]"

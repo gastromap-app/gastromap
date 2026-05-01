@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Mail, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Mail, CheckCircle2, ChevronRight } from 'lucide-react'
+import { AuthLayout } from '@/features/auth/components/AuthLayout'
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 
 const ForgotPasswordPage = () => {
@@ -28,15 +29,8 @@ const ForgotPasswordPage = () => {
     }
 
     return (
-        <div className="min-h-screen w-full bg-white flex">
-            {/* Left Side - Visual (Desktop only) */}
-            <div className="hidden lg:flex lg:w-[45%] relative bg-black text-white p-12 flex-col justify-between overflow-hidden">
-                {/* Aurora Background */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-60 pointer-events-none">
-                    <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-600 rounded-full blur-[120px] animate-pulse" />
-                    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-indigo-600 rounded-full blur-[120px] animate-pulse delay-700" />
-                </div>
-
+        <AuthLayout backTo="/login" leftChildren={
+            <>
                 <div className="relative z-10">
                     <div className="bg-white/10 w-fit px-4 py-2 rounded-full flex items-center gap-2 mb-8 backdrop-blur-md border border-white/10 text-white">
                         <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-6 h-6 object-cover rounded-full" />
@@ -56,99 +50,92 @@ const ForgotPasswordPage = () => {
                 <div className="relative z-10 text-xs text-gray-500">
                     © 2025 GastroMap Inc.
                 </div>
-            </div>
-
-            {/* Right Side - Form */}
-            <div className="flex-1 relative flex items-center justify-center p-6 bg-gray-50/50">
-                <Link to="/login" className="absolute top-8 left-8 lg:left-12 p-3 bg-white hover:bg-gray-100 rounded-full transition-colors group">
-                    <ArrowLeft size={20} className="text-gray-900 group-hover:-translate-x-1 transition-transform" />
-                </Link>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-[420px] bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100"
-                >
-                    {emailSent ? (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="text-center"
+            </>
+        }>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-[420px] bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100"
+            >
+                {emailSent ? (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center"
+                    >
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <CheckCircle2 size={32} className="text-green-600" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Check your email</h2>
+                        <p className="text-gray-500 mb-2">
+                            We've sent a password reset link to:
+                        </p>
+                        <p className="font-semibold text-gray-900 mb-6">{submittedEmail}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+                            Didn't receive the email? Check your spam folder or try again.
+                        </p>
+                        <button
+                            onClick={() => setEmailSent(false)}
+                            className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
                         >
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle2 size={32} className="text-green-600" />
-                            </div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-4">Check your email</h2>
-                            <p className="text-gray-500 mb-2">
-                                We've sent a password reset link to:
-                            </p>
-                            <p className="font-semibold text-gray-900 mb-6">{submittedEmail}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-                                Didn't receive the email? Check your spam folder or try again.
-                            </p>
-                            <button
-                                onClick={() => setEmailSent(false)}
-                                className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
-                            >
-                                Try another email
-                            </button>
+                            Try another email
+                        </button>
+                    </motion.div>
+                ) : (
+                    <>
+                        <motion.div variants={itemVariants} className="text-center mb-10">
+                            <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-12 h-12 object-cover rounded-full mx-auto mb-6 lg:hidden" />
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot password?</h2>
+                            <p className="text-gray-500">Enter your email to reset your password.</p>
                         </motion.div>
-                    ) : (
-                        <>
-                            <motion.div variants={itemVariants} className="text-center mb-10">
-                                <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-12 h-12 object-cover rounded-full mx-auto mb-6 lg:hidden" />
-                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot password?</h2>
-                                <p className="text-gray-500">Enter your email to reset your password.</p>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
+                                    {error}
+                                </div>
+                            )}
+
+                            <motion.div variants={itemVariants} className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-bold text-gray-900 ml-1">Email</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
+                                    <input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        required
+                                        className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                                        placeholder="Enter your email"
+                                    />
+                                </div>
                             </motion.div>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                {error && (
-                                    <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
-                                        {error}
-                                    </div>
+                            <motion.button
+                                variants={itemVariants}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <>Send reset link <ChevronRight size={18} /></>
                                 )}
+                            </motion.button>
+                        </form>
 
-                                <motion.div variants={itemVariants} className="space-y-2">
-                                    <label htmlFor="email" className="text-sm font-bold text-gray-900 ml-1">Email</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
-                                        <input
-                                            id="email"
-                                            name="email"
-                                            type="email"
-                                            required
-                                            className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
-                                            placeholder="Enter your email"
-                                        />
-                                    </div>
-                                </motion.div>
-
-                                <motion.button
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
-                                >
-                                    {isLoading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        <>Send reset link <ChevronRight size={18} /></>
-                                    )}
-                                </motion.button>
-                            </form>
-
-                            <motion.div variants={itemVariants} className="mt-8 text-center">
-                                <p className="text-gray-500 text-sm">
-                                    Remember your password? <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">Sign in</Link>
-                                </p>
-                            </motion.div>
-                        </>
-                    )}
-                </motion.div>
-            </div>
-        </div>
+                        <motion.div variants={itemVariants} className="mt-8 text-center">
+                            <p className="text-gray-500 text-sm">
+                                Remember your password? <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">Sign in</Link>
+                            </p>
+                        </motion.div>
+                    </>
+                )}
+            </motion.div>
+        </AuthLayout>
     )
 }
 

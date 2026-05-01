@@ -8,7 +8,8 @@
  *   mode — 'admin' | 'user' (controls which fields are filled)
  */
 
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { Search, MapPin, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -99,17 +100,10 @@ export default function PlacesAutocomplete({
         return () => controller.abort()
     }, [debouncedQuery, sessionToken])
 
-    // Close on outside click
-    useEffect(() => {
-        const handler = (e) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-                setIsOpen(false)
-                setActiveIdx(-1)
-            }
-        }
-        document.addEventListener('mousedown', handler)
-        return () => document.removeEventListener('mousedown', handler)
-    }, [])
+    useClickOutside(wrapperRef, () => {
+        setIsOpen(false)
+        setActiveIdx(-1)
+    })
 
     const handleInputChange = useCallback((e) => {
         const val = e.target.value

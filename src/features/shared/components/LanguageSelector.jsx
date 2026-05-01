@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { useI18n } from '@/hooks/useI18n'
 import { Globe, Check, ChevronDown, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -32,16 +33,7 @@ export function LanguageSelector({
     const currentIdx = languages.findIndex(l => l.code === language)
     const currentLang = languages[currentIdx] || languages[0]
 
-    useEffect(() => {
-        if (variant !== 'dropdown') return
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setIsOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [variant])
+    useClickOutside(containerRef, () => setIsOpen(false), variant === 'dropdown')
 
     const handleSelect = (code) => {
         setLanguage(code)

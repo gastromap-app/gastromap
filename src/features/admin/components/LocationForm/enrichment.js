@@ -152,7 +152,7 @@ Return ONLY valid JSON with this exact structure:
 /**
  * Generate search keywords for location
  */
-async function generateAIKeywords(locationData, apiKey) {
+async function generateAIKeywords(locationData, _apiKey) {
     const textForAI = [
         locationData.title,
         locationData.description,
@@ -189,7 +189,7 @@ async function generateAIKeywords(locationData, apiKey) {
 /**
  * Generate expert summary (context) for AI assistant
  */
-async function generateAIContext(locationData, apiKey) {
+async function generateAIContext(locationData, _apiKey) {
     const textForAI = [
         locationData.title,
         locationData.description,

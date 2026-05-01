@@ -98,7 +98,7 @@ export function useAIChat() {
             clearHistory();
         }
         return () => { mounted = false };
-    }, [user?.id, loadHistory, clearHistory]);
+    }, [user, loadHistory, clearHistory]);
 
 const MAX_CHAT_INPUT_LENGTH = 3000
 
@@ -304,7 +304,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, status, requestGeo])
+    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, requestGeo, t])
 
     return {
         messages,

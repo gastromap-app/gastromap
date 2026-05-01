@@ -388,7 +388,7 @@ export function OnboardingFlow({ onComplete }) {
     const [budget, setBudget]     = useState(['$$'])
     const [allergens, setAllergens] = useState([])
     const [saving, setSaving]     = useState(false)
-    const [skipError, setSkipError] = useState(null)
+    const [, setSkipError] = useState(null)
 
     // Step 0–3 can-continue rules:
     //   0 (cuisines)  → at least 1

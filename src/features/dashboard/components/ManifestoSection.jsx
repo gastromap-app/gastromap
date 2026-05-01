@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion'
+import { motion, useScroll, useTransform, useMotionValue } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Heart, Instagram, ArrowUpRight } from 'lucide-react'
@@ -13,8 +13,7 @@ const ManifestoSection = ({ isDark }) => {
     const mouseX = useMotionValue(0)
     const mouseY = useMotionValue(0)
 
-    const springX = useSpring(mouseX, { stiffness: 40, damping: 25 })
-    const springY = useSpring(mouseY, { stiffness: 40, damping: 25 })
+
 
     useEffect(() => {
         const handleMouseMove = (e) => {

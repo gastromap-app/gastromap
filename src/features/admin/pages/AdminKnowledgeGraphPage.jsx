@@ -938,7 +938,7 @@ const AdminKnowledgeGraphPage = () => {
                 || (item.region || '').toLowerCase().includes(q)
                 || (item.origin_country || '').toLowerCase().includes(q)
         })
-    }, [activeTab, cuisines, dishes, ingredients, searchTerm])
+    }, [activeTab, cuisines, dishes, ingredients, vibes, searchTerm])
 
     const isCurrentTabLoading =
         (activeTab === 'cuisines'     && loadingCuisines)     ||

@@ -11,7 +11,7 @@ import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
     const [step, setStep] = useState(1)
-    const [file, setFile] = useState(null)
+    const [, setFile] = useState(null)
     const [previewData, setPreviewData] = useState([])
     const [fullData, setFullData] = useState([])
     const [isParsing, setIsParsing] = useState(false)

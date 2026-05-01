@@ -76,6 +76,7 @@ export function LocationImage({
 
     useEffect(() => {
         if (!rawSrc) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setError(true)
             return
         }
@@ -99,6 +100,7 @@ export function LocationImage({
 
     // Сброс состояния при смене src
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoaded(false)
         setError(false)
         setUseOriginal(false)

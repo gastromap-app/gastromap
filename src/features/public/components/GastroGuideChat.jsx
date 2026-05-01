@@ -26,7 +26,7 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                 }
             })
         }
-    }, [isOpen, messages.length])
+    }, [isOpen, messages.length, lastScrollY])
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop

@@ -66,7 +66,10 @@ export default function AdminModerationPage() {
     const totalPages = Math.ceil(filteredQueue.length / PAGE_SIZE)
     const paginatedQueue = filteredQueue.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-    useEffect(() => { setCurrentPage(1) }, [searchTerm])
+    useEffect(() => {
+        const t = setTimeout(() => setCurrentPage(1), 0)
+        return () => clearTimeout(t)
+    }, [searchTerm])
 
     const handleApprove = async (item) => {
         try {

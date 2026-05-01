@@ -41,7 +41,7 @@ const AIGuidePage = () => {
         }
         setHeaderScrolled(false)
         return () => setHeaderScrolled(false)
-    }, [])
+    }, [lastScrollY, setHeaderScrolled])
 
     const handleScroll = (e) => {
         const scrollTop = e.currentTarget.scrollTop

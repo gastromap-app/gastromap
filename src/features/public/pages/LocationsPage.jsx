@@ -124,6 +124,7 @@ const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({
         return result
     }, [items])
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentRef.current,
@@ -242,6 +243,7 @@ const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
         return result
     }, [items])
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentRef.current,
@@ -377,16 +379,20 @@ const LocationsPage = () => {
     // Sync store query -> local input (if updated from outside, like URL or deep links)
     useEffect(() => {
         if (storeQuery !== localSearch) {
-            setLocalSearch(storeQuery)
+            const t = setTimeout(() => setLocalSearch(storeQuery), 0)
+            return () => clearTimeout(t)
         }
-    }, [storeQuery])
+    }, [storeQuery, localSearch])
 
     // Sync from URL query param on mount
     useEffect(() => {
         const q = new URLSearchParams(window.location.search).get('q')
-        if (q) { 
-            setLocalSearch(q)
-            storeSetSearch(q) 
+        if (q) {
+            const t = setTimeout(() => {
+                setLocalSearch(q)
+                storeSetSearch(q)
+            }, 0)
+            return () => clearTimeout(t)
         }
     }, [storeSetSearch])
 

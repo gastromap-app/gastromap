@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useGeoCovers } from '@/shared/api/queries'
+import { useGeoCovers } from '@/shared/api/queries'
 import { useNavigate } from 'react-router-dom'
 import { 
     Search, MapPin, TrendingUp, Star, Clock, Heart, 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { PageTransition } from '@/components/ui/PageTransition'
-import { translate } from '@/utils/translation'
+
 import { DashboardCardSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
@@ -53,16 +53,6 @@ const LocationCardMobile = ({ location, onClick, type }) => {
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-function getGreeting(t, name, city, visitCount) {
-    const h = new Date().getHours()
-    if (visitCount > 1 && city && city !== 'Unknown') {
-        return t('dashboard.welcome_back', { name, city }) || `Hello ${name}! Happy to see you back in ${city}!`
-    }
-    const timeGreeting = h < 12 ? t('dashboard.greeting_morning') : (h < 18 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening'))
-    if (city && city !== 'Unknown') return `${timeGreeting}, ${city}`
-    return timeGreeting
-}
-
 function calculateDistance(lat1, lon1, lat2, lon2) {
     if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 999999
     const nLat1 = Number(String(lat1).replace(',', '.'))
@@ -76,11 +66,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(nLat1 * (Math.PI / 180)) * Math.cos(nLat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
-}
-
-const formatDistance = (dist) => {
-    if (dist < 1) return `${Math.round(dist * 1000)} m`
-    return `${dist.toFixed(1)} km`
 }
 
 const COUNTRY_IMAGES = {
@@ -144,7 +129,7 @@ const DashboardPage = () => {
 
     useEffect(() => {
         if (!useLocationsStore.getState().isInitialized) initialize()
-    }, [])
+    }, [initialize])
 
     useEffect(() => {
         if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
@@ -157,9 +142,10 @@ const DashboardPage = () => {
 
     useEffect(() => {
         if (storeSearchQuery !== searchQuery && !debouncedSearch) {
-            setSearchQuery(storeSearchQuery || '')
+            const t = setTimeout(() => setSearchQuery(storeSearchQuery || ''), 0)
+            return () => clearTimeout(t)
         }
-    }, [storeSearchQuery])
+    }, [storeSearchQuery, searchQuery, debouncedSearch])
 
     // Pull-to-refresh
     const handleRefresh = async () => {

@@ -15,7 +15,7 @@ export function UniversalHeader() {
     const { theme, toggleTheme } = useTheme()
     const { user: authUser, logout } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
-    const { isHeaderScrolled: storeIsScrolled, setHeaderScrolled } = useUIStore()
+    const { isHeaderScrolled: storeIsScrolled } = useUIStore()
     const user = authUser || null
     const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'

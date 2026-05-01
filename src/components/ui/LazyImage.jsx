@@ -60,6 +60,7 @@ export function LazyImage({
 
     useEffect(() => {
         if (!src) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasError(true)
             return
         }

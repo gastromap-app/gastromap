@@ -38,12 +38,12 @@ const MapPage = () => {
     }, [debouncedMapSearch])
 
     // Sync local search with store (e.g. if reset in modal)
+    const storeSearchQuery = useLocationsStore.getState().searchQuery
     useEffect(() => {
-        const storeSearch = useLocationsStore.getState().searchQuery
-        if (storeSearch !== mapSearch && !debouncedMapSearch) {
-            setMapSearch(storeSearch || '')
+        if (storeSearchQuery !== mapSearch && !debouncedMapSearch) {
+            setMapSearch(storeSearchQuery || '')
         }
-    }, [useLocationsStore.getState().searchQuery])
+    }, [storeSearchQuery, mapSearch, debouncedMapSearch])
 
     return (
         <div className="fixed inset-0 z-0">

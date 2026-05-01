@@ -101,6 +101,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     useEffect(() => {
         if (isOpen) {
             const store = useLocationsStore.getState()
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedCategory(store.activeCategory === 'All' ? 'all' : store.activeCategory)
             setSelectedRating(store.minRating)
             setSelectedPriceLevels(store.activePriceLevels || [])

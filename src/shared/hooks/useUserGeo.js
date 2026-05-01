@@ -116,7 +116,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
                 maximumAge: 0, // Force fresh location
             }
         )
-    }, [status, setCoords, setLocation, setStatus, setError])
+    }, [status, setCoords, setLocation, setStatus, setError, user, setVisitData])
 
     // Auto-request on mount if enabled
     useEffect(() => {

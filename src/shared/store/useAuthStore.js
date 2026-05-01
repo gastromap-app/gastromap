@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { signIn, signUp, signOut, updateProfile, subscribeToAuthChanges, resetPassword, updatePassword, resendVerification, uploadAvatar } from '@/shared/api/auth.api'
-import { supabase } from '@/shared/api/client'
 
 // Import related stores for cleanup during logout
 import { useAIChatStore } from './useAIChatStore'
@@ -31,18 +30,20 @@ export const useAuthStore = create(
             initAuth: () => {
                 set({ isLoading: true })
 
-                const unsubscribe = subscribeToAuthChanges(
-                    ({ user, token }) => {
-                        set({ user, token, isAuthenticated: true, isLoading: false })
-                    },
-                    () => {
-                        set({ user: null, token: null, isAuthenticated: false, isLoading: false })
-                    }
-                )
-
                 const timeout = setTimeout(() => {
                     if (get().isLoading) set({ isLoading: false })
                 }, 5000)
+
+                const unsubscribe = subscribeToAuthChanges(
+                    ({ user, token }) => {
+                        clearTimeout(timeout)
+                        set({ user, token, isAuthenticated: true, isLoading: false })
+                    },
+                    () => {
+                        clearTimeout(timeout)
+                        set({ user: null, token: null, isAuthenticated: false, isLoading: false })
+                    }
+                )
 
                 set({ _unsubscribeAuth: unsubscribe })
             },

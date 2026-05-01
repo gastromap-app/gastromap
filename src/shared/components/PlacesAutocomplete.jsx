@@ -8,7 +8,7 @@
  *   mode — 'admin' | 'user' (controls which fields are filled)
  */
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { Search, MapPin, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'

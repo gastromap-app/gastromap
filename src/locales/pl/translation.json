@@ -74,7 +74,14 @@
     "review_placeholder": "Podziel się szczegółami swojej wizyty…",
     "review_submitted": "Dziękujemy! Twoja opinia oczekuje na moderację.",
     "review_failed": "Nie udało się wysłać opinii. Spróbuj ponownie.",
-    "review_count": "{{count}} opinii"
+    "review_count": "{{count}} opinii",
+    "cuisine_menu": "Kuchnia i menu",
+    "experience": "Doświadczenie w {{title}}",
+    "curator_tip": "Wskazówka kuratora",
+    "must_try": "Trzeba spróbować",
+    "venue_gallery": "Galeria lokalu",
+    "full_album": "Pełny album",
+    "find_online": "Znajdź online"
   },
   "reviews": {
     "based_on": "Na podstawie {{count}} opinii",
@@ -143,7 +150,30 @@
     "switch_to_light": "Przełącz na tryb jasny",
     "switch_to_dark": "Przełącz na tryb ciemny",
     "profile_aria": "Profil",
-    "sign_in": "Zaloguj się"
+    "sign_in": "Zaloguj się",
+    "concierge": "Concierge"
+  },
+  "pages": {
+    "about": {
+      "title": "Nasza historia",
+      "subtitle": "Naszą misją jest zmapowanie kulinarnych skarbów świata.",
+      "highlight": "O nas"
+    },
+    "features": {
+      "title": "Potężne funkcje",
+      "subtitle": "Wszystko, czego potrzebujesz, aby odkrywać, planować i cieszyć się idealnym posiłkiem.",
+      "highlight": "Funkcje"
+    },
+    "pricing": {
+      "title": "100% darmowe. Na zawsze.",
+      "subtitle": "GastroMap jest budowany przez lokalną społeczność. Wszystkie funkcje są darmowe. Jeśli kochasz to, co robimy, możesz nas wesprzeć dotacją.",
+      "highlight": "Społeczność"
+    },
+    "contact": {
+      "title": "Skontaktuj się",
+      "subtitle": "Masz pytanie lub znalazłeś perełkę? Daj nam znać.",
+      "highlight": "Kontakt"
+    }
   },
   "dashboard": {
     "welcome": "Witaj, {{name}}!",

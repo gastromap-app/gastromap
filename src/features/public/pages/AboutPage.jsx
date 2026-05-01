@@ -2,14 +2,16 @@ import React from 'react'
 import { LazyImage } from '@/components/ui/LazyImage'
 import PageHeader from '@/components/layout/public/PageHeader'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 const AboutPage = () => {
+    const { t } = useTranslation()
     return (
         <div className="bg-base-100 min-h-screen">
             <PageHeader
-                title="Our Story"
-                subtitle="We are on a mission to map the world's culinary treasures."
-                highlight="About Us"
+                title={t('pages.about.title')}
+                subtitle={t('pages.about.subtitle')}
+                highlight={t('pages.about.highlight')}
             />
 
             <section className="py-20 px-6">

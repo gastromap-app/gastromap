@@ -3,8 +3,10 @@ import PageHeader from '@/components/layout/public/PageHeader'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { Send, Mail, MapPin, Clock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const ContactPage = () => {
+    const { t } = useTranslation()
     const [status, setStatus] = useState('idle')
     const [form, setForm] = useState({ name: '', email: '', subject: 'General Inquiry', message: '' })
 
@@ -28,9 +30,9 @@ const ContactPage = () => {
     return (
         <div className="bg-base-100 min-h-screen">
             <PageHeader
-                title="Get in Touch"
-                subtitle="Have a question or found a hidden gem? Let us know."
-                highlight="Contact"
+                title={t('pages.contact.title')}
+                subtitle={t('pages.contact.subtitle')}
+                highlight={t('pages.contact.highlight')}
             />
 
             <section className="py-20 px-6">

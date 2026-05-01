@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTheme } from '@/hooks/useTheme'
+import { useTranslation } from 'react-i18next'
 
 /**
  * AppHeader - A reusable header component with scroll-aware glassmorphism effects.
@@ -15,6 +16,7 @@ export function AppHeader({
     className = "",
     children
 }) {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const [isScrolledInternal, setIsScrolledInternal] = useState(false)
@@ -71,7 +73,7 @@ export function AppHeader({
                                 </h3>
                                 {!isScrolled && (
                                     <p className="text-[10px] uppercase tracking-wider font-bold text-indigo-500 dark:text-indigo-400 mt-1 animate-in fade-in slide-in-from-top-1">
-                                        Concierge
+                                        {t('header.concierge')}
                                     </p>
                                 )}
                             </div>

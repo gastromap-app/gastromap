@@ -3,6 +3,8 @@ import PageHeader from '@/components/layout/public/PageHeader'
 import { motion } from 'framer-motion'
 import { Award, Zap, Shield, Utensils, Coffee, Heart, User, Map, Globe } from 'lucide-react'
 
+import { useTranslation } from 'react-i18next'
+
 const features = [
     { icon: Award, title: "AI Rank", desc: "Grades locations based on your preferences." },
     { icon: Zap, title: "Instant Book", desc: "Reserve a table in seconds." },
@@ -16,12 +18,13 @@ const features = [
 ]
 
 const FeaturesPage = () => {
+    const { t } = useTranslation()
     return (
         <div className="bg-white">
             <PageHeader
-                title="Powerful Features"
-                subtitle="Everything you need to discover, plan, and enjoy the perfect dining experience."
-                highlight="Features"
+                title={t('pages.features.title')}
+                subtitle={t('pages.features.subtitle')}
+                highlight={t('pages.features.highlight')}
             />
 
             <section className="py-20 px-6">

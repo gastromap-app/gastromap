@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Check, Heart, Coffee, Users, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -11,12 +12,13 @@ const fadeInUp = {
 }
 
 const PricingPage = () => {
+    const { t } = useTranslation()
     return (
         <div className="bg-white dark:bg-[#0F1115]">
             <PageHeader
-                title="100% Free. Forever."
-                subtitle="GastroMap is built by locals for the community. All features are free. If you love what we do, you can support us with a donation."
-                highlight="Community First"
+                title={t('pages.pricing.title')}
+                subtitle={t('pages.pricing.subtitle')}
+                highlight={t('pages.pricing.highlight')}
             />
 
             {/* Free Tier + Supporter */}

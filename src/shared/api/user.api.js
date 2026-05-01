@@ -16,18 +16,31 @@ export async function trackUserLocation(userId, city, country) {
     if (!USE_SUPABASE) return { is_new_city: true, visit_count: 1 }
     if (!userId || !city) return null
 
-    const { data, error } = await supabase.rpc('track_user_location', {
-        p_user_id: userId,
-        p_city: city,
-        p_country: country
-    })
+    try {
+        const { data, error } = await supabase.rpc('track_user_location', {
+            p_user_id: userId,
+            p_city: city,
+            p_country: country
+        })
 
-    if (error) {
-        console.error('[user.api] Error tracking location:', error)
-        throw new ApiError(error.message, 400)
+        if (error) {
+            // Gracefully handle missing RPC function (PGRST202 / 404)
+            if (error.code === 'PGRST202' || error.message?.includes('Could not find the function')) {
+                console.warn('[user.api] track_user_location RPC not found. Skipping location tracking.')
+                return { is_new_city: true, visit_count: 1 }
+            }
+            console.error('[user.api] Error tracking location:', error)
+            throw new ApiError(error.message, 400)
+        }
+
+        return data
+    } catch (err) {
+        if (err?.code === 'PGRST202' || err?.message?.includes('Could not find the function')) {
+            console.warn('[user.api] track_user_location RPC not found. Skipping location tracking.')
+            return { is_new_city: true, visit_count: 1 }
+        }
+        throw err
     }
-
-    return data
 }
 
 /**

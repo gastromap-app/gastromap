@@ -350,7 +350,7 @@ const LocationDetailsPage = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <UtensilsCrossed size={14} className="text-blue-500" />
-                            <h3 className={`text-sm font-black ${textStyle}`}>Cuisine & Menu</h3>
+                            <h3 className={`text-sm font-black ${textStyle}`}>{t('location.cuisine_menu')}</h3>
                         </div>
                         {location.cuisine && (
                             <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
@@ -373,7 +373,7 @@ const LocationDetailsPage = () => {
             <section className="space-y-2.5">
                 <div className="flex items-center gap-2.5">
                     <div className="w-1 h-5 bg-blue-600 rounded-full" />
-                    <h3 className={`text-lg font-black ${textStyle}`}>Experience {location.title}</h3>
+                    <h3 className={`text-lg font-black ${textStyle}`}>{t('location.experience', { title: location.title })}</h3>
                 </div>
                 <p className={`text-sm leading-relaxed font-medium ${subTextStyle}`}>
                     {location.description}
@@ -392,7 +392,7 @@ const LocationDetailsPage = () => {
                     <Lightbulb className="absolute top-4 right-4 text-orange-500 opacity-20" size={32} />
                     <div className="flex items-center gap-2 mb-3">
                         <Sparkles size={16} className="text-orange-500" />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">Curator's Tip</h4>
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">{t('location.curator_tip')}</h4>
                     </div>
                     <p className={`text-sm font-bold italic leading-relaxed ${isDark ? 'text-orange-200/80' : 'text-orange-900/80'}`}>
                         "To experience the full magic, visit right before sunset. The lighting makes every photo look like a cinematic masterpiece."
@@ -402,7 +402,7 @@ const LocationDetailsPage = () => {
                     <UtensilsCrossed className="absolute top-4 right-4 text-blue-500 opacity-20" size={32} />
                     <div className="flex items-center gap-2 mb-3">
                         <Star size={16} className="text-blue-500" />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">Must Try</h4>
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">{t('location.must_try')}</h4>
                     </div>
                     <p className={`text-sm font-bold leading-relaxed ${isDark ? 'text-blue-200/80' : 'text-blue-900/80'}`}>
                         Our signature truffle-infused specialty is a non-negotiable choice for first-timers.
@@ -412,8 +412,8 @@ const LocationDetailsPage = () => {
 
             <section className="space-y-3">
                 <div className="flex justify-between items-center">
-                    <h3 className={`text-lg font-black ${textStyle}`}>Venue Gallery</h3>
-                    <button onClick={() => setActiveTab('Photos')} className="text-blue-600 font-black text-xs hover:underline">Full Album</button>
+                    <h3 className={`text-lg font-black ${textStyle}`}>{t('location.venue_gallery')}</h3>
+                    <button onClick={() => setActiveTab('Photos')} className="text-blue-600 font-black text-xs hover:underline">{t('location.full_album')}</button>
                 </div>
 
                 {/* Bento Style Gallery Grid */}
@@ -457,7 +457,7 @@ const LocationDetailsPage = () => {
                     <div className="absolute top-0 left-0 w-40 h-40 bg-blue-600/5 rounded-full -ml-20 -mt-20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                     <div className="space-y-4 text-center md:text-left relative z-10">
-                        <h3 className={`text-2xl font-black ${textStyle}`}>Find them online</h3>
+                        <h3 className={`text-2xl font-black ${textStyle}`}>{t('location.find_online')}</h3>
                         <div className="flex gap-3 justify-center md:justify-start">
                             {[
                                 { icon: Instagram, color: "hover:bg-pink-500 hover:text-white", label: "Instagram" },

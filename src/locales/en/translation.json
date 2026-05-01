@@ -98,7 +98,14 @@
     "review_count_few": "{{count}} reviews",
     "review_count_many": "{{count}} reviews",
     "review_count_one": "{{count}} review",
-    "review_count_other": "{{count}} reviews"
+    "review_count_other": "{{count}} reviews",
+    "cuisine_menu": "Cuisine & Menu",
+    "experience": "Experience {{title}}",
+    "curator_tip": "Curator's Tip",
+    "must_try": "Must Try",
+    "venue_gallery": "Venue Gallery",
+    "full_album": "Full Album",
+    "find_online": "Find them online"
   },
   "reviews": {
     "based_on": "Based on {{count}} reviews",
@@ -163,7 +170,30 @@
     "switch_to_light": "Switch to light mode",
     "switch_to_dark": "Switch to dark mode",
     "profile_aria": "Profile",
-    "sign_in": "Sign in"
+    "sign_in": "Sign in",
+    "concierge": "Concierge"
+  },
+  "pages": {
+    "about": {
+      "title": "Our Story",
+      "subtitle": "We are on a mission to map the world's culinary treasures.",
+      "highlight": "About Us"
+    },
+    "features": {
+      "title": "Powerful Features",
+      "subtitle": "Everything you need to discover, plan, and enjoy the perfect dining experience.",
+      "highlight": "Features"
+    },
+    "pricing": {
+      "title": "100% Free. Forever.",
+      "subtitle": "GastroMap is built by locals for the community. All features are free. If you love what we do, you can support us with a donation.",
+      "highlight": "Community First"
+    },
+    "contact": {
+      "title": "Get in Touch",
+      "subtitle": "Have a question or found a hidden gem? Let us know.",
+      "highlight": "Contact"
+    }
   },
   "dashboard": {
     "greeting_morning": "Good Morning",

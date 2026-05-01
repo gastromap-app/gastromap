@@ -189,7 +189,8 @@ const DashboardPage = () => {
         return t('dashboard.greeting_evening', { name: firstName })
     }, [firstName, t])
     const cityTagline = useMemo(() => {
-        return currentCity && currentCity !== 'Unknown'
+        const validCity = currentCity && currentCity !== 'Unknown' && currentCity.trim() !== ''
+        return validCity
             ? t('dashboard.explore_today', { city: currentCity })
             : t('dashboard.explore_today_fallback')
     }, [currentCity, t])

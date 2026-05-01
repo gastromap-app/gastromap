@@ -89,7 +89,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
                 } catch (err) {
                     console.warn('[GeoLocation] Reverse geocoding failed:', err.message)
                     // Don't fail the whole flow — coords are still available
-                    setLocation({ city: 'Current Location', country: null, address: 'Near your current position' })
+                    setLocation({ city: 'Unknown', country: null, address: 'Near your current position' })
                 }
             },
             (err) => {

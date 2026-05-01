@@ -174,6 +174,7 @@ export async function saveChatMessage(sessionId, userId, message) {
 
     const payload = {
         session_id: sessionId,
+        user_id: userId,
         role: message.role,
         content: message.content,
         metadata,

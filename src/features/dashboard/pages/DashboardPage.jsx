@@ -153,9 +153,10 @@ const DashboardPage = () => {
     const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || t('dashboard.traveler')
     const greeting = useMemo(() => {
         const hour = new Date().getHours()
-        if (hour < 12) return t('dashboard.greeting_morning', { name: firstName })
-        if (hour < 18) return t('dashboard.greeting_afternoon', { name: firstName })
-        return t('dashboard.greeting_evening', { name: firstName })
+        if (hour >= 6 && hour < 12) return t('dashboard.greeting_morning', { name: firstName })
+        if (hour >= 12 && hour < 18) return t('dashboard.greeting_afternoon', { name: firstName })
+        if (hour >= 18 && hour < 24) return t('dashboard.greeting_evening', { name: firstName })
+        return t('dashboard.greeting_night', { name: firstName })
     }, [firstName, t])
     const cityTagline = useMemo(() => {
         const validCity = currentCity && currentCity !== 'Unknown' && currentCity.trim() !== ''

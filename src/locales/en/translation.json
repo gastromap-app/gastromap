@@ -198,6 +198,7 @@
   "dashboard": {
     "greeting_morning": "Good Morning",
     "greeting_afternoon": "Good Afternoon",
+    "greeting_night": "Good Night",
     "greeting_evening": "Good Evening",
     "tagline": "What are we eating today?",
     "explore_today": "Explore what's available today in {{city}}",

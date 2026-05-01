@@ -182,6 +182,7 @@
     "recent_activity": "Ostatnia aktywność",
     "greeting_morning": "Dzień dobry",
     "greeting_afternoon": "Dzień dobry",
+    "greeting_night": "Dobranoc",
     "greeting_evening": "Dobry wieczór",
     "tagline": "Odkrywaj najlepsze miejsca kulinarne",
     "explore_today": "Odkryj, co jest dzisiaj w {{city}}",

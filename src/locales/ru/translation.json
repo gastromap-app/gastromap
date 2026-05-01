@@ -199,6 +199,7 @@
     "recent_activity": "Последняя активность",
     "greeting_morning": "Доброе утро",
     "greeting_afternoon": "Добрый день",
+    "greeting_night": "Доброй ночи",
     "greeting_evening": "Добрый вечер",
     "tagline": "Открывайте лучшие кулинарные места",
     "explore_today": "Исследуйте, что есть сегодня в {{city}}",

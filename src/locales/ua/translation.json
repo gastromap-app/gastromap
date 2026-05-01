@@ -182,6 +182,7 @@
     "recent_activity": "Остання активність",
     "greeting_morning": "Доброго ранку",
     "greeting_afternoon": "Доброго дня",
+    "greeting_night": "Добраніч",
     "greeting_evening": "Доброго вечора",
     "tagline": "Відкривайте найкращі кулінарні місця",
     "explore_today": "Досліджуйте, що є сьогодні в {{city}}",

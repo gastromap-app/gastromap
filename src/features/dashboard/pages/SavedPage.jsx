@@ -1,12 +1,9 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import LocationImage from '@/components/ui/LocationImage'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
-import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shared/api/queries'
-import { useAuthStore } from '@/shared/store/useAuthStore'
-import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useSavedLocations } from '@/hooks/useSavedLocations'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 
@@ -134,30 +131,7 @@ const SavedPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const { user } = useAuthStore()
-    const { data: dbFavorites = [], isLoading } = useUserFavoritesWithLocations(user?.id)
-    const removeFavorite = useRemoveFavoriteMutation()
-
-    // Guest fallback: read localStorage favorites and hydrate from locations store
-    const { favoriteIds: localIds } = useFavoritesStore()
-    const allLocations = useLocationsStore(s => s.locations)
-    const localFavorites = useMemo(() => {
-        if (user?.id) return []
-        return localIds
-            .map(id => allLocations.find(loc => String(loc.id) === String(id)))
-            .filter(Boolean)
-            .map(loc => ({ location_id: loc.id, locations: loc }))
-    }, [user, localIds, allLocations])
-
-    const favorites = user?.id ? dbFavorites : localFavorites
-
-    const handleRemove = (locationId) => {
-        if (user?.id) {
-            removeFavorite.mutate({ userId: user.id, locationId })
-        } else {
-            useFavoritesStore.getState().toggleFavorite(locationId)
-        }
-    }
+    const { favorites, isLoading, remove } = useSavedLocations()
 
     return (
         <div className="w-full max-w-2xl mx-auto px-4 pb-32 min-h-[100dvh] relative z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
@@ -200,7 +174,7 @@ const SavedPage = () => {
                             key={favorite.location_id}
                             favorite={favorite}
                             index={i}
-                            onRemove={handleRemove}
+                            onRemove={remove}
                         />
                     ))}
                 </div>

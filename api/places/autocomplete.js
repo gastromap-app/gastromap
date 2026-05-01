@@ -111,24 +111,27 @@ function normalizePlace(p) {
     if (!p) return null
 
     const CATEGORY_MAP = {
-        restaurant: 'Restaurant', cafe: 'Cafe', bar: 'Bar',
-        bakery: 'Bakery', night_club: 'Bar', food: 'Restaurant',
-        meal_takeaway: 'Street Food', meal_delivery: 'Street Food',
-        fine_dining_restaurant: 'Fine Dining', coffee_shop: 'Coffee Shop',
-        supermarket: 'Market', grocery_or_supermarket: 'Market',
+        restaurant: 'restaurant', cafe: 'cafe', bar: 'bar',
+        bakery: 'bakery', night_club: 'bar', food: 'restaurant',
+        meal_takeaway: 'restaurant', meal_delivery: 'restaurant',
+        fine_dining_restaurant: 'restaurant', coffee_shop: 'cafe',
+        supermarket: 'other', grocery_or_supermarket: 'other',
     }
     const googleTypes = p.types || []
-    const category = googleTypes.reduce((found, t) => found || CATEGORY_MAP[t], null) || 'Restaurant'
+    const category = googleTypes.reduce((found, t) => found || CATEGORY_MAP[t], null) || 'restaurant'
 
     const PRICE_MAP = { 0: '$', 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' }
 
     const openingHours = p.opening_hours?.weekday_text?.join(' | ') || ''
 
     // Extract city & country from address_components
-    let city = '', country = ''
+    let city = '', country = '', country_code = ''
     for (const comp of (p.address_components || [])) {
         if (comp.types.includes('locality'))             city    = comp.long_name
-        if (comp.types.includes('country'))              country = comp.long_name
+        if (comp.types.includes('country')) {
+            country = comp.long_name
+            country_code = comp.short_name
+        }
         if (!city && comp.types.includes('postal_town')) city    = comp.long_name
     }
 
@@ -160,6 +163,7 @@ function normalizePlace(p) {
         address:        p.formatted_address || p.vicinity || '',
         city,
         country,
+        country_code,
         lat:            p.geometry?.location?.lat ?? null,
         lng:            p.geometry?.location?.lng ?? null,
         phone:          p.formatted_phone_number   || '',

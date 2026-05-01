@@ -10,6 +10,7 @@ import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
 import { createSubmission, compressImage, uploadSubmissionPhoto } from '@/shared/api/submissions.api'
 import { enrichLocation } from '@/shared/api/ai'
 import { searchPlaces, searchCities, searchAddresses } from '../hooks/useNominatim'
+import { fetchPlacesSuggestions, fetchPlaceDetails } from '@/shared/api/google-places.api'
 import { CATEGORIES_PUBLIC as CATEGORIES } from '@/shared/constants/taxonomy'
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -210,10 +211,25 @@ function AutocompleteInput({
                                     }}
                                     className="w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,15%)] transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-0"
                                 >
-                                    <span className="font-semibold">{s.name || s.street}</span>
-                                    {s.displayName && (
-                                        <span className="text-slate-400 text-xs block truncate">{s.displayName}</span>
-                                    )}
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <span className="font-semibold block truncate">{s.name || s.street}</span>
+                                            {(s.description || s.displayName) && (
+                                                <span className="text-slate-400 text-xs block truncate">
+                                                    {s.description || s.displayName}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {s.source && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 ${
+                                                s.source === 'google' 
+                                                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                            }`}>
+                                                {s.source === 'google' ? 'G' : 'OSM'}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
                             </li>
                         ))}
@@ -276,37 +292,89 @@ export default function AddPlacePage() {
         const t = setTimeout(() => saveDraft(step, form), 400)
         return () => clearTimeout(t)
     }, [step, form])
+
     const setField = (field) => (val) =>
         setForm((f) => ({ ...f, [field]: typeof val === 'string' ? val : val?.target?.value ?? val }))
 
-    // ── Autocomplete: place name ───────────────────────────────────────────
+    // ── Autocomplete: place name ──────────────────────────────────────────
     const [placeSuggestions, setPlaceSuggestions] = useState([])
     const [placeLoading, setPlaceLoading]         = useState(false)
-    const placeTimer = useRef(null)
+    const placeTimer    = useRef(null)
+    const sessionToken  = useRef(null)
+
+    // Generate session token on mount (billing optimization)
+    useEffect(() => {
+        if (!sessionToken.current) {
+            sessionToken.current = Math.random().toString(36).substring(2, 15)
+        }
+    }, [])
 
     const onPlaceInput = useCallback((val) => {
         setField('name')(val)
         clearTimeout(placeTimer.current)
         if (val.length < 2) { setPlaceSuggestions([]); return }
         setPlaceLoading(true)
+
         placeTimer.current = setTimeout(async () => {
-            const results = await searchPlaces(val)
-            setPlaceSuggestions(results)
-            setPlaceLoading(false)
+            try {
+                // Try Google first
+                const googleResults = await fetchPlacesSuggestions(val, sessionToken.current)
+                
+                // Fallback/Mixed: Add Nominatim results if Google returns few or for robustness
+                const osmResults = await searchPlaces(val)
+                
+                // Merge & Dedup (prefer Google)
+                const combined = [
+                    ...googleResults.map(g => ({ ...g, source: 'google' })),
+                    ...osmResults
+                        .filter(o => !googleResults.some(g => g.name.toLowerCase() === o.name.toLowerCase()))
+                        .map(o => ({ ...o, source: 'osm' }))
+                ].slice(0, 8)
+
+                setPlaceSuggestions(combined)
+            } catch (err) {
+                console.error('[AddPlacePage] Search error:', err)
+            } finally {
+                setPlaceLoading(false)
+            }
         }, 350)
     }, [])
 
-    const onPlaceSelect = (s) => {
-        setForm((f) => ({
-            ...f,
-            name:         s.name,
-            country:      s.country,
-            country_code: s.countryCode,
-            city:         s.city,
-            address:      s.street,
-            lat:          s.lat,
-            lng:          s.lon,
-        }))
+    const onPlaceSelect = async (s) => {
+        if (s.source === 'google') {
+            setPlaceLoading(true)
+            const full = await fetchPlaceDetails(s.id, sessionToken.current)
+            setPlaceLoading(false)
+
+            if (full) {
+                setForm((f) => ({
+                    ...f,
+                    name:         full.title || s.name,
+                    country:      full.country || f.country,
+                    country_code: full.country_code || f.country_code,
+                    city:         full.city || f.city,
+                    address:      full.address || f.address,
+                    lat:          full.lat,
+                    lng:          full.lng,
+                    website_url:  full.website || f.website_url,
+                    category:     full.category?.toLowerCase() || f.category,
+                }))
+                // Refresh session token after successful selection
+                sessionToken.current = Math.random().toString(36).substring(2, 15)
+            }
+        } else {
+            // OSM Selection
+            setForm((f) => ({
+                ...f,
+                name:         s.name,
+                country:      s.country,
+                country_code: s.countryCode,
+                city:         s.city,
+                address:      s.street,
+                lat:          s.lat,
+                lng:          s.lon,
+            }))
+        }
         setPlaceSuggestions([])
     }
 

@@ -585,22 +585,6 @@ const AdminAIPage = () => {
                 eyebrow="Admin"
                 title="AI Agents"
                 subtitle="Configure AI models, agents, and system prompts."
-                actions={
-                    <div className="flex items-center gap-2">
-                        {saved && (
-                            <motion.span
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                            >
-                                <CheckCircle2 size={14} /> Saved!
-                            </motion.span>
-                        )}
-                        <button onClick={handleSave} className={adminBtnPrimary}>
-                            <Save size={13} /> Save Settings
-                        </button>
-                    </div>
-                }
             />
 
             {/* 2. Active Agents */}
@@ -1337,6 +1321,32 @@ const AdminAIPage = () => {
                             )}
                         </motion.div>
                     )}
+                </div>
+
+                {/* 6. Final Save Action */}
+                <div className="mt-10 mb-6 flex flex-col sm:flex-row items-center justify-end gap-4 bg-white dark:bg-[hsl(220,20%,6%)]/30 p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.03] shadow-sm">
+                    <div className="flex flex-col items-end mr-auto">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Ready to apply?</h3>
+                        <p className="text-xs text-slate-500">All changes will take effect immediately across the platform.</p>
+                    </div>
+                    <AnimatePresence>
+                        {saved && (
+                            <motion.span
+                                initial={{ scale: 0, opacity: 0, x: 20 }}
+                                animate={{ scale: 1, opacity: 1, x: 0 }}
+                                exit={{ scale: 0, opacity: 0, x: 20 }}
+                                className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-400"
+                            >
+                                <CheckCircle2 size={16} /> Saved Successfully
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
+                    <button 
+                        onClick={handleSave} 
+                        className={cn(adminBtnPrimary, "h-14 px-8 min-w-[200px] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all")}
+                    >
+                        <Save size={18} /> Save Parameters
+                    </button>
                 </div>
             </div>
         </div>

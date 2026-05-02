@@ -111,9 +111,9 @@ const MobileCard = memo(function MobileCard({ item, style }) {
 })
 
 // ─── Mobile Virtualized Grid ─────────────────────────────────────────────
-const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({ 
-    items, 
-    parentRef 
+const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({
+    items,
+    parentElement
 }) {
     const columns = 2
     const rows = useMemo(() => {
@@ -127,7 +127,7 @@ const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({
     // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
-        getScrollElement: () => parentRef.current,
+        getScrollElement: () => parentElement,
         estimateSize: () => 180, // Approximate height of a mobile row
         overscan: 5,
     })
@@ -227,12 +227,12 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
 })
 
 // ─── Desktop Virtualized Grid ─────────────────────────────────────────────
-const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({ 
-    items, 
-    isDark, 
-    textStyle, 
+const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
+    items,
+    isDark,
+    textStyle,
     subTextStyle,
-    parentRef 
+    parentElement
 }) {
     const columns = 4
     const rows = useMemo(() => {
@@ -246,7 +246,7 @@ const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
     // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
-        getScrollElement: () => parentRef.current,
+        getScrollElement: () => parentElement,
         estimateSize: () => 400, // height of a card + gap
         overscan: 3,
     })
@@ -447,8 +447,7 @@ const LocationsPage = () => {
         return () => observer.disconnect()
     }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-    const desktopParentRef = useRef(null)
-    const mobileScrollRef = useRef(null)
+    const [desktopScrollEl, setDesktopScrollEl] = useState(null)
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sortOpen, setSortOpen] = useState(false)
@@ -468,7 +467,7 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={mobileScrollRef}>
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={setMobileScrollEl}>
                 {/* Header with search */}
                 <div className="sticky top-0 z-40 px-4 pt-20 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
                     <div className="flex gap-2">
@@ -518,9 +517,9 @@ const LocationsPage = () => {
                                 })}
                             </p>
 
-                            <VirtualizedMobileGrid 
-                                items={localFilteredLocations} 
-                                parentRef={mobileScrollRef} 
+                            <VirtualizedMobileGrid
+                                items={localFilteredLocations}
+                                parentElement={mobileScrollEl}
                             />
 
                             {/* Infinite scroll sentinel */}
@@ -537,7 +536,7 @@ const LocationsPage = () => {
             {/* ── DESKTOP VIEW ──────────────────────────────────────────── */}
             {/* Wraps in absolute+overflow-y-auto so the grid scrolls within the
                 fixed inset-0 root that is required by the mobile map/sheet layout. */}
-            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10" ref={desktopParentRef}>
+            <div className="hidden md:flex absolute inset-0 overflow-y-auto z-10" ref={setDesktopScrollEl}>
                 <div className="w-full max-w-7xl mx-auto px-8 pt-24 pb-10">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
@@ -683,7 +682,7 @@ const LocationsPage = () => {
                                 isDark={isDark}
                                 textStyle={textStyle}
                                 subTextStyle={subTextStyle}
-                                parentRef={desktopParentRef}
+                                parentElement={desktopScrollEl}
                             />
                         )}
                     </div>

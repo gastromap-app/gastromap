@@ -757,6 +757,23 @@ export async function getCategories() {
     return ['All', ...unique.sort()]
 }
 
+/** Total approved location count (for landing page stats). */
+export async function getLocationsCount() {
+    if (!USE_SUPABASE) return MOCK_LOCATIONS.length
+
+    const { count, error } = await supabase
+        .from('locations')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['approved', 'active'])
+
+    if (error) {
+        safeWarn('[locations.api] Failed to fetch location count:', error.message)
+        return 0
+    }
+
+    return count ?? 0
+}
+
 /** Locations within radiusKm of given coordinates (Optimized using Bounding Box). */
 export async function getLocationsNearby(coords, radiusKm = 2) {
     if (!coords?.lat || !coords?.lng) return { data: [], total: 0, hasMore: false }
@@ -965,6 +982,7 @@ export default {
     getLocationById,
     getLocationTranslated,
     getCategories,
+    getLocationsCount,
     getLocationsNearby,
     createLocation,
     updateLocation,

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getLocationsCount } from '@/shared/api/locations.api'
 
 
 // --- Animations (Apple-like Springs) ---
@@ -35,6 +36,18 @@ const BentoHero = () => {
     const [reviewIndex, setReviewIndex] = React.useState(0)
     // Smart List Toggle Logic
     const [listMode, setListMode] = React.useState('wishlist')
+    // Actual location count from DB
+    const [locationCount, setLocationCount] = React.useState(null)
+
+    React.useEffect(() => {
+        getLocationsCount().then(count => setLocationCount(count)).catch(() => setLocationCount(0))
+    }, [])
+
+    const formatCount = (n) => {
+        if (n == null) return '—'
+        if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k+`
+        return String(n)
+    }
 
     const reviews = [
         { name: "Anna K.", loc: "Warsaw", text: "Incredible atmosphere ☕", img: "https://i.pravatar.cc/100?img=5" },
@@ -137,7 +150,7 @@ const BentoHero = () => {
                         >
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-4xl md:text-5xl font-semibold text-black/90 dark:text-white mb-1 tracking-tight">12k+</h3>
+                                    <h3 className="text-4xl md:text-5xl font-semibold text-black/90 dark:text-white mb-1 tracking-tight">{formatCount(locationCount)}</h3>
                                     <p className="text-sm md:text-base text-black/60 dark:text-white/60 font-medium">Curated Locations</p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center">
@@ -154,11 +167,11 @@ const BentoHero = () => {
                                     transition={{ duration: 0.3 }}
                                     className="mt-6 flex gap-4 items-center"
                                 >
-                                    <LazyImage 
-                                        src={reviews[reviewIndex].img} 
-                                        alt="User" 
-                                        className="w-12 h-12 rounded-full ring-2 ring-black/5 dark:ring-white/10 object-cover" 
-                                        width={100}
+                                    <img
+                                        src={reviews[reviewIndex].img}
+                                        alt={reviews[reviewIndex].name}
+                                        className="w-12 h-12 rounded-full ring-2 ring-black/5 dark:ring-white/10 object-cover"
+                                        loading="lazy"
                                     />
                                     <div>
                                         <p className="text-sm font-medium text-black/80 dark:text-white/80 leading-snug line-clamp-2">

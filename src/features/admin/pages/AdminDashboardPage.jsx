@@ -100,22 +100,14 @@ const AdminDashboardPage = () => {
     ]
 
     return (
-        <div className="space-y-6 lg:space-y-8 pb-12 font-sans">
+        <div className="space-y-4 lg:space-y-6 pb-12 font-sans">
 
             {/* Header */}
             <AdminPageHeader
                 eyebrow="Admin"
                 title={t('admin.dashboard.title')}
                 subtitle={<span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />{t('admin.dashboard.all_systems_ok')}</span>}
-                actions={
-                    <button
-                        onClick={() => navigate('/admin/locations')}
-                        className={adminBtnSecondary}
-                    >
-                        <MapPin size={13} />
-                        <span className="hidden sm:inline ml-1">{t('admin.stats.locations')}</span>
-                    </button>
-                }
+                className="pb-4 lg:pb-6"
             />
 
             {/* Main Grid */}

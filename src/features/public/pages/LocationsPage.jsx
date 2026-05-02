@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useMemo, useRef } from 'react'
+import React, { useState, useEffect, memo, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +25,8 @@ import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
 import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
+
+import { useUIStore } from '@/shared/store/useUIStore'
 
 // ─── Category config from canonical filterOptions ─────────────────────────
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
@@ -449,13 +451,34 @@ const LocationsPage = () => {
 
     const [desktopScrollEl, setDesktopScrollEl] = useState(null)
     const [mobileScrollEl, setMobileScrollEl] = useState(null)
+    const [showFloatingSearch, setShowFloatingSearch] = useState(true)
+    const lastScrollY = useRef(0)
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sortOpen, setSortOpen] = useState(false)
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
-        const currentSort = { value: sortBy, label: t(SORT_LABEL_KEYS[sortBy] || 'explore.top_rated') }
+    const currentSort = { value: sortBy, label: t(SORT_LABEL_KEYS[sortBy] || 'explore.top_rated') }
+
+    // Sync header background with internal scroll container
+    const setHeaderScrolled = useUIStore(s => s.setHeaderScrolled)
+
+    const handleMobileScroll = useCallback((e) => {
+        const scrollTop = e.currentTarget.scrollTop
+        const isScrolled = scrollTop > 20
+        setHeaderScrolled(isScrolled)
+
+        const scrollingDown = scrollTop > lastScrollY.current && scrollTop > 80
+        const scrollingUp = scrollTop < lastScrollY.current
+        lastScrollY.current = scrollTop
+
+        if (scrollingDown && showFloatingSearch) {
+            setShowFloatingSearch(false)
+        } else if (scrollingUp && !showFloatingSearch) {
+            setShowFloatingSearch(true)
+        }
+    }, [setHeaderScrolled, showFloatingSearch])
 
     return (
         // Using a plain div here (not PageTransition) because:
@@ -468,9 +491,18 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={setMobileScrollEl}>
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={setMobileScrollEl} onScroll={handleMobileScroll}>
                 {/* Header with search */}
-                <div className="sticky top-0 z-40 px-4 pt-20 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+                <motion.div
+                    className="sticky top-0 z-40 px-4 pt-20 pb-4"
+                    style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}
+                    initial={false}
+                    animate={{
+                        y: showFloatingSearch ? 0 : -120,
+                        opacity: showFloatingSearch ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                >
                     <div className="flex gap-2">
                         <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border backdrop-blur-xl shadow-lg ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/90 border-gray-200 shadow-xl'}`}>
                             <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
@@ -494,7 +526,7 @@ const LocationsPage = () => {
                             <SlidersHorizontal size={18} />
                         </button>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Mobile location cards */}
                 <div className="px-4 pb-24">

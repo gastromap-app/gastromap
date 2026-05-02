@@ -448,6 +448,7 @@ const LocationsPage = () => {
     }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const [desktopScrollEl, setDesktopScrollEl] = useState(null)
+    const [mobileScrollEl, setMobileScrollEl] = useState(null)
     const [activeTab, setActiveTab] = useState('overview')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sortOpen, setSortOpen] = useState(false)

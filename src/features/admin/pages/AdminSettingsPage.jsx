@@ -5,6 +5,7 @@ import {
     Save, AlertTriangle, Power, Hammer,
     CheckCircle2, Info, Image as ImageIcon, Upload
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
@@ -47,6 +48,7 @@ const StatusOption = ({ status, currentStatus, title, description, icon: Icon, c
 }
 
 const LogoUpload = ({ label, value, onUpload }) => {
+    const { t } = useTranslation()
     const inputRef = useRef(null)
     return (
         <div className="space-y-2">
@@ -64,7 +66,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
                 ) : (
                     <>
                         <ImageIcon size={24} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Click to Upload</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.settings.click_upload')}</span>
                     </>
                 )}
                 <input
@@ -83,6 +85,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
 }
 
 const AdminSettingsPage = () => {
+    const { t } = useTranslation()
     const config = useAppConfigStore()
     const [formData, setFormData] = useState({
         appName: config.appName,
@@ -101,19 +104,19 @@ const AdminSettingsPage = () => {
 
     const handleSave = () => {
         if (!formData.appName?.trim()) {
-            showToast('Название приложения обязательно', 'error')
+            showToast(t('admin.settings.name_required'), 'error')
             return
         }
         if (formData.appDescription && formData.appDescription.length > 500) {
-            showToast('Описание не должно превышать 500 символов', 'error')
+            showToast(t('admin.settings.desc_too_long'), 'error')
             return
         }
         config.updateSettings(formData)
-        showToast('Settings saved successfully.')
+        showToast(t('admin.settings.settings_saved'))
     }
 
     const handleClearCache = () => {
-        if (!window.confirm('Вы уверены? Это удалит все кешированные данные.')) return
+        if (!window.confirm(t('admin.settings.clear_cache_confirm'))) return
         try {
             const keysToRemove = []
             for (let i = 0; i < localStorage.length; i++) {
@@ -123,9 +126,9 @@ const AdminSettingsPage = () => {
                 }
             }
             keysToRemove.forEach(k => localStorage.removeItem(k))
-            showToast(`Cache cleared — ${keysToRemove.length} entries removed.`)
+            showToast(t('admin.settings.cache_cleared', { count: keysToRemove.length }))
         } catch {
-            showToast('Failed to clear cache.', 'error')
+            showToast(t('admin.settings.cache_clear_failed'), 'error')
         }
     }
 
@@ -154,17 +157,17 @@ const AdminSettingsPage = () => {
             {/* Header */}
             <AdminPageHeader
                 eyebrow="Admin"
-                title="Настройки"
-                subtitle="Управление приложением, брендингом и статусом."
+                title={t('admin.settings.title')}
+                subtitle={t('admin.settings.subtitle')}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* General Settings */}
                 <div className="space-y-8">
-                    <SettingSection title="General" icon={Settings}>
+                    <SettingSection title={t('admin.settings.general')} icon={Settings}>
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">App Name</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.app_name')}</label>
                                 <input
                                     type="text"
                                     value={formData.appName}
@@ -175,12 +178,12 @@ const AdminSettingsPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <LogoUpload
-                                    label="Logo (Dark)"
+                                    label={t('admin.settings.logo_dark')}
                                     value={formData.logoDark}
                                     onUpload={(url) => setFormData(f => ({ ...f, logoDark: url }))}
                                 />
                                 <LogoUpload
-                                    label="Logo (Light)"
+                                    label={t('admin.settings.logo_light')}
                                     value={formData.logoLight}
                                     onUpload={(url) => setFormData(f => ({ ...f, logoLight: url }))}
                                 />
@@ -188,10 +191,10 @@ const AdminSettingsPage = () => {
                         </div>
                     </SettingSection>
 
-                    <SettingSection title="SEO & Description" icon={Globe}>
+                    <SettingSection title={t('admin.settings.seo_title')} icon={Globe}>
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Meta Description (SEO)</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.seo_desc')}</label>
                                 <textarea
                                     value={formData.appDescription}
                                     onChange={(e) => setFormData({ ...formData, appDescription: e.target.value })}
@@ -200,7 +203,7 @@ const AdminSettingsPage = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Keywords (comma-separated)</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.keywords')}</label>
                                 <input
                                     type="text"
                                     value={formData.seoKeywords}
@@ -214,13 +217,13 @@ const AdminSettingsPage = () => {
 
                 {/* Status & Maintenance */}
                 <div className="space-y-8">
-                    <SettingSection title="App Status" icon={Activity}>
+                    <SettingSection title={t('admin.settings.app_status')} icon={Activity}>
                         <div className="flex flex-col gap-3">
                             <StatusOption
                                 status="active"
                                 currentStatus={config.appStatus}
-                                title="Live — fully operational"
-                                description="App is fully accessible to all users."
+                                title={t('admin.settings.status_live')}
+                                description={t('admin.settings.status_live_desc')}
                                 icon={Power}
                                 color="bg-emerald-500 text-emerald-500"
                                 onClick={config.setAppStatus}
@@ -228,8 +231,8 @@ const AdminSettingsPage = () => {
                             <StatusOption
                                 status="maintenance"
                                 currentStatus={config.appStatus}
-                                title="Maintenance mode"
-                                description="Access restricted, users see a notice."
+                                title={t('admin.settings.status_maintenance')}
+                                description={t('admin.settings.status_maintenance_desc')}
                                 icon={Hammer}
                                 color="bg-amber-500 text-amber-500"
                                 onClick={config.setAppStatus}
@@ -237,8 +240,8 @@ const AdminSettingsPage = () => {
                             <StatusOption
                                 status="down"
                                 currentStatus={config.appStatus}
-                                title="Offline"
-                                description="App is completely unavailable."
+                                title={t('admin.settings.status_offline')}
+                                description={t('admin.settings.status_offline_desc')}
                                 icon={AlertTriangle}
                                 color="bg-rose-500 text-rose-500"
                                 onClick={config.setAppStatus}
@@ -254,7 +257,7 @@ const AdminSettingsPage = () => {
                                     className="mt-8 pt-8 border-t border-slate-50 dark:border-white/[0.03] space-y-4 overflow-hidden"
                                 >
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Message shown to users</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">{t('admin.settings.maintenance_message')}</label>
                                         <textarea
                                             value={formData.maintenanceMessage}
                                             onChange={(e) => setFormData({ ...formData, maintenanceMessage: e.target.value })}
@@ -265,8 +268,7 @@ const AdminSettingsPage = () => {
                                     <div className="bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl p-6 flex gap-4">
                                         <Info className="text-indigo-500 shrink-0" size={20} />
                                         <p className="text-[11px] font-medium text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed italic">
-                                            Admins and staff will continue to see the app normally.
-                                            Only external users will see this notice.
+                                            {t('admin.settings.admin_access_note')}
                                         </p>
                                     </div>
                                 </motion.div>
@@ -274,18 +276,17 @@ const AdminSettingsPage = () => {
                         </AnimatePresence>
                     </SettingSection>
 
-                    <SettingSection title="Security" icon={Shield}>
+                    <SettingSection title={t('admin.settings.security')} icon={Shield}>
                         <div className="bg-rose-50 dark:bg-rose-500/10 rounded-3xl p-8 border border-rose-100 dark:border-rose-500/20">
-                            <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-4">Danger Zone</h3>
+                            <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-4">{t('admin.settings.danger_zone')}</h3>
                             <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-6 leading-relaxed">
-                                Clears the app's geo-cache (Nominatim responses stored in localStorage).
-                                API calls will be made fresh on next visit.
+                                {t('admin.settings.clear_cache_desc')}
                             </p>
                             <button
                                 onClick={handleClearCache}
                                 className="w-full h-12 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl border border-rose-500/20 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
                             >
-                                Clear System Cache
+                                {t('admin.settings.clear_cache_btn')}
                             </button>
                         </div>
                     </SettingSection>
@@ -299,7 +300,7 @@ const AdminSettingsPage = () => {
                     className={cn(adminBtnPrimary, "h-14 px-10 text-sm shadow-xl shadow-indigo-500/20 active:scale-95")}
                 >
                     <Save size={16} /> 
-                    <span>Сохранить изменения</span>
+                    <span>{t('admin.settings.save_changes')}</span>
                 </button>
             </div>
         </div>

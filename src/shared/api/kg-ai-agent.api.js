@@ -761,17 +761,22 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             parsed.skipped           = parsed.skipped        || { cuisines: [], dishes: [], ingredients: [] }
             parsed.model             = model
 
-            // ── Pre-dedup sanitization: drop AI objects with missing/empty name ─
-            // Some free-tier models return partial JSON or objects without name.
-            // We log them and strip them here before any further processing.
+            // ── Pre-dedup sanitization: ensure item has a valid name ─────────────
             const sanitizeItems = (arr, label) => {
                 if (!Array.isArray(arr)) return []
                 return arr.filter(item => {
-                    const valid = item && typeof item.name === 'string' && item.name.trim().length > 0
-                    if (!valid) {
-                        console.warn(`[KG Agent] Dropping invalid ${label} item from AI response (missing name):`, JSON.stringify(item))
+                    if (!item || typeof item !== 'object') return false
+
+                    // Try to find a name in common alternative fields
+                    const rawName = item.name || item.Name || item.title || item.Title || item.название || item.label
+                    
+                    if (typeof rawName === 'string' && rawName.trim().length > 0) {
+                        item.name = rawName.trim() // Normalize to 'name'
+                        return true
                     }
-                    return valid
+
+                    console.warn(`[KG Agent] Dropping invalid ${label} item from AI response (missing or empty name):`, JSON.stringify(item))
+                    return false
                 })
             }
             parsed.items.cuisines    = sanitizeItems(parsed.items.cuisines,    'cuisine')

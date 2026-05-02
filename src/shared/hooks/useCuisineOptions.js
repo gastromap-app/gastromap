@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useCuisines } from '@/shared/api/queries'
-import { CUISINE_OPTIONS, CUISINE_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { CUISINE_OPTIONS, CUISINE_EMOJI_MAP } from '@/shared/config/filterOptions'
 
 /**
  * useCuisineOptions
@@ -24,7 +24,7 @@ import { CUISINE_OPTIONS, CUISINE_EMOJI_MAP } from '@/shared/constants/taxonomy'
  *   - FilterModal  (cuisine filter chips)
  *
  * To add a new cuisine: add it in the KG admin panel. Optionally add its
- * emoji to CUISINE_EMOJI_MAP in src/shared/constants/taxonomy.js.
+ * emoji to CUISINE_EMOJI_MAP in src/shared/config/filterOptions.js.
  */
 export function useCuisineOptions() {
     const { data: kgCuisines = [], isLoading } = useCuisines()

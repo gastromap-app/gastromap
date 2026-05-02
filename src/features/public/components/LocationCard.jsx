@@ -10,8 +10,7 @@ import { translate } from '@/utils/translation'
 import LazyImage from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useTranslation } from 'react-i18next'
-import { getCategoryLabel } from '@/shared/config/filterOptions'
-import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { getCategoryLabel, getLabelEmoji } from '@/shared/config/filterOptions'
 import { getDisplayRating } from '@/utils/ratingUtils'
 
 export default function LocationCard({ location }) {
@@ -93,7 +92,7 @@ export default function LocationCard({ location }) {
                     {/* Special Labels */}
                     {location.special_labels?.slice(0, 2).map(label => (
                         <span key={label} className="text-[9px] font-black uppercase tracking-wider text-blue-500/80 dark:text-blue-400/60">
-                            • {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
+                            • {getLabelEmoji(label)} {translate(label)}
                         </span>
                     ))}
                 </div>

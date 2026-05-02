@@ -28,13 +28,13 @@ export const REVIEW_STATUSES = {
 
 /** Status display configuration: label, badge color classes, dot color */
 export const STATUS_DISPLAY = {
-    [LOCATION_STATUSES.ACTIVE]: { label: 'Активен', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
-    [LOCATION_STATUSES.APPROVED]: { label: 'Активен', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
-    [LOCATION_STATUSES.PENDING]: { label: 'Ожидает', badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600', dot: 'bg-amber-500' },
-    [LOCATION_STATUSES.REJECTED]: { label: 'Отклонён', badge: 'bg-rose-50 dark:bg-rose-500/10 text-rose-500', dot: 'bg-rose-500' },
-    [LOCATION_STATUSES.REVISION_REQUESTED]: { label: 'На доработку', badge: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700', dot: 'bg-orange-500' },
-    [LOCATION_STATUSES.HIDDEN]: { label: 'Скрыт', badge: 'bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500', dot: 'bg-slate-400' },
-    [LOCATION_STATUSES.COMING_SOON]: { label: 'Скоро', badge: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' },
+    [LOCATION_STATUSES.ACTIVE]: { labelKey: 'admin.status.active', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
+    [LOCATION_STATUSES.APPROVED]: { labelKey: 'admin.status.active', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600', dot: 'bg-emerald-500' },
+    [LOCATION_STATUSES.PENDING]: { labelKey: 'admin.status.pending', badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600', dot: 'bg-amber-500' },
+    [LOCATION_STATUSES.REJECTED]: { labelKey: 'admin.status.rejected', badge: 'bg-rose-50 dark:bg-rose-500/10 text-rose-500', dot: 'bg-rose-500' },
+    [LOCATION_STATUSES.REVISION_REQUESTED]: { labelKey: 'admin.status.revision', badge: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700', dot: 'bg-orange-500' },
+    [LOCATION_STATUSES.HIDDEN]: { labelKey: 'admin.status.inactive', badge: 'bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500', dot: 'bg-slate-400' },
+    [LOCATION_STATUSES.COMING_SOON]: { labelKey: 'admin.status.pending', badge: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' },
 }
 
 export const getStatusDisplay = (status) => STATUS_DISPLAY[status] || STATUS_DISPLAY[LOCATION_STATUSES.PENDING]

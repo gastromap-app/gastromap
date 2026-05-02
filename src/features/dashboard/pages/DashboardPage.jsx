@@ -201,9 +201,9 @@ const DashboardPage = () => {
                     <motion.h1 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`text-[32px] font-black tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        className={`text-[24px] font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
                     >
-                        {greeting} <span className="text-blue-600">✦</span>
+                        {greeting}
                     </motion.h1>
                     <motion.p 
                         initial={{ opacity: 0, y: 10 }}
@@ -472,8 +472,8 @@ const DesktopDashboard = ({
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <h1 className={`text-[56px] font-black leading-[1.05] tracking-tighter ${text} mb-3 relative`}>
-                        {greeting} <span className="text-blue-600">✦</span>
+                    <h1 className={`text-[36px] font-bold leading-tight tracking-tight ${text} mb-2 relative`}>
+                        {greeting}
                     </h1>
                     <p className={`text-[15px] font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'} mb-5 relative`}>
                         {cityTagline}

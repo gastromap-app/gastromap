@@ -8,6 +8,7 @@ import {
     ArrowRight
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
@@ -40,40 +41,47 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
 
 // ─── Activity row ─────────────────────────────────────────────────────────────
 
-const ActivityRow = ({ item }) => (
-    <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-all">
-        <div className="flex items-center gap-4 min-w-0">
-            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
-                {item.user_name?.charAt(0)?.toUpperCase() || 'U'}
+const ActivityRow = ({ item }) => {
+    const { t } = useTranslation()
+    return (
+        <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-all">
+            <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center font-bold text-sm text-slate-500 shrink-0">
+                    {item.user_name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1 truncate">{item.user_name || 'User'}</p>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide truncate leading-none">{item.action_text || item.activity_type}</p>
+                </div>
             </div>
-            <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1 truncate">{item.user_name || 'User'}</p>
-                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide truncate leading-none">{item.action_text || item.activity_type}</p>
-            </div>
+            <span className="text-[10px] font-medium text-slate-300 dark:text-[hsl(220,10%,55%)] whitespace-nowrap ml-3 shrink-0">
+                {formatDistanceToNow(item.created_at)}
+            </span>
         </div>
-        <span className="text-[10px] font-medium text-slate-300 dark:text-[hsl(220,10%,55%)] whitespace-nowrap ml-3 shrink-0">
-            {formatDistanceToNow(item.created_at)}
-        </span>
-    </div>
-)
+    )
+}
 
 // ─── Empty activity row ───────────────────────────────────────────────────────
 
-const EmptyRow = () => (
-    <div className="flex items-center gap-4 p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px]">
-        <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center text-slate-300 shrink-0">
-            <Activity size={16} />
+const EmptyRow = () => {
+    const { t } = useTranslation()
+    return (
+        <div className="flex items-center gap-4 p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px]">
+            <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.03] flex items-center justify-center text-slate-300 shrink-0">
+                <Activity size={16} />
+            </div>
+            <div>
+                <p className="text-sm font-semibold text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none mb-1">{t('admin.dashboard.no_activity')}</p>
+                <p className="text-[10px] text-slate-300 dark:text-[hsl(220,10%,55%)] font-medium uppercase tracking-wide leading-none">{t('admin.dashboard.activity_will_appear')}</p>
+            </div>
         </div>
-        <div>
-            <p className="text-sm font-semibold text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none mb-1">No activity yet</p>
-            <p className="text-[10px] text-slate-300 dark:text-[hsl(220,10%,55%)] font-medium uppercase tracking-wide leading-none">Activity will appear here</p>
-        </div>
-    </div>
-)
+    )
+}
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const AdminDashboardPage = () => {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [isStatsCollapsed, setIsStatsCollapsed] = useState(false)
     const { data: adminStats, isLoading: loadingStats } = useAdminStats()
@@ -85,10 +93,10 @@ const AdminDashboardPage = () => {
     const pageViews = adminStats?.engagement?.total_visits ?? (loadingStats ? '...' : '—')
 
     const stats = [
-        { title: 'Locations', value: totalLocations, icon: MapPin, color: 'bg-orange-500' },
-        { title: 'Users', value: totalUsers, icon: Users, color: 'bg-blue-500' },
-        { title: 'Reviews', value: totalReviews, icon: MessageSquare, color: 'bg-emerald-500' },
-        { title: 'Visits', value: pageViews, icon: Eye, color: 'bg-indigo-500' },
+        { title: t('admin.stats.locations'), value: totalLocations, icon: MapPin, color: 'bg-orange-500' },
+        { title: t('admin.stats.users'), value: totalUsers, icon: Users, color: 'bg-blue-500' },
+        { title: t('admin.stats.reviews'), value: totalReviews, icon: MessageSquare, color: 'bg-emerald-500' },
+        { title: t('admin.stats.visits'), value: pageViews, icon: Eye, color: 'bg-indigo-500' },
     ]
 
     return (
@@ -97,15 +105,15 @@ const AdminDashboardPage = () => {
             {/* Header */}
             <AdminPageHeader
                 eyebrow="Admin"
-                title="Панель управления"
-                subtitle={<span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />Все системы работают в штатном режиме</span>}
+                title={t('admin.dashboard.title')}
+                subtitle={<span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />{t('admin.dashboard.all_systems_ok')}</span>}
                 actions={
                     <button
                         onClick={() => navigate('/admin/locations')}
                         className={adminBtnSecondary}
                     >
                         <MapPin size={13} />
-                        <span className="hidden sm:inline ml-1">Локации</span>
+                        <span className="hidden sm:inline ml-1">{t('admin.stats.locations')}</span>
                     </button>
                 }
             />
@@ -121,7 +129,7 @@ const AdminDashboardPage = () => {
                         <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <BarChart3 size={16} className="text-indigo-500" />
-                                <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Аналитика</h2>
+                                <h2 className="font-semibold text-sm text-slate-900 dark:text-white">{t('admin.dashboard.analytics')}</h2>
                             </div>
                             <button
                                 onClick={() => setIsStatsCollapsed(!isStatsCollapsed)}
@@ -162,13 +170,13 @@ const AdminDashboardPage = () => {
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">GastroAI Insight</span>
                             </div>
                             <p className="text-sm font-semibold text-slate-800 dark:text-[hsl(220,20%,90%)] leading-snug mb-4">
-                                Weekend brunch venues up 24% in popularity this week.
+                                {t('admin.dashboard.ai_insight')}
                             </p>
                             <button
                                 onClick={() => navigate('/admin/stats')}
                                 className="flex items-center gap-1.5 text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition-colors group"
                             >
-                                View report
+                                {t('admin.dashboard.view_report')}
                                 <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                             </button>
                         </div>
@@ -186,13 +194,13 @@ const AdminDashboardPage = () => {
                         <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50 dark:border-white/[0.03]">
                             <div className="flex items-center gap-2">
                                 <Clock size={16} className="text-slate-400" />
-                                <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Последние действия</h2>
+                                <h2 className="font-semibold text-sm text-slate-900 dark:text-white">{t('admin.dashboard.recent_activity')}</h2>
                             </div>
                             <button
                                 onClick={() => navigate('/admin/users')}
                                 className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
                             >
-                                Все →
+                                {t('admin.dashboard.view_all')}
                             </button>
                         </div>
 

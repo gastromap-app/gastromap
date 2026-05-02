@@ -66,7 +66,7 @@ import LocationFormSlideOver from '../components/LocationFormSlideOver'
 import LocationFilters from '../components/LocationFilters'
 import LocationStats from '../components/LocationStats'
 import ListViewSection from '../components/ListViewSection'
-import { getLabelGroupsRu } from '@/shared/config/filterOptions'
+import { getLabelGroups } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
     const { t, i18n } = useTranslation()
@@ -98,7 +98,7 @@ const AdminLocationsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const LABEL_GROUPS = getLabelGroupsRu()
+    const LABEL_GROUPS = getLabelGroups(i18n.language)
 
     const mapLocations = useMemo(() =>
         filteredLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng),
@@ -131,9 +131,9 @@ const AdminLocationsPage = () => {
                             <AlertCircle size={20} />
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-red-900 dark:text-red-200 uppercase tracking-widest leading-none mt-1">Data Load Failure</h3>
+                            <h3 className="text-sm font-bold text-red-900 dark:text-red-200 uppercase tracking-widest leading-none mt-1">{t('admin.errors.data_load_failure')}</h3>
                             <p className="text-[11px] text-red-600 dark:text-red-400 font-medium mt-2 leading-relaxed">
-                                {loadError.message || 'Could not fetch data from database. Please check your Supabase configuration or network connection.'}
+                                {loadError.message || t('admin.data_load_error_desc')}
                             </p>
                         </div>
                     </div>
@@ -241,7 +241,7 @@ const AdminLocationsPage = () => {
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => p - 1)}
                             className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
-                        >← Prev</button>
+                        > {t('admin.actions.prev')} </button>
                         <span className="text-sm font-bold text-slate-500 dark:text-[hsl(220,10%,55%)]">
                             {currentPage} / {totalPages}
                         </span>
@@ -249,7 +249,7 @@ const AdminLocationsPage = () => {
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(p => p + 1)}
                             className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
-                        >Next →</button>
+                        > {t('admin.actions.next')} </button>
                     </div>
                 )}
 
@@ -275,7 +275,7 @@ const AdminLocationsPage = () => {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-[hsl(220,20%,96%)]">{rev.profiles?.name || 'Anonymous'}</p>
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-[hsl(220,20%,96%)]">{rev.profiles?.name || t('admin.anonymous')}</p>
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
                                                             <MapPin size={10} /> {rev.locations?.title || rev.location_id}
                                                         </span>

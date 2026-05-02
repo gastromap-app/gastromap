@@ -4,64 +4,30 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { ESTABLISHMENT_TYPES, LABEL_GROUPS, BEST_TIMES, ESTABLISHMENT_TYPE_NAMES } from '@/shared/config/filterOptions'
+import { 
+    ESTABLISHMENT_TYPES, 
+    ESTABLISHMENT_TYPE_NAMES,
+    getCategoryLabel,
+    getLabelGroups,
+    getLabelTranslation,
+    getLabelEmoji
+} from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
-import { getLabelEmoji } from '@/shared/constants/taxonomy'
-import { translate, translateToRu } from '@/utils/translation'
+
 
 // Non-cuisine static labels that stay in the "Cuisine & Menu" group
 const CUISINE_MENU_LABELS = [
-    'Signature Cuisine', 'Vegan Menu', 'Delicious Desserts',
-    'All Day Breakfast', 'Fusion',
+    'Signature Cuisine', 'Fusion Cuisine', 'Vegan Options', 'Tasty Desserts', 'All Day Brunch'
 ]
 
-// Map config-level English group names → i18n keys
-const GROUP_KEY_MAP = {
-    'Cuisine & Menu':      'filter.group_cuisine_menu',
-    'Bar & Drinks':        'filter.group_bar_drinks',
-    'Atmosphere':          'filter.group_atmosphere',
-    'Amenities & Service': 'filter.group_amenities_service',
-    'Awards & Special':    'filter.group_awards_special',
-}
-
-// Map establishment type id → category.* i18n key
-const CATEGORY_KEY_MAP = {
-    'all':         'category.all',
-    'Cafe':        'category.cafe',
-    'Restaurant':  'category.restaurant',
-    'Street Food': 'category.street_food',
-    'Bar':         'category.bar',
-    'Restobar':    'category.restobar',
-    'Market':      'category.market',
-    'Bakery':      'category.bakery',
-    'Winery':      'category.winery',
-    'Wine Bar':    'category.wine_bar',
-    'Coffee':      'category.coffee',
-    'Pastry':      'category.pastry',
-    'Fine Dining': 'category.fine_dining',
-}
-
-// Map best-time id → filter.best_time_* i18n key
-const BEST_TIME_KEY_MAP = {
-    morning:    'filter.best_time_morning',
-    day:        'filter.best_time_day',
-    evening:    'filter.best_time_evening',
-    late_night: 'filter.best_time_late_night',
-}
 
 const FilterModal = ({ isOpen, onClose, theme }) => {
     const { t, i18n } = useTranslation()
     const isDark = theme === 'dark'
 
-    // Cuisine list from KG (falls back to static taxonomy while loading)
+    // Cuisine list from KG (falls back to static filterOptions while loading)
     const { options: cuisineOptions } = useCuisineOptions()
 
-    // Merge static labels + live KG cuisine names for the "Cuisine & Menu" group
-    // eslint-disable-next-line no-unused-vars
-    const cuisineMenuItems = useMemo(() => [
-        ...CUISINE_MENU_LABELS,
-        ...cuisineOptions.map(c => c.name),
-    ], [cuisineOptions])
 
     // ── Local filter state ──────────────────────────────────────────────────
     const [selectedCategory, setSelectedCategory] = useState('all')
@@ -266,8 +232,7 @@ function normalizeForCompare(str) {
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                     {ESTABLISHMENT_TYPES.map(type => {
                                         const isActive = selectedCategory === type.id
-                                        const typeKey = CATEGORY_KEY_MAP[type.id]
-                                        const displayLabel = typeKey ? t(typeKey) : (i18n.language === 'ru' ? type.labelRu : type.label)
+                                        const displayLabel = getCategoryLabel(type.id, i18n.language)
                                         return (
                                             <motion.button
                                                 key={type.id}
@@ -346,8 +311,7 @@ function normalizeForCompare(str) {
                                 <div className="grid grid-cols-2 gap-3">
                                     {BEST_TIMES.map(time => {
                                         const isActive = selectedBestTime === time.id
-                                        const timeKey = BEST_TIME_KEY_MAP[time.id]
-                                        const displayLabel = timeKey ? t(timeKey) : (i18n.language === 'ru' ? time.labelRu : time.label)
+                                        const displayLabel = getCategoryLabel(time.id, i18n.language)
                                         
                                         // Map IDs to Lucide components for consistent UI
                                         const IconComponent = {
@@ -384,30 +348,44 @@ function normalizeForCompare(str) {
                             <div className="space-y-6 text-left">
                                 <label className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-900'}`}>{t('filter.special_features')}</label>
                                 <div className="space-y-6">
-                                    {LABEL_GROUPS.map((cat, idx) => {
+                                    {getLabelGroups(i18n.language).map((cat, idx) => {
                                         // First group (Cuisine & Menu) uses dynamic KG data
-                                        const items = idx === 0 ? dynamicCuisines : [...cat.items].sort()
+                                        let items = cat.items
+                                        if (idx === 0) {
+                                            // Convert dynamicCuisines (strings) + static labels to localized objects
+                                            items = [
+                                                ...CUISINE_MENU_LABELS.map(val => ({
+                                                    value: val,
+                                                    label: getLabelTranslation(val, i18n.language)
+                                                })),
+                                                ...dynamicCuisines.map(c => ({
+                                                    value: c,
+                                                    label: getLabelTranslation(c, i18n.language)
+                                                }))
+                                            ]
+                                        }
+                                        
                                         if (items.length === 0) return null
-                                        const groupKey = GROUP_KEY_MAP[cat.group]
-                                        const groupLabel = groupKey ? t(groupKey) : cat.group
+                                        const groupLabel = cat.group
+
                                         return (
                                         <div key={cat.group} className="space-y-3">
                                             <h4 className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-slate-800'}`}>{groupLabel}</h4>
                                             <div className="flex flex-wrap gap-2">
                                                 {items.map(chip => {
-                                                    const isActive = selectedFeatures.includes(chip)
+                                                    const isActive = selectedFeatures.includes(chip.value)
                                                     return (
                                                         <motion.button
-                                                            key={chip}
+                                                            key={chip.value}
                                                             whileHover={{ scale: 1.03 }}
                                                             whileTap={{ scale: 0.97 }}
-                                                            onClick={() => toggleFeature(chip)}
+                                                            onClick={() => toggleFeature(chip.value)}
                                                             className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
                                                         >
                                                             <span className="mr-1.5 opacity-90 group-hover:scale-125 transition-transform duration-300">
-                                                                {getLabelEmoji(chip)}
+                                                                {getLabelEmoji(chip.value)}
                                                             </span>
-                                                            {i18n.language === 'ru' ? translateToRu(chip) : translate(chip)}
+                                                            {chip.label}
                                                         </motion.button>
                                                     )
                                                 })}

@@ -26,7 +26,7 @@ import LocationImage from '@/components/ui/LocationImage'
 import { getLocationMenu, saveScannedMenu, incrementView } from '@/shared/api/locations.api'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
-import { LABEL_EMOJI_MAP } from '@/shared/constants/taxonomy'
+import { getLabelEmoji } from '@/shared/config/filterOptions'
 import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 
 
@@ -362,7 +362,7 @@ const LocationDetailsPage = () => {
                         <div className="flex flex-wrap gap-1.5">
                             {location.special_labels.map(label => (
                                 <span key={label} className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${isDark ? 'bg-white/[0.04] border-white/8 text-white/60 hover:bg-white/[0.08]' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}>
-                                    {LABEL_EMOJI_MAP[label] || ''} {translate(label)}
+                                    {getLabelEmoji(label)} {translate(label)}
                                 </span>
                             ))}
                         </div>

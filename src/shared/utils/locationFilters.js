@@ -126,7 +126,8 @@ export function applyAllFilters(locations, filters) {
 
         // 7. Rating
         if (minRating != null) {
-            if ((loc.rating ?? loc.google_rating ?? 0) < minRating) return false
+            const currentRating = loc.rating ?? loc.google_rating ?? 0
+            if (currentRating < minRating) return false
         }
 
         // 8. Vibes (Expensive - only run if activeVibes present)
@@ -191,20 +192,26 @@ export function applyAllFilters(locations, filters) {
             result.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
             break
         case 'rating':
+            result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            break
         case 'google_rating':
-            result.sort((a, b) => (b.rating ?? b.google_rating ?? 0) - (a.rating ?? a.google_rating ?? 0))
+            result.sort((a, b) => (b.google_rating ?? 0) - (a.google_rating ?? 0))
             break
         case 'price_asc':
-            result.sort((a, b) => (PRICE_ORDER[a.price_range] ?? 0) - (PRICE_ORDER[b.price_range] ?? 0))
+            result.sort((a, b) => (a.price_range?.length || 0) - (b.price_range?.length || 0))
             break
         case 'price_desc':
-            result.sort((a, b) => (PRICE_ORDER[b.price_range] ?? 0) - (PRICE_ORDER[a.price_range] ?? 0))
+            result.sort((a, b) => (b.price_range?.length || 0) - (a.price_range?.length || 0))
             break
         case 'name':
             result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
             break
         case 'newest':
-            result.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0))
+            result.sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                return dateB - dateA
+            })
             break
         default:
             break

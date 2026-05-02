@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
     ArrowRight, Sparkles, Loader2, Database, Download, FileSpreadsheet
 } from 'lucide-react'
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 
 const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
+    const { t } = useTranslation()
     const [step, setStep] = useState(1)
     const [, setFile] = useState(null)
     const [previewData, setPreviewData] = useState([])
@@ -132,8 +134,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                             <Database className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Import Locations</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Step {step} of 3</p>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('admin.import_wizard.title')}</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('admin.import_wizard.step_of', { step })}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
@@ -158,8 +160,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                             <FileSpreadsheet className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-gray-900 dark:text-white">Upload CSV File</h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Select your locations database file</p>
+                                            <h3 className="font-bold text-gray-900 dark:text-white">{t('admin.import_wizard.upload_csv')}</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.import_wizard.select_file')}</p>
                                         </div>
                                         <input 
                                             type="file" 
@@ -174,24 +176,24 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                             className="rounded-xl"
                                         >
                                             {isParsing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                            Choose File
+                                            {t('admin.import_wizard.choose_file')}
                                         </Button>
                                     </div>
 
                                     <div className="p-6 rounded-3xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 space-y-4">
                                         <div className="flex items-center gap-3 text-blue-600">
                                             <Download className="w-5 h-5" />
-                                            <h3 className="font-bold">Template</h3>
+                                            <h3 className="font-bold">{t('admin.import_wizard.template')}</h3>
                                         </div>
                                         <p className="text-sm text-blue-700/70 dark:text-blue-300/70 leading-relaxed">
-                                            Download our unified template to ensure all fields are correctly mapped to the database.
+                                            {t('admin.import_wizard.template_desc')}
                                         </p>
                                         <Button 
                                             variant="outline" 
                                             onClick={downloadCSVTemplate}
                                             className="w-full rounded-xl border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                                         >
-                                            Download CSV Template
+                                            {t('admin.import_wizard.download_template')}
                                         </Button>
                                     </div>
                                 </div>
@@ -200,11 +202,11 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                     <div className="flex gap-3">
                                         <div className="text-amber-600">⚠️</div>
                                         <div className="text-sm text-amber-800 dark:text-amber-200">
-                                            <p className="font-bold mb-1">Required Format:</p>
+                                            <p className="font-bold mb-1">{t('admin.import_wizard.required_format')}</p>
                                             <ul className="list-disc list-inside space-y-1 opacity-80">
-                                                <li>First row must contain headers</li>
-                                                <li>Required: name, category, address, lat, lng</li>
-                                                <li>Optional: rating, phone, website, description</li>
+                                                <li>{t('admin.import_wizard.headers_required')}</li>
+                                                <li>{t('admin.import_wizard.fields_required')}</li>
+                                                <li>{t('admin.import_wizard.fields_optional')}</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -221,8 +223,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 className="space-y-6"
                             >
                                 <div className="flex items-center justify-between">
-                                    <h3 className="font-bold text-gray-900 dark:text-white">Data Preview ({fullData.length} locations)</h3>
-                                    <Badge variant="outline" className="rounded-lg">Top 5 rows shown</Badge>
+                                    <h3 className="font-bold text-gray-900 dark:text-white">{t('admin.import_wizard.data_preview', { count: fullData.length })}</h3>
+                                    <Badge variant="outline" className="rounded-lg">{t('admin.import_wizard.top_rows_shown')}</Badge>
                                 </div>
 
                                 <div className="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800">
@@ -230,10 +232,10 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                         <table className="w-full text-left text-sm">
                                             <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 font-medium">
                                                 <tr>
-                                                    <th className="px-4 py-3">Name</th>
-                                                    <th className="px-4 py-3">Category</th>
-                                                    <th className="px-4 py-3">Address</th>
-                                                    <th className="px-4 py-3">Lat/Lng</th>
+                                                    <th className="px-4 py-3">{t('admin.import_wizard.col_name')}</th>
+                                                    <th className="px-4 py-3">{t('admin.import_wizard.col_category')}</th>
+                                                    <th className="px-4 py-3">{t('admin.import_wizard.col_address')}</th>
+                                                    <th className="px-4 py-3">{t('admin.import_wizard.col_coords')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -256,8 +258,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                             <Sparkles className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-blue-900 dark:text-blue-100">AI Enrichment</p>
-                                            <p className="text-xs text-blue-700/70 dark:text-blue-300/70">Automatically generate descriptions and tags</p>
+                                            <p className="font-bold text-blue-900 dark:text-blue-100">{t('admin.import_wizard.ai_enrichment')}</p>
+                                            <p className="text-xs text-blue-700/70 dark:text-blue-300/70">{t('admin.import_wizard.ai_enrichment_desc')}</p>
                                         </div>
                                     </div>
                                     <div 
@@ -275,8 +277,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl flex-1">Back</Button>
-                                    <Button onClick={() => setStep(3)} className="rounded-xl flex-1">Continue</Button>
+                                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl flex-1">{t('admin.actions.back')}</Button>
+                                    <Button onClick={() => setStep(3)} className="rounded-xl flex-1">{t('admin.actions.next')}</Button>
                                 </div>
                             </motion.div>
                         )}
@@ -295,15 +297,15 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                             <Database className="w-10 h-10" />
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Ready to Import</h3>
+                                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.import_wizard.ready_to_import')}</h3>
                                             <p className="text-gray-500 dark:text-gray-400 mt-2">
-                                                We are about to import {fullData.length} locations to your database.
-                                                {enrichmentEnabled && " AI enrichment is enabled."}
+                                                {t('admin.import_wizard.import_warning', { count: fullData.length })}
+                                                {enrichmentEnabled && t('admin.import_wizard.enrichment_enabled')}
                                             </p>
                                         </div>
                                         <div className="flex gap-3 max-w-sm mx-auto">
-                                            <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl flex-1">Back</Button>
-                                            <Button onClick={handleImport} className="rounded-xl flex-1">Start Import</Button>
+                                            <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl flex-1">{t('admin.actions.back')}</Button>
+                                            <Button onClick={handleImport} className="rounded-xl flex-1">{t('admin.import_wizard.start_import')}</Button>
                                         </div>
                                     </>
                                 ) : (
@@ -333,8 +335,8 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Importing Data...</h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please do not close this window</p>
+                                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('admin.import_wizard.importing')}</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.import_wizard.do_not_close')}</p>
                                         </div>
                                         <div className="max-w-xs mx-auto">
                                             <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">

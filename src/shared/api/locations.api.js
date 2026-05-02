@@ -12,7 +12,7 @@ import { MOCK_LOCATIONS, MOCK_CATEGORIES } from '@/mocks/locations'
 import { supabase, ApiError } from './client'
 import { enrichLocationData } from '@/features/admin/components/LocationForm/enrichment'
 import { config } from '@/shared/config/env'
-import { CATEGORIES_FULL } from '../constants/taxonomy'
+import { CATEGORIES_FULL } from '../config/filterOptions'
 import { sanitizePayload } from '../lib/schema-validator.js'
 import { log as safeLog, warn as safeWarn, error as safeError } from '../lib/safe-console.js'
 // import { 

@@ -6,7 +6,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ESTABLISHMENT_TYPES, LABEL_GROUPS } from '@/shared/config/filterOptions'
+import { ESTABLISHMENT_TYPES, getCategoryLabel, getLabelGroups } from '@/shared/config/filterOptions'
 
 const LocationFilters = ({
     view,
@@ -65,12 +65,10 @@ const LocationFilters = ({
     }
 
     // Flatten all vibes for the filter list
-    const allVibes = LABEL_GROUPS.flatMap(g => 
-        g.items.map((item, idx) => ({ 
-            id: item, 
-            label: i18n.language === 'ru' ? g.itemsRu[idx] : item 
-        }))
-    ).sort((a, b) => a.label.localeCompare(b.label))
+    const allVibes = React.useMemo(() => {
+        const groups = getLabelGroups(i18n.language)
+        return Object.entries(groups).flatMap(([group, items]) => items)
+    }, [i18n.language])
 
     return (
         <div className="flex flex-col border-b border-slate-100 dark:border-white/[0.03] bg-white dark:bg-[hsl(220,20%,6%)]/50">
@@ -220,7 +218,7 @@ const LocationFilters = ({
                                     >
                                         <option value="All">{t('admin.all_categories')}</option>
                                         {ESTABLISHMENT_TYPES.filter(t => t.id !== 'all').map(type => (
-                                            <option key={type.id} value={type.id}>{type.labelRu || type.label}</option>
+                                            <option key={type.id} value={type.id}>{getCategoryLabel(type.id, i18n.language)}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -314,11 +312,11 @@ const LocationFilters = ({
                                 <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto no-scrollbar pr-2">
                                     {allVibes.map(vibe => (
                                         <button
-                                            key={vibe.id}
-                                            onClick={() => toggleVibe(vibe.id)}
+                                            key={vibe.value}
+                                            onClick={() => toggleVibe(vibe.value)}
                                             className={cn(
                                                 "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap",
-                                                activeVibes.includes(vibe.id)
+                                                activeVibes.includes(vibe.value)
                                                     ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/10"
                                                     : "bg-white dark:bg-[hsl(220,20%,6%)] border-slate-100 dark:border-white/[0.06] text-slate-500 hover:bg-slate-50"
                                             )}

@@ -12,7 +12,7 @@ import { createSubmission, compressImage, uploadSubmissionPhoto } from '@/shared
 import { enrichLocation } from '@/shared/api/ai'
 import { searchPlaces, searchCities, searchAddresses } from '../hooks/useNominatim'
 import { fetchPlacesSuggestions, fetchPlaceDetails } from '@/shared/api/google-places.api'
-import { CATEGORIES_PUBLIC as CATEGORIES } from '@/shared/constants/taxonomy'
+import { CATEGORIES_PUBLIC as CATEGORIES } from '@/shared/config/filterOptions'
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ const STEPS = [
 ]
 
 // UI-subset of canonical PRICE_LEVELS (adds sub/range display copy);
-// canonical list for admin back-office lives in shared/constants/taxonomy.js.
+// canonical list for admin back-office lives in shared/config/filterOptions.js.
 const PRICE_LEVELS = [
     { id: '$',    label: '€',    sub: 'Budget',      range: 'up to €15' },
     { id: '$$',   label: '€€',   sub: 'Mid-range',   range: '€15–35'    },

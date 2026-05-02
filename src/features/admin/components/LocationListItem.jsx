@@ -34,6 +34,7 @@ function StatusBadge({ status }) {
 }
 
 function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
+    const { t } = useTranslation()
     const isVisible = locStatus === LOCATION_STATUSES.ACTIVE || locStatus === LOCATION_STATUSES.APPROVED
     return (
         <button
@@ -42,7 +43,7 @@ function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
                 "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
                 isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-[hsl(220,20%,12%)]"
             )}
-            title={isVisible ? "Скрыть локацию" : "Опубликовать локацию"}
+            title={isVisible ? t('admin.hide_location') : t('admin.publish_location')}
         >
             <span className="sr-only">Toggle visibility</span>
             <span
@@ -69,6 +70,7 @@ function HiddenGemBadge() {
 }
 
 function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMenu, viewMode }) {
+    const { t } = useTranslation()
     return (
         <Menu as="div" className="relative">
             <Menu.Button
@@ -105,7 +107,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                     )}
 
                     <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-white/[0.03] mb-2">
-                        Управление объектом
+                        {t('admin.manage_object')}
                     </div>
 
                     <div className="space-y-1">
@@ -121,7 +123,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-[hsl(220,20%,9%)] shadow-sm" : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50")}>
                                         <Edit size={16} className="stroke-[2.5]" />
                                     </div>
-                                    <span>Редактировать</span>
+                                    <span>{t('admin.actions.edit')}</span>
                                 </button>
                             )}
                         </Menu.Item>
@@ -139,7 +141,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                         <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-emerald-500/20 shadow-sm" : "bg-emerald-50/50 dark:bg-emerald-500/5")}>
                                             <CheckCircle size={16} className="stroke-[2.5]" />
                                         </div>
-                                        <span>Одобрить</span>
+                                        <span>{t('admin.actions.approve')}</span>
                                     </button>
                                 )}
                             </Menu.Item>
@@ -158,7 +160,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                         <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-amber-500/20 shadow-sm" : "bg-amber-50/50 dark:bg-amber-500/5")}>
                                             <X size={16} className="stroke-[2.5]" />
                                         </div>
-                                        <span>Отклонить</span>
+                                        <span>{t('admin.actions.reject')}</span>
                                     </button>
                                 )}
                             </Menu.Item>
@@ -178,7 +180,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-rose-500/20 shadow-sm" : "bg-rose-50/50 dark:bg-rose-500/5")}>
                                         <Trash2 size={16} className="stroke-[2.5]" />
                                     </div>
-                                    <span>Удалить</span>
+                                    <span>{t('admin.actions.delete')}</span>
                                 </button>
                             )}
                         </Menu.Item>
@@ -189,7 +191,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     <button
                                         className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
                                     >
-                                        Закрыть
+                                        {t('admin.actions.close')}
                                     </button>
                                 </Menu.Item>
                             </div>

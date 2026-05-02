@@ -109,8 +109,21 @@
     "start_cta": "Почати досліджувати"
   },
   "ai": {
+    "geo_permission_request": "📍 Щоб знайти місця поблизу, мені потрібен доступ до вашої геолокації. Будь ласка, надайте дозвіл…",
+    "found_places": "Я знайшов кілька місць для вас:",
+    "geo_failed_with_tip": "📍 Не вдалося отримати геолокацію. Спробуйте вказати місто у запиті, наприклад, \"кав'ярня у Львові\".",
+    "geo_unavailable": "📍 Геолокація недоступна. Спробуйте вказати місто у запиті.",
+    "response_failed": "GastroGuide не відповідає. Спробуйте ще раз.",
+    "general_error": "Сталася помилка. Спробуйте ще раз.",
     "placeholder": "Повідомлення GastroGuide…",
-    "typing": "GastroGuide думає…"
+    "typing": "GastroGuide думає…",
+    "welcome_title": "Привіт{{name}}! Я GastroGuide",
+    "welcome_subtitle": "Запитай мене про що завгодно: ресторани, кафе або приховані гастрономічні скарби поруч.",
+    "geo_denied": "Доступ заборонено. Натисніть, щоб спробувати ще раз",
+    "geo_share": "Поділіться місцем розташування для кращих результатів",
+    "suggestion_date": "Найкращі місця для побачення 🕯️",
+    "suggestion_vegan": "Веганський сніданок 🥑",
+    "suggestion_coffee": "Затишна кава ☕"
   },
   "onboarding": {
     "skip": "Пропустити",
@@ -180,10 +193,10 @@
     "welcome_back": "Привіт, {{name}}! Раді бачити тебе знову в {{city}}!",
     "quick_stats": "Швидка статистика",
     "recent_activity": "Остання активність",
-    "greeting_morning": "Доброго ранку",
-    "greeting_afternoon": "Доброго дня",
-    "greeting_night": "Добраніч",
-    "greeting_evening": "Доброго вечора",
+    "greeting_morning": "Доброго ранку, {{name}}",
+    "greeting_afternoon": "Доброго дня, {{name}}",
+    "greeting_night": "Доброї ночі, {{name}}",
+    "greeting_evening": "Доброго вечора, {{name}}",
     "tagline": "Відкривайте найкращі кулінарні місця",
     "explore_today": "Досліджуйте, що є сьогодні в {{city}}",
     "explore_today_fallback": "Досліджуйте, що є сьогодні у вашому місті",

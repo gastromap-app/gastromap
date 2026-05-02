@@ -9,12 +9,21 @@
     "ai_unavailable": "GastroGuide временно недоступен"
   },
   "ai": {
+    "placeholder": "Сообщение GastroGuide…",
+    "typing": "GastroGuide думает…",
+    "welcome_title": "Привет{{name}}! Я GastroGuide",
+    "welcome_subtitle": "Спрашивай меня о чем угодно: рестораны, кафе или скрытые гастрономические жемчужины рядом с тобой.",
     "geo_permission_request": "📍 Для поиска мест поблизости мне нужен доступ к вашей геолокации. Пожалуйста, разрешите доступ…",
     "found_places": "Я нашёл несколько мест для вас:",
     "geo_failed_with_tip": "📍 Не удалось получить геолокацию. Попробуйте указать город в запросе, например \"кафе в Кракове\".",
     "geo_unavailable": "📍 Геолокация недоступна. Попробуйте указать город в запросе.",
+    "geo_denied": "Доступ запрещен. Нажмите, чтобы попробовать снова",
+    "geo_share": "Поделитесь местоположением для лучших результатов",
     "response_failed": "GastroGuide не отвечает. Попробуйте ещё раз.",
-    "general_error": "Произошла ошибка. Попробуйте ещё раз."
+    "general_error": "Произошла ошибка. Попробуйте ещё раз.",
+    "suggestion_date": "Лучшие места для свидания 🕯️",
+    "suggestion_vegan": "Веганский завтрак 🥑",
+    "suggestion_coffee": "Уютный кофе ☕"
   },
   "language_settings": {
     "title": "Язык и Регион",
@@ -125,10 +134,7 @@
     "empty_desc": "Откройте место и нажмите \"Отметить как посещенное\", чтобы отслеживать свое кулинарное путешествие.",
     "start_cta": "Начать исследовать"
   },
-  "ai": {
-    "placeholder": "Сообщение GastroGuide…",
-    "typing": "GastroGuide думает…"
-  },
+
   "onboarding": {
     "skip": "Пропустить",
     "continue": "Продолжить",
@@ -197,10 +203,10 @@
     "welcome_back": "Привет, {{name}}! Рады видеть тебя снова в {{city}}!",
     "quick_stats": "Быстрая статистика",
     "recent_activity": "Последняя активность",
-    "greeting_morning": "Доброе утро",
-    "greeting_afternoon": "Добрый день",
-    "greeting_night": "Доброй ночи",
-    "greeting_evening": "Добрый вечер",
+    "greeting_morning": "Доброе утро, {{name}}",
+    "greeting_afternoon": "Добрый день, {{name}}",
+    "greeting_night": "Доброй ночи, {{name}}",
+    "greeting_evening": "Добрый вечер, {{name}}",
     "tagline": "Открывайте лучшие кулинарные места",
     "explore_today": "Исследуйте, что есть сегодня в {{city}}",
     "explore_today_fallback": "Исследуйте, что есть сегодня в вашем городе",

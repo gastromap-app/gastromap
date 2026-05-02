@@ -109,8 +109,21 @@
     "start_cta": "Zacznij odkrywać"
   },
   "ai": {
+    "geo_permission_request": "📍 Aby znaleźć miejsca w pobliżu, potrzebuję dostępu do Twojej geolokalizacji. Proszę o zgodę…",
+    "found_places": "Znalazłem kilka miejsc dla Ciebie:",
+    "geo_failed_with_tip": "📍 Nie udało się pobrać geolokalizacji. Spróbuj podać miasto w zapytaniu, np. \"kawiarnia w Krakowie\".",
+    "geo_unavailable": "📍 Geolokalizacja jest niedostępna. Spróbuj podać miasto w zapytaniu.",
+    "response_failed": "GastroGuide nie odpowiada. Spróbuj ponownie.",
+    "general_error": "Wystąpił błąd. Spróbuj ponownie.",
     "placeholder": "Wiadomość do GastroGuide…",
-    "typing": "GastroGuide myśli…"
+    "typing": "GastroGuide myśli…",
+    "welcome_title": "Cześć{{name}}! Jestem GastroGuide",
+    "welcome_subtitle": "Zapytaj mnie o cokolwiek: restauracje, kawiarnie lub ukryte perełki gastronomiczne w Twojej okolicy.",
+    "geo_denied": "Odmowa dostępu. Kliknij, aby spróbować ponownie",
+    "geo_share": "Udostępnij lokalizację dla lepszych wyników",
+    "suggestion_date": "Najlepsze miejsca na randkę 🕯️",
+    "suggestion_vegan": "Wegańskie śniadanie 🥑",
+    "suggestion_coffee": "Przytulna kawa ☕"
   },
   "onboarding": {
     "skip": "Pomiń",
@@ -180,10 +193,10 @@
     "welcome_back": "Cześć, {{name}}! Miło Cię widzieć ponownie w {{city}}!",
     "quick_stats": "Szybkie statystyki",
     "recent_activity": "Ostatnia aktywność",
-    "greeting_morning": "Dzień dobry",
-    "greeting_afternoon": "Dzień dobry",
-    "greeting_night": "Dobranoc",
-    "greeting_evening": "Dobry wieczór",
+    "greeting_morning": "Dzień dobry, {{name}}",
+    "greeting_afternoon": "Miłego popołudnia, {{name}}",
+    "greeting_night": "Dobranoc, {{name}}",
+    "greeting_evening": "Dobry wieczór, {{name}}",
     "tagline": "Odkrywaj najlepsze miejsca kulinarne",
     "explore_today": "Odkryj, co jest dzisiaj w {{city}}",
     "explore_today_fallback": "Odkryj, co jest dzisiaj w Twoim mieście",

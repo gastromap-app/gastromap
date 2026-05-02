@@ -40,7 +40,7 @@ function SavedCard({ favorite, index, onRemove }) {
 
             {/* Info */}
             <Link to={`/location/${loc.id}`} className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 pr-10">
                     <div className="min-w-0">
                         <h3 className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                             {loc.title}
@@ -49,23 +49,25 @@ function SavedCard({ favorite, index, onRemove }) {
                             {loc.cuisine} · {loc.category}
                         </p>
                     </div>
-
-                    {/* Rating pill */}
-                    <div className="flex-shrink-0 flex items-center gap-1 bg-blue-600/10 px-2 py-1 rounded-xl">
-                        <Star size={10} className="text-blue-600 fill-blue-600" />
-                        <span className="text-[11px] font-black text-blue-600">{loc.google_rating ?? loc.rating}</span>
-                    </div>
                 </div>
 
                 {/* Meta row */}
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-3 mt-2 pr-10">
+                    {/* Rating pill */}
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${
+                        isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
+                    }`}>
+                        <Star size={10} className="fill-current" />
+                        <span className="text-[10px] font-black">{loc.google_rating ?? loc.rating}</span>
+                    </div>
+
                     {loc.price_range && (
                         <span className={`text-[11px] font-bold ${isDark ? 'text-white/40' : 'text-gray-600'}`}>
                             {loc.price_range}
                         </span>
                     )}
                     {(loc.special_labels?.[0] || loc.vibe) && (
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg ${
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-lg truncate max-w-[120px] ${
                             isDark ? 'bg-white/8 text-white/60' : 'bg-slate-100 text-slate-700'
                         }`}>
                             {loc.special_labels?.[0] || loc.vibe}
@@ -77,10 +79,14 @@ function SavedCard({ favorite, index, onRemove }) {
             {/* Unsave button */}
             <button
                 onClick={(e) => { e.stopPropagation(); onRemove(loc.id) }}
-                className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/20 transition-colors active:scale-90"
+                className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 shadow-sm ${
+                    isDark 
+                        ? 'bg-red-500/10 hover:bg-red-500/20 text-red-500' 
+                        : 'bg-white hover:bg-red-50 shadow-red-100/20 text-red-500 border border-slate-100'
+                }`}
                 aria-label="Remove from saved"
             >
-                <Heart size={14} className="text-red-500 fill-red-500" />
+                <Heart size={14} className="fill-current" />
             </button>
         </motion.div>
     )

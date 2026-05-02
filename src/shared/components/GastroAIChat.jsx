@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChefHat, MoveUp, Sparkles, MapPin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -145,6 +146,7 @@ export function ChatInterface({
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { user } = useAuthStore()
+    const { t } = useTranslation()
     // Anchor element at the very end — always scroll this into view
     const bottomRef = useRef(null)
     // Internal scroll ref — only used when no external scrollContainerRef
@@ -199,12 +201,12 @@ export function ChatInterface({
                         <h3 className={`text-lg font-bold mb-1 ${
                             transparent ? 'text-white' : 'text-gray-900 dark:text-white'
                         }`}>
-                            Hi{user?.name ? `, ${user.name}` : ''}! I'm GastroGuide
+                            {t('ai.welcome_title', { name: user?.name ? `, ${user.name}` : '' })}
                         </h3>
                         <p className={`text-sm leading-relaxed max-w-xs ${
                             transparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
                         }`}>
-                        Ask me anything about restaurants, cafes, and hidden dining gems near you.
+                        {t('ai.welcome_subtitle')}
                     </p>
                     
                     {/* Geo Hint */}
@@ -220,7 +222,7 @@ export function ChatInterface({
                             }`}
                         >
                             <MapPin className="w-3.5 h-3.5" />
-                            {geoStatus === 'denied' ? 'Permission denied. Click to try again' : 'Share location for better results'}
+                            {geoStatus === 'denied' ? t('ai.geo_denied') : t('ai.geo_share')}
                         </motion.button>
                     )}
                 </motion.div>
@@ -230,7 +232,11 @@ export function ChatInterface({
                         transition={{ delay: 0.2 }}
                         className="flex flex-wrap gap-2 justify-center"
                     >
-                        {['Best spots for a date 🕯️', 'Vegan breakfast 🥑', 'Cozy coffee ☕'].map(hint => (
+                        {[
+                            t('ai.suggestion_date'),
+                            t('ai.suggestion_vegan'),
+                            t('ai.suggestion_coffee')
+                        ].map(hint => (
                             <button
                                 key={hint}
                                 onClick={() => onSendMessage?.(hint)}

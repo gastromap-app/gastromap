@@ -21,7 +21,14 @@
     "response_failed": "GastroGuide is not responding. Please try again.",
     "general_error": "An error occurred. Please try again.",
     "placeholder": "Message GastroGuide…",
-    "typing": "GastroGuide is thinking…"
+    "typing": "GastroGuide is thinking…",
+    "welcome_title": "Hi{{name}}! I'm GastroGuide",
+    "welcome_subtitle": "Ask me anything about restaurants, cafes, and hidden dining gems near you.",
+    "geo_denied": "Permission denied. Click to try again",
+    "geo_share": "Share location for better results",
+    "suggestion_date": "Best spots for a date 🕯️",
+    "suggestion_vegan": "Vegan breakfast 🥑",
+    "suggestion_coffee": "Cozy coffee ☕"
   },
   "language_settings": {
     "title": "Language & Region",
@@ -196,10 +203,10 @@
     }
   },
   "dashboard": {
-    "greeting_morning": "Good Morning",
-    "greeting_afternoon": "Good Afternoon",
-    "greeting_night": "Good Night",
-    "greeting_evening": "Good Evening",
+    "greeting_morning": "Good Morning, {{name}}",
+    "greeting_afternoon": "Good Afternoon, {{name}}",
+    "greeting_night": "Good Night, {{name}}",
+    "greeting_evening": "Good Evening, {{name}}",
     "tagline": "What are we eating today?",
     "explore_today": "Explore what's available today in {{city}}",
     "explore_today_fallback": "Explore what's available today in your city",

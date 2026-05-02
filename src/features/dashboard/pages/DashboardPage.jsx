@@ -197,12 +197,22 @@ const DashboardPage = () => {
             <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
 
                 {/* Greeting */}
-                <div className="px-5 mb-5">
-                    <p className={`text-[13px] font-medium mb-0.5 ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{greeting}</p>
-                    <h1 className={`text-[26px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {firstName} <span className="text-blue-600">✦</span>
-                    </h1>
-                    <p className={`text-[13px] font-medium mt-1 ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{cityTagline}</p>
+                <div className="px-5 mb-6">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`text-[32px] font-black tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    >
+                        {greeting} <span className="text-blue-600">✦</span>
+                    </motion.h1>
+                    <motion.p 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className={`text-[15px] font-semibold mt-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                    >
+                        {cityTagline}
+                    </motion.p>
                 </div>
 
                 {/* Search + filter */}
@@ -451,28 +461,26 @@ const DesktopDashboard = ({
     return (
         <div className="pb-20 max-w-6xl mx-auto w-full px-4">
 
-            {/* Hero */}
-            <div className="mt-8 mb-6 relative">
-                {/* Blue glow behind hero */}
+            <div className="mt-12 mb-10 relative">
+                {/* Subtle glow behind hero */}
                 {isDark && (
-                    <div className="absolute -top-10 -left-10 w-[300px] h-[200px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
+                    <div className="absolute -top-20 -left-20 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
                 )}
-                {visitCount > 1 && currentCity && currentCity !== 'Unknown' ? (
-                    <>
-                        <h1 className={`text-[32px] font-bold tracking-tight leading-tight mb-1 ${text} relative`}>
-                            {greeting} <span className="text-blue-500">✦</span>
-                        </h1>
-                        <p className={`text-[15px] font-medium ${sub} mb-5 relative`}>{cityTagline}</p>
-                    </>
-                ) : (
-                    <>
-                        <p className={`text-[15px] font-medium ${sub} mb-0.5 relative`}>{greeting}</p>
-                        <h1 className={`text-[40px] font-bold tracking-tight leading-none mb-1 ${text} relative`}>
-                            {firstName} <span className="text-blue-500">✦</span>
-                        </h1>
-                        <p className={`text-[15px] font-medium ${sub} mb-5 relative`}>{cityTagline}</p>
-                    </>
-                )}
+                
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
+                    <h1 className={`text-[56px] font-black leading-[1.05] tracking-tighter ${text} mb-3 relative`}>
+                        {greeting} <span className="text-blue-600">✦</span>
+                    </h1>
+                    <p className={`text-[15px] font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'} mb-5 relative`}>
+                        {cityTagline}
+                    </p>
+                </motion.div>
+
+                {/* Search + Filters */}
 
                 {/* Search + Filters */}
                 <div className="mb-6 space-y-5">

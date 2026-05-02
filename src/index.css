@@ -200,6 +200,12 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400;
   }
 
+  /* Vertical mask gradient for scrolling lists (LandingPage global search) */
+  .mask-gradient-vertical {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  }
+
   [data-theme='dark'] .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-300;
   }

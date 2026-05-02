@@ -27,7 +27,7 @@ const staggerContainer = {
 }
 
 // Reuseable subtle Apple border/shadow classes
-const surfaceApple = "bg-white dark:bg-[#1C1C1E] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.02)] border border-black/[0.03] dark:border-white/[0.04]"
+const surfaceApple = "bg-white dark:bg-[#1C1C1E] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.02)] border border-black/[0.08] dark:border-white/[0.06]"
 
 // --- Component: Hero (Bento) ---
 const BentoHero = () => {
@@ -44,17 +44,33 @@ const BentoHero = () => {
     ]
 
     React.useEffect(() => {
-        const statTimer = setInterval(() => {
-            setReviewIndex((prev) => (prev + 1) % reviews.length)
-        }, 4000)
+        let statTimer, listTimer
 
-        const listTimer = setInterval(() => {
-            setListMode(prev => prev === 'wishlist' ? 'visited' : 'wishlist')
-        }, 3000)
+        const startTimers = () => {
+            statTimer = setInterval(() => {
+                setReviewIndex((prev) => (prev + 1) % reviews.length)
+            }, 4000)
+            listTimer = setInterval(() => {
+                setListMode(prev => prev === 'wishlist' ? 'visited' : 'wishlist')
+            }, 3000)
+        }
 
-        return () => {
+        const stopTimers = () => {
             clearInterval(statTimer)
             clearInterval(listTimer)
+        }
+
+        const handleVisibility = () => {
+            if (document.hidden) stopTimers()
+            else startTimers()
+        }
+
+        startTimers()
+        document.addEventListener('visibilitychange', handleVisibility)
+
+        return () => {
+            stopTimers()
+            document.removeEventListener('visibilitychange', handleVisibility)
         }
     }, [reviews.length])
 
@@ -76,7 +92,7 @@ const BentoHero = () => {
                         <h1 className="text-4xl sm:text-5xl md:text-7xl font-semibold tracking-[-0.03em] leading-[1.05] text-black/90 dark:text-white mb-6 md:mb-8">
                             Discover places. <br className="hidden sm:block" /> Share with <span className="text-blue-600 dark:text-blue-500">friends.</span>
                         </h1>
-                        <p className="text-base md:text-xl text-black/50 dark:text-white/50 mb-8 md:mb-10 max-w-md leading-relaxed font-medium tracking-tight">
+                        <p className="text-base md:text-xl text-black/60 dark:text-white/60 mb-8 md:mb-10 max-w-md leading-relaxed font-medium tracking-tight">
                             Join the community-driven map to find the best local spots or add your own discoveries.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -122,7 +138,7 @@ const BentoHero = () => {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="text-4xl md:text-5xl font-semibold text-black/90 dark:text-white mb-1 tracking-tight">12k+</h3>
-                                    <p className="text-sm md:text-base text-black/40 dark:text-white/40 font-medium">Curated Locations</p>
+                                    <p className="text-sm md:text-base text-black/60 dark:text-white/60 font-medium">Curated Locations</p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center">
                                     <ArrowUpRight className="w-5 h-5 text-black/60 dark:text-white/60" />
@@ -173,7 +189,7 @@ const BentoHero = () => {
                                 <Heart size={24} className="fill-blue-500/20" />
                             </div>
                             <h3 className="font-semibold text-lg text-black/90 dark:text-white tracking-tight">Bio-Sync AI</h3>
-                            <p className="text-sm text-black/50 dark:text-white/50 font-medium mt-1">Health-aware dining</p>
+                            <p className="text-sm text-black/60 dark:text-white/60 font-medium mt-1">Health-aware dining</p>
                         </div>
                         <div className="bg-[#F5F5F7] dark:bg-white/5 rounded-[20px] p-4 mt-auto">
                             <motion.p
@@ -199,7 +215,7 @@ const BentoHero = () => {
                                 <List size={24} />
                             </div>
                             <h3 className="font-semibold text-lg text-black/90 dark:text-white tracking-tight">Collections</h3>
-                            <p className="text-sm text-black/50 dark:text-white/50 font-medium mt-1">Wishlists & histories</p>
+                            <p className="text-sm text-black/60 dark:text-white/60 font-medium mt-1">Wishlists & histories</p>
                         </div>
 
                         <div className="relative h-[88px] mt-auto">
@@ -252,7 +268,7 @@ const BentoHero = () => {
                                 <User size={24} />
                             </div>
                             <h3 className="font-semibold text-lg text-black/90 dark:text-white tracking-tight">Dine With Me</h3>
-                            <p className="text-sm text-black/50 dark:text-white/50 font-medium mt-1">Social dining radar</p>
+                            <p className="text-sm text-black/60 dark:text-white/60 font-medium mt-1">Social dining radar</p>
                         </div>
                         <div className="bg-[#F5F5F7] dark:bg-white/5 rounded-[20px] mt-auto relative overflow-hidden h-[88px] flex items-center justify-center">
                             {/* Simple minimalist grid */}
@@ -293,7 +309,7 @@ const BentoHero = () => {
                                 <Globe size={24} />
                             </div>
                             <h3 className="font-semibold text-lg text-black/90 dark:text-white tracking-tight">Global</h3>
-                            <p className="text-sm text-black/50 dark:text-white/50 font-medium mt-1">Find anywhere</p>
+                            <p className="text-sm text-black/60 dark:text-white/60 font-medium mt-1">Find anywhere</p>
                         </div>
                         <div className="relative h-[88px] overflow-hidden mt-auto rounded-[20px] bg-[#F5F5F7] dark:bg-white/5 mask-gradient-vertical">
                             <motion.div
@@ -318,7 +334,7 @@ const BentoHero = () => {
 
 // --- Component: Collection ---
 const CollectionPreview = () => (
-    <section className="py-12 md:py-24 relative z-10">
+    <section className="py-12 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8">
             <motion.div
                 initial="hidden"
@@ -330,8 +346,8 @@ const CollectionPreview = () => (
                 <h2 className="text-3xl md:text-5xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white">
                     The <span className="text-blue-600 dark:text-blue-500">Collection</span>
                 </h2>
-                <p className="text-lg md:text-xl font-medium text-black/50 dark:text-white/50 leading-relaxed">
-                    A highly curated selection of the world’s finest rooms, hidden haunts, and culinary landmarks.
+                <p className="text-lg md:text-xl font-medium text-black/60 dark:text-white/60 leading-relaxed">
+                    A highly curated selection of the world's finest rooms, hidden haunts, and culinary landmarks.
                 </p>
             </motion.div>
             <motion.div
@@ -347,7 +363,7 @@ const CollectionPreview = () => (
                     { title: "Madrid", sub: "Mercardo San Miguel", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800&auto=format&fit=crop" },
                     { title: "Tokyo", sub: "Sushi Arai", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800&auto=format&fit=crop" }
                 ].map((item, i) => (
-                    <motion.div key={i} variants={fadeInUp} className="group relative h-[350px] md:h-[480px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-[#1C1C1E] cursor-pointer">
+                    <motion.div key={i} variants={fadeInUp} className="group relative h-[280px] md:h-[360px] rounded-[32px] md:rounded-[40px] overflow-hidden bg-[#1C1C1E] cursor-pointer">
                         <LazyImage
                             src={item.img}
                             alt={item.title}
@@ -368,7 +384,7 @@ const CollectionPreview = () => (
 
 // --- Component: Pricing ---
 const Pricing = () => (
-    <section id="pricing" className="py-12 md:py-24 relative z-10">
+    <section id="pricing" className="py-12 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
         <div className="mx-4 lg:mx-8 rounded-[40px] py-16 md:py-24 bg-white dark:bg-[#1C1C1E] shadow-sm relative overflow-hidden">
             <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
                 <motion.div
@@ -385,7 +401,7 @@ const Pricing = () => (
                         100% Free. <br className="hidden sm:block" />
                         <span className="text-blue-600 dark:text-blue-500">Support the community.</span>
                     </h2>
-                    <p className="text-lg md:text-xl font-medium text-black/50 dark:text-white/50 max-w-2xl mx-auto">
+                    <p className="text-lg md:text-xl font-medium text-black/60 dark:text-white/60 max-w-2xl mx-auto">
                         GastroMap is built by locals for travelers. Enjoy full access forever, or become a supporter.
                     </p>
                 </motion.div>
@@ -400,7 +416,7 @@ const Pricing = () => (
                     <motion.div variants={fadeInUp} className={`p-8 md:p-10 rounded-[40px] flex flex-col ${surfaceApple}`}>
                         <div className="text-xs font-semibold text-black/40 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
                         <div className="text-5xl font-semibold tracking-tight mb-2 text-black/90 dark:text-white">Free</div>
-                        <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
+                        <p className="text-sm font-medium text-black/60 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
                         <ul className="space-y-5 mb-12 text-sm font-medium text-black/70 dark:text-white/70 flex-1">
                             <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Add & Review Places</li>
                             <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Full AI Guidance</li>
@@ -422,7 +438,7 @@ const Pricing = () => (
                         <div className="absolute top-8 right-8 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white backdrop-blur-md">Optional</div>
                         <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-6">Supporter</div>
                         <div className="text-5xl font-semibold tracking-tight mb-2">$5<span className="text-lg text-white/40 font-medium">/mo</span></div>
-                        <p className="text-sm font-medium text-white/50 mb-10">Help keep the servers running.</p>
+                        <p className="text-sm font-medium text-white/60 mb-10">Help keep the servers running.</p>
                         <ul className="space-y-5 mb-12 text-sm font-medium text-white/90 flex-1 relative z-10">
                             <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Exclusive "Supporter" Badge</li>
                             <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Early access to new features</li>
@@ -470,15 +486,16 @@ const FAQ = () => {
                     {questions.map((item, i) => {
                         const isOpen = openIndex === i
                         return (
-                            <div
+                            <button
                                 key={i}
                                 onClick={() => toggleFAQ(i)}
-                                className={`cursor-pointer overflow-hidden transition-all duration-300 rounded-[28px] ${isOpen ? 'bg-white dark:bg-[#1C1C1E] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-6 py-6' : 'hover:bg-black/5 dark:hover:bg-white/5 px-6 py-5'}`}
+                                aria-expanded={isOpen}
+                                className={`w-full text-left cursor-pointer overflow-hidden transition-all duration-300 rounded-[28px] ${isOpen ? 'bg-white dark:bg-[#1C1C1E] shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-6 py-6' : 'hover:bg-black/5 dark:hover:bg-white/5 px-6 py-5'}`}
                             >
-                                <div className="flex justify-between items-center">
+                                <span className="flex justify-between items-center">
                                     <span className={`font-semibold text-lg transition-colors ${isOpen ? 'text-black/90 dark:text-white' : 'text-black/70 dark:text-white/70'}`}>{item.q}</span>
                                     <ChevronDown size={20} className={`text-black/30 dark:text-white/30 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.87,0,0.13,1)] ${isOpen ? 'rotate-180' : ''}`} />
-                                </div>
+                                </span>
                                 <AnimatePresence>
                                     {isOpen && (
                                         <motion.div
@@ -493,7 +510,7 @@ const FAQ = () => {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </div>
+                            </button>
                         )
                     })}
                 </div>
@@ -501,6 +518,39 @@ const FAQ = () => {
         </section>
     )
 }
+
+// --- Component: Final CTA ---
+const FinalCTA = () => (
+    <section className="py-16 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
+        <div className="w-full max-w-[800px] mx-auto px-4 md:px-8 text-center">
+            <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+            >
+                <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-black/90 dark:text-white mb-6">
+                    Ready to explore?
+                </h2>
+                <p className="text-lg md:text-xl font-medium text-black/60 dark:text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
+                    Join thousands of food lovers discovering hidden gems around the world.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link to="/auth/signup">
+                        <Button size="lg" className="w-full sm:w-auto h-14 rounded-full px-10 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium transition-transform active:scale-95 duration-200 shadow-lg shadow-blue-500/20">
+                            Get Started Free
+                        </Button>
+                    </Link>
+                    <Link to="/explore">
+                        <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 rounded-full px-10 text-base bg-transparent border-black/10 dark:border-white/10 text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/5 font-medium transition-transform active:scale-95 duration-200">
+                            Explore Map
+                        </Button>
+                    </Link>
+                </div>
+            </motion.div>
+        </div>
+    </section>
+)
 
 export default function LandingPage() {
     return (
@@ -516,16 +566,8 @@ export default function LandingPage() {
                 <CollectionPreview />
                 <Pricing />
                 <FAQ />
+                <FinalCTA />
             </div>
-
-            {/* Global style overrides needed for mask-gradients */}
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .mask-gradient-vertical {
-                    -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-                    mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-                }
-            `}} />
         </div>
     )
 }

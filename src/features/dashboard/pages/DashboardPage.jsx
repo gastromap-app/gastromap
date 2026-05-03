@@ -58,12 +58,20 @@ const MAP_CATEGORIES = [
 const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
     const { t } = useTranslation()
     return (
-        <div className="flex justify-between items-end">
-            <div>
-                <h3 className={`text-[18px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
-                {subtitle && <p className={`text-[12px] mt-0.5 font-medium ${isDark ? 'text-gray-500' : 'text-slate-600'}`}>{subtitle}</p>}
+        <div className="flex justify-between items-end mb-6">
+            <div className="space-y-1">
+                {subtitle && <p className="text-eyebrow-muted">{subtitle}</p>}
+                <h2 className="text-2xl md:text-[1.75rem] font-extrabold leading-[1.2] tracking-tight text-t-primary">{title}</h2>
             </div>
-            {onSeeAll && <button onClick={onSeeAll} className="text-[13px] font-semibold text-blue-500 hover:text-blue-600 transition-colors">{t('dashboard.see_all')}</button>}
+            {onSeeAll && (
+                <button 
+                    onClick={onSeeAll} 
+                    className="group flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-all"
+                >
+                    {t('dashboard.see_all')}
+                    <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                </button>
+            )}
         </div>
     )
 }
@@ -412,33 +420,33 @@ const DashboardPage = () => {
 
             {/* Desktop Layout */}
             <div className="hidden md:block">
-                    <DesktopDashboard
-                        isDark={isDark}
-                        text={text}
-                        sub={sub}
-                        greeting={greeting}
-                        cityTagline={cityTagline}
-                        firstName={firstName}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        setIsFilterOpen={setIsFilterOpen}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        geoStatus={geoStatus}
-                        isLoading={isLoading}
-                        requestGeo={requestGeo}
-                        nearbyLocations={nearbyLocations}
-                        countries={countries}
-                        handleSelectCountry={handleSelectCountry}
-                        recommended={recommended}
-                        trending={trending}
-                        openNowLocations={openNowLocations}
-                        navigate={navigate}
-                        t={t}
-                        visitCount={visitCount || 0}
-                        currentCity={currentCity || 'Unknown'}
-                    />
-                </div>
+                <DesktopDashboard
+                    isDark={isDark}
+                    text={text}
+                    sub={sub}
+                    greeting={greeting}
+                    cityTagline={cityTagline}
+                    firstName={firstName}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    setIsFilterOpen={setIsFilterOpen}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    geoStatus={geoStatus}
+                    isLoading={isLoading}
+                    requestGeo={requestGeo}
+                    nearbyLocations={nearbyLocations}
+                    countries={countries}
+                    handleSelectCountry={handleSelectCountry}
+                    recommended={recommended}
+                    trending={trending}
+                    openNowLocations={openNowLocations}
+                    navigate={navigate}
+                    t={t}
+                    visitCount={visitCount || 0}
+                    currentCity={currentCity || 'Unknown'}
+                />
+            </div>
         </PageTransition>
     )
 }
@@ -455,96 +463,98 @@ const DesktopDashboard = ({
 }) => {
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
     }
 
     return (
-        <div className="pb-20 max-w-6xl mx-auto w-full px-4">
+        <div className="pb-32 max-w-7xl mx-auto w-full px-6 lg:px-8">
 
-            <div className="mt-12 mb-10 relative">
+            <div className="mt-20 mb-12 relative">
                 {/* Subtle glow behind hero */}
                 {isDark && (
-                    <div className="absolute -top-20 -left-20 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
                 )}
                 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
+                    className="mb-10 max-w-4xl"
                 >
-                    <h1 className={`text-[36px] font-bold leading-tight tracking-tight ${text} mb-2 relative`}>
+                    {/* Branded Display Typography */}
+                    <h1 className="text-[3rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-t-primary mb-4">
                         {greeting}
                     </h1>
-                    <p className={`text-[15px] font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'} mb-5 relative`}>
+                    <p className="text-[1.125rem] font-bold text-blue-500/90 mb-8 max-w-2xl tracking-tight">
                         {cityTagline}
                     </p>
-                </motion.div>
 
-                {/* Search + Filters */}
-
-                {/* Search + Filters */}
-                <div className="mb-6 space-y-5">
-                    <div className="max-w-2xl">
-                        <SmartSearchBar
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFilter={() => setIsFilterOpen(true)}
-                            placeholder={t('dashboard.search_placeholder')}
-                        />
+                    {/* Search + Filters Integrated */}
+                    <div className="flex flex-col gap-6">
+                        <div className="w-full max-w-4xl">
+                            <SmartSearchBar
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFilter={() => setIsFilterOpen(true)}
+                                placeholder={t('dashboard.search_placeholder')}
+                                showFilter={false}
+                            />
+                        </div>
+                        <div className="w-full">
+                            <CategoryFilters isDark={isDark} />
+                        </div>
                     </div>
-                    
-                    {/* Quick Filters */}
-                    <CategoryFilters isDark={isDark} />
-                </div>
+                </motion.div>
             </div>
 
             {/* Tab bar + filter */}
-            <div className="flex items-center justify-between mb-6">
-                <div className={`flex items-center p-1 rounded-[12px] gap-0.5 ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
+            <div className="flex items-center justify-between mb-12 border-b border-border pb-6">
+                <div className="flex items-center p-1 rounded-2xl gap-1 bg-secondary/50 backdrop-blur-sm">
                     {['overview', 'map'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`relative px-6 py-2 rounded-[9px] text-[14px] font-semibold capitalize transition-all ${
+                            className={`relative px-8 py-2.5 rounded-xl text-sm font-bold capitalize transition-all duration-300 ${
                                 activeTab === tab
-                                    ? isDark
-                                        ? 'bg-white/[0.08] text-[hsl(220,20%,96%)] shadow-sm'
-                                        : 'bg-white text-gray-900 shadow-sm'
-                                    : isDark
-                                        ? 'text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                    ? 'bg-white dark:bg-white/10 text-t-primary shadow-lg shadow-black/5 dark:shadow-none'
+                                    : 'text-t-tertiary hover:text-t-primary'
                             }`}
                         >
                             {tab === 'overview' ? t('dashboard.tab_overview') : t('dashboard.tab_map')}
+                            {activeTab === tab && (
+                                <motion.div 
+                                    layoutId="activeTab" 
+                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-xl -z-10"
+                                />
+                            )}
                         </button>
                     ))}
                 </div>
 
                 <button
                     onClick={() => setIsFilterOpen(true)}
-                    className={`flex items-center gap-2 px-4 h-9 rounded-[10px] text-[13px] font-semibold transition-all active:scale-95 ${
-                        isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:bg-white/[0.08] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className="flex items-center gap-2 px-5 h-11 rounded-xl text-sm font-bold transition-all active:scale-95 bg-secondary hover:bg-secondary/80 text-t-primary border border-border"
                 >
-                    <SlidersHorizontal size={15} />
+                    <SlidersHorizontal size={16} />
                     {t('dashboard.filters')}
                 </button>
             </div>
 
             {/* Content */}
             {activeTab === 'map' ? (
-                <Suspense fallback={<div className="h-[calc(100vh-300px)] flex items-center justify-center"><Skeleton className="h-12 w-12 rounded-full" /></div>}>
-                    <MapTab />
+                <Suspense fallback={<div className="h-[70vh] flex items-center justify-center"><Skeleton className="h-12 w-12 rounded-full" /></div>}>
+                    <div className="h-[70vh] rounded-[32px] overflow-hidden border border-border shadow-2xl">
+                        <MapTab />
+                    </div>
                 </Suspense>
             ) : (
                 <motion.div
                     initial="hidden"
                     animate="visible"
-                    variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                    className="space-y-10"
+                    variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                    className="space-y-20"
                 >
                     {/* Nearby Locations */}
-                    <motion.div variants={itemVariants} className="space-y-5 pb-8 border-b border-white/[0.05]">
+                    <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
@@ -555,69 +565,76 @@ const DesktopDashboard = ({
                             isDark={isDark}
                         />
                         
+                        {/* Nearby Locations Grid */}
                         {(geoStatus === 'loading' || geoStatus === 'idle' || isLoading) ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {Array.from({ length: 3 }).map((_, i) => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {Array.from({ length: 4 }).map((_, i) => (
                                     <DashboardCardSkeleton key={i} isDark={isDark} />
                                 ))}
                             </div>
                         ) : geoStatus === 'denied' || geoStatus === 'error' ? (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
-                                <MapPin className={isDark ? "text-gray-500" : "text-gray-400"} size={28} />
-                                <div className="text-center">
-                                    <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.location_needed', 'Location Access Needed')}</p>
-                                    <p className={`text-[13px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.location_desc', 'Please allow location access to see places near you.')}</p>
+                            <div className="w-full flex flex-col items-center justify-center gap-4 py-16 px-8 surface border-dashed border-2">
+                                <div className="p-4 rounded-full bg-blue-500/10 text-blue-500">
+                                    <MapPin size={32} />
                                 </div>
-                                <button onClick={requestGeo} className="mt-3 px-5 py-2.5 rounded-pill bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-bold active:scale-95 transition-all">
+                                <div className="text-center max-w-sm">
+                                    <p className="text-lg font-black text-t-primary">{t('dashboard.location_needed', 'Location Access Needed')}</p>
+                                    <p className="text-sm mt-2 text-t-tertiary leading-relaxed">{t('dashboard.location_desc', 'Please allow location access to see places near you.')}</p>
+                                </div>
+                                <button onClick={requestGeo} className="mt-4 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold active:scale-95 transition-all shadow-xl shadow-blue-500/20">
                                     {t('dashboard.enable_location', 'Enable Location')}
                                 </button>
                             </div>
                         ) : nearbyLocations.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {nearbyLocations.map((item) => (
-                                    <LocationCardNearby key={item.id} location={item} />
+                                    <LocationCardNearby key={item.id} location={item} width="w-full" />
                                 ))}
                             </div>
                         ) : (
-                            <div className={`w-full flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sheet border ${isDark ? 'bg-white/[0.02] border-slate-200/20' : 'bg-white border-slate-200/50 shadow-sm'}`}>
-                                <MapPin className={isDark ? "text-gray-600" : "text-gray-300"} size={32} />
-                                <div className="text-center">
-                                    <p className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
-                                    <p className={`text-[13px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
+                            <div className="w-full flex flex-col items-center justify-center gap-4 py-16 px-8 surface border-dashed border-2">
+                                <div className="p-4 rounded-full bg-slate-500/10 text-t-quaternary">
+                                    <MapPin size={32} />
+                                </div>
+                                <div className="text-center max-w-sm">
+                                    <p className="text-lg font-black text-t-primary">{t('dashboard.no_nearby_places', 'No Places Nearby')}</p>
+                                    <p className="text-sm mt-2 text-t-tertiary leading-relaxed">{t('dashboard.no_nearby_desc', 'There are no places within 1km of your current location.')}</p>
                                 </div>
                             </div>
                         )}
                     </motion.div>
 
                     {/* Countries */}
-                    <motion.div variants={itemVariants} className="space-y-5">
+                    <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
                             isDark={isDark}
                         />
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
                             {countries.map((country) => (
                                 <button
                                     key={country.slug}
                                     onClick={() => handleSelectCountry(country)}
                                     aria-label={t('dashboard.explore_country_aria', { country: country.name })}
-                                    className="relative h-[180px] rounded-card overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform duration-200 text-left"
+                                    className="relative aspect-[16/9] w-full rounded-[32px] overflow-hidden group cursor-pointer active:scale-[0.98] transition-all duration-500 text-left surface-elevated border-none hover:-translate-y-2 hover:shadow-2xl"
                                 >
                                     <LocationImage
                                         src={country.image}
                                         alt={country.name}
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                                         width={400}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                                    <div className="absolute top-3 right-3 bg-blue-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-full">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent group-hover:from-black transition-colors" />
+                                    <div className="absolute top-5 right-5 bg-blue-600 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-lg transform group-hover:scale-110 transition-transform">
                                         {t('dashboard.new_badge', { count: country.newCount })}
                                     </div>
-                                    <div className="absolute bottom-4 left-4">
-                                        <h4 className="text-[18px] font-bold text-white mb-0.5">{country.name}</h4>
-                                        <div className="flex items-center gap-1 text-white/60 text-[11px]">
-                                            <MapPin size={10} />
+                                    <div className="absolute bottom-8 left-8 right-8">
+                                        <h4 className="text-[1.75rem] font-black text-white mb-2 leading-none group-hover:text-blue-400 transition-colors tracking-tighter">
+                                            {country.name}
+                                        </h4>
+                                        <div className="flex items-center gap-2 text-white/70 text-[0.6875rem] font-bold uppercase tracking-[0.14em]">
+                                            <MapPin size={12} className="text-blue-500" />
                                             <span>{t('dashboard.explore_cities')}</span>
                                         </div>
                                     </div>
@@ -627,14 +644,14 @@ const DesktopDashboard = ({
                     </motion.div>
 
                     {/* Recommended */}
-                    <motion.div variants={itemVariants} className="space-y-5">
+                    <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
                             title={t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
                             onSeeAll={() => navigate('/explore')}
                             isDark={isDark}
                         />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {recommended.map((item) => (
                                 <LocationCardDefault key={item.id} location={item} />
                             ))}
@@ -642,14 +659,14 @@ const DesktopDashboard = ({
                     </motion.div>
 
                     {/* Trending */}
-                    <motion.div variants={itemVariants} className="space-y-5">
+                    <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
                             title={t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
                             onSeeAll={() => navigate('/explore')}
                             isDark={isDark}
                         />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {trending.map((item) => (
                                 <LocationCardDefault key={item.id} location={item} />
                             ))}
@@ -658,7 +675,7 @@ const DesktopDashboard = ({
 
                     {/* Open Now */}
                     {openNowLocations.length > 0 && (
-                        <motion.div variants={itemVariants} className="space-y-5 pt-8 border-t border-white/[0.05]">
+                        <motion.div variants={itemVariants} className="space-y-8">
                             <SectionHeader
                                 title={t('dashboard.open_now')}
                                 subtitle={t('dashboard.currently_serving')}
@@ -668,15 +685,15 @@ const DesktopDashboard = ({
                                 }}
                                 isDark={isDark}
                             />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {openNowLocations.slice(0, 3).map((item) => (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {openNowLocations.slice(0, 4).map((item) => (
                                     <LocationCardDefault key={item.id} location={item} />
                                 ))}
                             </div>
                         </motion.div>
                     )}
-                    {/* Manifesto Section Integrated */}
-                    <div className="pt-12 pb-12 border-t border-white/[0.05]">
+                    
+                    <div className="pt-20">
                         <ManifestoSection isDark={isDark} />
                         <FooterDisclaimer isDark={isDark} />
                     </div>

@@ -21,22 +21,22 @@ export function LocationCardNearby({
     return (
         <button
             onClick={() => navigate(`/location/${location.id}`)}
-            className={`flex-shrink-0 ${width} text-left rounded-2xl overflow-hidden border transition-all duration-200 active:scale-[0.98] bg-white dark:bg-[hsl(220,20%,6%)] border-slate-200/50 dark:border-white/5 hover:shadow-md ${className}`}
+            className={`flex-shrink-0 ${width} group text-left surface transition-all duration-300 active:scale-[0.98] hover:surface-elevated hover:-translate-y-1 ${className}`}
         >
             {/* Image */}
-            <div className="relative h-[110px] w-full overflow-hidden">
+            <div className="relative h-[120px] w-full overflow-hidden rounded-t-[20px]">
                 <LazyImage
                     src={image}
                     alt={location.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     wrapperClassName="w-full h-full"
                 />
 
                 {/* Distance badge */}
                 {distanceKm != null && Number.isFinite(distanceKm) && (
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full">
-                        <MapPin size={8} className="text-blue-400" />
-                        <span className="text-[10px] font-bold text-white">
+                    <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/10 shadow-lg">
+                        <MapPin size={10} className="text-blue-400" />
+                        <span className="text-[10px] font-black text-white">
                             {formatDistance(distanceKm)}
                         </span>
                     </div>
@@ -44,11 +44,11 @@ export function LocationCardNearby({
             </div>
 
             {/* Content */}
-            <div className="p-2.5">
-                <h4 className="text-[13px] font-bold leading-tight truncate text-gray-900 dark:text-white">
+            <div className="p-4">
+                <h4 className="text-[0.9375rem] font-extrabold leading-tight truncate text-t-primary group-hover:text-blue-500 transition-colors tracking-tight">
                     {location.title}
                 </h4>
-                <p className="text-[11px] text-slate-500 dark:text-gray-600 truncate mt-0.5">
+                <p className="text-[0.6875rem] text-t-tertiary truncate mt-1.5 font-bold uppercase tracking-[0.14em]">
                     {location.city}
                 </p>
             </div>

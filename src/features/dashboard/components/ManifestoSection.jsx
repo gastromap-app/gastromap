@@ -79,16 +79,14 @@ const ManifestoSection = ({ isDark }) => {
                 <motion.div style={{ y: titleY }} className="mb-8 md:mb-12">
                     <motion.p 
                         variants={itemVariants}
-                        className={`text-[9px] md:text-[10px] font-black tracking-[0.3em] uppercase mb-4 flex items-center gap-3 ${
-                            isDark ? 'text-blue-400/60' : 'text-blue-600/60'
-                        }`}
+                        className="text-eyebrow-muted mb-4 flex items-center gap-3"
                     >
-                        <span className="w-6 md:w-8 h-px bg-current opacity-20" />
+                        <span className="w-6 md:w-8 h-px bg-blue-500/30" />
                         {t('manifesto.title_eyebrow') || 'MANIFESTO'}
                     </motion.p>
                     
                     <div className="overflow-hidden">
-                        <motion.h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.1] md:leading-[1.1] flex flex-wrap gap-x-3 md:gap-x-6">
+                        <motion.h2 className="text-[2rem] md:text-[3rem] font-extrabold tracking-[-0.03em] leading-[1.05] flex flex-wrap gap-x-3 md:gap-x-6">
                             {t('manifesto.title').split(' ').map((word, i) => (
                                 <span key={i} className="inline-block overflow-hidden">
                                     <motion.span 
@@ -106,7 +104,7 @@ const ManifestoSection = ({ isDark }) => {
                 {/* Content Grid */}
                 <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 md:gap-20 items-start mb-10 md:mb-16">
                     <motion.div variants={itemVariants} className="space-y-4 md:space-y-8">
-                        <p className={`text-xl sm:text-2xl md:text-5xl leading-tight font-light tracking-tight ${
+                        <p className={`text-[1.375rem] md:text-[1.75rem] leading-tight font-light tracking-tight ${
                             isDark ? 'text-white/80' : 'text-slate-800'
                         }`}>
                             {t('manifesto.description')}
@@ -116,7 +114,7 @@ const ManifestoSection = ({ isDark }) => {
                     </motion.div>
 
                     <motion.div variants={itemVariants} className="space-y-4 md:space-y-6">
-                        <p className={`text-base md:text-2xl leading-relaxed font-normal italic font-serif opacity-60`}>
+                        <p className="text-[1.125rem] md:text-[1.375rem] leading-relaxed font-normal italic font-serif opacity-60">
                             "{t('manifesto.creator_story')}"
                         </p>
                         
@@ -127,7 +125,7 @@ const ManifestoSection = ({ isDark }) => {
                             className="group flex items-center gap-4 py-1 opacity-60 hover:opacity-100 transition-opacity"
                         >
                             <Instagram size={18} className="group-hover:text-blue-500 transition-colors" />
-                            <span className="text-sm md:text-xl font-bold tracking-tight">@Alikovit</span>
+                            <span className="text-[1.125rem] font-bold tracking-tight">@Alikovit</span>
                             <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                         </motion.a>
                     </motion.div>
@@ -139,10 +137,10 @@ const ManifestoSection = ({ isDark }) => {
                     className="flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-12 pt-8 md:pt-12 border-t border-current/5"
                 >
                     <div className="text-center lg:text-left max-w-lg">
-                        <h3 className="text-2xl md:text-4xl font-black mb-2 md:mb-4 tracking-tighter">
+                        <h3 className="text-[1.375rem] md:text-[1.75rem] font-extrabold mb-2 md:mb-4 tracking-tight">
                             {t('manifesto.join_title')}
                         </h3>
-                        <p className={`text-sm md:text-lg font-light leading-relaxed ${
+                        <p className={`text-[0.9375rem] font-medium leading-relaxed ${
                             isDark ? 'text-white/40' : 'text-slate-500'
                         }`}>
                             {t('manifesto.join_description')}

@@ -20,6 +20,12 @@ import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
 import { useAdminLocations } from '../hooks/useAdminLocations'
+import LocationListItem from '../components/LocationListItem'
+import LocationFormSlideOver from '../components/LocationFormSlideOver'
+import LocationFilters from '../components/LocationFilters'
+import LocationStats from '../components/LocationStats'
+import ListViewSection from '../components/ListViewSection'
+import { getLabelGroups } from '@/shared/config/filterOptions'
 
 // Fix for default marker icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -61,12 +67,6 @@ function LocationPicker({ position, onLocationSelect }) {
     ) : null;
 }
 
-import LocationListItem from '../components/LocationListItem'
-import LocationFormSlideOver from '../components/LocationFormSlideOver'
-import LocationFilters from '../components/LocationFilters'
-import LocationStats from '../components/LocationStats'
-import ListViewSection from '../components/ListViewSection'
-import { getLabelGroups } from '@/shared/config/filterOptions'
 
 const AdminLocationsPage = () => {
     const { t, i18n } = useTranslation()

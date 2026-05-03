@@ -1432,29 +1432,32 @@ const AdminAIPage = () => {
                 </div>
 
                 {/* 6. Final Save Action */}
-                <div className="mt-10 mb-6 flex flex-col sm:flex-row items-center justify-end gap-4 bg-white dark:bg-[hsl(220,20%,6%)]/30 p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.03] shadow-sm">
-                    <div className="flex flex-col items-end mr-auto">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Ready to apply?</h3>
-                        <p className="text-xs text-slate-500">All changes will take effect immediately across the platform.</p>
-                    </div>
+                <div className="mt-10 mb-6 flex flex-col sm:flex-row items-center justify-end gap-6 bg-white dark:bg-[hsl(220,20%,6%)]/30 p-8 rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm">
                     <AnimatePresence>
                         {saved && (
                             <motion.span
                                 initial={{ scale: 0, opacity: 0, x: 20 }}
                                 animate={{ scale: 1, opacity: 1, x: 0 }}
                                 exit={{ scale: 0, opacity: 0, x: 20 }}
-                                className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-400"
+                                className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 mr-auto"
                             >
                                 <CheckCircle2 size={16} /> Saved Successfully
                             </motion.span>
                         )}
                     </AnimatePresence>
-                    <button 
-                        onClick={handleSave} 
-                        className={cn(adminBtnPrimary, "h-14 px-8 min-w-[200px] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all")}
-                    >
-                        <Save size={18} /> Save Parameters
-                    </button>
+
+                    <div className="flex flex-col items-end gap-3">
+                        <button 
+                            onClick={handleSave} 
+                            className={cn(adminBtnPrimary, "h-14 px-10 min-w-[240px] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all")}
+                        >
+                            <Save size={18} /> Save Parameters
+                        </button>
+                        <div className="flex flex-col items-end pr-1">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Ready to apply?</h3>
+                            <p className="text-[11px] text-slate-500 leading-tight">All changes will take effect immediately across the platform.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

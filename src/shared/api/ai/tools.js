@@ -319,6 +319,7 @@ export async function executeTool(name, args, ctx = {}) {
 
     // ── search_locations ────────────────────────────────────────────────────
     if (name === 'search_locations') {
+        const {
             city, cuisine_types, tags, price_range, category,
             amenities, best_for, dietary_options, min_rating,
             keyword, michelin, limit = 5, sort_by,

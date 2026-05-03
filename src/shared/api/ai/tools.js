@@ -106,6 +106,7 @@ function mapLocation(l) {
         michelin_stars: l.michelin_stars ?? 0,
         michelin_bib:   l.michelin_bib ?? false,
         distance:       l.distance_meters ?? null,
+        created_at:     l.created_at ?? null,
     }
 }
 
@@ -130,7 +131,7 @@ function getUserPreferences() {
  *
  * Returns raw rows (for client-side post-filtering).
  */
-async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, fetchLimit = 200 }) {
+async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, sort_by, fetchLimit = 200 }) {
     if (!supabase) return null
 
     try {
@@ -169,7 +170,7 @@ async function querySupabase({ city, category, cuisine, price_range, min_rating,
         }
 
         const { data, error } = await query
-            .order('google_rating', { ascending: false, nullsFirst: false })
+            .order(sort_by === 'newest' ? 'created_at' : 'google_rating', { ascending: false, nullsFirst: false })
             .limit(fetchLimit)
 
         if (error) {
@@ -237,7 +238,7 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
 
 // ─── Tier 3: Keyword search (pgvector semantic + literal fallback) ────────────
 
-async function applyKeywordSearch(results, keyword, limit, { city, category } = {}) {
+async function applyKeywordSearch(results, keyword, limit, { city, category, sort_by } = {}) {
     const kw = norm(keyword)
 
     // Helper: search inside all kg_profile array fields
@@ -281,6 +282,11 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
                 const bS = semanticIds.has(b.id) ? 2 : 0
                 const aL = literalMatches.find(m => m.id === a.id) ? 1 : 0
                 const bL = literalMatches.find(m => m.id === b.id) ? 1 : 0
+                
+                if (sort_by === 'newest') {
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0)
+                }
+                
                 return (bS + bL) - (aS + aL) || (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0)
             })
             return combined
@@ -289,6 +295,9 @@ async function applyKeywordSearch(results, keyword, limit, { city, category } = 
         // pgvector not available or failed — use literal only
     }
 
+    if (sort_by === 'newest') {
+        return literalMatches.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    }
     return literalMatches.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
 }
 
@@ -310,15 +319,14 @@ export async function executeTool(name, args, ctx = {}) {
 
     // ── search_locations ────────────────────────────────────────────────────
     if (name === 'search_locations') {
-        const {
             city, cuisine_types, tags, price_range, category,
             amenities, best_for, dietary_options, min_rating,
-            keyword, michelin, limit = 5,
+            keyword, michelin, limit = 5, sort_by,
         } = args
 
         console.log(`[ai.tools] 🔎 Executing search_locations:`, {
             city, category, keyword,
-            price_range, min_rating,
+            price_range, min_rating, sort_by
         })
 
         // ── Case A: Keyword/Semantic Search (Hybrid-first) ──────────────────
@@ -375,6 +383,7 @@ export async function executeTool(name, args, ctx = {}) {
                 price_range: price_range?.length ? price_range : (effectivePrice ? [effectivePrice] : null),
                 min_rating,
                 michelin,
+                sort_by,
             })
             if (dbRows?.length) {
                 pool = dbRows
@@ -402,9 +411,14 @@ export async function executeTool(name, args, ctx = {}) {
 
             // If keyword exists but hybrid failed, do a literal fallback
             if (keyword) {
-                pool = await applyKeywordSearch(pool, keyword, limit, { city, category })
+                pool = await applyKeywordSearch(pool, keyword, limit, { city, category, sort_by })
             } else {
-                pool.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
+                pool.sort((a, b) => {
+                    if (sort_by === 'newest') {
+                        return new Date(b.created_at || 0) - new Date(a.created_at || 0)
+                    }
+                    return (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0)
+                })
             }
         }
 

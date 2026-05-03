@@ -175,7 +175,7 @@ const DashboardPage = () => {
     const [activeTab, setActiveTab] = useState('all')
     const handleSelectCountry = useCallback((country) => {
         useLocationsStore.getState().setCountry(country.name)
-        navigate('/explore')
+        navigate(`/explore/${country.slug}`)
     }, [navigate])
     const recommended = useMemo(() => {
         return [...filteredLocations]
@@ -609,6 +609,7 @@ const DesktopDashboard = ({
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
+                            onSeeAll={() => navigate('/explore')}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">

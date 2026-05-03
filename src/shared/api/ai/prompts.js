@@ -18,7 +18,7 @@ import { buildRecentContext } from './recent-context'
  * @param {Array} [recentMessages=[]] - Last N messages from the store, used for recent context injection
  * @returns {Promise<string>} - Built system prompt with personalization
  */
-export async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null, recentMessages = []) {
+export async function buildSystemPrompt(userPrefs = {}, queryContext = null, agentType = 'guide', userData = null, recentMessages = [], overridePrompt = null) {
     let appCfg = {}
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
@@ -28,10 +28,10 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
         appCfg = getActiveAIConfig()
     }
 
-    // Use custom prompt if set, otherwise default
-    const basePrompt = agentType === 'guide'
+    // Use custom prompt if set, otherwise default. Use overridePrompt if provided (e.g. for preview)
+    const basePrompt = overridePrompt ?? (agentType === 'guide'
         ? (appCfg.aiGuideSystemPrompt || DEFAULT_GUIDE_PROMPT)
-        : (appCfg.aiAssistantSystemPrompt || DEFAULT_ASSISTANT_PROMPT)
+        : (appCfg.aiAssistantSystemPrompt || DEFAULT_ASSISTANT_PROMPT))
 
     const { favoriteCuisines = [], vibePreference = [], priceRange = [], dietaryRestrictions = [] } = userPrefs
 

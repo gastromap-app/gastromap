@@ -365,6 +365,15 @@ const AdminAIPage = () => {
     const [guidePrompt, setGuidePrompt] = useState(appConfig.aiGuideSystemPrompt ?? '')
     const [assistantPrompt, setAssistantPrompt] = useState(appConfig.aiAssistantSystemPrompt ?? '')
     const [kgAgentPrompt, setKgAgentPrompt] = useState(appConfig.aiKGAgentSystemPrompt ?? '')
+    
+    // Check if prompts match system defaults
+    const isGuideDefault = !guidePrompt || guidePrompt === DEFAULT_PROMPTS.guide
+    const isAssistantDefault = !assistantPrompt || assistantPrompt === DEFAULT_PROMPTS.assistant
+    const isKgDefault = !kgAgentPrompt || kgAgentPrompt === DEFAULT_KG_SYSTEM_PROMPT
+
+    const [showGuideDiff, setShowGuideDiff] = useState(false)
+    const [showAssistantDiff, setShowAssistantDiff] = useState(false)
+    const [showKgDiff, setShowKgDiff] = useState(false)
     const [braveApiKey, setBraveApiKey] = useState(appConfig.braveSearchApiKey ?? '')
     const [showBraveKey, setShowBraveKey] = useState(false)
 
@@ -481,7 +490,9 @@ const AdminAIPage = () => {
                 { favoriteCuisines: ['Italian', 'Polish'], vibePreference: ['Romantic'], priceRange: ['$$'], dietaryRestrictions: [] },
                 'romantic dinner in Krakow',
                 'guide',
-                { visitedCount: 5, visitedNames: ['Pod Baranem', 'Starka'], favoritesNames: ['Szara Gęś'], foodieDNA: 'Adventurous Explorer', userExperience: 'Loves Polish and Italian cuisine', recentInterests: ['fine dining', 'date night'] }
+                { visitedCount: 5, visitedNames: ['Pod Baranem', 'Starka'], favoritesNames: ['Szara Gęś'], foodieDNA: 'Adventurous Explorer', userExperience: 'Loves Polish and Italian cuisine', recentInterests: ['fine dining', 'date night'] },
+                [],
+                guidePrompt
             )
             setPreviewPrompt(result)
             setShowPreview(true)
@@ -1026,7 +1037,17 @@ const AdminAIPage = () => {
                                     <MessageSquare className="text-indigo-500" size={16} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
+                                        <span className={cn(
+                                            "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                            isGuideDefault 
+                                                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                                : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                        )}>
+                                            {isGuideDefault ? 'System Default' : 'Custom Override'}
+                                        </span>
+                                    </div>
                                     <p className="text-xs text-slate-500">User-facing dining assistant</p>
                                 </div>
                             </div>
@@ -1040,8 +1061,15 @@ const AdminAIPage = () => {
                                     Preview Final Prompt
                                 </button>
                                 <button
-                                    onClick={() => setGuidePrompt(DEFAULT_PROMPTS.guide)}
+                                    onClick={() => setShowGuideDiff(!showGuideDiff)}
                                     className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                                >
+                                    <Code size={12} />
+                                    {showGuideDiff ? 'Hide Diff' : 'Compare'}
+                                </button>
+                                <button
+                                    onClick={() => setGuidePrompt(DEFAULT_PROMPTS.guide)}
+                                    className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1 transition-colors"
                                 >
                                     <RotateCcw size={12} />
                                     Reset
@@ -1055,9 +1083,24 @@ const AdminAIPage = () => {
                             rows={6}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
-                        <p className="text-xs text-slate-400 mt-2">
-                            {guidePrompt.length} characters {guidePrompt.length === 0 && '(using default)'}
-                        </p>
+                        
+                        {showGuideDiff && !isGuideDefault && (
+                            <div className="mt-3 p-4 bg-slate-100 dark:bg-[hsl(220,20%,4%)] rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Original System Default:</h4>
+                                <pre className="text-[10px] text-slate-500 overflow-x-auto whitespace-pre-wrap max-h-[150px] font-mono leading-relaxed">
+                                    {DEFAULT_PROMPTS.guide}
+                                </pre>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-slate-400">
+                                {guidePrompt.length} characters {isGuideDefault && '(currently using system default)'}
+                            </p>
+                            {!isGuideDefault && (
+                                <span className="text-[10px] text-amber-500 font-medium">⚠️ Custom override active</span>
+                            )}
+                        </div>
                     </div>
 
                     {/* GastroAssistant Prompt */}
@@ -1067,18 +1110,37 @@ const AdminAIPage = () => {
                                 <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
                                     <Brain className="text-emerald-500" size={16} />
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant</h3>
-                                    <p className="text-xs text-slate-500">Background agent for search &amp; personalization</p>
+                                 <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroAssistant</h3>
+                                        <span className={cn(
+                                            "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                            isAssistantDefault 
+                                                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                                : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                        )}>
+                                            {isAssistantDefault ? 'System Default' : 'Custom Override'}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">Background agent for search & personalization</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setAssistantPrompt(DEFAULT_PROMPTS.assistant)}
-                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
-                            >
-                                <RotateCcw size={12} />
-                                Reset
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setShowAssistantDiff(!showAssistantDiff)}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                                >
+                                    <Code size={12} />
+                                    {showAssistantDiff ? 'Hide Diff' : 'Compare'}
+                                </button>
+                                <button
+                                    onClick={() => setAssistantPrompt(DEFAULT_PROMPTS.assistant)}
+                                    className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1 transition-colors"
+                                >
+                                    <RotateCcw size={12} />
+                                    Reset
+                                </button>
+                            </div>
                         </div>
                         <textarea
                             value={assistantPrompt}
@@ -1087,9 +1149,24 @@ const AdminAIPage = () => {
                             rows={6}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
-                        <p className="text-xs text-slate-400 mt-2">
-                            {assistantPrompt.length} characters {assistantPrompt.length === 0 && '(using default)'}
-                        </p>
+
+                        {showAssistantDiff && !isAssistantDefault && (
+                            <div className="mt-3 p-4 bg-slate-100 dark:bg-[hsl(220,20%,4%)] rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Original System Default:</h4>
+                                <pre className="text-[10px] text-slate-500 overflow-x-auto whitespace-pre-wrap max-h-[150px] font-mono leading-relaxed">
+                                    {DEFAULT_PROMPTS.assistant}
+                                </pre>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-slate-400">
+                                {assistantPrompt.length} characters {isAssistantDefault && '(currently using system default)'}
+                            </p>
+                            {!isAssistantDefault && (
+                                <span className="text-[10px] text-amber-500 font-medium">⚠️ Custom override active</span>
+                            )}
+                        </div>
                     </div>
 
                     {/* KG Agent Prompt */}
@@ -1100,25 +1177,45 @@ const AdminAIPage = () => {
                                     <Globe className="text-indigo-500" size={16} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">Knowledge Graph Agent</h3>
-                                    <p className="text-xs text-slate-500">Enriches the culinary database from Open Food Facts &amp; web sources</p>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">Knowledge Graph Agent</h3>
+                                        <span className={cn(
+                                            "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                            isKgDefault 
+                                                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                                : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                        )}>
+                                            {isKgDefault ? 'System Default' : 'Custom Override'}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">Internal data enrichment and logic</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setKgAgentPrompt('')}
-                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
-                            >
-                                <RotateCcw size={12} />
-                                Reset
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setShowKgDiff(!showKgDiff)}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline"
+                                >
+                                    <Code size={12} />
+                                    {showKgDiff ? 'Hide Diff' : 'Compare'}
+                                </button>
+                                <button
+                                    onClick={() => setKgAgentPrompt(DEFAULT_KG_SYSTEM_PROMPT)}
+                                    className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1 transition-colors"
+                                >
+                                    <RotateCcw size={12} />
+                                    Reset
+                                </button>
+                            </div>
                         </div>
+
                         <div className="mb-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
                             <p className="text-xs text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed">
                                 This agent connects to Open Food Facts, Wikipedia, and other culinary sources to populate
                                 the Knowledge Graph with cuisines, dishes, and ingredients.
-                                GastroGuide reads this data for semantic, context-aware recommendations.
                             </p>
                         </div>
+
                         {/* Brave Search API Key */}
                         <div className="mb-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -1145,12 +1242,8 @@ const AdminAIPage = () => {
                                     {showBraveKey ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1.5">
-                                Get a free key at{" "}
-                                <a href="https://api.search.brave.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">api.search.brave.com</a>.
-                                {braveApiKey ? " ✓ Web search enrichment active" : " Leave empty to skip web search."}
-                            </p>
                         </div>
+
                         <textarea
                             value={kgAgentPrompt}
                             onChange={(e) => setKgAgentPrompt(e.target.value)}
@@ -1158,9 +1251,24 @@ const AdminAIPage = () => {
                             rows={8}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500 transition-all resize-y"
                         />
-                        <p className="text-xs text-slate-400 mt-2">
-                            {kgAgentPrompt.length} characters {kgAgentPrompt.length === 0 && '(using default — Open Food Facts + Wikipedia sources)'}
-                        </p>
+
+                        {showKgDiff && !isKgDefault && (
+                            <div className="mt-3 p-4 bg-slate-100 dark:bg-[hsl(220,20%,4%)] rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Original System Default:</h4>
+                                <pre className="text-[10px] text-slate-500 overflow-x-auto whitespace-pre-wrap max-h-[150px] font-mono leading-relaxed">
+                                    {DEFAULT_KG_SYSTEM_PROMPT}
+                                </pre>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-slate-400">
+                                {kgAgentPrompt.length} characters {isKgDefault && '(currently using system default)'}
+                            </p>
+                            {!isKgDefault && (
+                                <span className="text-[10px] text-amber-500 font-medium">⚠️ Custom override active</span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Live Prompt Preview */}

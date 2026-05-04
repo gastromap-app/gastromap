@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Building2, Sparkles, Wand2, MapPin, Phone, Globe,
     Clock, Star, DollarSign, ChevronDown, Image, Plus, Trash2,
-    RefreshCw, Zap, Info, ChevronUp, AlertCircle, Save, Upload
+    RefreshCw, Zap, Info, ChevronUp, AlertCircle, Save, Upload,
+    Instagram, Facebook, Calendar
 } from 'lucide-react'
 import { compressImage, uploadFile } from '@/shared/api/storage.api'
 import { cn } from '@/lib/utils'
@@ -384,7 +385,14 @@ const LocationFormSlideOver = ({
                                                         <div className="relative group">
                                                             <select
                                                                 value={formData.cuisine || ''}
-                                                                onChange={e => set('cuisine', e.target.value)}
+                                                                onChange={e => {
+                                                                    const val = e.target.value
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        cuisine: val,
+                                                                        cuisine_types: val ? [val] : []
+                                                                    }))
+                                                                }}
                                                                 className={cn(input, "appearance-none pr-10 cursor-pointer")}
                                                                 disabled={cuisinesLoading}
                                                             >
@@ -516,6 +524,48 @@ const LocationFormSlideOver = ({
                                                         onChange={e => set('phone', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder="+48 123 456 789"
+                                                    />
+                                                </div>
+                                            </Field>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-2">
+                                            <Field label={t('admin.locations.form.fields.social_instagram')}>
+                                                <div className="relative group">
+                                                    <Instagram size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.social_instagram || ''}
+                                                        onChange={e => set('social_instagram', e.target.value)}
+                                                        className={cn(input, "pl-11")}
+                                                        placeholder="https://instagram.com/..."
+                                                    />
+                                                </div>
+                                            </Field>
+                                            <Field label={t('admin.locations.form.fields.social_facebook')}>
+                                                <div className="relative group">
+                                                    <Facebook size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.social_facebook || ''}
+                                                        onChange={e => set('social_facebook', e.target.value)}
+                                                        className={cn(input, "pl-11")}
+                                                        placeholder="https://facebook.com/..."
+                                                    />
+                                                </div>
+                                            </Field>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            <Field label={t('admin.locations.form.fields.booking_url')}>
+                                                <div className="relative group">
+                                                    <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.booking_url || ''}
+                                                        onChange={e => set('booking_url', e.target.value)}
+                                                        className={cn(input, "pl-11")}
+                                                        placeholder="https://booking-site.com/..."
                                                     />
                                                 </div>
                                             </Field>

@@ -208,17 +208,38 @@ const ProfilePage = () => {
                     label: t('profile.check_updates'),
                     action: async () => {
                         if ('serviceWorker' in navigator) {
-                            const registration = await navigator.serviceWorker.getRegistration();
-                            showToast(t('profile.sw_checking') || 'Checking for updates…');
-                            
-                            // Simulate a network check for better UX
-                            await new Promise(resolve => setTimeout(resolve, 1500));
+                            try {
+                                const registration = await navigator.serviceWorker.getRegistration();
+                                showToast(t('profile.sw_checking') || 'Checking for updates…');
+                                
+                                if (registration) {
+                                    // First check if there is already a waiting worker
+                                    if (registration.waiting) {
+                                        showToast(t('profile.sw_ready') || 'New version ready! Reloading...');
+                                        setTimeout(() => window.location.reload(), 1500);
+                                        return;
+                                    }
 
-                            if (registration) {
-                                await registration.update();
-                                showToast(t('profile.sw_latest') || 'You are on the latest version');
-                            } else {
-                                showToast(t('profile.sw_latest') || 'You are on the latest version');
+                                    // Otherwise, trigger an update check
+                                    await registration.update();
+                                    
+                                    // Wait a bit for the update to be processed
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                                    if (registration.waiting || registration.installing) {
+                                        showToast(t('profile.sw_updating') || 'Updating to latest version...');
+                                        // Most SWs are configured to skipWaiting on message or automatically.
+                                        // If it's waiting, we can reload.
+                                        setTimeout(() => window.location.reload(), 2000);
+                                    } else {
+                                        showToast(t('profile.sw_latest') || 'You are on the latest version');
+                                    }
+                                } else {
+                                    showToast(t('profile.sw_latest') || 'You are on the latest version');
+                                }
+                            } catch (err) {
+                                console.error('SW Update check failed:', err);
+                                showToast(t('profile.sw_error') || 'Failed to check for updates');
                             }
                         } else {
                             showToast(t('profile.sw_unsupported') || 'Update check not supported');
@@ -380,13 +401,37 @@ const ProfilePage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set — complete onboarding</p>
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
                             )}
                         </div>
 
-                        {/* Vibes */}
+                        {/* Foodie DNA Description */}
                         <div className="space-y-2">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Atmosphere</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.dna_label') || 'Foodie DNA'}</label>
+                            {prefs.foodieDNA ? (
+                                <p className={`text-sm leading-relaxed p-4 rounded-2xl border ${isDark ? 'bg-white/5 border-white/5 text-white/80' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
+                                    {prefs.foodieDNA}
+                                </p>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
+                            )}
+                        </div>
+
+                        {/* Atmosphere Description */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.atm_label') || 'Atmosphere'}</label>
+                            {prefs.atmospherePreference ? (
+                                <p className={`text-sm leading-relaxed p-4 rounded-2xl border ${isDark ? 'bg-indigo-500/5 border-indigo-500/10 text-indigo-100/70' : 'bg-indigo-50/50 border-indigo-100/50 text-indigo-900/70'}`}>
+                                    {prefs.atmospherePreference}
+                                </p>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
+                            )}
+                        </div>
+
+                        {/* Vibe Tags */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.vibes_label') || 'Vibe Tags'}</label>
                             {prefs.vibePreference?.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {prefs.vibePreference.map(v => (
@@ -396,13 +441,29 @@ const ProfilePage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set</p>
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
+                            )}
+                        </div>
+
+                        {/* Important Features */}
+                        <div className="space-y-2">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.features_label') || 'Important Features'}</label>
+                            {prefs.features?.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prefs.features.map(f => (
+                                        <span key={f} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                                            {f}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
                             )}
                         </div>
 
                         {/* Budget */}
                         <div className="space-y-2">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Budget</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.budget_label') || 'Budget'}</label>
                             {prefs.priceRange?.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {prefs.priceRange.map(p => (
@@ -412,13 +473,13 @@ const ProfilePage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>Not set</p>
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.not_set')}</p>
                             )}
                         </div>
 
                         {/* Allergens / Dietary */}
                         <div className="space-y-2">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Dietary & Allergens</label>
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.dietary_label') || 'Dietary & Allergens'}</label>
                             {prefs.dietaryRestrictions?.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {prefs.dietaryRestrictions.map(a => (
@@ -428,7 +489,7 @@ const ProfilePage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>No restrictions</p>
+                                <p className={`text-xs italic ${subTextStyle} opacity-60`}>{t('profile.no_restrictions')}</p>
                             )}
                         </div>
                     </div>

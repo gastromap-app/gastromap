@@ -29,7 +29,7 @@ const RequireAdmin = () => {
 }
 
 // ─── Post-confirmation redirect — when Supabase resolves auth from URL hash ─
-const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/features', '/pricing', '/about', '/contact'])
+const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/features', '/pricing', '/about', '/contact'])
 
 const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()
@@ -150,15 +150,15 @@ export const AppRouter = () => {
                     <Route path="/community" element={<PublicPage title="Community" subtitle="Join the conversation." />} />
                 </Route>
 
-                {/* Public App Routes — no auth needed (explore, location details) */}
+                {/* Public App Routes — no auth needed (location details) */}
                 <Route element={<MaintenanceGuard><MainLayout /></MaintenanceGuard>}>
-                    <Route path="/explore" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
-                    <Route path="/explore/:country" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
-                    <Route path="/explore/:country/:city" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
                     <Route path="/location/:id" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><LocationDetailsPage /></ErrorBoundary>} />
 
                     {/* Private App Routes — requires authentication */}
                     <Route element={<RequireAuth />}>
+                        <Route path="/explore" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
+                        <Route path="/explore/:country" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
+                        <Route path="/explore/:country/:city" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/dashboard/add-place" element={<AddPlacePage />} />
                         <Route path="/dashboard/my-submissions" element={<MySubmissionsPage />} />

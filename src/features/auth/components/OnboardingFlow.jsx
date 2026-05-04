@@ -4,7 +4,7 @@ import { ArrowRight, Check, Sparkles, X, Plus } from 'lucide-react'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useTranslation } from 'react-i18next'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
-import { supabase } from '@/shared/api/client'
+import { updateUserPreferences } from '@/shared/api/preferences.api'
 
 // ─── Static data ──────────────────────────────────────────────────────────
 
@@ -39,38 +39,15 @@ const ALLERGENS = [
     { id: 'kosher',        label: 'Kosher',     icon: '✡️' },
 ]
 
-// ─── Save DNA to Supabase ─────────────────────────────────────────────────
-
-async function saveDNAToSupabase({ cuisines, vibes, budget, allergens }) {
-    if (!supabase) return
-    try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) return
-        const userId = session.user.id
-
-        // Always upsert to user_preferences
-        // Keep 'any' in the DB — it acts as a sentinel that onboarding was completed.
-        const { error: upError } = await supabase
-            .from('user_preferences')
-            .upsert({
-                user_id:              userId,
-                onboarding_completed: true,
-                favorite_cuisines:    cuisines,   // preserve 'any' sentinel
-                vibe_preferences:     vibes,
-                dietary_restrictions: allergens,
-                price_range:          budget?.length > 0 ? budget[0] : null,
-                last_updated:         new Date().toISOString(),
-            }, { onConflict: 'user_id' })
-
-        if (upError) {
-            console.warn('[Onboarding] user_preferences upsert failed:', upError.message)
-        } else {
-            console.log('[Onboarding] ✅ DNA saved to user_preferences')
-        }
-    } catch (err) {
-        console.warn('[Onboarding] saveDNAToSupabase error:', err.message)
-    }
-}
+const FEATURES = [
+    { id: 'Outdoor Seating',    label: 'Outdoor',      icon: '🪴' },
+    { id: 'WiFi',               label: 'WiFi',         icon: '📶' },
+    { id: 'Parking',            label: 'Parking',      icon: '🅿️' },
+    { id: 'Pet Friendly',       label: 'Pet Friendly', icon: '🐾' },
+    { id: 'Kids Play Area',     label: 'Kids Area',    icon: '🧸' },
+    { id: 'Laptop Friendly',    label: 'Laptop',       icon: '💻' },
+    { id: 'Wheelchair Accessible', label: 'Accessible', icon: '♿' },
+]
 
 // ─── Shared Chip component ────────────────────────────────────────────────
 
@@ -374,9 +351,65 @@ function StepAllergens({ value, onChange }) {
     )
 }
 
+// ─── Step 5: Atmosphere ───────────────────────────────────────────────────
+
+function StepAtmosphere({ value, onChange }) {
+    const { t } = useTranslation()
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-black text-white tracking-tight">
+                    {t('onboarding.atmosphere_title', 'Describe your vibe')}
+                </h2>
+                <p className="text-white/50 text-sm font-medium mt-1">
+                    {t('onboarding.atmosphere_desc', 'Tell us what makes a place perfect for you')}
+                </p>
+            </div>
+
+            <textarea
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={t('onboarding.atmosphere_placeholder', 'e.g. "I love quiet, hidden gems with great coffee and books..."')}
+                className="w-full h-40 p-5 rounded-3xl bg-white/5 border border-white/10 text-white text-base font-medium placeholder:text-white/20 outline-none focus:border-blue-500/60 focus:bg-white/10 transition-all resize-none"
+            />
+        </div>
+    )
+}
+
+// ─── Step 6: Features ─────────────────────────────────────────────────────
+
+function StepFeatures({ value, onChange }) {
+    const { t } = useTranslation()
+    const toggle = (id) =>
+        onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-black text-white tracking-tight">
+                    {t('onboarding.features_title', 'Must-have features')}
+                </h2>
+                <p className="text-white/50 text-sm font-medium mt-1">
+                    {t('onboarding.features_desc', 'What amenities are important for your visit?')}
+                </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+                {FEATURES.map((f) => (
+                    <Chip key={f.id} selected={value.includes(f.id)} onClick={() => toggle(f.id)}>
+                        <span className="text-base">{f.icon}</span>
+                        {f.label}
+                    </Chip>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 6
 
 export function OnboardingFlow({ onComplete }) {
     const { t } = useTranslation()
@@ -386,9 +419,10 @@ export function OnboardingFlow({ onComplete }) {
     const [cuisines, setCuisines] = useState([])
     const [vibes, setVibes]       = useState([])
     const [budget, setBudget]     = useState(['$$'])
+    const [atmosphere, setAtmosphere] = useState('')
+    const [features, setFeatures] = useState([])
     const [allergens, setAllergens] = useState([])
     const [saving, setSaving]     = useState(false)
-    const [, setSkipError] = useState(null)
 
     // Step 0–3 can-continue rules:
     //   0 (cuisines)  → at least 1
@@ -399,7 +433,9 @@ export function OnboardingFlow({ onComplete }) {
         cuisines.length > 0,
         vibes.length > 0,
         budget.length > 0,
-        true,
+        true, // atmosphere is optional
+        true, // features optional
+        true, // allergens optional
     ][step] ?? true
 
     const handleNext = () => {
@@ -413,61 +449,81 @@ export function OnboardingFlow({ onComplete }) {
     const handleFinish = async () => {
         setSaving(true)
         const dna = {
-            cuisines:  cuisines.length > 0 ? cuisines : ['any'],
-            vibes,
-            budget:    budget.length > 0 ? budget : ['$$'],
-            allergens,
+            onboarding_completed: true,
+            favorite_cuisines: cuisines.length > 0 ? cuisines : ['any'],
+            vibe_preferences: vibes,
+            price_range: budget,
+            dietary_restrictions: allergens,
+            atmosphere_preference: atmosphere,
+            features: features,
         }
 
-        // 1. Save to Zustand + localStorage (instant, always works)
+        // 1. Save to Zustand + localStorage (instant)
         updatePrefs({
-            onboardingCompleted:  true,
-            favoriteCuisines:     dna.cuisines,
-            vibePreference:       dna.vibes,
-            priceRange:           dna.budget,
-            dietaryRestrictions:  dna.allergens,
+            onboardingCompleted: true,
+            favoriteCuisines: dna.favorite_cuisines,
+            vibePreference: dna.vibe_preferences,
+            priceRange: dna.price_range,
+            dietaryRestrictions: dna.dietary_restrictions,
+            atmospherePreference: dna.atmosphere_preference,
+            features: dna.features,
         })
 
-        // 2. Save to Supabase (async, non-blocking — failures logged not thrown)
-        await saveDNAToSupabase(dna)
+        // 2. Save to Supabase via API
+        try {
+            const { data: { session } } = await (await import('@/shared/api/client')).supabase.auth.getSession()
+            if (session?.user?.id) {
+                await updateUserPreferences(session.user.id, { longTerm: dna })
+                console.log('[Onboarding] ✅ DNA saved to Supabase')
+            }
+        } catch (err) {
+            console.warn('[Onboarding] Supabase save failed:', err.message)
+        }
 
         setSaving(false)
         onComplete()
     }
 
     const handleSkip = async () => {
-        setSkipError(null)
-        // Mark cuisines as ['any'] so OnboardingGate never shows again
+        // Mark as completed with defaults
+        const defaults = {
+            onboarding_completed: true,
+            favorite_cuisines: ['any'],
+            vibe_preferences: [],
+            price_range: ['$$'],
+            dietary_restrictions: [],
+            atmosphere_preference: '',
+            features: [],
+        }
+
         updatePrefs({
             onboardingCompleted: true,
-            favoriteCuisines: cuisines.length > 0 ? cuisines : ['any'],
-            vibePreference:   vibes,
-            priceRange:       budget.length > 0 ? budget : ['$$'],
-            dietaryRestrictions: allergens,
+            favoriteCuisines: defaults.favorite_cuisines,
+            vibePreference: defaults.vibe_preferences,
+            priceRange: defaults.price_range,
+            dietaryRestrictions: defaults.dietary_restrictions,
+            atmospherePreference: defaults.atmosphere_preference,
+            features: defaults.features,
         })
-        // FIX: await save + handle errors — fire-and-forget could lose data on failure
+
         try {
-            await saveDNAToSupabase({
-                cuisines: cuisines.length > 0 ? cuisines : ['any'],
-                vibes,
-                budget: budget.length > 0 ? budget : ['$$'],
-                allergens,
-            })
+            const { data: { session } } = await (await import('@/shared/api/client')).supabase.auth.getSession()
+            if (session?.user?.id) {
+                await updateUserPreferences(session.user.id, { longTerm: defaults })
+            }
         } catch (err) {
-            // Still close onboarding — local prefs are saved, DB will sync later
             console.warn('[Onboarding] Skip save failed:', err.message)
-            setSkipError('Could not save preferences to server. Your local preferences are saved.')
-            // Small delay so user sees the message before closing
-            await new Promise(r => setTimeout(r, 1500))
         }
         onComplete()
     }
 
     const steps = [
-        <StepCuisines  key="cuisines"  value={cuisines}   onChange={setCuisines}  />,
-        <StepVibes     key="vibes"     value={vibes}      onChange={setVibes}     />,
-        <StepBudget    key="budget"    value={budget}      onChange={setBudget}    />,
-        <StepAllergens key="allergens" value={allergens}   onChange={setAllergens} />,
+        <StepCuisines   key="cuisines"   value={cuisines}    onChange={setCuisines}   />,
+        <StepVibes      key="vibes"      value={vibes}       onChange={setVibes}      />,
+        <StepBudget     key="budget"     value={budget}      onChange={setBudget}     />,
+        <StepAtmosphere key="atmosphere" value={atmosphere}  onChange={setAtmosphere} />,
+        <StepFeatures   key="features"   value={features}    onChange={setFeatures}   />,
+        <StepAllergens  key="allergens"  value={allergens}   onChange={setAllergens}  />,
     ]
 
     return (

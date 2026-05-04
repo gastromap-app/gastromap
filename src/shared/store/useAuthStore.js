@@ -21,7 +21,7 @@ export const useAuthStore = create(
             user: null,            // { id, name, email, role, avatar, createdAt }
             token: null,
             isAuthenticated: false,
-            isLoading: false,
+            isLoading: true,
             error: null,
             _unsubscribeAuth: null,
 

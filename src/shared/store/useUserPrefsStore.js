@@ -20,6 +20,8 @@ const DEFAULT_PREFS = {
     frequentSearches: [],
 }
 
+import { getUserPreferences, updateUserPreferences } from '@/shared/api/preferences.api'
+
 async function syncToSupabase(prefs) {
     try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -32,25 +34,13 @@ async function syncToSupabase(prefs) {
                 .from('profiles')
                 .update({ onboarding_completed: prefs.onboardingCompleted })
                 .eq('id', userId),
-            supabase
-                .from('user_preferences')
-                .upsert({
-                    user_id: userId,
-                    onboarding_completed: prefs.onboardingCompleted,
-                    favorite_cuisines:  prefs.favoriteCuisines  || [],
-                    vibe_preferences:     prefs.vibePreference    || [],
-                    dietary_restrictions: prefs.dietaryRestrictions || [],
-                    price_range:     prefs.priceRange?.length ? prefs.priceRange.join(',') : null,
-                    foodie_dna:      prefs.foodieDNA || '',
-                    atmosphere_preference: prefs.atmospherePreference || '',
-                    features:        Array.isArray(prefs.features) ? prefs.features.join(',') : (prefs.features || ''),
-                    last_updated:    new Date().toISOString(),
-                }, { onConflict: 'user_id' })
+            updateUserPreferences(userId, prefs)
         ])
     } catch (error) {
         console.error('[PrefsStore] Sync failed:', error)
     }
 }
+
 
 export const useUserPrefsStore = create(
     persist(
@@ -114,44 +104,34 @@ export const useUserPrefsStore = create(
                     if (!session?.user) return false
                     const userId = session.user.id
 
-                    // Fetch from both profiles (new source of truth) and user_preferences (legacy)
-                    const [profileRes, prefsRes] = await Promise.all([
+                    // Fetch from both profiles (onboarding status) and preferences api
+                    const [profileRes, up] = await Promise.all([
                         supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
-                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna, atmosphere_preference, features').eq('user_id', userId).maybeSingle()
+                        getUserPreferences(userId)
                     ])
 
-                    // If we get a 400, the table or column is probably missing — ignore and use local
-                    if (profileRes.error && profileRes.error.code !== 'PGRST116') {
-                        // ignore 400/406 during migration
-                    }
-
                     const profile = profileRes.data
-                    const up = prefsRes.data
+                    const dna = up?.longTerm
 
-                    // profiles.onboarding_completed takes precedence
-                    const onboardingCompleted = profile?.onboarding_completed ?? up?.onboarding_completed ?? false
+                    // profiles.onboarding_completed takes precedence for the status
+                    const onboardingCompleted = profile?.onboarding_completed ?? dna?.onboardingCompleted ?? false
 
-                    if (up || profile) {
+                    if (dna || profile) {
                         set((state) => ({
                             prefs: {
                                 ...state.prefs,
+                                ...dna,
                                 onboardingCompleted: onboardingCompleted,
-                                favoriteCuisines:    up?.favorite_cuisines    || state.prefs.favoriteCuisines,
-                                vibePreference:      up?.vibe_preferences       || state.prefs.vibePreference,
-                                dietaryRestrictions: up?.dietary_restrictions   || state.prefs.dietaryRestrictions,
-                                priceRange:          up?.price_range ? up.price_range.split(',') : state.prefs.priceRange,
-                                foodieDNA:           up?.foodie_dna           || state.prefs.foodieDNA,
-                                atmospherePreference: up?.atmosphere_preference || state.prefs.atmospherePreference,
-                                features:             up?.features ? (typeof up.features === 'string' ? up.features.split(',') : up.features) : state.prefs.features,
                             },
                         }))
                         return !!onboardingCompleted
                     }
-                } catch {
-                    // Silent fail for background sync
+                } catch (e) {
+                    console.error('[PrefsStore] Load failed:', e)
                 }
                 return false
             },
+
         }),
         {
             name: 'user-prefs-storage',

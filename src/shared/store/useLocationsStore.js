@@ -218,9 +218,15 @@ export const useLocationsStore = create((set, get) => ({
 
     addLocation: (location) =>
         set((state) => {
+            const generateId = () => {
+                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                    return crypto.randomUUID()
+                }
+                return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`
+            }
             const locations = [
                 ...state.locations,
-                { ...location, id: location.id || Math.random().toString(36).slice(2, 11) },
+                { ...location, id: location.id || generateId() },
             ]
             return { locations, filteredLocations: applyAllFilters(locations, state) }
         }),

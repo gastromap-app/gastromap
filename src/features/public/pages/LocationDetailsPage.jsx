@@ -352,11 +352,16 @@ const LocationDetailsPage = () => {
                             <UtensilsCrossed size={14} className="text-blue-500" />
                             <h3 className={`text-sm font-black ${textStyle}`}>{t('location.cuisine_menu')}</h3>
                         </div>
-                        {location.cuisine && (
-                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
-                                {translate(location.cuisine)}
-                            </span>
-                        )}
+                        <div className="flex flex-wrap gap-1.5">
+                            {(location.cuisine_types && location.cuisine_types.length > 0 ? location.cuisine_types : [location.cuisine]).filter(Boolean).map((tag, i) => (
+                                <span 
+                                    key={i}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-600'}`}
+                                >
+                                    {translate(tag)}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                     {location.special_labels?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
@@ -388,26 +393,42 @@ const LocationDetailsPage = () => {
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className={`p-5 rounded-[32px] border relative overflow-hidden ${isDark ? 'bg-orange-500/5 border-orange-500/10' : 'bg-orange-50 border-orange-100'}`}>
-                    <Lightbulb className="absolute top-4 right-4 text-orange-500 opacity-20" size={32} />
-                    <div className="flex items-center gap-2 mb-3">
-                        <Sparkles size={16} className="text-orange-500" />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">{t('location.curator_tip')}</h4>
+                {/* Curator Tips from DB */}
+                {(location.insider_tip || location.must_try) && (
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        {location.insider_tip && (
+                            <div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100'}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center">
+                                        <Sparkles size={12} className="text-white" />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                                        {t('location.insider_tip') || 'Insider Tip'}
+                                    </span>
+                                </div>
+                                <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-indigo-200/80' : 'text-indigo-900/70'}`}>
+                                    "{location.insider_tip}"
+                                </p>
+                            </div>
+                        )}
+
+                        {location.must_try && (
+                            <div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-amber-50 border border-amber-100'}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center">
+                                        <Star size={12} className="text-white" />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                                        {t('location.must_try') || 'Must Try'}
+                                    </span>
+                                </div>
+                                <p className={`text-xs leading-relaxed font-bold ${isDark ? 'text-amber-200/90' : 'text-amber-900/80'}`}>
+                                    {location.must_try}
+                                </p>
+                            </div>
+                        )}
                     </div>
-                    <p className={`text-sm font-bold italic leading-relaxed ${isDark ? 'text-orange-200/80' : 'text-orange-900/80'}`}>
-                        "To experience the full magic, visit right before sunset. The lighting makes every photo look like a cinematic masterpiece."
-                    </p>
-                </div>
-                <div className={`p-5 rounded-3xl border relative overflow-hidden ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
-                    <UtensilsCrossed className="absolute top-4 right-4 text-blue-500 opacity-20" size={32} />
-                    <div className="flex items-center gap-2 mb-3">
-                        <Star size={16} className="text-blue-500" />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">{t('location.must_try')}</h4>
-                    </div>
-                    <p className={`text-sm font-bold leading-relaxed ${isDark ? 'text-blue-200/80' : 'text-blue-900/80'}`}>
-                        Our signature truffle-infused specialty is a non-negotiable choice for first-timers.
-                    </p>
-                </div>
+                )}
             </div>
 
             <section className="space-y-3">
@@ -420,7 +441,7 @@ const LocationDetailsPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-[300px] md:h-[600px]">
                     <div className="col-span-2 md:col-span-6 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
                         <LocationImage
-                            src={location.image}
+                            src={location.image_url || location.image}
                             alt={location.title}
                             width={800}
                             className="transition-transform duration-500 group-hover:scale-105"
@@ -429,22 +450,22 @@ const LocationDetailsPage = () => {
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
+                        <LazyImage src={location.photos?.[0] || "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src="https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
+                        <LazyImage src={location.photos?.[1] || "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
                     </div>
 
                     <div className="col-span-1 md:col-span-4 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
+                        <LazyImage src={location.photos?.[2] || "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
                     </div>
 
                     <div className="col-span-1 md:col-span-8 rounded-3xl overflow-hidden relative group cursor-pointer shadow-lg">
-                        <LazyImage src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop" crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
+                        <LazyImage src={location.photos?.[3] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
                         <div className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
                             <Camera size={24} className="mb-1" />
-                            <span className="text-xl font-black">+24</span>
+                            <span className="text-xl font-black">+{location.photos?.length || 0}</span>
                             <span className="text-[9px] font-black uppercase tracking-widest">Explore</span>
                         </div>
                     </div>
@@ -808,16 +829,27 @@ const LocationDetailsPage = () => {
         )
     }
 
-    const renderPhotos = () => (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
-            {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100">
-                    <LazyImage src={`https://images.unsplash.com/photo-${1517248135467 + i}-4c7edcad34c4?q=80&w=400&fit=crop`} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="gallery" />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-            ))}
-        </motion.div>
-    )
+        const displayPhotos = (location.photos && location.photos.length > 0)
+            ? location.photos
+            : [
+                'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800',
+                'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800',
+                'https://images.unsplash.com/photo-1550966841-3ecfcdac8943?w=800',
+                'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
+                'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
+                'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800'
+            ];
+
+        return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
+                {displayPhotos.map((url, i) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100">
+                        <LazyImage src={url} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`gallery-${i}`} />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                ))}
+            </motion.div>
+        );
 
     const renderNotes = () => (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -986,7 +1018,7 @@ const LocationDetailsPage = () => {
             {/* ── Hero Image (full-bleed from top of viewport) ───────────────────── */}
             <div className="relative h-[55vh] md:h-[62vh] w-full overflow-hidden">
                 <LocationImage
-                    src={location.image}
+                    src={location.image_url || location.image}
                     alt={location.title}
                     width={1200}
                     priority={true}

@@ -184,10 +184,6 @@ export default function AdminModerationPage() {
                 </button>
             </div>
 
-            {activeTab === 'moderation' ? (
-                <>
-
-            )}
 
             {/* Content area based on tab */}
             {activeTab === 'moderation' ? (

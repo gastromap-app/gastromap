@@ -43,6 +43,9 @@ export const VALID_LOCATION_COLUMNS = new Set([
     // Michelin
     'michelin_stars', 'michelin_bib',
     
+    // Social / Google
+    'social_instagram', 'social_facebook', 'google_place_id', 'google_maps_url',
+    
     // Meta
     'moderation_note',
     'created_at', 'updated_at'

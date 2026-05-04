@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
     useAdminLocationsQuery, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
     useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
@@ -17,6 +18,7 @@ import { exportLocationsToCSV } from '@/shared/utils/importExportUtils'
  * Extracted to reduce component complexity and improve testability
  */
 export const useAdminLocations = () => {
+    const { t } = useTranslation()
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     
@@ -213,43 +215,19 @@ export const useAdminLocations = () => {
     const prepareFormData = (loc) => {
         if (!loc) return null
         
+        // Use the location object directly since it's already normalised by useAdminLocationsQuery (via LocationAPI.getLocations)
         const prepared = { ...loc }
         
-        // Handle must_try alias for the UI string input
-        if (Array.isArray(loc.what_to_try)) {
-            prepared.must_try = loc.what_to_try.join(', ')
-        } else {
-            prepared.must_try = loc.what_to_try || ''
+        // For the UI form compatibility (if it expects strings for some fields)
+        if (Array.isArray(loc.cuisine_types)) {
+            prepared.cuisine = loc.cuisine_types[0] || loc.cuisine || ''
         }
 
-        // Ensure KG fields are present (they come from normalise now)
-        prepared.kg_cuisines    = loc.kg_cuisines    ?? []
-        prepared.kg_dishes      = loc.kg_dishes      ?? []
-        prepared.kg_ingredients = loc.kg_ingredients ?? []
-        prepared.kg_allergens   = loc.kg_allergens   ?? []
-        prepared.kg_enriched_at = loc.kg_enriched_at ?? null
-
-        // Ensure other optional fields
-        prepared.vibe           = loc.vibe           ?? []
-        prepared.features       = loc.features       ?? []
-        prepared.dietary        = loc.dietary        ?? []
-        prepared.michelin_stars = loc.michelin_stars ?? 0
-        prepared.michelin_bib   = loc.michelin_bib   ?? false
-        
-        // Map canonical fields to UI field names for editing
-        if (loc.cuisine_types?.length) {
-            prepared.cuisine = loc.cuisine_types.join(', ')
-        }
-        
-        // price_range is already canonical, no mapping needed for UI
-
-        
-        // FIX: Do NOT overwrite vibe from tags — they are separate DB columns
-        // vibe = atmosphere labels, tags = search keywords — different semantics
-        // Ensure vibe has a value from the location data (already set above)
-        if (!prepared.vibe?.length && loc.tags?.length) {
-            // Only fall back to tags if vibe is truly empty
-            prepared.vibe = [...loc.tags]
+        // Ensure what_to_try is an array for the UI components
+        if (typeof loc.what_to_try === 'string' && loc.what_to_try) {
+            prepared.what_to_try = loc.what_to_try.split(',').map(s => s.trim()).filter(Boolean)
+        } else if (!Array.isArray(loc.what_to_try)) {
+            prepared.what_to_try = []
         }
 
         return prepared
@@ -426,35 +404,16 @@ export const useAdminLocations = () => {
     }
 
     const prepareSubmissionData = (formData) => {
+        // We can now send the formData almost as is, because LocationAPI._toRow 
+        // will handle the conversion of fields like 'cuisine' -> 'cuisine_types'
+        // and 'what_to_try' -> 'must_try' string etc.
         const submissionData = { ...formData }
         
-        // Map old field names to canonical Supabase schema
-        if (submissionData.cuisine) {
-            submissionData.cuisine_types = typeof submissionData.cuisine === 'string' 
-                ? submissionData.cuisine.split(',').map(s => s.trim()).filter(Boolean)
-                : submissionData.cuisine
-            delete submissionData.cuisine
-        }
+        // Clean up internal UI-only fields if any
+        delete submissionData._data_source
+        delete submissionData._candidates
         
-
-        
-        // vibe is a separate column — keep it as-is, also merge into tags for search
-        if (submissionData.vibe?.length) {
-            const existingTags = submissionData.tags || []
-            submissionData.tags = [...new Set([...existingTags, ...submissionData.vibe])]
-            // DO NOT delete vibe — it's a separate DB column
-        }
-        
-        // Handle what_to_try / must_try with both array and string sources
-        if (Array.isArray(submissionData.what_to_try) && submissionData.what_to_try.length > 0) {
-            submissionData.must_try = submissionData.what_to_try.join(', ')
-        } else if (typeof submissionData.must_try === 'string' && submissionData.must_try.trim()) {
-            submissionData.what_to_try = submissionData.must_try.split(',').map(s => s.trim()).filter(Boolean)
-            submissionData.must_try = submissionData.must_try.trim()
-        }
-
-        // Clean up legacy fields to ensure strict schema adherence
-        // Ensure both ratings are numbers if present
+        // Ensure numbers
         if (submissionData.rating !== undefined && submissionData.rating !== null) {
             submissionData.rating = parseFloat(submissionData.rating)
         }
@@ -471,16 +430,38 @@ export const useAdminLocations = () => {
         if (!formData.category) return alert('Категория обязательна')
         if (!formData.city) return alert('Город обязателен')
 
-        // Basic URL Validation
+        // Basic URL Validation & Auto-correction
         const urlFields = ['website', 'booking_url', 'social_instagram', 'social_facebook']
+        const updatedFields = {}
+        let hasErrors = false
+
         for (const field of urlFields) {
-            const val = formData[field]?.trim()
-            if (val && !val.startsWith('http') && !val.startsWith('www')) {
-                return alert(`Поле ${field} должно быть ссылкой (напр. https://...)`)
+            let val = formData[field]?.trim()
+            if (val) {
+                // Auto-fix common omissions (e.g. instagram.com -> https://instagram.com)
+                if (!val.startsWith('http://') && !val.startsWith('https://')) {
+                    if (val.startsWith('www.') || val.includes('.')) {
+                        val = `https://${val}`
+                        updatedFields[field] = val
+                    } else {
+                        alert(t('admin.locations.form.errors.url_invalid', { 
+                            field: t(`admin.locations.form.fields.${field}`) 
+                        }))
+                        hasErrors = true
+                        break
+                    }
+                }
             }
         }
 
-        const submissionData = prepareSubmissionData(formData)
+        if (hasErrors) return
+
+        // Apply fixes to state so UI stays in sync
+        if (Object.keys(updatedFields).length > 0) {
+            setFormData(prev => ({ ...prev, ...updatedFields }))
+        }
+
+        const submissionData = prepareSubmissionData({ ...formData, ...updatedFields })
 
         if (selectedLocation.id === 'NEW') {
             submissionData.status = 'pending'

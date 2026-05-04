@@ -335,8 +335,15 @@ export async function executeTool(name, args, ctx = {}) {
 
         // Personalization: Merge user preferences if not explicitly overridden by search
         const userPrefs = getUserPreferences()
-        const effectiveCuisine = cuisine_types?.[0] || (keyword && !cuisine_types?.length ? null : userPrefs?.favoriteCuisines?.[0])
-        const effectivePrice = price_range?.[0] || (keyword && !price_range?.length ? null : userPrefs?.priceRange?.[0])
+        
+        // Use full preference arrays for better personalization
+        const effectiveCuisines = (cuisine_types?.length) ? cuisine_types : (userPrefs?.favoriteCuisines || [])
+        const effectivePrices = (price_range?.length) ? price_range : (userPrefs?.priceRange || [])
+        
+        // Atmosphere and features as additional context (if applicable)
+        const preferredAtmosphere = userPrefs?.atmospherePreference || null
+        const preferredFeatures = userPrefs?.features || []
+
 
         if (keyword) {
             // Call semanticSearch (Hybrid RPC) which handles city/category/cuisine server-side.
@@ -344,9 +351,10 @@ export async function executeTool(name, args, ctx = {}) {
             const semanticResults = await semanticSearch(keyword, limit * 5, null, {
                 city,
                 category,
-                cuisine: effectiveCuisine,
-                price_range: effectivePrice,
+                cuisine: effectiveCuisines?.[0], // RPC currently takes one, but we'll use the primary one
+                price_range: effectivePrices?.[0],
             })
+
 
             if (semanticResults?.length) {
                 // Hydrate semantic results with full data from the store to ensure
@@ -380,12 +388,13 @@ export async function executeTool(name, args, ctx = {}) {
             const dbRows = await querySupabase({
                 city,
                 category,
-                cuisine: effectiveCuisine,
-                price_range: price_range?.length ? price_range : (effectivePrice ? [effectivePrice] : null),
+                cuisine: effectiveCuisines?.[0], 
+                price_range: effectivePrices,
                 min_rating,
                 michelin,
                 sort_by,
             })
+
             if (dbRows?.length) {
                 pool = dbRows
             } else {
@@ -445,9 +454,11 @@ export async function executeTool(name, args, ctx = {}) {
         return {
             results,
             culinaryContext,
+            userPreferences: userPrefs, // Providing full context to the AI for aware personalization
             found: pool.length,
             message: results.length ? null : `No locations found matching the search criteria.`
         }
+
     }
 
     // ── search_nearby ───────────────────────────────────────────────────────

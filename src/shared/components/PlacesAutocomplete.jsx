@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { Search, MapPin, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,12 +40,13 @@ async function fetchPlaceDetails(place_id, sessiontoken) {
 
 export default function PlacesAutocomplete({
     onPlaceSelected,
-    placeholder = 'Название заведения и город…',
+    placeholder,
     className,
     value: externalValue = '',
     onChange,
     disabled = false,
 }) {
+    const { t } = useTranslation()
     const [inputValue, setInputValue]     = useState(externalValue)
     const [suggestions, setSuggestions]   = useState([])
     const [isLoading, setIsLoading]       = useState(false)
@@ -53,6 +55,12 @@ export default function PlacesAutocomplete({
     const [activeIdx, setActiveIdx]       = useState(-1)
     const [sessionToken]                  = useState(() => newSessionToken())
     const [error, setError]               = useState(null)
+
+    // Fallbacks for localized strings
+    const defaultPlaceholder = placeholder || t('common.places_autocomplete.placeholder')
+    const fetchingText = t('common.places_autocomplete.fetching')
+    const errorSuggestions = t('common.places_autocomplete.error_suggestions')
+    const errorDetails = t('common.places_autocomplete.error_details')
 
     const wrapperRef = useRef(null)
     const inputRef   = useRef(null)
@@ -91,14 +99,14 @@ export default function PlacesAutocomplete({
             .catch(err => {
                 if (controller.signal.aborted) return
                 console.error('[PlacesAutocomplete]', err)
-                setError('Не удалось загрузить подсказки')
+                setError(errorSuggestions)
             })
             .finally(() => {
                 if (!controller.signal.aborted) setIsLoading(false)
             })
 
         return () => controller.abort()
-    }, [debouncedQuery, sessionToken])
+    }, [debouncedQuery, sessionToken, errorSuggestions])
 
     useClickOutside(wrapperRef, () => {
         setIsOpen(false)
@@ -128,11 +136,11 @@ export default function PlacesAutocomplete({
             }
         } catch (err) {
             console.error('[PlacesAutocomplete] details error:', err)
-            setError('Не удалось получить данные места')
+            setError(errorDetails)
         } finally {
             setIsFetching(false)
         }
-    }, [sessionToken, onPlaceSelected])
+    }, [sessionToken, onPlaceSelected, errorDetails])
 
     const handleKeyDown = useCallback((e) => {
         if (!isOpen || suggestions.length === 0) return
@@ -188,7 +196,7 @@ export default function PlacesAutocomplete({
                     onKeyDown={handleKeyDown}
                     onFocus={() => suggestions.length > 0 && setIsOpen(true)}
                     disabled={disabled || isFetching}
-                    placeholder={isFetching ? 'Загружаю данные…' : placeholder}
+                    placeholder={isFetching ? fetchingText : defaultPlaceholder}
                     className={cn(
                         "w-full pl-10 pr-10 py-3 bg-white dark:bg-[hsl(220,20%,9%)] rounded-xl border border-slate-200 dark:border-white/[0.08]",
                         "text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400",

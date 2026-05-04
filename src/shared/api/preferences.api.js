@@ -5,7 +5,7 @@ export async function getUserPreferences(userId) {
 
     const { data: up, error } = await supabase
         .from('user_preferences')
-        .select('favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna, atmosphere_preference, features')
+        .select('favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna, atmosphere_preference, features, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle()
 
@@ -15,10 +15,11 @@ export async function getUserPreferences(userId) {
             favoriteCuisines:     up.favorite_cuisines  || [],
             vibePreference:       up.vibe_preferences     || [],
             dietaryRestrictions:  up.dietary_restrictions || [],
-            priceRange:           up.price_range ? [up.price_range] : [],
+            priceRange:           up.price_range ? up.price_range.split(',') : [],
             foodieDNA:            up.foodie_dna || '',
             atmospherePreference: up.atmosphere_preference || '',
-            features:             up.features || '',
+            features:             up.features ? (typeof up.features === 'string' ? up.features.split(',') : up.features) : [],
+            onboardingCompleted:  up.onboarding_completed || false,
         }
     }
 }
@@ -34,11 +35,13 @@ export async function updateUserPreferences(userId, preferences) {
             favorite_cuisines:    dna.favoriteCuisines    || [],
             vibe_preferences:     dna.vibePreference      || [],
             dietary_restrictions: dna.dietaryRestrictions || [],
-            price_range:          dna.priceRange?.length ? dna.priceRange[0] : null,
+            price_range:          Array.isArray(dna.priceRange) ? dna.priceRange.join(',') : (dna.priceRange || null),
             foodie_dna:           dna.foodieDNA || '',
             atmosphere_preference: dna.atmospherePreference || '',
-            features:             dna.features || '',
+            features:             Array.isArray(dna.features) ? dna.features.join(',') : (dna.features || ''),
+            onboarding_completed: dna.onboardingCompleted || false,
             last_updated:         new Date().toISOString(),
         }, { onConflict: 'user_id' })
     return { data: null, error: e2 }
 }
+

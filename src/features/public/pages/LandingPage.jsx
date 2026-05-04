@@ -554,7 +554,7 @@ const FinalCTA = () => (
                             Get Started Free
                         </Button>
                     </Link>
-                    <Link to="/explore">
+                    <Link to="/auth/signup">
                         <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 rounded-full px-10 text-base bg-transparent border-black/10 dark:border-white/10 text-black/80 dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/5 font-medium transition-transform active:scale-95 duration-200">
                             Explore Map
                         </Button>

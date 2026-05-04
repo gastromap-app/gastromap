@@ -179,12 +179,9 @@ describe('locations.api', () => {
             expect(mockTextSearch).toHaveBeenCalledWith('fts', 'pizza', expect.any(Object))
         })
 
-        it('falls back to mocks on Supabase error', async () => {
-            setQueryResult({ data: null, error: { message: 'db error' }, count: 0 })
-            const result = await getLocations()
-            // Should not throw, should return object shape
-            expect(result).toHaveProperty('data')
-            expect(result).toHaveProperty('total')
+        it('throws ApiError on Supabase error', async () => {
+            setQueryResult({ data: null, error: { message: 'db error', code: '500' }, count: 0 })
+            await expect(getLocations()).rejects.toThrow('db error')
         })
 
         it('accepts legacy status active', async () => {
@@ -208,7 +205,7 @@ describe('locations.api', () => {
         })
 
         it('filters by approved status in public mode', async () => {
-            mockSingle.mockResolvedValue({ data: null, error: { message: 'not found' } })
+            mockSingle.mockResolvedValue({ data: { id: 'x', title: 'Test', lat: 0, lng: 0 }, error: null })
             await getLocation('x')
             expect(mockIn).toHaveBeenCalledWith('status', ['approved', 'active'])
         })
@@ -220,11 +217,9 @@ describe('locations.api', () => {
             expect(eqCalls).not.toContain('status')
         })
 
-        it('falls back to mock on error', async () => {
-            mockSingle.mockResolvedValue({ data: null, error: { message: 'fail' } })
-            // Should not throw
-            const result = await getLocation('nonexistent')
-            expect(result === null || result === undefined || typeof result === 'object').toBe(true)
+        it('throws ApiError on error', async () => {
+            mockSingle.mockResolvedValue({ data: null, error: { message: 'fail', code: '500' } })
+            await expect(getLocation('nonexistent')).rejects.toThrow('fail')
         })
 
         it('getLocationById is an alias for getLocation', () => {

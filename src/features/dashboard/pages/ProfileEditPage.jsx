@@ -357,6 +357,41 @@ const ProfileEditPage = () => {
                             placeholder={t('profile_edit.atm_placeholder')}
                         />
                     </div>
+
+                    {/* Features Editor */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.features_label') || 'Important Features'}</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.features_hint') || 'Select amenities that matter to you'}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {['WiFi', 'Outlets', 'Pet Friendly', 'Kid Friendly', 'Parking', 'Outdoor Seating', 'Live Music', 'Vegetarian Options', 'Vegan Options'].map(f => {
+                                const currentFeatures = Array.isArray(formData.preferences?.longTerm?.features) 
+                                    ? formData.preferences.longTerm.features 
+                                    : (formData.preferences?.longTerm?.features ? formData.preferences.longTerm.features.split(',').map(s => s.trim()) : [])
+                                
+                                const isSelected = currentFeatures.includes(f)
+                                return (
+                                    <button
+                                        key={f}
+                                        onClick={() => {
+                                            const next = isSelected ? currentFeatures.filter(x => x !== f) : [...currentFeatures, f]
+                                            setFormData({ 
+                                                ...formData, 
+                                                preferences: { 
+                                                    ...formData.preferences, 
+                                                    longTerm: { ...formData.preferences.longTerm, features: next } 
+                                                } 
+                                            })
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                    >
+                                        {f}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Save Button */}

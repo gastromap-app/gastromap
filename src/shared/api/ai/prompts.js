@@ -33,41 +33,39 @@ export async function buildSystemPrompt(userPrefs = {}, queryContext = null, age
         ? (appCfg.aiGuideSystemPrompt || DEFAULT_GUIDE_PROMPT)
         : (appCfg.aiAssistantSystemPrompt || DEFAULT_ASSISTANT_PROMPT))
 
-    const { favoriteCuisines = [], vibePreference = [], priceRange = [], dietaryRestrictions = [] } = userPrefs
-
-    const prefLines = [
-        favoriteCuisines.length ? `Favourite cuisines: ${favoriteCuisines.join(', ')}` : '',
-        vibePreference.length ? `Preferred vibes: ${vibePreference.join(', ')}` : '',
-        priceRange.length ? `Budget: ${priceRange.join(', ')}` : '',
-        dietaryRestrictions.length ? `Dietary restrictions: ${dietaryRestrictions.join(', ')}` : '',
-    ].filter(Boolean).join('\n')
-
-    // 1. Dynamic user personalization context (injecting knowledge from database)
+    // 1. Transform technical profile and preferences into a narrative "Guest Insight"
+    // This prevents the AI from reciting fields like a robot.
+    const favoriteCuisines = userPrefs?.favoriteCuisines || []
+    const vibePreference = userPrefs?.vibePreference || []
+    
+    const guestInsightParts = []
+    
+    // Core Preferences
+    if (favoriteCuisines.length) guestInsightParts.push(`This guest has a verified love for ${favoriteCuisines.join(', ')} cuisines.`)
+    if (vibePreference.length) guestInsightParts.push(`They naturally gravitate towards ${vibePreference.join(', ')} atmospheres.`)
+    
+    // Deep Profile (Foodie DNA, etc.)
+    if (userData?.foodieDNA) guestInsightParts.push(`Their 'Foodie DNA' reveals a palate that seeks ${userData.foodieDNA}.`)
+    if (userData?.atmospherePreference) guestInsightParts.push(`They've mentioned a preference for ${userData.atmospherePreference} vibes.`)
+    if (userData?.features) guestInsightParts.push(`Key requirements for them include: ${userData.features}.`)
+    
+    // Experience & History
+    if (userData?.visitedCount > 0) guestInsightParts.push(`They are an active explorer with ${userData.visitedCount} spots visited, including favorites like ${userData.favoritesNames?.slice(0, 3).join(', ')}.`)
+    if (userData?.userExperience) guestInsightParts.push(`Their past feedback indicates: ${userData.userExperience}`)
+    
+    // Geography
     const geoLine = userData?.userCity
-        ? `- Current location: ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''} (detected via GPS — prioritize this city in searches unless the user specifies another city)${userData.userLat ? `\n- Current GPS: ${userData.userLat}, ${userData.userLng}` : ''}`
-        : '- Current location: unknown (ask if the city matters for the request)'
+        ? `They are currently in ${userData.userCity}${userData.userCountry ? `, ${userData.userCountry}` : ''}. ${userData.userLat ? `(GPS: ${userData.userLat}, ${userData.userLng})` : ''}`
+        : "Their current city is unknown—ask if it's relevant."
+    guestInsightParts.push(geoLine)
 
-    const profile = userData ? `
-USER PROFILE & EXPERIENCE:
-${geoLine}
-- Visited locations: ${userData.visitedNames?.join(', ') || 'none yet'} (${userData.visitedCount || 0} total)
-- Favorite places: ${userData.favoritesNames?.join(', ') || 'none yet'}
-- Foodie DNA (Taste Profile): ${userData.foodieDNA || 'Developing taste profile'}
-- Atmosphere Preferences: ${userData.atmospherePreference || 'No specific atmosphere preference set'}
-- Must-have Features: ${userData.features || 'None specified'}
-- Past Experiences & Reviews:
-${userData.userExperience || 'No direct review history yet.'}
-- Location History (Cities Visited):
-${userData.locationHistory?.length ? userData.locationHistory.map(h => `  * ${h.city}${h.country ? `, ${h.country}` : ''}: ${h.visits} visits (last: ${new Date(h.lastVisited).toLocaleDateString()})`).join('\n') : '  * No location history yet.'}
-- Recent Search Interests: ${userData.recentInterests?.join(', ') || 'General explorer'}
-` : ''
+    const guestInsight = guestInsightParts.join(' ')
 
     // 2. Fetch knowledge graph context if query is provided (non-blocking with timeout)
     let knowledgeContext = ''
     if (queryContext) {
         try {
             const { getAIContextForQuery } = await import('../knowledge-graph.api')
-            // Timeout after 2s — don't block the chat on slow KG lookups
             const kgContext = await Promise.race([
                 getAIContextForQuery(queryContext),
                 new Promise(resolve => setTimeout(() => resolve(null), 5000)),
@@ -88,16 +86,22 @@ ${userData.locationHistory?.length ? userData.locationHistory.map(h => `  * ${h.
 
     return `${basePrompt}
 ${knowledgeContext}
-${prefLines ? `\nUSER PREFERENCES:\n${prefLines}` : ''}
-${profile}
+
+# INTERNAL GUEST CONTEXT (FOR YOUR EYES ONLY)
+${guestInsight || 'No specific profile data available yet. Be curious and observant.'}
 ${recentCtx ? `\n${recentCtx}\n` : ''}
-PERSONALIZATION GUIDELINES (BE OSOZNANNY / CONSCIOUS):
-- Use USER PREFERENCES and USER PROFILE as internal context to find and rank the best matches.
-- AVOID ROBOTIC PHRASES: Never say "Given your Foodie DNA", "Based on your preferences", or "According to your profile". These sound formulaic and robotic.
-- BE AN EXPERT FRIEND: Talk like a local expert who knows the user well. Instead of "Based on your price range", say "Since you're looking for something more budget-friendly..." or "If you're in the mood for a splurge...".
-- SUBTLE REASONING: When a place matches a user's DNA (e.g. "Spicy foods"), explain the recommendation by highlighting the place's features naturally: "Their curry has that bold, punchy heat you'll definitely appreciate."
-- RESPECT INTENT: If the user explicitly asks for something outside their profile (e.g. a vegetarian asking for a steakhouse for a friend), respect their current intent over stored preferences.
-- REFERENCE HISTORY NATURALLY: If they've visited similar places, mention it subtly: "It has a similar energy to [Place Name] which you visited recently, but with a more local twist."
-- GEOLOCATION: If GPS city is known, always use it as the default search filter. Mention proximity naturally ("It's just a 5-minute walk from where you are").
-- NO OFF-TOPIC: Stay in character as GastroGuide. If asked about non-gastro topics, politely decline and bring it back to food.`
+
+# THE CONSCIOUS PARTNER PHILOSOPHY (CRITICAL)
+- ROLE: You are an expert Gastro Guide and a conscious partner in the user's culinary journey.
+- You are not "matching" data; you are sharing a vibe with a friend.
+- NO ROBOTIC PHRASES: NEVER say "Based on your Foodie DNA", "According to your preferences", "I've analyzed your profile", or "Учитывая твой Foodie DNA".
+- If you recommend something that fits their profile, do it SUBTLY. 
+  * Instead of: "This matches your Spicy preference," 
+  * Say: "I have a feeling you'll really appreciate the bold, fiery kick they put in their ramen here."
+- Be "Osoznanny" (Conscious): If the user's current request contradicts their profile, prioritize the CURRENT request. They might be in the mood for something new.
+- YOUR TONE: An elegant, well-traveled local expert who knows the "soul" of establishments, not just their menu.
+- SUBTLE REASONING: When recommending a place, explain *why* it fits the user's soul without referencing the database. "This place has that authentic, family-run feel that I think will really resonate with you."
+- BE PROACTIVE BUT HUMAN: If they ask "What should I try?", don't just dump a list. Ask a clarifying question or offer a curated choice based on their mood and profile.
+- GEOLOCATION: If GPS city is known, always use it as the default search filter. Mention proximity naturally ("It's just around the corner from you").
+- NO OFF-TOPIC: Stay in character. If asked about non-food topics, stay helpful but redirect to the world of gastronomy.`
 }

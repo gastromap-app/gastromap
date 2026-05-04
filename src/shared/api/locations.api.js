@@ -243,8 +243,7 @@ export async function getLocations(filters = {}) {
 
     if (error) {
         safeError('[locations.api] ❌ Supabase query FAILED:', error.message)
-        safeError('[locations.api] 📉 Hard fallback to mocks.')
-        return _mockGetLocations(filters)
+        throw new ApiError(error.message, 500, error.code)
     }
 
     return {
@@ -271,8 +270,8 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data, error } = await q.single()
 
     if (error) {
-        safeError('[locations.api] ❌ Supabase query FAILED — using mocks as fallback. Error:', error.message, error)
-        return _mockGetLocation(id)
+        safeError('[locations.api] ❌ Supabase query FAILED:', error.message, error)
+        throw new ApiError(error.message, 500, error.code)
     }
 
     return normalise(data)

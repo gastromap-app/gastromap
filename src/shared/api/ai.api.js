@@ -33,6 +33,7 @@ import { semanticSearch } from './ai/search'
 
 import { fetchOpenRouter } from './ai/openrouter'
 import { OPENROUTER_URL, MODEL_CASCADE, TOOLS } from './ai/constants'
+import { buildSystemPrompt } from './ai/prompts'
 
 /**
  * Get active AI config — admin store overrides env vars at runtime.
@@ -238,25 +239,8 @@ async function executeTool(name, args) {
 
 // ─── System prompt ────────────────────────────────────────────────────────
 
-function buildSystemPrompt(prefs = {}) {
-    const parts = [
-        `You are GastroGuide — an expert AI assistant for GastroMap, a curated gastronomy app focused on Krakow, Poland.`,
-        `Your role: help users discover the perfect restaurant, cafe, or bar based on their mood, occasion, and preferences.`,
-        ``,
-        `TOOLS: Always use search_locations before recommending any place. Never invent venues.`,
-        `TONE: Warm, knowledgeable, concise. Max 3 recommendations per response. No bullet spam.`,
-        `LANGUAGE: Match the user's language (Polish, English, Russian, Ukrainian all supported).`,
-    ]
+// Advanced buildSystemPrompt is now imported from ./ai/prompts.js
 
-    if (prefs?.dietaryRestrictions?.length) {
-        parts.push(`USER DIETARY: ${prefs.dietaryRestrictions.join(', ')} — filter accordingly.`)
-    }
-    if (prefs?.preferredCuisines?.length) {
-        parts.push(`USER PREFERENCES: Enjoys ${prefs.preferredCuisines.join(', ')}.`)
-    }
-
-    return parts.join('\n')
-}
 
 // fetchOpenRouter is now imported from ./ai/openrouter
 
@@ -352,8 +336,16 @@ export async function analyzeQuery(message, context = {}) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
+            const systemPrompt = await buildSystemPrompt(
+                context.preferences,
+                message,
+                'guide',
+                context.userData,
+                historyMessages
+            )
+
             const messages = [
-                { role: 'system', content: buildSystemPrompt(context.preferences) },
+                { role: 'system', content: systemPrompt },
                 ...historyMessages,
                 { role: 'user', content: message },
             ]
@@ -387,8 +379,16 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }))
 
+            const systemPrompt = await buildSystemPrompt(
+                context.preferences,
+                message,
+                'guide',
+                context.userData,
+                historyMessages
+            )
+
             const messages = [
-                { role: 'system', content: buildSystemPrompt(context.preferences) },
+                { role: 'system', content: systemPrompt },
                 ...historyMessages,
                 { role: 'user', content: message },
             ]

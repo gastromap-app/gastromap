@@ -221,6 +221,7 @@ export async function updateProfile(userId, updates) {
     const metaUpdates = {}
     if (updates.name) metaUpdates.full_name = updates.name
     if (updates.avatar !== undefined) metaUpdates.avatar_url = updates.avatar
+    if (updates.bio !== undefined) metaUpdates.bio = updates.bio
 
     if (Object.keys(metaUpdates).length > 0) {
         await supabase.auth.updateUser({ data: metaUpdates })
@@ -229,6 +230,7 @@ export async function updateProfile(userId, updates) {
     const dbUpdates = {}
     if (updates.name) dbUpdates.full_name = updates.name
     if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
+    if (updates.bio !== undefined) dbUpdates.bio = updates.bio
 
     // Try `profiles` table first (legacy schema)
     try {
@@ -239,7 +241,7 @@ export async function updateProfile(userId, updates) {
             .select()
             .single()
         if (!error && data) {
-            return { id: data.id, name: data.full_name, avatar: data.avatar_url, role: data.role }
+            return { id: data.id, name: data.full_name, avatar: data.avatar_url, bio: data.bio, role: data.role }
         }
     } catch { /* profiles table may not exist */ }
 
@@ -248,6 +250,7 @@ export async function updateProfile(userId, updates) {
         const upsertData = { id: userId, updated_at: new Date().toISOString() }
         if (updates.name) upsertData.display_name = updates.name
         if (updates.avatar !== undefined) upsertData.avatar_url = updates.avatar
+        if (updates.bio !== undefined) upsertData.bio = updates.bio
 
         const { data } = await supabase
             .from('user_profiles')
@@ -255,12 +258,12 @@ export async function updateProfile(userId, updates) {
             .select()
             .single()
         if (data) {
-            return { id: data.id, name: data.display_name, avatar: data.avatar_url, role: data.role }
+            return { id: data.id, name: data.display_name, avatar: data.avatar_url, bio: data.bio, role: data.role }
         }
     } catch { /* user_profiles table may not exist yet */ }
 
     // At minimum return the updates so UI stays in sync
-    return { id: userId, name: updates.name, avatar: updates.avatar }
+    return { id: userId, name: updates.name, avatar: updates.avatar, bio: updates.bio }
 }
 
 /**

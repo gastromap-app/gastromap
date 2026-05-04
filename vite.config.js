@@ -169,6 +169,9 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600,
   },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
   resolve: {
     alias: {
       "@": path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./src"),

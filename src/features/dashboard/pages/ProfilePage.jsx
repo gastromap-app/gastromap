@@ -8,16 +8,40 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
-import { useUserVisits, useUserFavorites, useUserReviews, useUserRank } from '@/shared/api/queries'
+import { useUserVisits, useUserFavorites, useUserReviews, useUserRank, useSendFeedbackMutation, useUserPreferences } from '@/shared/api/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { APP_CONFIG } from '@/shared/config/appConfig'
 
 // Simple Feedback Modal Component nested for convenience
-const FeedbackModal = ({ isOpen, onClose, theme }) => {
+const FeedbackModal = ({ isOpen, onClose, theme, userId }) => {
     const { t } = useTranslation()
+    const [message, setMessage] = useState('')
+    const [type, setType] = useState('suggestion') // default type
+    const sendFeedback = useSendFeedbackMutation()
+    
     const isDark = theme === 'dark'
     if (!isOpen || typeof document === 'undefined') return null
+
+    const handleSubmit = async () => {
+        if (!message.trim()) return
+        
+        try {
+            await sendFeedback.mutateAsync({
+                userId,
+                type,
+                message,
+                metadata: { timestamp: new Date().toISOString() }
+            })
+            setMessage('')
+            onClose()
+            // Assume toast is handled by parent or just closing is enough. 
+            // Better to show success feedback here if possible, but onClose is called.
+        } catch (error) {
+            console.error('Failed to send feedback:', error)
+        }
+    }
 
     return createPortal(
         <AnimatePresence>
@@ -31,16 +55,41 @@ const FeedbackModal = ({ isOpen, onClose, theme }) => {
                     className={`relative w-full max-w-md p-6 rounded-[32px] overflow-hidden shadow-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-slate-200/50 text-gray-900'}`}
                 >
                     <h3 className="text-2xl font-bold mb-2">{t('profile.feedback_title')}</h3>
-                    <p className={`text-sm mb-6 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{t('profile.feedback_desc')}</p>
+                    <p className={`text-sm mb-4 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{t('profile.feedback_desc')}</p>
+
+                    <div className="flex gap-2 mb-4">
+                        {['suggestion', 'bug', 'other'].map(tKey => (
+                            <button
+                                key={tKey}
+                                onClick={() => setType(tKey)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    type === tKey 
+                                        ? 'bg-blue-600 text-white' 
+                                        : (isDark ? 'bg-white/5 text-white/40' : 'bg-gray-100 text-gray-500')
+                                }`}
+                            >
+                                {tKey.charAt(0).toUpperCase() + tKey.slice(1)}
+                            </button>
+                        ))}
+                    </div>
 
                     <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
                         className={`w-full h-32 p-4 rounded-2xl resize-none text-sm outline-none border focus:border-blue-500 transition-colors ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-slate-200/50 text-gray-900'}`}
                         placeholder={t('profile.feedback_placeholder')}
                     />
 
                     <div className="flex gap-3 mt-6">
                         <button onClick={onClose} className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{t('common.cancel')}</button>
-                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700">{t('profile.feedback_send')}</button>
+                        <button 
+                            onClick={handleSubmit} 
+                            disabled={!message.trim() || sendFeedback.isPending}
+                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+                        >
+                            {sendFeedback.isPending && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                            {t('profile.feedback_send')}
+                        </button>
                     </div>
                 </motion.div>
             </div>
@@ -77,7 +126,16 @@ const ProfilePage = () => {
     const { data: rankData }       = useUserRank(authUser?.id)
 
     // DNA profile from local store (synced from Supabase via onboarding)
-    const { prefs } = useUserPrefsStore()
+    const { prefs: localPrefs } = useUserPrefsStore()
+    const { data: remotePrefs } = useUserPreferences(authUser?.id)
+    
+    // Combine local and remote for the best experience (remote takes precedence)
+    const prefs = {
+        ...localPrefs,
+        foodieDNA: remotePrefs?.longTerm?.foodieDNA || localPrefs.foodieDNA,
+        atmospherePreference: remotePrefs?.longTerm?.atmospherePreference || localPrefs.atmospherePreference,
+        features: remotePrefs?.longTerm?.features || localPrefs.features
+    }
 
     // Redirect to login if not authenticated
     if (!authUser) {
@@ -121,7 +179,7 @@ const ProfilePage = () => {
         {
             section: t('profile.section_account'),
             items: [
-                ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t('profile.admin_panel'), link: "/admin", highlight: true }] : []),
+                ...(authUser?.role === 'admin' ? [{ icon: ShieldCheck, label: t('profile.admin_panel'), link: "/admin", highlight: true }] : []),
                 { icon: User, label: t('profile.personal_info'), link: "/profile/edit" },
                 { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: i18n.language?.toUpperCase() ?? "EN" },
                 { icon: Lock, label: t('profile.security'), link: "/profile/security" },
@@ -151,14 +209,19 @@ const ProfilePage = () => {
                     action: async () => {
                         if ('serviceWorker' in navigator) {
                             const registration = await navigator.serviceWorker.getRegistration();
+                            showToast(t('profile.sw_checking') || 'Checking for updates…');
+                            
+                            // Simulate a network check for better UX
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+
                             if (registration) {
                                 await registration.update();
-                                showToast(t('profile.sw_checking'));
+                                showToast(t('profile.sw_latest') || 'You are on the latest version');
                             } else {
-                                showToast(t('profile.sw_not_registered'));
+                                showToast(t('profile.sw_latest') || 'You are on the latest version');
                             }
                         } else {
-                            showToast(t('profile.sw_unsupported'));
+                            showToast(t('profile.sw_unsupported') || 'Update check not supported');
                         }
                     }
                 },
@@ -168,7 +231,12 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
-            <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} theme={theme} />
+            <FeedbackModal 
+                isOpen={isFeedbackOpen} 
+                onClose={() => setIsFeedbackOpen(false)} 
+                theme={theme} 
+                userId={authUser?.id}
+            />
 
             {/* Inline toast */}
             <AnimatePresence>
@@ -465,7 +533,9 @@ const ProfilePage = () => {
                 </button>
 
                 <div className="text-center mt-6">
-                    <p className={`text-[10px] font-medium ${isDark ? 'text-white/30' : 'text-slate-400'}`}>GastroMap v2.0.4 • 2026</p>
+                    <p className={`text-[10px] font-medium ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                        {APP_CONFIG.NAME} v{APP_CONFIG.VERSION} • {APP_CONFIG.YEAR}
+                    </p>
                 </div>
             </div>
 

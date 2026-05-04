@@ -274,3 +274,27 @@ export function useUserGrowth(days = 30) {
         refetchOnMount: true,
     })
 }
+
+// ─── Feedback ──────────────────────────────────────────────────────────────
+
+export function useFeedback() {
+    return useQuery({
+        queryKey: ['admin', 'feedback'],
+        queryFn: async () => {
+            const { getFeedback } = await import('../admin.api')
+            return getFeedback()
+        },
+        staleTime: 30_000,
+    })
+}
+
+export function useUpdateFeedbackStatusMutation() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, status }) => {
+            const { updateFeedbackStatus } = await import('../admin.api')
+            return updateFeedbackStatus(id, status)
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'feedback'] }),
+    })
+}

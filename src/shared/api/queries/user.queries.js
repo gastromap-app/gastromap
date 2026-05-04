@@ -27,3 +27,14 @@ export function useUpdatePreferencesMutation() {
         },
     })
 }
+
+// ─── Feedback ──────────────────────────────────────────────────────────────
+
+export function useSendFeedbackMutation() {
+    return useMutation({
+        mutationFn: async ({ userId, type, message, metadata }) => {
+            const { sendFeedback } = await import('../user.api')
+            return sendFeedback(userId, type, message, metadata)
+        }
+    })
+}

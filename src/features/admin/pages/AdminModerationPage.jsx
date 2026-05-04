@@ -6,13 +6,17 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import AdminPageHeader from '../components/AdminPageHeader'
-import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation } from '@/shared/api/queries'
+import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation, useFeedback, useUpdateFeedbackStatusMutation } from '@/shared/api/queries'
 
 export default function AdminModerationPage() {
     const { data: pendingReviews = [], isLoading: _loadingReviews } = usePendingReviews()
     const { data: pendingLocations = [], isLoading: _loadingLocs } = usePendingLocations()
+    const { data: feedback = [], isLoading: _loadingFeedback } = useFeedback()
     const updateReviewStatus = useUpdateReviewStatusMutation()
     const updateLocationStatus = useUpdateLocationStatusMutation()
+    const updateFeedbackStatus = useUpdateFeedbackStatusMutation()
+
+    const [activeTab, setActiveTab] = useState('moderation') // 'moderation' | 'feedback'
 
     // Combine both into a unified queue
     const queue = [
@@ -149,188 +153,282 @@ export default function AdminModerationPage() {
             {/* Header */}
             <AdminPageHeader
                 eyebrow="Admin"
-                title="Модерация"
-                subtitle="Одобряйте новые заведения и управляйте контентом."
+                title="Модерация и Обратная связь"
+                subtitle="Управляйте контентом и читайте сообщения пользователей."
                 badge={queue.length > 0 ? { label: `${queue.length} в очереди`, color: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20' } : undefined}
             />
 
-            {/* Search */}
-            <div className="flex gap-3">
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={15} />
-                    <input
-                        type="text"
-                        placeholder="Поиск по названию, городу или автору..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all shadow-inner"
-                    />
-                </div>
-                <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all">
-                    <Filter size={14} />
-                    <span className="text-xs font-medium hidden sm:inline">Фильтры</span>
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200 dark:border-white/[0.06] mb-6">
+                <button
+                    onClick={() => setActiveTab('moderation')}
+                    className={cn(
+                        "px-6 py-3 text-sm font-bold transition-all border-b-2",
+                        activeTab === 'moderation'
+                            ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                            : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                >
+                    Модерация ({queue.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('feedback')}
+                    className={cn(
+                        "px-6 py-3 text-sm font-bold transition-all border-b-2",
+                        activeTab === 'feedback'
+                            ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                            : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                >
+                    Фидбек ({feedback.length})
                 </button>
             </div>
 
-            {/* Queue List — mobile cards */}
-            <div className="md:hidden space-y-3">
-                <AnimatePresence>
-                    {filteredQueue.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
-                            Очередь модерации пуста.
+            {activeTab === 'moderation' ? (
+                <>
+
+            )}
+
+            {/* Content area based on tab */}
+            {activeTab === 'moderation' ? (
+                <div className="space-y-6">
+                    {/* Search */}
+                    <div className="flex gap-3">
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={15} />
+                            <input
+                                type="text"
+                                placeholder="Поиск по названию, городу или автору..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all shadow-inner"
+                            />
+                        </div>
+                        <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all">
+                            <Filter size={14} />
+                            <span className="text-xs font-medium hidden sm:inline">Фильтры</span>
+                        </button>
+                    </div>
+
+                    {/* Queue List — mobile cards */}
+                    <div className="md:hidden space-y-3">
+                        <AnimatePresence>
+                            {filteredQueue.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
+                                    Очередь модерации пуста.
+                                </div>
+                            ) : (
+                                paginatedQueue.map(item => (
+                                    <motion.button
+                                        key={`card-${item.id}`}
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        onClick={() => setSelectedItem(item)}
+                                        className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[20px] border border-slate-100 dark:border-white/[0.03] p-4 active:scale-[0.99] transition-transform"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                <MapPin size={20} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                                                    {item.name}
+                                                </div>
+                                                <div className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-0.5 truncate">
+                                                    {item.type} • {item.city}
+                                                </div>
+                                                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                                                    <span className="flex items-center gap-1 truncate"><User size={12} /> {item.author}</span>
+                                                    <span className="flex items-center gap-1 shrink-0"><Calendar size={12} /> {new Date(item.date).toLocaleDateString('ru-RU')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+                                            <div className={cn(
+                                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold",
+                                                item.status === 'PENDING_MODERATION'
+                                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                                    : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                                            )}>
+                                                <AlertCircle size={12} />
+                                                {item.status === 'PENDING_MODERATION' ? 'На проверке' : 'Запрошена правка'}
+                                            </div>
+                                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Проверить →</span>
+                                        </div>
+                                    </motion.button>
+                                ))
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Queue List — desktop table */}
+                    <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 text-xs uppercase tracking-wider text-slate-500 dark:text-[hsl(220,10%,55%)] font-semibold">
+                                        <th className="p-4 pl-6">Заведение</th>
+                                        <th className="p-4">Автор</th>
+                                        <th className="p-4">Дата</th>
+                                        <th className="p-4">Статус</th>
+                                        <th className="p-4 pr-6 text-right">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <AnimatePresence>
+                                        {filteredQueue.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="5" className="p-8 text-center text-slate-500">
+                                                    Очередь модерации пуста.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            paginatedQueue.map(item => (
+                                                <motion.tr
+                                                    key={item.id}
+                                                    layout
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, x: -20 }}
+                                                    className="hover:bg-slate-50/50 dark:hover:bg-[hsl(220,20%,12%)]/30 transition-colors"
+                                                >
+                                                    <td className="p-4 pl-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                                <MapPin size={20} />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-semibold text-sm text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => setSelectedItem(item)}>
+                                                                    {item.name}
+                                                                </div>
+                                                                <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                                    <span>{item.type}</span> • <span>{item.city}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[hsl(220,10%,55%)]">
+                                                            <User size={14} className="text-slate-400" />
+                                                            {item.author}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[hsl(220,10%,55%)]">
+                                                            <Calendar size={14} className="text-slate-400" />
+                                                            {new Date(item.date).toLocaleDateString('ru-RU')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className={cn(
+                                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
+                                                            item.status === 'PENDING_MODERATION'
+                                                                ? "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                                                : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                                                        )}>
+                                                            <AlertCircle size={12} />
+                                                            {item.status === 'PENDING_MODERATION' ? 'На проверке' : 'Запрошена правка'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 pr-6 text-right">
+                                                        <button
+                                                            onClick={() => setSelectedItem(item)}
+                                                            className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-[hsl(220,20%,9%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-700 dark:text-[hsl(220,10%,55%)] rounded-lg transition-colors"
+                                                        >
+                                                            Проверить
+                                                        </button>
+                                                    </td>
+                                                </motion.tr>
+                                            ))
+                                        )}
+                                    </AnimatePresence>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-6">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
+                            >
+                                ← Назад
+                            </button>
+                            <span className="text-xs text-slate-400">
+                                {currentPage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
+                            >
+                                Далее →
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {feedback.length === 0 ? (
+                        <div className="p-12 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] border border-slate-100 dark:border-white/[0.03]">
+                            Сообщений обратной связи пока нет.
                         </div>
                     ) : (
-                        paginatedQueue.map(item => (
-                            <motion.button
-                                key={`card-${item.id}`}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                onClick={() => setSelectedItem(item)}
-                                className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[20px] border border-slate-100 dark:border-white/[0.03] p-4 active:scale-[0.99] transition-transform"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                                        <MapPin size={20} />
-                                    </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            {feedback.map(item => (
+                                <div 
+                                    key={item.id} 
+                                    className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-6 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center"
+                                >
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-                                            {item.name}
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider",
+                                                item.type === 'bug' ? "bg-rose-500 text-white" : item.type === 'suggestion' ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"
+                                            )}>
+                                                {item.type}
+                                            </span>
+                                            <span className="text-xs text-slate-400">{new Date(item.created_at).toLocaleString('ru-RU')}</span>
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded text-[10px] font-bold capitalize",
+                                                item.status === 'resolved' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                            )}>
+                                                {item.status}
+                                            </span>
                                         </div>
-                                        <div className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-0.5 truncate">
-                                            {item.type} • {item.city}
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
-                                            <span className="flex items-center gap-1 truncate"><User size={12} /> {item.author}</span>
-                                            <span className="flex items-center gap-1 shrink-0"><Calendar size={12} /> {new Date(item.date).toLocaleDateString('ru-RU')}</span>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">{item.message}</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                                {item.user_avatar ? <img src={item.user_avatar} alt="" className="w-full h-full object-cover" /> : <User size={12} className="m-1.5 text-slate-400" />}
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-500">{item.user_name}</span>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                                    <div className={cn(
-                                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold",
-                                        item.status === 'PENDING_MODERATION'
-                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-                                            : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                                    )}>
-                                        <AlertCircle size={12} />
-                                        {item.status === 'PENDING_MODERATION' ? 'На проверке' : 'Запрошена правка'}
-                                    </div>
-                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Проверить →</span>
-                                </div>
-                            </motion.button>
-                        ))
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* Queue List — desktop table */}
-            <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20 text-xs uppercase tracking-wider text-slate-500 dark:text-[hsl(220,10%,55%)] font-semibold">
-                                <th className="p-4 pl-6">Заведение</th>
-                                <th className="p-4">Автор</th>
-                                <th className="p-4">Дата</th>
-                                <th className="p-4">Статус</th>
-                                <th className="p-4 pr-6 text-right">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            <AnimatePresence>
-                                {filteredQueue.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="p-8 text-center text-slate-500">
-                                            Очередь модерации пуста.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    paginatedQueue.map(item => (
-                                        <motion.tr
-                                            key={item.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="hover:bg-slate-50/50 dark:hover:bg-[hsl(220,20%,12%)]/30 transition-colors"
+                                    <div className="flex gap-2 shrink-0">
+                                        {item.status !== 'resolved' && (
+                                            <button 
+                                                onClick={() => updateFeedbackStatus.mutate({ id: item.id, status: 'resolved' })}
+                                                className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"
+                                            >
+                                                Решено
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => updateFeedbackStatus.mutate({ id: item.id, status: 'archived' })}
+                                            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                         >
-                                            <td className="p-4 pl-6">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                        <MapPin size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-semibold text-sm text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => setSelectedItem(item)}>
-                                                            {item.name}
-                                                        </div>
-                                                        <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                                            <span>{item.type}</span> • <span>{item.city}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[hsl(220,10%,55%)]">
-                                                    <User size={14} className="text-slate-400" />
-                                                    {item.author}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[hsl(220,10%,55%)]">
-                                                    <Calendar size={14} className="text-slate-400" />
-                                                    {new Date(item.date).toLocaleDateString('ru-RU')}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className={cn(
-                                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
-                                                    item.status === 'PENDING_MODERATION'
-                                                        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-                                                        : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                                                )}>
-                                                    <AlertCircle size={12} />
-                                                    {item.status === 'PENDING_MODERATION' ? 'На проверке' : 'Запрошена правка'}
-                                                </div>
-                                            </td>
-                                            <td className="p-4 pr-6 text-right">
-                                                <button
-                                                    onClick={() => setSelectedItem(item)}
-                                                    className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-[hsl(220,20%,9%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-700 dark:text-[hsl(220,10%,55%)] rounded-lg transition-colors"
-                                                >
-                                                    Проверить
-                                                </button>
-                                            </td>
-                                        </motion.tr>
-                                    ))
-                                )}
-                            </AnimatePresence>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                    <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
-                    >
-                        ← Назад
-                    </button>
-                    <span className="text-xs text-slate-400">
-                        {currentPage} / {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 disabled:opacity-30"
-                    >
-                        Далее →
-                    </button>
+                                            {item.status === 'archived' ? 'Архивировано' : 'В архив'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

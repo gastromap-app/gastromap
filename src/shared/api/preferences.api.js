@@ -5,7 +5,7 @@ export async function getUserPreferences(userId) {
 
     const { data: up, error } = await supabase
         .from('user_preferences')
-        .select('favorite_cuisines, vibe_preferences, dietary_restrictions, price_range')
+        .select('favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna, atmosphere_preference, features')
         .eq('user_id', userId)
         .maybeSingle()
 
@@ -16,6 +16,9 @@ export async function getUserPreferences(userId) {
             vibePreference:       up.vibe_preferences     || [],
             dietaryRestrictions:  up.dietary_restrictions || [],
             priceRange:           up.price_range ? [up.price_range] : [],
+            foodieDNA:            up.foodie_dna || '',
+            atmospherePreference: up.atmosphere_preference || '',
+            features:             up.features || '',
         }
     }
 }
@@ -32,6 +35,9 @@ export async function updateUserPreferences(userId, preferences) {
             vibe_preferences:     dna.vibePreference      || [],
             dietary_restrictions: dna.dietaryRestrictions || [],
             price_range:          dna.priceRange?.length ? dna.priceRange[0] : null,
+            foodie_dna:           dna.foodieDNA || '',
+            atmosphere_preference: dna.atmospherePreference || '',
+            features:             dna.features || '',
             last_updated:         new Date().toISOString(),
         }, { onConflict: 'user_id' })
     return { data: null, error: e2 }

@@ -11,8 +11,8 @@ const DEFAULT_PREFS = {
     onboardingCompleted: false,
     favoriteCuisines: [],
     dietaryRestrictions: [],
-    atmospherePreference: [],
-    vibePreference: [],
+    atmospherePreference: '', // Standardized as string
+    vibePreference: [],       // Array of tags
     priceRange: ['$', '$$'],
     features: [],
     foodieDNA: '',
@@ -40,8 +40,10 @@ async function syncToSupabase(prefs) {
                     favorite_cuisines:  prefs.favoriteCuisines  || [],
                     vibe_preferences:     prefs.vibePreference    || [],
                     dietary_restrictions: prefs.dietaryRestrictions || [],
-                    price_range:     prefs.priceRange?.length ? prefs.priceRange[0] : null,
+                    price_range:     prefs.priceRange?.length ? prefs.priceRange.join(',') : null,
                     foodie_dna:      prefs.foodieDNA || '',
+                    atmosphere_preference: prefs.atmospherePreference || '',
+                    features:        Array.isArray(prefs.features) ? prefs.features.join(',') : (prefs.features || ''),
                     last_updated:    new Date().toISOString(),
                 }, { onConflict: 'user_id' })
         ])
@@ -115,7 +117,7 @@ export const useUserPrefsStore = create(
                     // Fetch from both profiles (new source of truth) and user_preferences (legacy)
                     const [profileRes, prefsRes] = await Promise.all([
                         supabase.from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle(),
-                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna').eq('user_id', userId).maybeSingle()
+                        supabase.from('user_preferences').select('onboarding_completed, favorite_cuisines, vibe_preferences, dietary_restrictions, price_range, foodie_dna, atmosphere_preference, features').eq('user_id', userId).maybeSingle()
                     ])
 
                     // If we get a 400, the table or column is probably missing — ignore and use local
@@ -137,8 +139,10 @@ export const useUserPrefsStore = create(
                                 favoriteCuisines:    up?.favorite_cuisines    || state.prefs.favoriteCuisines,
                                 vibePreference:      up?.vibe_preferences       || state.prefs.vibePreference,
                                 dietaryRestrictions: up?.dietary_restrictions   || state.prefs.dietaryRestrictions,
-                                priceRange:          up?.price_range ? [up.price_range] : state.prefs.priceRange,
+                                priceRange:          up?.price_range ? up.price_range.split(',') : state.prefs.priceRange,
                                 foodieDNA:           up?.foodie_dna           || state.prefs.foodieDNA,
+                                atmospherePreference: up?.atmosphere_preference || state.prefs.atmospherePreference,
+                                features:             up?.features ? (typeof up.features === 'string' ? up.features.split(',') : up.features) : state.prefs.features,
                             },
                         }))
                         return !!onboardingCompleted

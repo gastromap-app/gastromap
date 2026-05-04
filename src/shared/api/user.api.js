@@ -51,3 +51,35 @@ export async function getUserLocationHistory(userId) {
 
     return data || []
 }
+
+/**
+ * Sends user feedback to the database.
+ * 
+ * @param {string} userId
+ * @param {string} type - 'bug', 'suggestion', 'other'
+ * @param {string} message
+ * @param {object} metadata - optional additional data
+ */
+export async function sendFeedback(userId, type, message, metadata = {}) {
+    if (!USE_SUPABASE) return { success: true }
+    if (!message) throw new ApiError('Message is required', 400)
+
+    const { data, error } = await supabase
+        .from('feedback')
+        .insert([{
+            user_id: userId,
+            type,
+            message,
+            metadata,
+            status: 'new'
+        }])
+        .select()
+        .single()
+
+    if (error) {
+        console.error('[user.api] Error sending feedback:', error)
+        throw new ApiError(error.message, 400)
+    }
+
+    return data
+}

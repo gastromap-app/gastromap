@@ -3,14 +3,27 @@ import { supabase } from './client'
 export async function getLeaderboard(limit = 50) {
     if (!supabase) return []
     try {
-        // Try `profiles` (legacy: full_name column) then `user_profiles` (new: display_name column)
+        // Try `profiles` then `user_profiles` with a safer select to avoid 400 errors
         let profiles = []
-        const profilesRes = await supabase.from('profiles').select('id, full_name, avatar_url')
-        if (!profilesRes.error && profilesRes.data?.length) {
-            profiles = profilesRes.data.map(p => ({ id: p.id, name: p.full_name, avatar: p.avatar_url }))
+        
+        // 1. Try profiles
+        const { data: pData, error: pErr } = await supabase.from('profiles').select('*')
+        if (!pErr && pData?.length) {
+            profiles = pData.map(p => ({ 
+                id: p.id, 
+                name: p.full_name || p.display_name || p.username || 'User', 
+                avatar: p.avatar_url 
+            }))
         } else {
-            const upRes = await supabase.from('user_profiles').select('id, display_name, avatar_url')
-            profiles = (upRes.data || []).map(p => ({ id: p.id, name: p.display_name, avatar: p.avatar_url }))
+            // 2. Fallback to user_profiles
+            const { data: upData, error: upErr } = await supabase.from('user_profiles').select('*')
+            if (!upErr && upData?.length) {
+                profiles = upData.map(p => ({ 
+                    id: p.id, 
+                    name: p.display_name || p.full_name || 'User', 
+                    avatar: p.avatar_url 
+                }))
+            }
         }
 
         // Reviews with status 'approved' (admin approved) or 'published'

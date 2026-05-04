@@ -444,3 +444,46 @@ export async function getDetailedEngagement() {
         // Canonical roles: 'admin' | 'moderator' | 'user' (no premium in system)
     }
 }
+
+// ─── Feedback Management ───────────────────────────────────────────────────
+
+/**
+ * Fetches all user feedback entries.
+ * @returns {Promise<Array>}
+ */
+export async function getFeedback() {
+    if (!supabase) return []
+    const { data, error } = await supabase
+        .from('feedback')
+        .select('*, profiles(name, email, avatar_url)')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('[admin.api] getFeedback error:', error)
+        return []
+    }
+
+    return (data || []).map(f => ({
+        ...f,
+        user_name: f.profiles?.name || f.profiles?.email || 'Unknown User',
+        user_avatar: f.profiles?.avatar_url
+    }))
+}
+
+/**
+ * Updates the status of a feedback entry.
+ * @param {string} id
+ * @param {string} status - 'new', 'in_progress', 'resolved', 'archived'
+ */
+export async function updateFeedbackStatus(id, status) {
+    if (!supabase) throw new Error('No Supabase')
+    const { data, error } = await supabase
+        .from('feedback')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}

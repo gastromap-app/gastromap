@@ -168,6 +168,8 @@ const MAX_CHAT_INPUT_LENGTH = 3000
             userExperience,
             locationHistory, // New: injected into the prompt via buildSystemPrompt
             foodieDNA: prefs.foodieDNA || '',
+            atmospherePreference: prefs.atmospherePreference || '',
+            features: prefs.features || '',
             // Geolocation context — filled when user grants browser permission
             userCity: userCity || null,
             userCountry: userCountry || null,

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, Mail, Save, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-import { useAuthStore } from '../../auth/hooks/useAuthStore'
 import { useTranslation } from 'react-i18next'
 import { useUserPreferences, useUpdatePreferencesMutation } from '@/shared/api/queries'
+import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const ProfileEditPage = () => {
     const { t } = useTranslation()
@@ -13,6 +14,7 @@ const ProfileEditPage = () => {
     const { user: authUser, updateUserProfile } = useAuthStore()
     const { data: preferences = {}, isLoading: loadingPrefs } = useUserPreferences(authUser?.id)
     const updatePrefs = useUpdatePreferencesMutation()
+    const { updatePrefs: updateZustandPrefs } = useUserPrefsStore()
 
     const isDark = theme === 'dark'
 
@@ -21,8 +23,16 @@ const ProfileEditPage = () => {
         name: authUser?.name ?? '',
         email: authUser?.email ?? '',
         bio: authUser?.bio || 'Food enthusiast traveling the world for the best flavors.',
-        preferences: authUser?.preferences || {
-            longTerm: { atmospherePreference: '', features: '', foodieDNA: '' }
+        preferences: {
+            longTerm: {
+                favoriteCuisines: [],
+                vibePreference: [],
+                dietaryRestrictions: [],
+                priceRange: [],
+                atmospherePreference: '',
+                features: '',
+                foodieDNA: ''
+            }
         }
     }))
 
@@ -31,15 +41,11 @@ const ProfileEditPage = () => {
 
     // Initialize form from Supabase preferences when loaded
     useEffect(() => {
-        if (!loadingPrefs && preferences && Object.keys(preferences).length > 0) {
+        if (!loadingPrefs && preferences?.longTerm) {
             setFormData((prev) => ({
                 ...prev,
                 preferences: {
-                    ...prev.preferences,
-                    longTerm: {
-                        ...prev.preferences?.longTerm,
-                        ...preferences.longTerm
-                    }
+                    longTerm: { ...prev.preferences.longTerm, ...preferences.longTerm }
                 }
             }))
         }
@@ -61,9 +67,21 @@ const ProfileEditPage = () => {
         setSaveError('')
         setSaveLoading(true)
         try {
-            await updateUserProfile({ name: formData.name, avatar: formData.avatar })
+            await updateUserProfile({ name: formData.name, avatar: formData.avatar, bio: formData.bio })
             if (authUser?.id) {
                 await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })
+                
+                // Sync Zustand store for immediate UI updates elsewhere
+                const dna = formData.preferences?.longTerm || {}
+                updateZustandPrefs({
+                    favoriteCuisines: dna.favoriteCuisines || [],
+                    vibePreference: dna.vibePreference || [],
+                    dietaryRestrictions: dna.dietaryRestrictions || [],
+                    priceRange: dna.priceRange || [],
+                    foodieDNA: dna.foodieDNA || '',
+                    atmospherePreference: dna.atmospherePreference || '',
+                    features: dna.features || ''
+                })
             }
             navigate('/profile')
         } catch (err) {
@@ -150,10 +168,154 @@ const ProfileEditPage = () => {
                 </div>
 
                 {/* Taste Profile Editor */}
-                <div className={`p-6 rounded-[32px] border ${cardBg} space-y-6`}>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Sparkles size={16} className="text-yellow-500" />
-                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${subTextStyle}`}>{t('profile_edit.taste_dna')}</h3>
+                <div className={`p-6 rounded-[32px] border ${cardBg} space-y-8`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Sparkles size={16} className="text-yellow-500" />
+                            <h3 className={`text-[11px] font-black uppercase tracking-widest ${subTextStyle}`}>{t('profile_edit.taste_dna')}</h3>
+                        </div>
+                    </div>
+
+                    {/* Favorite Cuisines */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.cuisines_label')}</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>Separate with commas or press enter</p>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Italian, Japanese, Georgian..."
+                            className={`w-full p-4 rounded-2xl text-sm font-bold outline-none border transition-all focus:border-blue-500 ${inputBg} ${textStyle}`}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ',') {
+                                    e.preventDefault()
+                                    const val = e.target.value.trim().replace(/,$/, '')
+                                    if (val && !formData.preferences?.longTerm?.favoriteCuisines?.includes(val)) {
+                                        setFormData({
+                                            ...formData,
+                                            preferences: {
+                                                ...formData.preferences,
+                                                longTerm: {
+                                                    ...(formData.preferences?.longTerm || {}),
+                                                    favoriteCuisines: [...(formData.preferences?.longTerm?.favoriteCuisines || []), val]
+                                                }
+                                            }
+                                        })
+                                        e.target.value = ''
+                                    }
+                                }
+                            }}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                            {formData.preferences?.longTerm?.favoriteCuisines?.map(c => (
+                                <span key={c} className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-2">
+                                    {c}
+                                    <button onClick={() => setFormData({
+                                        ...formData,
+                                        preferences: { 
+                                            ...formData.preferences, 
+                                            longTerm: { 
+                                                ...formData.preferences.longTerm, 
+                                                favoriteCuisines: formData.preferences.longTerm.favoriteCuisines.filter(x => x !== c) 
+                                            } 
+                                        }
+                                    })}>×</button>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Vibe Preferences */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Vibe Tags</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>e.g. Romantic, Quiet, Lively</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {['Romantic', 'Quiet', 'Lively', 'Work-friendly', 'Family', 'Hidden Gem'].map(v => {
+                                const isSelected = formData.preferences?.longTerm?.vibePreference?.includes(v)
+                                return (
+                                    <button
+                                        key={v}
+                                        onClick={() => {
+                                            const current = formData.preferences?.longTerm?.vibePreference || []
+                                            const next = isSelected ? current.filter(x => x !== v) : [...current, v]
+                                            setFormData({ 
+                                                ...formData, 
+                                                preferences: { 
+                                                    ...formData.preferences, 
+                                                    longTerm: { ...formData.preferences.longTerm, vibePreference: next } 
+                                                } 
+                                            })
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                    >
+                                        {v}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Dietary Restrictions */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Dietary & Allergens</label>
+                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>Select any that apply</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut-free', 'Halal', 'Kosher'].map(d => {
+                                const isSelected = formData.preferences?.longTerm?.dietaryRestrictions?.includes(d)
+                                return (
+                                    <button
+                                        key={d}
+                                        onClick={() => {
+                                            const current = formData.preferences?.longTerm?.dietaryRestrictions || []
+                                            const next = isSelected ? current.filter(x => x !== d) : [...current, d]
+                                            setFormData({ 
+                                                ...formData, 
+                                                preferences: { 
+                                                    ...formData.preferences, 
+                                                    longTerm: { ...formData.preferences.longTerm, dietaryRestrictions: next } 
+                                                } 
+                                            })
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                    >
+                                        {d}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Price Range */}
+                    <div className="space-y-4">
+                        <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>Budget</label>
+                        <div className="flex gap-2">
+                            {['$', '$$', '$$$', '$$$$'].map(p => {
+                                const isSelected = formData.preferences?.longTerm?.priceRange?.includes(p)
+                                return (
+                                    <button
+                                        key={p}
+                                        onClick={() => {
+                                            const current = formData.preferences?.longTerm?.priceRange || []
+                                            const next = isSelected ? current.filter(x => x !== p) : [...current, p]
+                                            setFormData({ 
+                                                ...formData, 
+                                                preferences: { 
+                                                    ...formData.preferences, 
+                                                    longTerm: { ...formData.preferences.longTerm, priceRange: next } 
+                                                } 
+                                            })
+                                        }}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-black transition-all border ${isSelected ? 'bg-amber-500 text-white border-amber-400' : 'bg-white/5 text-white/40 border-white/10'}`}
+                                    >
+                                        {p}
+                                    </button>
+                                )
+                            })}
+                        </div>
                     </div>
 
                     {/* Foodie DNA Input */}
@@ -162,26 +324,18 @@ const ProfileEditPage = () => {
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.dna_label')}</label>
                             <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.dna_hint')}</p>
                         </div>
-                        <div className="relative group">
-                            <div className="absolute top-4 left-4 text-blue-500 opacity-50 group-focus-within:opacity-100 transition-opacity">
-                                <Sparkles size={18} />
-                            </div>
-                            <textarea
-                                value={formData.preferences?.longTerm?.foodieDNA || ''}
-                                onChange={(e) => setFormData({
-                                    ...formData,
-                                    preferences: {
-                                        ...formData.preferences,
-                                        longTerm: {
-                                            ...formData.preferences.longTerm,
-                                            foodieDNA: e.target.value
-                                        }
-                                    }
-                                })}
-                                className={`w-full pl-12 pr-4 py-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-32 resize-none ${inputBg} ${textStyle}`}
-                                placeholder={t('profile_edit.dna_placeholder')}
-                            />
-                        </div>
+                        <textarea
+                            value={formData.preferences?.longTerm?.foodieDNA || ''}
+                            onChange={(e) => setFormData({
+                                ...formData,
+                                preferences: {
+                                    ...formData.preferences,
+                                    longTerm: { ...formData.preferences.longTerm, foodieDNA: e.target.value }
+                                }
+                            })}
+                            className={`w-full p-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
+                            placeholder={t('profile_edit.dna_placeholder')}
+                        />
                     </div>
 
                     {/* Atmosphere Editor */}
@@ -196,37 +350,11 @@ const ProfileEditPage = () => {
                                 ...formData,
                                 preferences: {
                                     ...formData.preferences,
-                                    longTerm: {
-                                        ...formData.preferences.longTerm,
-                                        atmospherePreference: e.target.value
-                                    }
+                                    longTerm: { ...formData.preferences.longTerm, atmospherePreference: e.target.value }
                                 }
                             })}
                             className={`w-full p-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
                             placeholder={t('profile_edit.atm_placeholder')}
-                        />
-                    </div>
-
-                    {/* Features Editor */}
-                    <div className="space-y-4">
-                        <div className="flex flex-col gap-1">
-                            <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile_edit.features_label')}</label>
-                            <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>{t('profile_edit.features_hint')}</p>
-                        </div>
-                        <textarea
-                            value={formData.preferences?.longTerm?.features || ''}
-                            onChange={(e) => setFormData({
-                                ...formData,
-                                preferences: {
-                                    ...formData.preferences,
-                                    longTerm: {
-                                        ...formData.preferences.longTerm,
-                                        features: e.target.value
-                                    }
-                                }
-                            })}
-                            className={`w-full p-4 rounded-[24px] text-sm font-bold outline-none border transition-all focus:border-blue-500 h-24 resize-none ${inputBg} ${textStyle}`}
-                            placeholder={t('profile_edit.features_placeholder')}
                         />
                     </div>
                 </div>

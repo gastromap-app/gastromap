@@ -141,7 +141,7 @@ const CountriesPage = () => {
     const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
 
     return (
-        <div data-lenis-prevent className="bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide">
+        <div data-lenis-prevent className="bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide md:absolute md:inset-0">
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
             <motion.div
                 className="md:hidden space-y-5 px-[2.5vw] pt-24 pb-12"

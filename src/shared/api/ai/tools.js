@@ -131,54 +131,53 @@ function getUserPreferences() {
  *
  * Returns raw rows (for client-side post-filtering).
  */
+async function _buildLocationQuery(selectColumns = '*') {
+    return supabase.from('locations').select(selectColumns).eq('status', 'approved')
+}
+
+async function _applyFilters(query, { city, category, cuisine, price_range, min_rating, michelin }) {
+    if (price_range?.length) query = query.in('price_range', price_range)
+    if (min_rating) query = query.gte('google_rating', min_rating)
+    if (michelin) query = query.or('michelin_stars.gt.0,michelin_bib.eq.true')
+    if (city) {
+        const cityPattern = city.replace(/[óòôõö]/g, '_').replace(/[aáàâãä]/g, '_')
+        query = query.ilike('city', `%${cityPattern}%`)
+    }
+    if (category) query = query.ilike('category', `%${category}%`)
+    if (cuisine) query = query.or(`cuisine.ilike.%${cuisine}%,kg_cuisines.cs.{${cuisine}}`)
+    return query
+}
+
 async function querySupabase({ city, category, cuisine, price_range, min_rating, michelin, sort_by, fetchLimit = 200 }) {
     if (!supabase) return null
 
     try {
         console.log(`[ai.tools] Tier 1: Querying Supabase...`, { city, category })
-        
-        let query = supabase
-            .from('locations')
-            .select('*, vibes:location_vibes(vibe:vibes(name))')
-            .eq('status', 'approved')
 
-        // SQL-safe filters
-        if (price_range?.length) {
-            // In DB it is called price_range
-            query = query.in('price_range', price_range)
-        }
-        if (min_rating) {
-            // In DB it is called google_rating
-            query = query.gte('google_rating', min_rating)
-        }
-        if (michelin) {
-            query = query.or('michelin_stars.gt.0,michelin_bib.eq.true')
-        }
+        // Try with vibes join first; fall back to plain select if schema isn't ready
+        let query = await _buildLocationQuery('*, vibes:location_vibes(vibe:vibes(name))')
+        query = await _applyFilters(query, { city, category, cuisine, price_range, min_rating, michelin })
 
-        // ADDED: SQL-side city and category filtering for efficiency
-        if (city) {
-            // Flexible matching for cities (e.g. Krakow vs Kraków)
-            const cityPattern = city.replace(/[óòôõö]/g, '_').replace(/[aáàâãä]/g, '_')
-            query = query.ilike('city', `%${cityPattern}%`)
-        }
-        if (category) {
-            query = query.ilike('category', `%${category}%`)
-        }
-        if (cuisine) {
-            // Check both cuisine column and kg_cuisines array
-            query = query.or(`cuisine.ilike.%${cuisine}%,kg_cuisines.cs.{${cuisine}}`)
-        }
-
-        const { data, error } = await query
+        let { data, error } = await query
             .order(sort_by === 'newest' ? 'created_at' : 'google_rating', { ascending: false, nullsFirst: false })
             .limit(fetchLimit)
+
+        if (error) {
+            console.warn('[ai.tools] Vibes join failed, falling back to plain select:', error.message)
+            query = await _buildLocationQuery('*')
+            query = await _applyFilters(query, { city, category, cuisine, price_range, min_rating, michelin })
+            const fallback = await query
+                .order(sort_by === 'newest' ? 'created_at' : 'google_rating', { ascending: false, nullsFirst: false })
+                .limit(fetchLimit)
+            data = fallback.data
+            error = fallback.error
+        }
 
         if (error) {
             console.warn('[ai.tools] Supabase query error:', error.message)
             return null
         }
-        
-        // console.log(`[ai.tools] Tier 1: Fetched ${data?.length || 0} rows`)
+
         return data || []
     } catch (err) {
         console.warn('[ai.tools] Supabase query failed:', err.message)

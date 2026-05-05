@@ -59,7 +59,7 @@ const AIGuidePage = () => {
     }
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-transparent overflow-hidden">
+        <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent overflow-hidden">
             {/* Aurora while typing */}
             {isTyping && (
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -87,22 +87,24 @@ const AIGuidePage = () => {
                 {/* Header Spacer to push content below UniversalHeader */}
                 <div style={{ height: HEADER_OFFSET }} className="w-full flex-shrink-0" />
 
-                <ChatInterface
-                    messages={messages}
-                    isTyping={isTyping}
-                    onSendMessage={sendMessage}
-                    onCardClick={handleCardClick}
-                    transparent={true}
-                    scrollContainerRef={scrollRef}
-                    contentClassName="px-4"
-                    geoStatus={geoStatus}
-                    requestGeo={requestGeo}
-                />
+                <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
+                    <ChatInterface
+                        messages={messages}
+                        isTyping={isTyping}
+                        onSendMessage={sendMessage}
+                        onCardClick={handleCardClick}
+                        transparent={true}
+                        scrollContainerRef={scrollRef}
+                        contentClassName=""
+                        geoStatus={geoStatus}
+                        requestGeo={requestGeo}
+                    />
+                </div>
             </div>
 
             {/* Input fixed just above BottomNav */}
             <div
-                className="fixed left-0 right-0 z-30 px-3 pointer-events-none"
+                className="fixed left-0 right-0 md:left-[72px] z-30 px-3 pointer-events-none"
                 style={{ bottom: INPUT_BOTTOM }}
             >
                 <div className="max-w-4xl mx-auto w-full pointer-events-auto">

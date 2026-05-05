@@ -24,7 +24,7 @@ function VisitedCard({ visit, index, onDelete }) {
         >
             <Link
                 to={`/location/${loc.id}`}
-                className={`group relative flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
+                className={`group flex gap-4 p-4 rounded-2xl transition-all active:scale-[0.98] ${
                     isDark
                         ? 'bg-white/5 border border-white/10 hover:bg-white/8'
                         : 'bg-white border border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.06),0_10px_30px_rgba(15,23,42,0.08)]'
@@ -58,9 +58,22 @@ function VisitedCard({ visit, index, onDelete }) {
                             </p>
                         </div>
 
-                        <div className="flex-shrink-0 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-xl">
-                            <Star size={10} className="text-emerald-500 fill-emerald-500" />
-                            <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.google_rating || loc.rating}</span>
+                        {/* Rating + Delete column */}
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-xl">
+                                <Star size={10} className="text-emerald-500 fill-emerald-500" />
+                                <span className="text-[11px] font-black text-emerald-600">{visit.rating || loc.google_rating || loc.rating}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(visit.id) }}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
+                                    isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400' : 'bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500'
+                                }`}
+                                aria-label="Delete visit"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     </div>
 
@@ -78,17 +91,6 @@ function VisitedCard({ visit, index, onDelete }) {
                         )}
                     </div>
                 </div>
-
-                {/* Delete button */}
-                <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(visit.id) }}
-                    className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
-                        isDark ? 'bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400' : 'bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500'
-                    }`}
-                    aria-label="Delete visit"
-                >
-                    <Trash2 size={14} />
-                </button>
             </Link>
         </motion.div>
     )

@@ -2,6 +2,7 @@ import React from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { UniversalHeader } from './UniversalHeader'
+import { DesktopSidebar } from './DesktopSidebar'
 import GastroGuideChat from '@/features/public/components/GastroGuideChat'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
@@ -25,29 +26,33 @@ export function MainLayout() {
 
     return (
         <AuroraBackground theme={theme}>
-            <div className="flex flex-col min-h-dvh text-foreground relative">
-                {!isLocationDetail && <UniversalHeader />}
-                <main
-                    className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24'} md:pb-0`}
-                    style={!isFullScreen ? { paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' } : undefined}
-                >
-                    {/* Map page uses fixed inset-0 and renders above this container */}
-                    <Outlet />
-                </main>
-                <BottomNav />
+            <div className="flex min-h-dvh text-foreground relative">
+                {/* Desktop Sidebar Navigation */}
+                <DesktopSidebar />
 
-                {/* AI Floating Action Button (Desktop Only) */}
-                {!isChatOpen && !isAIGuide && (
-                    <Button
-                        size="lg"
-                        className="fixed bottom-8 right-8 z-40 rounded-full w-14 h-14 shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300 hidden md:flex"
-                        onClick={() => setIsChatOpen(true)}
+                <div className="flex-1 flex flex-col md:ml-[72px]">
+                    {!isLocationDetail && <UniversalHeader />}
+                    <main
+                        className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24 md:pb-6'}`}
                     >
-                        <Sparkles className="h-6 w-6 text-white" />
-                    </Button>
-                )}
+                        {/* Map page uses fixed inset-0 and renders above this container */}
+                        <Outlet />
+                    </main>
+                    <BottomNav />
 
-                {!isAIGuide && !isLocationDetail && <GastroGuideChat key={user?.id || 'guest'} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
+                    {/* AI Floating Action Button (Desktop Only) */}
+                    {!isChatOpen && !isAIGuide && (
+                        <Button
+                            size="lg"
+                            className="fixed bottom-8 right-8 z-40 rounded-full w-14 h-14 shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300 hidden md:flex"
+                            onClick={() => setIsChatOpen(true)}
+                        >
+                            <Sparkles className="h-6 w-6 text-white" />
+                        </Button>
+                    )}
+
+                    {!isAIGuide && !isLocationDetail && <GastroGuideChat key={user?.id || 'guest'} isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
+                </div>
             </div>
         </AuroraBackground>
     )

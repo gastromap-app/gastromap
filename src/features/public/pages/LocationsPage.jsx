@@ -487,7 +487,7 @@ const LocationsPage = () => {
         //    — fixed elements inside a CSS-transformed parent are positioned relative
         //    to that parent, not the viewport.
         // 2. The individual child elements already have their own motion animations.
-        <div data-lenis-prevent className="fixed inset-0 w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
+        <div data-lenis-prevent className="fixed inset-0 md:left-[72px] w-full h-[100dvh] bg-transparent overflow-hidden overscroll-none">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}

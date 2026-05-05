@@ -1,12 +1,11 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Shield, Eye, Lock, Database } from 'lucide-react'
+import PageHeader from '@/components/layout/public/PageHeader'
+import { Shield } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 const PrivacyPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const navigate = useNavigate()
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
@@ -36,19 +35,14 @@ const PrivacyPage = () => {
     ]
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
-            {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
-                <button
-                    onClick={() => navigate(-1)}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Privacy Policy</h1>
-            </div>
+        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen pb-24">
+            <PageHeader
+                title="Privacy Policy"
+                subtitle="How we collect, use, and protect your personal information."
+                highlight="Legal"
+            />
 
-            <div className="px-5 space-y-6">
+            <div className="px-4 sm:px-6 md:px-8 pt-8 max-w-[800px] mx-auto space-y-6">
                 {/* Intro Card */}
                 <div className={`p-8 rounded-[40px] border ${cardBg} bg-gradient-to-br from-blue-500/5 to-indigo-500/5`}>
                     <Shield size={40} className="text-blue-500 mb-6" />

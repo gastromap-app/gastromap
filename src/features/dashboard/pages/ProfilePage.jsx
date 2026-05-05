@@ -252,6 +252,7 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
+            <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
             <FeedbackModal 
                 isOpen={isFeedbackOpen} 
                 onClose={() => setIsFeedbackOpen(false)} 
@@ -274,7 +275,7 @@ const ProfilePage = () => {
             </AnimatePresence>
 
             {/* Profile Header - Compact */}
-            <div className="pt-24 px-6 flex flex-col items-center text-center">
+            <div className="pt-24 md:pt-10 px-6 flex flex-col items-center text-center">
                 <div className="relative mb-4">
                     <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/30">
                         {user.name.charAt(0)}
@@ -600,6 +601,7 @@ const ProfilePage = () => {
                 </div>
             </div>
 
+            </div>
         </div>
     )
 }

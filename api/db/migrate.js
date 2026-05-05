@@ -10,12 +10,18 @@
  *     -d "{\"secret\": \"YOUR_SECRET\"}"
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
+    setCorsHeaders(req, res)
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
 
-    const secret = process.env.MIGRATE_SECRET || 'gastromap-migrate-2026'
+    if (applyRateLimit(req, res, 'migrate', { maxRequests: 3, windowMs: 300000 })) return
+
+    const secret = process.env.MIGRATE_SECRET
+    if (!secret) return res.status(500).json({ error: 'MIGRATE_SECRET not configured' })
     const { secret: provided } = req.body || {}
     if (provided !== secret) return res.status(403).json({ error: 'Invalid secret' })
 

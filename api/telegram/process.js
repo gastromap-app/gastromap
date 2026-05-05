@@ -11,6 +11,15 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+}
 
 // ── Step 0: Normalize query to English ──────────────────────────────────────
 async function normalizeQueryToEnglish(query, apiKey) {
@@ -56,16 +65,13 @@ async function triggerAutoTranslation(locationId, locationData, apiKey) {
     const SUPPORTED_LANGS = ['pl', 'uk', 'ru']
     const TRANSLATABLE_FIELDS = ['title', 'description', 'insider_tip', 'what_to_try']
 
-    const translations = {}
-
-    for (const lang of SUPPORTED_LANGS) {
+    const langPromises = SUPPORTED_LANGS.map(async (lang) => {
         try {
             const translated = {}
             for (const field of TRANSLATABLE_FIELDS) {
                 const val = locationData[field]
                 if (!val) continue
                 if (Array.isArray(val)) {
-                    // Переводим массив как одну строку через | для экономии токенов
                     const joined = val.join(' | ')
                     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                         method: 'POST',
@@ -102,12 +108,16 @@ async function triggerAutoTranslation(locationId, locationData, apiKey) {
                     if (t) translated[field] = t
                 }
             }
-            translations[lang] = translated
             console.log(`[process] Translation done: ${lang}`)
+            return [lang, translated]
         } catch (err) {
             console.warn(`[process] Translation ${lang} failed:`, err.message)
+            return [lang, {}]
         }
-    }
+    })
+
+    const results = await Promise.all(langPromises)
+    const translations = Object.fromEntries(results)
 
     // EN — оригинал
     translations['en'] = Object.fromEntries(
@@ -118,7 +128,11 @@ async function triggerAutoTranslation(locationId, locationData, apiKey) {
 
     // Сохраняем в location_translations
     try {
-        const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://myyzguendoruefiiufop.supabase.co'
+        const supabaseUrl = process.env.VITE_SUPABASE_URL
+        if (!supabaseUrl) {
+            console.error('[process] VITE_SUPABASE_URL not configured for translations')
+            return
+        }
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
         const { createClient } = await import('@supabase/supabase-js')
         const supabase = createClient(supabaseUrl, serviceKey)
@@ -488,12 +502,22 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
 
 // ── Step 5: Supabase Insert ───────────────────────────────────────────────────
 async function insertLocation(d) {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://myyzguendoruefiiufop.supabase.co'
+    const supabaseUrl = process.env.VITE_SUPABASE_URL
+    if (!supabaseUrl) throw new Error('VITE_SUPABASE_URL not configured')
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 
     if (!serviceKey) throw new Error('No Supabase service key in env')
 
     const supabase = createClient(supabaseUrl, serviceKey)
+
+    // Validate synthesized data before insert
+    if (d.title && d.title.length > 200) d.title = d.title.slice(0, 200)
+    if (d.description && d.description.length > 2000) d.description = d.description.slice(0, 2000)
+    if (d.tags && d.tags.length > 20) d.tags = d.tags.slice(0, 20)
+    if (d.photos && d.photos.length > 10) d.photos = d.photos.slice(0, 10)
+    if (d.website) {
+        try { new URL(d.website) } catch { d.website = null }
+    }
 
     // Нормализуем opening_hours в строку
     let openingHours = null
@@ -558,11 +582,18 @@ async function insertLocation(d) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end()
 
+    if (applyRateLimit(req, res, 'telegram-process', { maxRequests: 10, windowMs: 60000 })) return
+
     const { chatId, query, username: _username } = req.body || {}
     if (!chatId || !query) return res.status(400).json({ error: 'Missing chatId or query' })
 
     const token = process.env.TELEGRAM_BOT_TOKEN
     const userQuery = query.value
+
+    // H9: LLM input validation
+    if (!userQuery || typeof userQuery !== 'string' || userQuery.trim().length < 2 || userQuery.trim().length > 200) {
+        return res.status(400).json({ error: 'Invalid query' })
+    }
 
     const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY
     const userQueryNormalized = await normalizeQueryToEnglish(userQuery, apiKey)
@@ -580,7 +611,7 @@ export default async function handler(req, res) {
 
         if (!placesData && !apifyData) {
             await sendMessage(token, chatId,
-                `❌ Не нашёл данные о <b>${userQuery}</b>.\n\nПопробуй точнее: <code>/add Название, Адрес, Город</code>`
+                `❌ Не нашёл данные о <b>${escapeHtml(userQuery)}</b>.\n\nПопробуй точнее: <code>/add Название, Адрес, Город</code>`
             )
             return res.status(200).json({ ok: true })
         }
@@ -685,8 +716,8 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error('[process] Error:', err.message)
         await sendMessage(token, chatId,
-            `⚠️ Ошибка при создании локации:\n<code>${err.message}</code>`
+            `⚠️ Ошибка при создании локации. Попробуйте позже.`
         ).catch(() => {})
-        return res.status(500).json({ error: err.message })
+        return res.status(500).json({ error: 'Processing failed' })
     }
 }

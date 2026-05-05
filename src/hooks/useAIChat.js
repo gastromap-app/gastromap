@@ -12,6 +12,7 @@ import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/a
 import { summarizeSession } from '@/shared/api/ai/summarize-session'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { useEffect } from 'react'
+import { log as safeLog, warn as safeWarn } from '@/shared/lib/safe-console.js'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { getUserLocationHistory } from '@/shared/api/user.api'
 
@@ -73,7 +74,7 @@ export function useAIChat() {
             // Isolation check: if the local storage belongs to another user (or no user), clear it immediately
             const state = useAIChatStore.getState();
             if (state.userId !== user.id) {
-                console.log('[AI Guide] User mismatch or missing ID in chat store, clearing history for isolation');
+                safeLog('[AI Guide] User mismatch, clearing history for isolation');
                 clearHistory();
                 // Stamp it immediately so the next check passes
                 useAIChatStore.setState({ userId: user.id });
@@ -98,7 +99,7 @@ export function useAIChat() {
             clearHistory();
         }
         return () => { mounted = false };
-    }, [user, loadHistory, clearHistory]);
+    }, [user?.id, loadHistory, clearHistory]);
 
 const MAX_CHAT_INPUT_LENGTH = 3000
 
@@ -152,7 +153,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                     lastVisited: h.last_visited_at
                 }))
             } catch {
-                console.warn('[useAIChat] Failed to fetch personalization data (reviews/history)')
+                safeWarn('[useAIChat] Failed to fetch personalization data')
             }
         }
 
@@ -198,11 +199,8 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 addMessage('assistant', '…')
                 let accumulated = ''
 
-                console.log('[AI Guide] Sending context:', {
+                safeLog('[AI Guide] Sending context:', {
                     hasPreferences: !!context.preferences,
-                    hasFoodieDNA: !!context.userData?.foodieDNA,
-                    visitedCount: context.userData?.visitedCount,
-                    favoritesCount: context.userData?.favoritesNames?.length,
                     historyLength: context.history?.length,
                     locationsCount: locations?.length,
                 })
@@ -296,9 +294,9 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                         // Sync to local store AND Supabase
                         const { updatePrefs } = useUserPrefsStore.getState();
                         updatePrefs({ foodie_dna: res.foodieDNA });
-                        console.log('GastroGuide: Syncing updated Foodie DNA to preferences');
+                        safeLog('GastroGuide: Syncing updated Foodie DNA to preferences');
                     }
-                }).catch(e => console.error('GastroGuide: Session summary failed', e));
+                }).catch(() => {});
             }
         } catch (err) {
             setError(err.message ?? t('ai.response_failed'))

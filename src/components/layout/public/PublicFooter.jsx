@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Instagram, Twitter, Linkedin } from 'lucide-react'
+import { Instagram } from 'lucide-react'
 
 const PublicFooter = () => (
     <div className="bg-slate-50 dark:bg-[hsl(220,20%,3%)] transition-colors duration-500 mt-auto">
@@ -31,11 +31,10 @@ const PublicFooter = () => (
                             Made with love for foodies.
                         </p>
                         <div className="flex gap-4 mt-8">
-                            {[[Instagram, 'https://instagram.com'], [Twitter, 'https://x.com'], [Linkedin, 'https://linkedin.com']].map(([Icon], i) => (
-                                <div key={i} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-blue-600 transition-colors cursor-pointer backdrop-blur-md border border-white/5">
-                                    <Icon size={18} />
-                                </div>
-                            ))}
+                            <a href="https://gastromap-five.vercel.app" target="_blank" rel="noopener noreferrer"
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-blue-600 transition-colors cursor-pointer backdrop-blur-md border border-white/5">
+                                <Instagram size={18} />
+                            </a>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12 md:gap-12 w-full lg:w-auto">

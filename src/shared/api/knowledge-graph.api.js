@@ -356,8 +356,6 @@ async function saveViaProxy(type, data) {
             const supabaseRef = supabase.supabaseUrl?.match(/\/\/([^.]+)\./)?.[1] ?? ''
             const keys = [
                 `sb-${supabaseRef}-auth-token`,
-                `sb-myyzguendoruefiiufop-auth-token`,
-                `sb-fglvibyyiqbfkqrdomyv-auth-token`,
             ]
             for (const key of keys) {
                 const stored = localStorage.getItem(key)

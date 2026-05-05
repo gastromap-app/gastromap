@@ -103,6 +103,14 @@ const LocationFormSlideOver = ({
         setFormData(prev => ({ ...prev, [field]: val })),
     [setFormData])
 
+    // Sanitized setter for text inputs — strips HTML tags and event handlers
+    const safeSet = useCallback((field, value) => {
+        if (typeof value === 'string') {
+            value = value.replace(/<[^>]*>?/gm, '').replace(/on\w+\s*=/gi, '')
+        }
+        set(field, value)
+    }, [set])
+
     const handlePlaceSelected = useCallback((place) => {
         if (!place) return
         setFormData(prev => ({
@@ -344,7 +352,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="text"
                                                         value={formData.title || ''}
-                                                        onChange={e => set('title', e.target.value)}
+                                                        onChange={e => safeSet('title', e.target.value)}
                                                         className={input}
                                                         placeholder={t('admin.locations.form.fields.title_placeholder')}
                                                     />
@@ -438,7 +446,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="text"
                                                         value={formData.opening_hours || ''}
-                                                        onChange={e => set('opening_hours', e.target.value)}
+                                                        onChange={e => safeSet('opening_hours', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder={t('admin.locations.form.fields.working_hours_placeholder')}
                                                     />
@@ -455,7 +463,7 @@ const LocationFormSlideOver = ({
                                                 <input
                                                     type="text"
                                                     value={formData.city || ''}
-                                                    onChange={e => set('city', e.target.value)}
+                                                    onChange={e => safeSet('city', e.target.value)}
                                                     className={input}
                                                     placeholder="Krakow"
                                                 />
@@ -464,7 +472,7 @@ const LocationFormSlideOver = ({
                                                 <input
                                                     type="text"
                                                     value={formData.country || ''}
-                                                    onChange={e => set('country', e.target.value)}
+                                                    onChange={e => safeSet('country', e.target.value)}
                                                     className={input}
                                                     placeholder="Poland"
                                                 />
@@ -475,7 +483,7 @@ const LocationFormSlideOver = ({
                                             <input
                                                 type="text"
                                                 value={formData.address || ''}
-                                                onChange={e => set('address', e.target.value)}
+                                                onChange={e => safeSet('address', e.target.value)}
                                                 className={input}
                                                 placeholder="ul. Szeroka 2, 31-053"
                                             />
@@ -509,7 +517,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="url"
                                                         value={formData.website || ''}
-                                                        onChange={e => set('website', e.target.value)}
+                                                        onChange={e => safeSet('website', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder="https://..."
                                                     />
@@ -521,7 +529,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="tel"
                                                         value={formData.phone || ''}
-                                                        onChange={e => set('phone', e.target.value)}
+                                                        onChange={e => safeSet('phone', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder="+48 123 456 789"
                                                     />
@@ -536,7 +544,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="text"
                                                         value={formData.social_instagram || ''}
-                                                        onChange={e => set('social_instagram', e.target.value)}
+                                                        onChange={e => safeSet('social_instagram', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder="https://instagram.com/..."
                                                     />
@@ -548,7 +556,7 @@ const LocationFormSlideOver = ({
                                                     <input
                                                         type="text"
                                                         value={formData.social_facebook || ''}
-                                                        onChange={e => set('social_facebook', e.target.value)}
+                                                        onChange={e => safeSet('social_facebook', e.target.value)}
                                                         className={cn(input, "pl-11")}
                                                         placeholder="https://facebook.com/..."
                                                     />
@@ -584,7 +592,7 @@ const LocationFormSlideOver = ({
                                             <div className="relative group">
                                                 <textarea
                                                     value={formData.description || ''}
-                                                    onChange={e => set('description', e.target.value)}
+                                                    onChange={e => safeSet('description', e.target.value)}
                                                     rows={5}
                                                     className={cn(textarea, "pt-4")}
                                                     placeholder={t('admin.locations.form.fields.description_placeholder')}
@@ -610,7 +618,7 @@ const LocationFormSlideOver = ({
                                         <Field label={t('admin.locations.form.fields.insider_tip')}>
                                             <textarea
                                                 value={formData.insider_tip || ''}
-                                                onChange={e => set('insider_tip', e.target.value)}
+                                                onChange={e => safeSet('insider_tip', e.target.value)}
                                                 rows={2}
                                                 className={textarea}
                                                 placeholder={t('admin.locations.form.fields.insider_tip_placeholder')}

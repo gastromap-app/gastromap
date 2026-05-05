@@ -7,12 +7,15 @@
  *  2. Call search_locations_hybrid RPC (pgvector + FTS combined via RRF)
  *  3. Fallback to search_locations_fulltext if embedding fails
  */
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  setCorsHeaders(req, res)
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  if (applyRateLimit(req, res, 'ai-search', { maxRequests: 15, windowMs: 60000 })) return
 
   const { query, city, category, limit = 10, threshold = 0.0 } = req.body || {}
   if (!query?.trim()) return res.status(400).json({ error: 'query is required' })

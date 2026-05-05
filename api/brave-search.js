@@ -8,6 +8,9 @@
  * Free tier: 2 000 requests/month — https://api.search.brave.com
  */
 
+import { setCorsHeaders } from './_shared/cors.js'
+import { applyRateLimit } from './_shared/rate-limit.js'
+
 const BRAVE_URL = 'https://api.search.brave.com/res/v1/web/search'
 
 // Trusted culinary sources — authoritative, accurate, English-first
@@ -55,14 +58,14 @@ function isBlocked(url) {
 }
 
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    setCorsHeaders(req, res)
 
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-    const apiKey = process.env.BRAVE_SEARCH_API_KEY || req.body?.apiKey || ''
+    if (applyRateLimit(req, res, 'brave-search', { maxRequests: 10, windowMs: 60000 })) return
+
+    const apiKey = process.env.BRAVE_SEARCH_API_KEY || ''
     if (!apiKey || !apiKey.trim()) {
         return res.status(400).json({ error: 'Brave Search API key not configured' })
     }

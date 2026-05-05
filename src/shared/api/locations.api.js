@@ -971,8 +971,40 @@ export { normalise }
 
 export async function incrementView(locationId) {
     if (!USE_SUPABASE) return
+
+    // Try RPC function first (most efficient)
     const { error } = await supabase.rpc('increment_location_view', { location_id: locationId })
-    if (error) safeError('[locations.api] Failed to increment view:', error.message)
+    if (!error) return
+
+    // Fallback: if RPC doesn't exist (404), use direct UPDATE via raw SQL workaround
+    // This handles the case where the migration hasn't been applied yet
+    if (error.code === '42883' || error.message?.includes('Could not find the function')) {
+        safeWarn('[locations.api] RPC increment_location_view not found, using direct update fallback')
+        try {
+            // Use Supabase REST API to increment views_count directly
+            // Get current views_count and increment by 1
+            const { data: loc } = await supabase
+                .from('locations')
+                .select('views_count')
+                .eq('id', locationId)
+                .single()
+
+            if (loc) {
+                const { error: updateError } = await supabase
+                    .from('locations')
+                    .update({ views_count: (loc.views_count ?? 0) + 1 })
+                    .eq('id', locationId)
+
+                if (updateError) {
+                    safeError('[locations.api] Direct update fallback also failed:', updateError.message)
+                }
+            }
+        } catch (fallbackErr) {
+            safeError('[locations.api] View increment fallback failed:', fallbackErr.message)
+        }
+    } else {
+        safeError('[locations.api] Failed to increment view:', error.message)
+    }
 }
 
 export default {

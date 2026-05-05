@@ -9,14 +9,17 @@
  *   → Google Places Details (full data for selected suggestion)
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
 const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place'
 
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    setCorsHeaders(req, res)
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' })
+
+    if (applyRateLimit(req, res, 'places-autocomplete', { maxRequests: 20, windowMs: 60000 })) return
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) return res.status(500).json({ error: 'GOOGLE_PLACES_API_KEY not configured' })

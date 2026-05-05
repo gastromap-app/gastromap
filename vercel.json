@@ -11,6 +11,9 @@
     },
     "api/telegram/webhook.js": {
       "maxDuration": 10
+    },
+    "api/webhook/stripe.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
@@ -54,6 +57,10 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://api.openrouter.ai https://maps.googleapis.com https://places.googleapis.com https://api.brave.com; frame-src 'none'; object-src 'none'; base-uri 'self'"
+        },
+        {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
@@ -67,7 +74,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "geolocation=(self), camera=(), microphone=()"
+          "value": "camera=(), microphone=(), geolocation=(self)"
         },
         {
           "key": "Feature-Policy",

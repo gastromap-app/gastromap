@@ -198,7 +198,7 @@ const DashboardPage = () => {
     }, [filteredLocations])
 
     return (
-        <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
+        <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0" data-testid="dashboard-page">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── Mobile Layout ─────────────────────────────────────────────── */}

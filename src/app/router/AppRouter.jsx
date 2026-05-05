@@ -57,6 +57,10 @@ const PricingPage = lazy(() => import('@/features/public/pages/PricingPage'))
 const AboutPage = lazy(() => import('@/features/public/pages/AboutPage'))
 const ContactPage = lazy(() => import('@/features/public/pages/ContactPage'))
 const PublicPage = lazy(() => import('@/features/public/pages/PublicPage'))
+const BlogPage = lazy(() => import('@/features/public/pages/BlogPage'))
+const StatusPage = lazy(() => import('@/features/public/pages/StatusPage'))
+const CommunityPage = lazy(() => import('@/features/public/pages/CommunityPage'))
+const SecurityPage = lazy(() => import('@/features/public/pages/SecurityPage'))
 const LocationDetailsPage = lazy(() => import('@/features/public/pages/LocationDetailsPage'))
 
 // ─── LAZY: Auth pages ──────────────────────────────────────────────────────
@@ -140,14 +144,14 @@ export const AppRouter = () => {
                     <Route path="/api" element={<PublicPage title="API Documentation" subtitle="Build on top of GastroMap." />} />
                     <Route path="/showcase" element={<PublicPage title="Showcase" subtitle="See what others are discovering." />} />
                     <Route path="/careers" element={<PublicPage title="Careers" subtitle="Join our team." />} />
-                    <Route path="/blog" element={<PublicPage title="Blog" subtitle="Stories from the kitchen." />} />
+                    <Route path="/blog" element={<BlogPage />} />
                     <Route path="/privacy" element={<PrivacyPage />} />
                     <Route path="/terms" element={<TermsPage />} />
-                    <Route path="/security" element={<SecurityPrivacyPage />} />
+                    <Route path="/security" element={<SecurityPage />} />
                     <Route path="/cookies" element={<CookiePolicyPage />} />
                     <Route path="/help" element={<HelpCenterPage />} />
-                    <Route path="/status" element={<PublicPage title="System Status" subtitle="All systems operational." />} />
-                    <Route path="/community" element={<PublicPage title="Community" subtitle="Join the conversation." />} />
+                    <Route path="/status" element={<StatusPage />} />
+                    <Route path="/community" element={<CommunityPage />} />
                 </Route>
 
                 {/* Public App Routes — no auth needed (location details) */}

@@ -10,6 +10,9 @@
  *  3. INSERT      — с Prefer: return=representation
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
 const TABLE_MAP = {
     cuisine:    'cuisines',
     dish:       'dishes',
@@ -33,22 +36,13 @@ const INGREDIENT_CAT_MAP = {
 }
 
 export default async function handler(req, res) {
-    // CORS — allow production, all Vercel previews, and local dev
-    const origin = req.headers.origin || ''
-    const isAllowed = (
-        !origin ||                                              // server-to-server
-        origin.endsWith('.vercel.app') ||                       // any Vercel preview/deploy
-        origin === 'https://gastromap.app' ||
-        origin === 'http://localhost:5173' ||
-        origin === 'http://localhost:3000'
-    )
-    const corsOrigin = isAllowed ? (origin || 'https://gastromap.app') : 'https://gastromap.app'
-    res.setHeader('Access-Control-Allow-Origin', corsOrigin)
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    // CORS
+    setCorsHeaders(req, res)
     if (req.method === 'OPTIONS') return res.status(200).end()
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+    if (applyRateLimit(req, res, 'kg-save', { maxRequests: 10, windowMs: 60000 })) return
 
     // ── JWT Authentication — verify caller is a logged-in user ────────────────
     const authHeader = req.headers['authorization'] || req.headers['Authorization'] || ''
@@ -60,9 +54,12 @@ export default async function handler(req, res) {
     // Support both server-only and VITE_ prefixed env vars
     const supabaseUrl = (
         process.env.SUPABASE_URL ||
-        process.env.VITE_SUPABASE_URL ||
-        'https://myyzguendoruefiiufop.supabase.co'
+        process.env.VITE_SUPABASE_URL
     )
+    if (!supabaseUrl) {
+        console.error('[kg/save] VITE_SUPABASE_URL not configured')
+        return res.status(500).json({ error: 'Server configuration error' })
+    }
     const cleanUrl   = supabaseUrl.replace(/\/+$/, '')
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
@@ -75,10 +72,7 @@ export default async function handler(req, res) {
 
     if (!serviceKey) {
         console.error('[kg/save] SUPABASE_SERVICE_ROLE_KEY is not set in Vercel env vars!')
-        return res.status(500).json({
-            error: 'Server misconfiguration: SUPABASE_SERVICE_ROLE_KEY is missing.',
-            hint: 'Add SUPABASE_SERVICE_ROLE_KEY in Vercel Dashboard → Project Settings → Environment Variables.',
-        })
+        return res.status(500).json({ error: 'Server configuration error' })
     }
 
     // ── Verify JWT via Supabase Auth — ensures only authenticated users can save ──
@@ -92,14 +86,22 @@ export default async function handler(req, res) {
         if (!verifyResp.ok) {
             const errBody = await verifyResp.text().catch(() => 'No body')
             console.error('[kg/save] JWT verification failed:', verifyResp.status, errBody)
-            return res.status(401).json({ 
-                error: 'Invalid or expired token. Please re-login.',
-                details: `Supabase Auth returned ${verifyResp.status}`,
-                url_checked: `${cleanUrl}/auth/v1/user`
-            })
+            return res.status(401).json({ error: 'Authentication failed' })
         }
         const user = await verifyResp.json()
         console.log(`[kg/save] Authenticated user: ${user.email || user.id}`)
+
+        // Check user role - only admin/moderator can save to KG
+        const { data: roleData } = await fetch(`${cleanUrl}/rest/v1/user_roles?user_id=eq.${user.id}&select=role&limit=1`, {
+            headers: {
+                'apikey': serviceKey,
+                'Authorization': `Bearer ${serviceKey}`,
+            },
+        }).then(r => r.json()).then(rows => ({ data: rows?.[0] || null })).catch(() => ({ data: null }))
+
+        if (!roleData || !['admin', 'moderator'].includes(roleData.role)) {
+            return res.status(403).json({ error: 'Insufficient permissions' })
+        }
     } catch (authErr) {
         console.error('[kg/save] Auth check error:', authErr.message)
         return res.status(401).json({ error: 'Authentication failed' })
@@ -218,7 +220,7 @@ export default async function handler(req, res) {
 
     } catch (err) {
         console.error('[kg/save] Unexpected error:', err.message, err.stack)
-        return res.status(500).json({ error: err.message })
+        return res.status(500).json({ error: 'Internal server error' })
     }
 }
 

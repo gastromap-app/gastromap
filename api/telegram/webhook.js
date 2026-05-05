@@ -10,6 +10,17 @@
  *   /help                      — справка
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit, checkRateLimit } from '../_shared/rate-limit.js'
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+}
+
 const TELEGRAM_API = 'https://api.telegram.org'
 
 // Отправить сообщение пользователю
@@ -43,9 +54,17 @@ function parseAddCommand(text) {
 
 export default async function handler(req, res) {
     // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*')
+    setCorsHeaders(req, res)
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(200).end()
+
+    if (applyRateLimit(req, res, 'telegram-webhook', { maxRequests: 30, windowMs: 60000 })) return
+
+    // C1: Telegram secret token verification
+    const secretToken = process.env.TELEGRAM_SECRET_TOKEN
+    if (!secretToken || req.headers['x-telegram-bot-api-secret-token'] !== secretToken) {
+        return res.status(401).json({ error: 'Unauthorized' })
+    }
 
     const token = process.env.GASTROMAP_LOCATION_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN
     if (!token) {
@@ -61,12 +80,19 @@ export default async function handler(req, res) {
     const text = message.text.trim()
     const username = message.from?.first_name || 'друг'
 
+    // Per-chat rate limiting
+    const chatRl = checkRateLimit('telegram-per-chat', { maxRequests: 5, windowMs: 60000 }, String(chatId))
+    if (!chatRl.allowed) {
+        await sendMessage(token, chatId, '⏳ Too many requests. Please wait a minute.')
+        return res.status(200).json({ ok: true })
+    }
+
     console.log(`[telegram/webhook] Message from ${chatId}: ${text}`)
 
     // ── /start или /help ─────────────────────────────────────────────────────
     if (text.startsWith('/start') || text.startsWith('/help')) {
         await sendMessage(token, chatId, [
-            `👋 Привет, <b>${username}</b>! Я GastroMap Location Bot.`,
+            `👋 Привет, <b>${escapeHtml(username)}</b>! Я GastroMap Location Bot.`,
             '',
             'Я умею добавлять новые локации в GastroMap — сам нахожу всю информацию через Google Places, Apify и веб-поиск.',
             '',
@@ -98,7 +124,7 @@ export default async function handler(req, res) {
 
         // Сразу отвечаем пользователю — не заставляем ждать
         await sendMessage(token, chatId,
-            `🔍 Ищу данные о <b>${parsed.value.slice(0, 60)}</b>...\n\nЭто займёт ~30 секунд. Я пришлю результат как только создам карточку.`
+            `🔍 Ищу данные о <b>${escapeHtml(parsed.value.slice(0, 60))}</b>...\n\nЭто займёт ~30 секунд. Я пришлю результат как только создам карточку.`
         )
 
         // Запускаем pipeline асинхронно — НЕ await

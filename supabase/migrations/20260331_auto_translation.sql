@@ -45,18 +45,21 @@ CREATE INDEX IF NOT EXISTS idx_location_translations_languages
 ALTER TABLE public.location_translations ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Anyone can view translations
+DROP POLICY IF EXISTS "Anyone can view translations" ON public.location_translations;
 CREATE POLICY "Anyone can view translations"
     ON public.location_translations
     FOR SELECT
     USING (true);
 
 -- Policy: Authenticated users can create translations
+DROP POLICY IF EXISTS "Authenticated users can create translations" ON public.location_translations;
 CREATE POLICY "Authenticated users can create translations"
     ON public.location_translations
     FOR INSERT
     WITH CHECK (auth.role() = 'authenticated');
 
 -- Policy: Admins and moderators can update translations
+DROP POLICY IF EXISTS "Admins and moderators can update translations" ON public.location_translations;
 CREATE POLICY "Admins and moderators can update translations"
     ON public.location_translations
     FOR UPDATE
@@ -69,6 +72,7 @@ CREATE POLICY "Admins and moderators can update translations"
     );
 
 -- Policy: Admins can delete translations
+DROP POLICY IF EXISTS "Admins can delete translations" ON public.location_translations;
 CREATE POLICY "Admins can delete translations"
     ON public.location_translations
     FOR DELETE
@@ -90,6 +94,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger for updated_at
+DROP TRIGGER IF EXISTS set_updated_at_translations ON public.location_translations;
 CREATE TRIGGER set_updated_at_translations
     BEFORE UPDATE ON public.location_translations
     FOR EACH ROW

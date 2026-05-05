@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Search, HelpCircle, MessageSquare, ChevronRight, BookOpen, Star, Zap } from 'lucide-react'
+import PageHeader from '@/components/layout/public/PageHeader'
+import { Search, HelpCircle, MessageSquare, BookOpen, Star, Zap } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 const HelpCenterPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
@@ -27,19 +26,14 @@ const HelpCenterPage = () => {
     ]
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
-            {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
-                <button
-                    onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Help Center</h1>
-            </div>
+        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen pb-24">
+            <PageHeader
+                title="Help Center"
+                subtitle="Find answers, learn how to use GastroMap, and get support when you need it."
+                highlight="Support"
+            />
 
-            <div className="px-5 space-y-8">
+            <div className="px-4 sm:px-6 md:px-8 pt-8 max-w-[800px] mx-auto space-y-8">
                 {/* Search Bar */}
                 <div className="relative">
                     <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/20' : 'text-gray-500 dark:text-gray-400'}`} size={18} />

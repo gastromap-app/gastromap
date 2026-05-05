@@ -2,6 +2,24 @@ import React, { useRef, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { ImageOff } from 'lucide-react'
 
+const ALLOWED_IMAGE_DOMAINS = [
+    'lh3.googleusercontent.com',
+    'lh5.googleusercontent.com',
+    'maps.googleapis.com',
+    '.supabase.co',
+    'images.unsplash.com',
+    'cloudflare-ipfs.com',
+]
+
+function isAllowedImageDomain(url) {
+    try {
+        const parsed = new URL(url)
+        return ALLOWED_IMAGE_DOMAINS.some(domain =>
+            domain.startsWith('.') ? parsed.hostname.endsWith(domain) : parsed.hostname === domain
+        )
+    } catch { return false }
+}
+
 /**
  * LazyImage — IntersectionObserver-based lazy image loader.
  *
@@ -35,6 +53,11 @@ export function LazyImage({
         if (!originalSrc || typeof originalSrc !== 'string' || originalSrc.trim() === '') return null
         
         const cleanSrc = originalSrc.trim()
+
+        // Allow data: URLs and relative paths
+        if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('/')) return cleanSrc
+        // Validate external URLs — pass through unknown domains without optimization
+        if (cleanSrc.startsWith('http') && !isAllowedImageDomain(cleanSrc)) return cleanSrc
         
         // 1. Google Photos CDN
         if (cleanSrc.includes('lh3.googleusercontent.com')) {

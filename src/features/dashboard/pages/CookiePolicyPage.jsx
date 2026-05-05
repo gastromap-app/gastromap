@@ -1,12 +1,11 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Cookie, Info, ShieldCheck, Settings } from 'lucide-react'
+import PageHeader from '@/components/layout/public/PageHeader'
+import { Cookie, Settings } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 const CookiePolicyPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const navigate = useNavigate()
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
@@ -31,19 +30,14 @@ const CookiePolicyPage = () => {
     ]
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
-            {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
-                <button
-                    onClick={() => navigate(-1)}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Cookie Policy</h1>
-            </div>
+        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen pb-24">
+            <PageHeader
+                title="Cookie Policy"
+                subtitle="How we use cookies and similar technologies on the GastroMap platform."
+                highlight="Legal"
+            />
 
-            <div className="px-5 space-y-6">
+            <div className="px-4 sm:px-6 md:px-8 pt-8 max-w-[800px] mx-auto space-y-6">
                 {/* Intro Card */}
                 <div className={`p-8 rounded-[40px] border ${cardBg} bg-gradient-to-br from-yellow-500/5 to-orange-500/5`}>
                     <Cookie size={40} className="text-yellow-500 mb-6" />

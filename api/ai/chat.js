@@ -6,6 +6,9 @@
  * RAG: when messages contain food/location intent, enriches with semantic search results.
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // TAIL FALLBACK — primary model is passed via req.body.model from the client
@@ -77,7 +80,11 @@ async function getSemanticContext(messages, baseUrl) {
 }
 
 export default async function handler(req, res) {
+    setCorsHeaders(req, res)
+    if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+    if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
 
     const apiKey = process.env.OPENROUTER_API_KEY
     if (!apiKey?.trim()) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })

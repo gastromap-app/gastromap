@@ -63,16 +63,16 @@ const SignUpPage = () => {
     }
 
     return (
-        <AuthLayout reverse backTo="/" aurora={['bg-emerald-600', 'bg-blue-600']} leftChildren={
+        <AuthLayout backTo="/" aurora={['bg-emerald-600', 'bg-blue-600']} leftChildren={
             <>
-                <div className="relative z-10 flex justify-end">
+                <div className="relative z-10">
                     <div className="bg-white/10 w-fit px-4 py-2 rounded-full flex items-center gap-2 mb-8 backdrop-blur-md border border-white/10 text-white">
-                        <span className="font-semibold text-sm">GastroMap</span>
                         <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-6 h-6 object-cover rounded-full" />
+                        <span className="font-semibold text-sm">GastroMap</span>
                     </div>
                 </div>
 
-                <div className="relative z-10 max-w-md ml-auto text-right">
+                <div className="relative z-10 max-w-md">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -82,21 +82,21 @@ const SignUpPage = () => {
                             Join a global community of <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">taste makers.</span>
                         </h1>
 
-                        <div className="space-y-6 flex flex-col items-end">
-                            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm w-fit flex-row-reverse text-left">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
                                 <div className="w-10 h-10 rounded-full bg-emerald-600/20 flex items-center justify-center text-emerald-400">
                                     <CheckCircle2 size={20} />
                                 </div>
-                                <div className="text-right">
+                                <div>
                                     <h3 className="font-bold">Contribute & Earn</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Add places and earn badges.</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm w-fit flex-row-reverse text-left">
+                            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
                                 <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400">
                                     <CheckCircle2 size={20} />
                                 </div>
-                                <div className="text-right">
+                                <div>
                                     <h3 className="font-bold">100% Free Forever</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">No paywalls for the community.</p>
                                 </div>
@@ -105,7 +105,7 @@ const SignUpPage = () => {
                     </motion.div>
                 </div>
 
-                <div className="relative z-10 text-xs text-gray-500 text-right">
+                <div className="relative z-10 text-xs text-gray-500">
                     © 2025 GastroMap Inc.
                 </div>
             </>

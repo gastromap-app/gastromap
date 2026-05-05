@@ -11,6 +11,22 @@
  *   { dishes: [{ name, description, price, category }], raw_text: string }
  */
 
+import { setCorsHeaders } from '../_shared/cors.js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+
+function isValidImageUrl(url) {
+    try {
+        const parsed = new URL(url)
+        if (!['http:', 'https:'].includes(parsed.protocol)) return false
+        const hostname = parsed.hostname
+        // Block private/internal IPs
+        if (/^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(hostname)) return false
+        // Block IPv6 loopback and link-local (hostname includes brackets, e.g. [::1])
+        if (/^\[/.test(hostname)) return false
+        return true
+    } catch { return false }
+}
+
 const VISION_MODELS = [
   'nvidia/nemotron-nano-2-vl:free',    // ✅ primary — 12B multimodal, OCR
   'google/gemma-3-27b-it:free',         // ✅ fallback — multimodal
@@ -41,16 +57,21 @@ Rules:
 - If no menu is visible, return { "dishes": [], "raw_text": "No menu visible" }`
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  setCorsHeaders(req, res)
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  if (applyRateLimit(req, res, 'menu-ocr', { maxRequests: 5, windowMs: 60000 })) return
 
   const { image_url, image_base64, mime_type = 'image/jpeg' } = req.body || {}
 
   if (!image_url && !image_base64) {
     return res.status(400).json({ error: 'image_url or image_base64 required' })
+  }
+
+  // H8: Validate image URL to prevent SSRF
+  if (image_url && !isValidImageUrl(image_url)) {
+    return res.status(400).json({ error: 'Invalid image URL' })
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY

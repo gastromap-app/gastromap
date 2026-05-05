@@ -41,7 +41,11 @@ export async function translateText(text, targetLang, _sourceLang = 'auto') {
         return text
     }
 
-    const targetLanguage = SUPPORTED_LANGUAGES[targetLang]?.name || targetLang
+    if (!SUPPORTED_LANGUAGES[targetLang]) {
+        return text
+    }
+
+    const targetLanguage = SUPPORTED_LANGUAGES[targetLang].name
 
     const messages = [
         {
@@ -56,7 +60,7 @@ export async function translateText(text, targetLang, _sourceLang = 'auto') {
 
     try {
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Translation timeout')), 30000)
+            setTimeout(() => reject(new Error('Translation timeout')), 12000)
         )
 
         const { fetchOpenRouter } = await import('./ai/openrouter')
@@ -70,23 +74,36 @@ export async function translateText(text, targetLang, _sourceLang = 'auto') {
         return translated || text
     } catch (error) {
         console.error('[Translation API] translateText error:', error.message)
-        return text  // graceful fallback — never block location creation
+        return text
     }
 }
 
 /**
- * Translate array of strings
+ * Translate array of strings via single batch call (uses | separator)
  */
 export async function translateArray(texts, targetLang) {
     if (!Array.isArray(texts)) {
         return texts
     }
-    
-    const translated = await Promise.all(
-        texts.map(text => translateText(text, targetLang))
-    )
-    
-    return translated
+
+    if (texts.length === 0) {
+        return []
+    }
+
+    if (texts.length === 1) {
+        return [await translateText(texts[0], targetLang)]
+    }
+
+    const joined = texts.join(' | ')
+    const translatedJoined = await translateText(joined, targetLang)
+    const parts = translatedJoined.split(' | ').map(s => s.trim())
+
+    if (parts.length === texts.length) {
+        return parts
+    }
+
+    console.warn('[Translation API] Batch array split mismatch, falling back to individual translations')
+    return Promise.all(texts.map(t => translateText(t, targetLang)))
 }
 
 /**
@@ -113,8 +130,7 @@ export async function translateLocation(locationData, targetLang, sourceLang = '
 }
 
 /**
- * Auto-translate location to all supported languages
- * Uses sequential translation with delays to prevent API overload
+ * Auto-translate location to all supported languages in parallel
  */
 export async function autoTranslateAll(locationData, sourceLang = 'auto') {
     if (!locationData) {
@@ -126,39 +142,35 @@ export async function autoTranslateAll(locationData, sourceLang = 'auto') {
         translations: {}
     }
 
-    const translations = {}
-    const TRANSLATION_DELAY_MS = 500 // Delay between language translations
+    const langEntries = Object.entries(SUPPORTED_LANGUAGES)
 
-    for (const [langCode, langInfo] of Object.entries(SUPPORTED_LANGUAGES)) {
-        console.log(`[Translation API] Translating to ${langInfo.name}...`)
+    const translationResults = await Promise.all(
+        langEntries.map(async ([langCode, langInfo]) => {
+            console.log(`[Translation API] Translating to ${langInfo.name}...`)
 
-        try {
-            const translated = await translateLocation(locationData, langCode, sourceLang)
-            translations[langCode] = {
-                title: translated.title,
-                description: translated.description,
-                address: translated.address,
-                insider_tip: translated.insider_tip,
-                what_to_try: translated.what_to_try,
-                ai_context: translated.ai_context,
-                translated_at: new Date().toISOString()
+            try {
+                const translated = await translateLocation(locationData, langCode, sourceLang)
+                return [langCode, {
+                    title: translated.title,
+                    description: translated.description,
+                    address: translated.address,
+                    insider_tip: translated.insider_tip,
+                    what_to_try: translated.what_to_try,
+                    ai_context: translated.ai_context,
+                    translated_at: new Date().toISOString()
+                }]
+            } catch (error) {
+                console.error(`[Translation API] Failed to translate to ${langCode}:`, error)
+                return [langCode, {
+                    title: locationData.title,
+                    description: locationData.description,
+                    error: error.message
+                }]
             }
+        })
+    )
 
-            // Add delay between language translations to prevent API overload
-            if (langCode !== 'ru') { // No delay after last language
-                await new Promise(resolve => setTimeout(resolve, TRANSLATION_DELAY_MS))
-            }
-        } catch (error) {
-            console.error(`[Translation API] Failed to translate to ${langCode}:`, error)
-            translations[langCode] = {
-                title: locationData.title,
-                description: locationData.description,
-                error: error.message
-            }
-        }
-    }
-
-    result.translations = translations
+    result.translations = Object.fromEntries(translationResults)
     return result
 }
 

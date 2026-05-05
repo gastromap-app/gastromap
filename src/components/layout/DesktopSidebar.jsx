@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     Home, Map, Sparkles, Heart, CheckCircle, Globe,
     Trophy, User, PlusCircle
@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
+import { useClickOutside } from '@/hooks/useClickOutside'
 
 const navItems = [
     { icon: Home,        label: 'Dashboard',   path: '/dashboard' },
@@ -18,6 +19,81 @@ const navItems = [
     { icon: Globe,       label: 'Explore',     path: '/explore' },
     { icon: Trophy,      label: 'Leaderboard', path: '/dashboard/leaderboard' },
 ]
+
+const languages = [
+    { code: 'en', label: 'English',    flag: '🇬🇧' },
+    { code: 'ru', label: 'Русский',    flag: '🇷🇺' },
+    { code: 'pl', label: 'Polski',     flag: '🇵🇱' },
+    { code: 'ua', label: 'Українська', flag: '🇺🇦' },
+]
+
+function LanguageSidebarButton() {
+    const { i18n } = useTranslation()
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+    const [isOpen, setIsOpen] = useState(false)
+    const containerRef = useRef(null)
+
+    useClickOutside(containerRef, () => setIsOpen(false), isOpen)
+
+    const current = languages.find(l => l.code === i18n.language) || languages[0]
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={cn(
+                    'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 text-[10px] font-black uppercase tracking-tight',
+                    isDark
+                        ? 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                )}
+                aria-label="Change language"
+            >
+                {current.code}
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, x: -8, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className={cn(
+                            'absolute left-full bottom-0 ml-3 w-48 rounded-2xl overflow-hidden border shadow-xl z-[100] py-1',
+                            isDark
+                                ? 'bg-[hsl(220,20%,9%)] border-white/[0.06]'
+                                : 'bg-white border-slate-200'
+                        )}
+                    >
+                        {languages.map((lang) => (
+                            <button
+                                key={lang.code}
+                                onClick={() => { i18n.changeLanguage(lang.code); setIsOpen(false) }}
+                                className={cn(
+                                    'w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-colors',
+                                    i18n.language === lang.code
+                                        ? (isDark ? 'text-blue-400 bg-blue-500/10' : 'text-blue-600 bg-blue-50')
+                                        : (isDark ? 'text-white hover:bg-white/5' : 'text-gray-900 hover:bg-gray-50')
+                                )}
+                            >
+                                <span className="text-lg">{lang.flag}</span>
+                                <span>{lang.label}</span>
+                                {i18n.language === lang.code && (
+                                    <span className={cn(
+                                        'ml-auto w-2 h-2 rounded-full',
+                                        isDark ? 'bg-blue-400' : 'bg-blue-600'
+                                    )} />
+                                )}
+                            </button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    )
+}
 
 export function DesktopSidebar() {
     const location = useLocation()
@@ -124,6 +200,7 @@ export function DesktopSidebar() {
 
             {/* Bottom actions */}
             <div className="flex flex-col items-center gap-2">
+                <LanguageSidebarButton />
                 <Link
                     to="/dashboard/add-place"
                     className={cn(

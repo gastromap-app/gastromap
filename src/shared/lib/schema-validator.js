@@ -46,6 +46,11 @@ export const VALID_LOCATION_COLUMNS = new Set([
     // Social / Google
     'social_instagram', 'social_facebook', 'google_place_id', 'google_maps_url',
     
+    // Analytics / Performance
+    'views_count', 'saves_count', 'visits_count', 'comments_count',
+    'trending_score', 'trending_at',
+    'city_slug', 'country_slug',
+    
     // Meta
     'moderation_note',
     'created_at', 'updated_at'

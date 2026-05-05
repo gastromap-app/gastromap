@@ -65,12 +65,10 @@ const LocationDetailsPage = () => {
         }
     }, [storeLocations.length, storeIsLoading])
 
-    // PERF: Increment view count on load
+    // PERF: Increment view count on load (fire-and-forget, never blocks rendering)
     useEffect(() => {
         if (location?.id) {
-            incrementView(location.id).catch(err => {
-                console.warn('Failed to increment view:', err)
-            })
+            incrementView(location.id).catch(() => {})
         }
     }, [location?.id])
 
@@ -450,19 +448,19 @@ const LocationDetailsPage = () => {
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[0] || "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
+                        <LazyImage src={location.photos?.[0] || "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
                     </div>
 
                     <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[1] || "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
+                        <LazyImage src={location.photos?.[1] || "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
                     </div>
 
                     <div className="col-span-1 md:col-span-4 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[2] || "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
+                        <LazyImage src={location.photos?.[2] || "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
                     </div>
 
                     <div className="col-span-1 md:col-span-8 rounded-3xl overflow-hidden relative group cursor-pointer shadow-lg">
-                        <LazyImage src={location.photos?.[3] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"} crossOrigin="anonymous" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
+                        <LazyImage src={location.photos?.[3] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
                         <div className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
                             <Camera size={24} className="mb-1" />
                             <span className="text-xl font-black">+{location.photos?.length || 0}</span>
@@ -829,6 +827,7 @@ const LocationDetailsPage = () => {
         )
     }
 
+    const renderPhotos = () => {
         const displayPhotos = (location.photos && location.photos.length > 0)
             ? location.photos
             : [
@@ -838,18 +837,19 @@ const LocationDetailsPage = () => {
                 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
                 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
                 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800'
-            ];
+            ]
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
                 {displayPhotos.map((url, i) => (
                     <div key={i} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100">
-                        <LazyImage src={url} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`gallery-${i}`} />
+                        <LazyImage src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`gallery-${i}`} />
                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                 ))}
             </motion.div>
-        );
+        )
+    }
 
     const renderNotes = () => (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">

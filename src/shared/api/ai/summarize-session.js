@@ -97,13 +97,18 @@ export async function summarizeSession(sessionId, messages, userId = null) {
     const { summary: summaryText, foodieDNA } = result
 
     try {
+        // Append foodie DNA to summary so it's preserved even though
+        // the conversation_summaries table has no dedicated foodie_dna column.
+        const fullSummary = foodieDNA
+            ? `${summaryText}\n\nFoodie DNA: ${foodieDNA}`
+            : summaryText
+
         const { error } = await supabase
             .from('conversation_summaries')
             .upsert({
                 session_id: sessionId,
                 user_id: userId,
-                summary: summaryText,
-                foodie_dna: foodieDNA, // Store extracted DNA in history too
+                summary: fullSummary,
                 covers_up_to: new Date().toISOString(),
                 messages_covered: messages.length,
                 updated_at: new Date().toISOString(),

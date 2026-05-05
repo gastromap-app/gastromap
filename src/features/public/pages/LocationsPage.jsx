@@ -18,6 +18,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useInfiniteLocations } from '@/hooks/useLocationsQuery'
+import { SmartSearchBar } from '@/features/dashboard/components/SmartSearchBar'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useDebounce } from '@/hooks/useDebounce'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
@@ -378,13 +379,14 @@ const LocationsPage = () => {
         }
     }, [debouncedSearch, storeQuery, storeSetSearch])
 
-    // Sync store query -> local input (if updated from outside, like URL or deep links)
+    // Sync store query -> local input (only when debounced search is empty,
+    // to avoid overwriting the user's current input during typing)
     useEffect(() => {
-        if (storeQuery !== localSearch) {
+        if (storeQuery !== localSearch && !debouncedSearch) {
             const t = setTimeout(() => setLocalSearch(storeQuery), 0)
             return () => clearTimeout(t)
         }
-    }, [storeQuery, localSearch])
+    }, [storeQuery, localSearch, debouncedSearch])
 
     // Sync from URL query param on mount
     useEffect(() => {
@@ -494,7 +496,7 @@ const LocationsPage = () => {
             <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={setMobileScrollEl} onScroll={handleMobileScroll}>
                 {/* Header with search */}
                 <motion.div
-                    className="sticky top-0 z-40 px-4 pt-20 pb-4"
+                    className="sticky top-0 z-40 px-5 pt-20 pb-4"
                     style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}
                     initial={false}
                     animate={{
@@ -503,29 +505,12 @@ const LocationsPage = () => {
                     }}
                     transition={{ duration: 0.25, ease: 'easeInOut' }}
                 >
-                    <div className="flex gap-2">
-                        <div className={`flex-1 relative flex items-center h-12 px-4 rounded-2xl border backdrop-blur-xl shadow-lg ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/90 border-gray-200 shadow-xl'}`}>
-                            <Search size={17} className="text-blue-500 mr-2.5 flex-shrink-0" />
-                            <input
-                                type="text"
-                                placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
-                                value={localSearch}
-                                onChange={(e) => setLocalSearch(e.target.value)}
-                                className={`bg-transparent flex-1 outline-none text-sm font-semibold placeholder:text-gray-400 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            />
-                            {localSearch && (
-                                <button onClick={() => setLocalSearch('')} className="ml-2 text-gray-400 hover:text-gray-600">
-                                    <X size={15} />
-                                </button>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => setIsFilterOpen(true)}
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center border backdrop-blur-xl shadow-lg active:scale-95 transition-all ${isDark ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : 'bg-blue-600 text-white border-transparent shadow-blue-200'}`}
-                        >
-                            <SlidersHorizontal size={18} />
-                        </button>
-                    </div>
+                    <SmartSearchBar
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)}
+                        onFilter={() => setIsFilterOpen(true)}
+                        placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
+                    />
                 </motion.div>
 
                 {/* Mobile location cards */}

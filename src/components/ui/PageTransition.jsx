@@ -22,7 +22,7 @@ const transition = {
 
 const reducedTransition = { duration: 0.15 }
 
-export const PageTransition = ({ children, className, style }) => {
+export const PageTransition = ({ children, className, style, ...rest }) => {
     const shouldReduceMotion = useReducedMotion()
     return (
         <motion.div
@@ -33,6 +33,7 @@ export const PageTransition = ({ children, className, style }) => {
             transition={shouldReduceMotion ? reducedTransition : transition}
             style={{ willChange: 'opacity, transform', ...style }}
             className={className}
+            {...rest}
         >
             {children}
         </motion.div>

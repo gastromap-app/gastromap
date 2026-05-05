@@ -449,24 +449,47 @@ export async function getDetailedEngagement() {
 
 /**
  * Fetches all user feedback entries.
+ * Profiles are fetched separately because feedback.user_id references
+ * auth.users(id), not profiles(id), so PostgREST cannot auto-detect the join.
  * @returns {Promise<Array>}
  */
 export async function getFeedback() {
     if (!supabase) return []
-    const { data, error } = await supabase
+
+    const { data: feedbackData, error: feedbackError } = await supabase
         .from('feedback')
-        .select('*, profiles(name, email, avatar_url)')
+        .select('*')
         .order('created_at', { ascending: false })
 
-    if (error) {
-        console.error('[admin.api] getFeedback error:', error)
+    if (feedbackError) {
+        console.error('[admin.api] getFeedback error:', feedbackError)
         return []
     }
 
-    return (data || []).map(f => ({
+    const userIds = (feedbackData || [])
+        .map(f => f.user_id)
+        .filter(Boolean)
+
+    let profilesMap = {}
+    if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, email, avatar_url')
+            .in('id', userIds)
+
+        if (profilesError) {
+            console.warn('[admin.api] getFeedback: could not fetch profiles:', profilesError.message)
+        } else {
+            profilesMap = Object.fromEntries(
+                (profilesData || []).map(p => [p.id, p])
+            )
+        }
+    }
+
+    return (feedbackData || []).map(f => ({
         ...f,
-        user_name: f.profiles?.name || f.profiles?.email || 'Unknown User',
-        user_avatar: f.profiles?.avatar_url
+        user_name: profilesMap[f.user_id]?.name || profilesMap[f.user_id]?.email || 'Unknown User',
+        user_avatar: profilesMap[f.user_id]?.avatar_url || null
     }))
 }
 

@@ -56,10 +56,10 @@ export default function LeaderboardPage() {
                         <Trophy size={32} />
                     </div>
                     <h1 className={`text-4xl md:text-5xl font-black tracking-tight mb-4 ${textStyle}`}>
-                        GastroMap <span className="text-amber-500">Top Guides</span>
+                        GastroMap <span className="text-amber-500">Top Contributors</span>
                     </h1>
                     <p className={`text-lg max-w-xl mx-auto ${subTextStyle}`}>
-                        No guides on the leaderboard yet. Be the first to climb the ranks!
+                        No contributors on the leaderboard yet. Be the first to climb the ranks!
                     </p>
                 </motion.div>
             </PageTransition>
@@ -72,7 +72,7 @@ export default function LeaderboardPage() {
     const userInTop = isLoggedIn && leaderboard.some(entry => entry.profile_id === user?.id)
 
     return (
-        <PageTransition className="w-full max-w-4xl mx-auto flex flex-col pt-24 pb-32 px-6">
+        <PageTransition className="w-full max-w-4xl mx-auto flex flex-col pt-24 md:pt-10 pb-32 px-6">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -82,10 +82,10 @@ export default function LeaderboardPage() {
                     <Trophy size={32} />
                 </div>
                 <h1 className={`text-4xl md:text-5xl font-black tracking-tight mb-4 ${textStyle}`}>
-                    GastroMap <span className="text-amber-500">Top Guides</span>
+                    GastroMap <span className="text-amber-500">Top Contributors</span>
                 </h1>
                 <p className={`text-lg max-w-xl mx-auto ${subTextStyle}`}>
-                    Climb the ranks by adding incredible places and writing helpful reviews. Top guides get exclusive rewards!
+                    Climb the ranks by adding incredible places and writing helpful reviews. Top contributors get exclusive rewards!
                 </p>
             </motion.div>
 
@@ -105,7 +105,7 @@ export default function LeaderboardPage() {
             )}
 
             {/* Top 3 Podium (Visual Flare) */}
-            <div className="flex items-end justify-center gap-2 md:gap-4 mb-12 h-48">
+            <div className="flex items-end justify-center gap-2 md:gap-4 mb-12">
                 {/* 2nd Place */}
                 <motion.div
                     initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -162,7 +162,7 @@ export default function LeaderboardPage() {
                 {/* List Header */}
                 <div className="flex items-center px-6 py-4 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
                     <div className="w-12 text-center text-xs font-bold uppercase tracking-widest opacity-50">Rank</div>
-                    <div className="flex-1 text-xs font-bold uppercase tracking-widest opacity-50 px-4">Guide</div>
+                    <div className="flex-1 text-xs font-bold uppercase tracking-widest opacity-50 px-4">Contributor</div>
                     <div className="w-24 text-right text-xs font-bold uppercase tracking-widest opacity-50">Points</div>
                 </div>
 

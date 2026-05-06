@@ -1,12 +1,22 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Star } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { LazyImage } from '@/components/ui/LazyImage'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import { useFavorites } from '@/hooks/useFavorites'
+import {
+    CutoutCard,
+    CutoutCardMedia,
+    CutoutCardOverlay,
+    CutoutCardPin,
+    CutoutCorner,
+    CutoutCardContent,
+    useCutoutContentStaggerVariants,
+} from '@/components/ui/cutout-card'
 
 /**
- * Default location card — rich preview with photo, rating, favorites,
+ * Default location card — cutout style with photo, rating, favorites,
  * title, city, budget, and description snippet.
  *
  * Used in: explore grids, recommendations, trending, search results.
@@ -14,11 +24,12 @@ import { useFavorites } from '@/hooks/useFavorites'
 export function LocationCardDefault({
     location,
     className = '',
-    imageHeight = 'h-48',
+    imageHeight = 'h-40',
 }) {
     const navigate = useNavigate()
     const { isFavorite, toggleFavorite } = useFavorites()
     const isFav = isFavorite(location.id)
+    const stagger = useCutoutContentStaggerVariants()
 
     const image = location.image || location.image_url
     const rating = location.google_rating || location.rating || 0
@@ -27,66 +38,92 @@ export function LocationCardDefault({
     return (
         <div
             onClick={() => navigate(`/location/${location.id}`)}
-            className={`group cursor-pointer surface transition-all duration-300 active:scale-[0.98] hover:surface-elevated hover:-translate-y-1 ${className}`}
+            className={`group cursor-pointer transition-all duration-300 active:scale-[0.98] hover:-translate-y-1 ${className}`}
         >
-            {/* Image */}
-            <div className={`relative ${imageHeight} overflow-hidden rounded-t-[28px]`}>
-                <LazyImage
-                    src={image}
-                    alt={location.title}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                    wrapperClassName="w-full h-full"
-                />
-
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-                {/* Rating badge */}
-                {rating > 0 && (
-                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/10 shadow-lg">
-                        <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-[11px] font-black text-white">{Number(rating).toFixed(1)}</span>
+            <CutoutCard className="overflow-hidden">
+                {/* Image */}
+                <CutoutCardMedia className={imageHeight}>
+                    <div className="absolute inset-0">
+                        <LazyImage
+                            src={image}
+                            alt={location.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            wrapperClassName="w-full h-full"
+                        />
                     </div>
-                )}
+                    <CutoutCardOverlay />
 
-                {/* Favorite button */}
-                <div className="absolute top-3 right-3 z-10">
-                    <FavoriteButton
-                        isFavorite={isFav}
-                        onToggle={() => toggleFavorite(location.id)}
-                        variant="chip"
-                        size={18}
-                        className="bg-black/40 backdrop-blur-md hover:bg-black/60 border border-white/10 shadow-lg"
-                    />
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-5">
-                <h3 className="text-[1.125rem] font-extrabold leading-[1.2] text-t-primary group-hover:text-blue-500 transition-colors tracking-tight">
-                    {location.title}
-                </h3>
-
-                <div className="flex items-center gap-2 mt-2 text-[0.6875rem] font-bold uppercase tracking-[0.14em]">
-                    <span className="text-blue-500 truncate">
-                        {location.city}
-                    </span>
-                    {price && (
-                        <>
-                            <span className="text-t-quaternary">·</span>
-                            <span className="text-t-tertiary">
-                                {price}
-                            </span>
-                        </>
+                    {/* Pin — rating top-left */}
+                    {rating > 0 && (
+                        <CutoutCardPin className="top-2 left-2 rounded-br-[12px] bg-black/40 backdrop-blur-md px-2 py-1 flex items-center gap-1 border border-white/10 shadow-lg">
+                            <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-black text-white">{Number(rating).toFixed(1)}</span>
+                            <CutoutCorner
+                                className="absolute top-0 -right-[23px] rotate-90 text-black/40"
+                                size={24}
+                            />
+                            <CutoutCorner
+                                className="absolute bottom-0 -left-[23px] rotate-90 text-black/40"
+                                size={24}
+                            />
+                        </CutoutCardPin>
                     )}
-                </div>
 
-                {location.description && (
-                    <p className="text-[0.9375rem] text-t-tertiary mt-3 line-clamp-2 leading-relaxed font-medium tracking-tight">
-                        {location.description}
-                    </p>
-                )}
-            </div>
+                    {/* Favorite button */}
+                    <div className="absolute top-2 right-2 z-10">
+                        <FavoriteButton
+                            isFavorite={isFav}
+                            onToggle={() => toggleFavorite(location.id)}
+                            variant="chip"
+                            size={18}
+                            className="bg-black/40 backdrop-blur-md hover:bg-black/60 border border-white/10 shadow-lg"
+                        />
+                    </div>
+                </CutoutCardMedia>
+
+                {/* Content */}
+                <CutoutCardContent className="p-4">
+                    <motion.div
+                        animate="show"
+                        className="contents"
+                        initial="hidden"
+                        variants={stagger.container}
+                    >
+                        <motion.h3
+                            className="text-[0.9375rem] font-semibold leading-[1.3] text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors tracking-[-0.012em] line-clamp-1"
+                            variants={stagger.item}
+                        >
+                            {location.title}
+                        </motion.h3>
+
+                        <motion.div
+                            className="flex items-center gap-2 mt-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.08em]"
+                            variants={stagger.item}
+                        >
+                            <span className="text-blue-500 truncate">
+                                {location.city}
+                            </span>
+                            {price && (
+                                <>
+                                    <span className="text-slate-300 dark:text-slate-600">·</span>
+                                    <span className="text-slate-400 dark:text-slate-500">
+                                        {price}
+                                    </span>
+                                </>
+                            )}
+                        </motion.div>
+
+                        {location.description && (
+                            <motion.p
+                                className="text-[0.8125rem] text-slate-400 dark:text-slate-500 mt-2 line-clamp-2 leading-relaxed tracking-[-0.003em]"
+                                variants={stagger.item}
+                            >
+                                {location.description}
+                            </motion.p>
+                        )}
+                    </motion.div>
+                </CutoutCardContent>
+            </CutoutCard>
         </div>
     )
 }

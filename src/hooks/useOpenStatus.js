@@ -1,48 +1,46 @@
 import { useMemo } from 'react'
+import { isCurrentlyOpen, formatOpeningHours } from '@/utils/formatOpeningHours'
 
 /**
  * useOpenStatus — determines if a venue is currently open.
  *
- * Parses openingHours strings like "09:00 - 23:00" or "10:00 - 02:00"
- * (handles overnight periods where close < open).
+ * Supports:
+ *   - Simple string: "09:00 - 23:00"
+ *   - JSON: { monday: "08:00-18:00", tuesday: "08:00-18:00", ... }
+ *   - JSON string: '{"monday":"08:00-18:00",...}'
  *
- * @param {string} openingHours  - e.g. "09:00 - 23:00"
+ * @param {string|object} openingHours
  * @returns {{
  *   isOpen: boolean,
- *   label: string,            - "Open" | "Closed" | "Closing soon"
+ *   label: string,            - "Open now" | "Closed" | "Closing soon"
  *   color: string,            - Tailwind text color class
+ *   hoursText: string,        - Formatted hours for today
  *   minutesUntilClose: number | null,
  * }}
  */
 export function useOpenStatus(openingHours) {
     return useMemo(() => {
-        if (!openingHours) return { isOpen: null, label: '', color: '', minutesUntilClose: null }
+        if (!openingHours) {
+            return { isOpen: null, label: '', color: '', hoursText: '', minutesUntilClose: null }
+        }
 
-        const match = openingHours.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/)
-        if (!match) return { isOpen: null, label: '', color: '', minutesUntilClose: null }
+        const { isOpen, todayHours, closeTime } = isCurrentlyOpen(openingHours)
 
-        const [, openH, openM, closeH, closeM] = match.map(Number)
+        if (isOpen === null) {
+            // Couldn't parse — return empty
+            return { isOpen: null, label: '', color: '', hoursText: '', minutesUntilClose: null }
+        }
 
-        const now = new Date()
-        const currentMinutes = now.getHours() * 60 + now.getMinutes()
-        const openMinutes = openH * 60 + openM
-        const closeMinutes = closeH * 60 + closeM
-
-        let isOpen
+        // Calculate minutes until close
         let minutesUntilClose = null
-
-        // Handle overnight: e.g. 18:00 - 02:00
-        if (closeMinutes < openMinutes) {
-            isOpen = currentMinutes >= openMinutes || currentMinutes < closeMinutes
-            if (isOpen) {
-                minutesUntilClose =
-                    currentMinutes >= openMinutes
-                        ? 24 * 60 - currentMinutes + closeMinutes
-                        : closeMinutes - currentMinutes
-            }
-        } else {
-            isOpen = currentMinutes >= openMinutes && currentMinutes < closeMinutes
-            if (isOpen) minutesUntilClose = closeMinutes - currentMinutes
+        if (isOpen && closeTime) {
+            const now = new Date()
+            const [closeH, closeM] = closeTime.split(':').map(Number)
+            const closeMinutes = closeH * 60 + closeM
+            const currentMinutes = now.getHours() * 60 + now.getMinutes()
+            minutesUntilClose = closeMinutes > currentMinutes
+                ? closeMinutes - currentMinutes
+                : 24 * 60 - currentMinutes + closeMinutes
         }
 
         const closingSoon = isOpen && minutesUntilClose != null && minutesUntilClose <= 60
@@ -55,6 +53,7 @@ export function useOpenStatus(openingHours) {
                 : isOpen
                 ? 'text-emerald-500'
                 : 'text-red-400',
+            hoursText: todayHours || '',
             minutesUntilClose,
         }
     }, [openingHours])

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
+import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 import { useNavigate } from 'react-router-dom'
 import { 
     Search, MapPin, TrendingUp, Star, Clock, Heart, 
@@ -233,11 +234,8 @@ const DashboardPage = () => {
     }, [filteredLocations])
     const openNowLocations = useMemo(() => {
         return filteredLocations.filter(loc => {
-            if (!loc.opening_hours) return false
-            // Simple open-now check: look for current day in opening_hours string
-            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-            const today = days[new Date().getDay()]
-            return loc.opening_hours.toLowerCase().includes(today)
+            const { isOpen } = isCurrentlyOpen(loc.opening_hours || loc.openingHours)
+            return isOpen === true
         })
     }, [filteredLocations])
 

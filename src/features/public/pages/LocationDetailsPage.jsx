@@ -12,6 +12,7 @@ import {
     Instagram, Facebook, Twitter, ExternalLink, Globe, X
 } from 'lucide-react'
 import { getDisplayRating } from '@/utils/ratingUtils'
+import { formatOpeningHours } from '@/utils/formatOpeningHours'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
@@ -306,7 +307,7 @@ const LocationDetailsPage = () => {
             {/* ── Compact Info Grid ───────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {[
-                    { id: 'hours',     icon: Clock,         label: openLabel || t('location.hours_today'), value: location.openingHours || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
+                    { id: 'hours',     icon: Clock,         label: openLabel || t('location.hours_today'), value: formatOpeningHours(location.openingHours || location.opening_hours) || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
                     { id: 'contact',   icon: Phone,         label: t('location.contact'),        value: location.phone || '—', color: "text-green-500", bg: "bg-green-500/8", hidden: !location.phone },
                     { id: 'reviews',   icon: MessageSquare, label: t('location.total_reviews'),  value: aggregate.count ? `${aggregate.count}` : '—', sub: aggregate.count ? t('location.review_count_short', { defaultValue: 'reviews' }) : t('location.no_reviews'), color: "text-indigo-500", bg: "bg-indigo-500/8" },
                     { id: 'directions',icon: Navigation,   label: t('location.get_directions'), value: location.address ? t('location.open_in_maps') : '—', color: "text-orange-500", bg: "bg-orange-500/8" }

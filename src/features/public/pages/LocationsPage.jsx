@@ -23,6 +23,7 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { useDebounce } from '@/hooks/useDebounce'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
+import { formatOpeningHours } from '@/utils/formatOpeningHours'
 import LazyImage from '@/components/ui/LazyImage'
 import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/components/ui/Skeleton'
 import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
@@ -44,9 +45,13 @@ const SORT_LABEL_KEYS = {
 // ─── Open status badge (uses real openingHours) ───────────────────────────
 function OpenBadge({ openingHours }) {
     const { label, color, isOpen } = useOpenStatus(openingHours)
+    const hoursText = formatOpeningHours(openingHours)
     if (isOpen === null) return null
     return (
-        <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter ${color}`}>
+        <div 
+            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter ${color}`}
+            title={hoursText || undefined}
+        >
             <div className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-400'}`} />
             {label}
         </div>

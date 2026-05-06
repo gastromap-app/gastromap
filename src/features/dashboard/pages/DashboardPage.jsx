@@ -94,8 +94,20 @@ const DashboardPage = () => {
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { city: currentCity = 'Unknown', visitCount = 0 } = useGeoStore()
+    const { city: currentCity = 'Unknown', country: currentCountry, visitCount = 0 } = useGeoStore()
     const { lat: geoLat, lng: geoLng, status: geoStatus, requestGeo } = useUserGeo({ autoRequest: true })
+
+    // Build explore URL with current city + optional sort param
+    const buildExploreUrl = useCallback((sort) => {
+        const city = currentCity && currentCity !== 'Unknown' ? currentCity.toLowerCase().replace(/\s+/g, '-') : null
+        const country = currentCountry ? currentCountry.toLowerCase().replace(/\s+/g, '-') : null
+        if (city && country) {
+            const base = `/explore/${country}/${city}`
+            return sort ? `${base}?sort=${sort}` : base
+        }
+        // Fallback: no city info → just /explore with sort
+        return sort ? `/explore?sort=${sort}` : '/explore'
+    }, [currentCity, currentCountry])
 
     const { data: geoCoversData = [] } = useGeoCovers('country')
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
@@ -244,7 +256,7 @@ const DashboardPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── Mobile Layout ─────────────────────────────────────────────── */}
-            <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+            <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6.5rem)' }}>
 
                 {/* Greeting */}
                 <div className="px-5 mb-6">
@@ -287,8 +299,9 @@ const DashboardPage = () => {
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
+                                useLocationsStore.getState().resetFilters()
                                 useLocationsStore.getState().setRadius(1)
-                                navigate('/explore')
+                                navigate(buildExploreUrl())
                             }}
                             isDark={isDark}
                         />
@@ -335,7 +348,7 @@ const DashboardPage = () => {
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl()) }}
                             isDark={isDark}
                         />
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
@@ -370,7 +383,10 @@ const DashboardPage = () => {
                                 ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
                                 : t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => {
+                                useLocationsStore.getState().resetFilters()
+                                navigate(buildExploreUrl('recommended'))
+                            }}
                             isDark={isDark}
                         />
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
@@ -414,7 +430,10 @@ const DashboardPage = () => {
                                 ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
                                 : t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => {
+                                useLocationsStore.getState().resetFilters()
+                                navigate(buildExploreUrl('trending'))
+                            }}
                             isDark={isDark}
                         />
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
@@ -440,8 +459,9 @@ const DashboardPage = () => {
                                 title={t('dashboard.open_now')}
                                 subtitle={t('dashboard.currently_serving')}
                                 onSeeAll={() => {
+                                    useLocationsStore.getState().resetFilters()
                                     useLocationsStore.getState().setIsOpenNow(true)
-                                    navigate('/explore')
+                                    navigate(buildExploreUrl())
                                 }}
                                 isDark={isDark}
                             />
@@ -601,8 +621,9 @@ const DesktopDashboard = ({
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
+                                useLocationsStore.getState().resetFilters()
                                 useLocationsStore.getState().setRadius(1)
-                                navigate('/explore')
+                                navigate(buildExploreUrl())
                             }}
                             isDark={isDark}
                         />
@@ -651,7 +672,7 @@ const DesktopDashboard = ({
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl()) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
@@ -693,7 +714,7 @@ const DesktopDashboard = ({
                                 ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
                                 : t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl('recommended')) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -710,7 +731,7 @@ const DesktopDashboard = ({
                                 ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
                                 : t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
-                            onSeeAll={() => navigate('/explore')}
+                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl('trending')) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -727,8 +748,9 @@ const DesktopDashboard = ({
                                 title={t('dashboard.open_now')}
                                 subtitle={t('dashboard.currently_serving')}
                                 onSeeAll={() => {
+                                    useLocationsStore.getState().resetFilters()
                                     useLocationsStore.getState().setIsOpenNow(true)
-                                    navigate('/explore')
+                                    navigate(buildExploreUrl())
                                 }}
                                 isDark={isDark}
                             />

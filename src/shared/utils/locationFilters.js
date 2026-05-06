@@ -213,6 +213,17 @@ export function applyAllFilters(locations, filters) {
                 return dateB - dateA
             })
             break
+        case 'trending':
+            result.sort((a, b) => {
+                const scoreA = ((a.google_rating ?? a.rating ?? 0) * 0.6) + (Math.min((a.views_count || 0) / 200, 5) * 0.4)
+                const scoreB = ((b.google_rating ?? b.rating ?? 0) * 0.6) + (Math.min((b.views_count || 0) / 200, 5) * 0.4)
+                return scoreB - scoreA
+            })
+            break
+        case 'recommended':
+            // Recommended = top rated first (personalized sorting done separately via DNA)
+            result.sort((a, b) => (b.google_rating ?? b.rating ?? 0) - (a.google_rating ?? a.rating ?? 0))
+            break
         default:
             break
     }

@@ -34,9 +34,11 @@ import { useUIStore } from '@/shared/store/useUIStore'
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
 const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
-const SORT_VALUES = ['google_rating', 'price_asc', 'price_desc', 'name']
+const SORT_VALUES = ['google_rating', 'trending', 'recommended', 'price_asc', 'price_desc', 'name']
 const SORT_LABEL_KEYS = {
     google_rating: 'explore.top_rated',
+    trending:      'explore.trending',
+    recommended:   'explore.recommended',
     price_asc:     'explore.price_asc',
     price_desc:    'explore.price_desc',
     name:          'explore.a_to_z',
@@ -372,6 +374,7 @@ const LocationsPage = () => {
     const storeSetSearch = useLocationsStore(s => s.setSearchQuery)
     const setSortBy = useLocationsStore(s => s.setSortBy)
     const resetFilters = useLocationsStore(s => s.resetFilters)
+    const activeFiltersCount = useLocationsStore(s => s.getActiveFiltersCount())
 
     // Local search input → debounce → store
     const [localSearch, setLocalSearch] = useState(storeQuery)
@@ -386,7 +389,9 @@ const LocationsPage = () => {
 
     // Sync from URL query param on mount
     useEffect(() => {
-        const q = new URLSearchParams(window.location.search).get('q')
+        const params = new URLSearchParams(window.location.search)
+        const q = params.get('q')
+        const sort = params.get('sort')
         if (q) {
             const t = setTimeout(() => {
                 setLocalSearch(q)
@@ -394,12 +399,15 @@ const LocationsPage = () => {
             }, 0)
             return () => clearTimeout(t)
         }
-    }, [storeSetSearch])
+        if (sort && sort !== sortBy) {
+            setSortBy(sort)
+        }
+    }, [storeSetSearch, setSortBy, sortBy])
 
-    // Cleanup filters on unmount only
-    useEffect(() => {
-        return () => resetFilters()
-    }, [resetFilters])
+    // Note: filters are NOT reset on unmount — they persist in the global store.
+    // Users can clear them via the "Reset" button in the filter modal or the
+    // active-filters badge. Dashboard "See All" calls resetFilters() before
+    // navigating here, providing a clean entry point.
 
     // Fetch city-scoped locations with infinite scroll & server-side filtering
     const { 
@@ -523,13 +531,24 @@ const LocationsPage = () => {
                         <EmptyState query={localSearch} isDark={isDark} />
                     ) : (
                         <>
-                            {/* Results counter */}
-                            <p className={`text-center text-[12px] font-medium mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                {t('explore.showing_of', { 
-                                    shown: localFilteredLocations.length, 
-                                    total: localFilteredLocations.length 
-                                })}
-                            </p>
+                            {/* Results counter + Clear filters */}
+                            <div className="flex items-center justify-center gap-3 mb-3">
+                                <p className={`text-[12px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {t('explore.showing_of', { 
+                                        shown: localFilteredLocations.length, 
+                                        total: localFilteredLocations.length 
+                                    })}
+                                </p>
+                                {activeFiltersCount > 0 && (
+                                    <button
+                                        onClick={resetFilters}
+                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-red-400 hover:bg-white/[0.08]' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                                    >
+                                        <X size={10} />
+                                        {t('filter.reset', 'Reset')}
+                                    </button>
+                                )}
+                            </div>
 
                             <VirtualizedMobileGrid
                                 items={localFilteredLocations}
@@ -629,9 +648,14 @@ const LocationsPage = () => {
                             <button
                                 onClick={() => setIsFilterOpen(true)}
                                 aria-label="Open filters"
-                                className={`h-16 w-16 rounded-[24px] flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
+                                className={`relative h-16 w-16 rounded-[24px] flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 shadow-sm hover:border-blue-400'}`}
                             >
                                 <SlidersHorizontal size={22} />
+                                {activeFiltersCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg">
+                                        {activeFiltersCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -670,10 +694,21 @@ const LocationsPage = () => {
                             </div>
                         </nav>
 
-                        {/* Results count */}
-                        <p className={`text-sm font-bold ml-auto ${subTextStyle}`}>
-                            {localFilteredLocations.length} result{localFilteredLocations.length !== 1 ? 's' : ''}
-                        </p>
+                        {/* Results count + Clear filters */}
+                        <div className="flex items-center gap-3 ml-auto">
+                            {activeFiltersCount > 0 && (
+                                <button
+                                    onClick={resetFilters}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-red-400 hover:bg-white/[0.08]' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                                >
+                                    <X size={12} />
+                                    {t('filter.reset', 'Reset')}
+                                </button>
+                            )}
+                            <p className={`text-sm font-bold ${subTextStyle}`}>
+                                {localFilteredLocations.length} result{localFilteredLocations.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
                     </div>
 
                     {/* Content */}

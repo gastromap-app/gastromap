@@ -9,6 +9,8 @@
         "sort": {
             "title": "Sortuj według",
             "top_rated": "Najwyżej oceniane",
+            "trending": "Popularne",
+            "recommended": "Polecane",
             "price_asc": "Cena: od najniższej",
             "price_desc": "Cena: od najwyższej",
             "a_to_z": "Nazwa: A → Z",

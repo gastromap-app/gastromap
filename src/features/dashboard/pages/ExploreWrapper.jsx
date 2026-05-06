@@ -1,11 +1,19 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import LocationsPage from '@/features/public/pages/LocationsPage'
 import CitiesPage from './CitiesPage'
 import CountriesPage from './CountriesPage'
 
 const ExploreWrapper = () => {
     const { country, city } = useParams()
+    const [searchParams] = useSearchParams()
+    const sortParam = searchParams.get('sort')
+
+    // If we have a sort parameter but no city, redirect to LocationsPage
+    // (filters/sort should work on the full location list)
+    if (sortParam && !city) {
+        return <LocationsPage />
+    }
 
     // If no country param, show list of countries
     if (!country) {

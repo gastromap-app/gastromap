@@ -9,6 +9,8 @@
         "sort": {
             "title": "Sort by",
             "top_rated": "Top Rated",
+            "trending": "Trending",
+            "recommended": "Recommended",
             "price_asc": "Price: Low to High",
             "price_desc": "Price: High to Low",
             "a_to_z": "Name: A to Z",

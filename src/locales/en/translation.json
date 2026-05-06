@@ -53,6 +53,8 @@
     "clear_filters": "Clear filters",
     "sort": "Sort",
     "top_rated": "Top Rated",
+    "trending": "Trending",
+    "recommended": "Recommended",
     "price_asc": "Price ↑",
     "price_desc": "Price ↓",
     "a_to_z": "A → Z",

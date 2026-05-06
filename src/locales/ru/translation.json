@@ -53,6 +53,8 @@
     "clear_filters": "Очистить фильтры",
     "sort": "Сортировать",
     "top_rated": "Лучшие",
+    "trending": "Популярные",
+    "recommended": "Рекомендуемые",
     "price_asc": "Цена ↑",
     "price_desc": "Цена ↓",
     "a_to_z": "А → Я",

@@ -144,7 +144,8 @@ const CountriesPage = () => {
         <div data-lenis-prevent className="bg-transparent relative overscroll-none overflow-y-auto scrollbar-hide md:absolute md:inset-0">
             {/* ── MOBILE ───────────────────────────────────────────────────── */}
             <motion.div
-                className="md:hidden space-y-5 px-[2.5vw] pt-24 pb-12"
+                className="md:hidden space-y-5 px-[2.5vw] pb-12"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6.5rem)' }}
                 onPanEnd={(_, info) => {
                     if (info.offset.x > 100 && info.velocity.x > 10) navigate(-1)
                 }}

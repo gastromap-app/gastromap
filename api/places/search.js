@@ -12,6 +12,7 @@
 
 import { setCorsHeaders } from '../_shared/cors.js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
+import { normalizeCityName, normalizeCountryName, extractCityCountryFromAddress } from '../../src/utils/normalizeCityName.js'
 
 const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place'
 
@@ -142,12 +143,21 @@ function normalizePlace(p) {
         return acc
     }, [])
 
+    // Extract and normalize city/country from the address
+    const { city: rawCity, country: rawCountry } = extractCityCountryFromAddress(
+        p.formatted_address || p.vicinity || ''
+    )
+    const city = normalizeCityName(rawCity)
+    const country = normalizeCountryName(rawCountry)
+
     return {
         // Core identity
         title:         p.name || null,
         category,
         // Address & geo
         address:       p.formatted_address || p.vicinity || null,
+        city,
+        country,
         lat:           p.geometry?.location?.lat || null,
         lng:           p.geometry?.location?.lng || null,
         // Contact

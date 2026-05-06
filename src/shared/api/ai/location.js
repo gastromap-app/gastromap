@@ -5,6 +5,8 @@
  * - extractLocationData: Extract structured restaurant data from queries
  */
 
+import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
+
 import { getActiveAIConfig } from '../ai-config.api'
 import { fetchOpenRouter } from './openrouter'
 import { robustParseJSON } from './utils'
@@ -228,8 +230,8 @@ Return JSON with these exact fields:
 {
   "title": "official name",
   "category": "Restaurant|Cafe|Bar|Bakery|Street Food|Fine Dining|Fast Food",
-  "city": "city name",
-  "country": "country",
+  "city": "city name in ENGLISH. E.g.: 'Krakow' (NOT 'Krakow local'), 'Warsaw' (NOT 'Warszawa'), 'Rome' (NOT 'Roma'). Always use English/international names.",
+  "country": "country name in ENGLISH. E.g.: 'Poland', 'Ukraine', 'Italy'.",
   "address": "street address or null",
   "description": "2-3 sentences in Russian or null",
   "cuisine": "single cuisine type or null",
@@ -259,6 +261,9 @@ _source field: set to "llm_fallback"`
         const text = data.choices?.[0]?.message?.content || '{}'
         const extracted = robustParseJSON(text)
         console.log('[ai.location] LLM fallback extracted:', extracted?.title)
+        // Normalize city/country to English
+        if (extracted?.city) extracted.city = normalizeCityName(extracted.city)
+        if (extracted?.country) extracted.country = normalizeCountryName(extracted.country)
         return { ...extracted, _source: 'llm_fallback' }
     } catch (err) {
         console.error('[ai.location] LLM extraction also failed:', err)

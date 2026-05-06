@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { 
+import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
+import {
     useAdminLocationsQuery, useCreateLocationMutation, useUpdateLocationMutation, useDeleteLocationMutation, 
     useUpdateLocationStatusMutation, usePendingLocations, useExtractLocationMutation, 
     useReindexLocationSemanticMutation, useBulkReindexLocationsMutation, useSpoonacularSearchMutation,
@@ -256,8 +257,8 @@ export const useAdminLocations = () => {
                     // Core fields — prefer Google Places data
                     title:         data.title         ?? prev.title,
                     category:      data.category      ?? prev.category,
-                    city:          data.city           ?? prev.city,
-                    country:       data.country        ?? prev.country,
+                    city:          data.city ? normalizeCityName(data.city) : (prev.city || ''),
+                    country:       data.country ? normalizeCountryName(data.country) : (prev.country || ''),
                     address:       data.address        ?? prev.address,
                     lat:           data.lat            ?? prev.lat,
                     lng:           data.lng            ?? prev.lng,

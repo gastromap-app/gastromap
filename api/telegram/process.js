@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
 import { normalizeOpeningHoursToJSON, formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
+import { normalizeCityName, normalizeCountryName } from '../../src/utils/normalizeCityName.js'
 
 // Polyfill AbortSignal.timeout for older Node.js
 if (!AbortSignal.timeout) {
@@ -449,8 +450,8 @@ Generate EXACTLY this JSON structure (all fields required, no extras):
 
   "dietary": ["Dietary options available", "e.g.", "Vegetarian", "Vegan", "Gluten-free", "Halal", "Kosher"],
 
-  "city": "City name only. E.g.: 'Kraków'",
-  "country": "Country. E.g.: 'Poland'",
+  "city": "City name in ENGLISH only. E.g.: 'Krakow' (NOT local names), 'Warsaw' (NOT Warszawa), 'Kyiv' (NOT Kiev), 'Rome' (NOT Roma). Always use English/international names.",
+  "country": "Country in ENGLISH. E.g.: 'Poland', 'Ukraine', 'Italy'. Always use English names.",
 
   "opening_hours": {
     "monday": "08:00-18:00",
@@ -548,8 +549,8 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
         what_to_try: apifyData?.apify_popular_dishes || [],
         insider_tip: null,
         dietary: [],
-        city: placesData?.address?.split(',').pop()?.trim() || null,
-        country: 'Poland',
+        city: normalizeCityName(placesData?.address?.split(',').pop()?.trim() || ''),
+        country: normalizeCountryName('Poland'),
         opening_hours: placesData?.opening_hours || apifyData?.apify_opening_hours || null,
         has_wifi: (placesData?.features || []).includes('Free Wi-Fi'),
         has_outdoor_seating: (placesData?.features || []).includes('Outdoor Seating'),
@@ -654,9 +655,9 @@ async function insertLocation(d, apifyHours = null) {
         // Media
         image:          d.image || (d.photos?.[0]) || null,
         photos:         d.photos || [],
-        // Location
-        city:           d.city || null,
-        country:        d.country || null,
+        // Location (normalize to English/international names)
+        city:           d.city ? normalizeCityName(d.city) : null,
+        country:        d.country ? normalizeCountryName(d.country) : null,
         // Meta
         status:         'draft',
         source:         'telegram_bot',

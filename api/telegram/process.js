@@ -12,6 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
+import { normalizeOpeningHoursToJSON, formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
 
 function escapeHtml(str) {
     return String(str)
@@ -442,8 +443,18 @@ Generate EXACTLY this JSON structure (all fields required, no extras):
   "city": "City name only. E.g.: 'Kraków'",
   "country": "Country. E.g.: 'Poland'",
 
-  "opening_hours_summary": "Human-readable hours summary. E.g.: 'Mon–Sat 12:00–22:00, Sun 13:00–21:00' or 'Daily 11:00–23:00'",
-
+  "opening_hours": {
+    "monday": "08:00-18:00",
+    "tuesday": "08:00-18:00",
+    "wednesday": "08:00-18:00",
+    "thursday": "08:00-18:00",
+    "friday": "08:00-18:00",
+    "saturday": "09:00-18:00",
+    "sunday": "09:00-18:00"
+  },
+  // OR if same every day:
+  "opening_hours": "08:00-18:00",
+  
   "has_wifi": true or false,
   "has_outdoor_seating": true or false,
   "reservations_required": true or false
@@ -501,7 +512,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
 }
 
 // ── Step 5: Supabase Insert ───────────────────────────────────────────────────
-async function insertLocation(d) {
+async function insertLocation(d, apifyHours = null) {
     const supabaseUrl = process.env.VITE_SUPABASE_URL
     if (!supabaseUrl) throw new Error('VITE_SUPABASE_URL not configured')
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
@@ -509,6 +520,27 @@ async function insertLocation(d) {
     if (!serviceKey) throw new Error('No Supabase service key in env')
 
     const supabase = createClient(supabaseUrl, serviceKey)
+
+    // Check for duplicates (title + address)
+    if (d.title && d.address) {
+        const { data: existing } = await supabase
+            .from('locations')
+            .select('id, title, address')
+            .ilike('title', d.title)
+            .limit(5)
+        
+        if (existing?.length) {
+            const isDuplicate = existing.some(loc => {
+                const existingAddr = (loc.address || '').toLowerCase()
+                const newAddr = (d.address || '').toLowerCase()
+                return existingAddr.includes(newAddr) || newAddr.includes(existingAddr)
+            })
+            
+            if (isDuplicate) {
+                throw new Error(`Duplicate location: "${d.title}" at "${d.address}" already exists`)
+            }
+        }
+    }
 
     // Validate synthesized data before insert
     if (d.title && d.title.length > 200) d.title = d.title.slice(0, 200)
@@ -519,14 +551,27 @@ async function insertLocation(d) {
         try { new URL(d.website) } catch { d.website = null }
     }
 
-    // Нормализуем opening_hours в строку
+    // Normalize opening_hours to standardized JSON format
     let openingHours = null
-    if (d.opening_hours_summary) {
-        openingHours = d.opening_hours_summary
-    } else if (Array.isArray(d.opening_hours)) {
-        openingHours = d.opening_hours.join(' | ')
-    } else if (typeof d.opening_hours === 'string') {
-        openingHours = d.opening_hours
+    
+    // Priority 1: LLM-generated structured hours
+    if (d.opening_hours) {
+        openingHours = normalizeOpeningHoursToJSON(d.opening_hours)
+    }
+    
+    // Priority 2: Google Places weekday_text
+    if (!openingHours && Array.isArray(d.opening_hours) && d.opening_hours.length > 0) {
+        openingHours = normalizeOpeningHoursToJSON(d.opening_hours)
+    }
+    
+    // Priority 3: Apify hours (passed as parameter)
+    if (!openingHours && apifyHours?.length) {
+        openingHours = normalizeOpeningHoursToJSON(apifyHours)
+    }
+    
+    // Priority 4: Fallback to summary string (will be normalized if possible)
+    if (!openingHours && d.opening_hours_summary) {
+        openingHours = normalizeOpeningHoursToJSON(d.opening_hours_summary)
     }
 
     const row = {
@@ -636,7 +681,7 @@ export default async function handler(req, res) {
         }
 
         // Шаг 5: Supabase
-        const created = await insertLocation(finalData)
+        const created = await insertLocation(finalData, apifyData?.apify_opening_hours || null)
         console.log('[process] Created location:', created.id)
 
         // Запускаем автоперевод в фоне (non-blocking)
@@ -668,7 +713,10 @@ export default async function handler(req, res) {
         lines.push('')
 
         // Расписание
-        if (created.opening_hours) lines.push(`🕐 <b>Часы:</b> ${created.opening_hours}`)
+        if (created.opening_hours) {
+            const formattedHours = formatOpeningHours(created.opening_hours)
+            if (formattedHours) lines.push(`🕐 <b>Часы:</b> ${formattedHours}`)
+        }
 
         // Атмосфера
         if (created.vibe?.length) lines.push(`✨ <b>Атмосфера:</b> ${created.vibe.join(', ')}`)

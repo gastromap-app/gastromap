@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatOpeningHours, getHoursForDay, isCurrentlyOpen } from './formatOpeningHours'
+import { formatOpeningHours, getHoursForDay, isCurrentlyOpen, normalizeOpeningHoursToJSON } from './formatOpeningHours'
 
 describe('formatOpeningHours', () => {
     it('returns empty string for null/undefined', () => {
@@ -100,5 +100,102 @@ describe('isCurrentlyOpen', () => {
         const result = isCurrentlyOpen('09:00 - 23:00')
         expect(result.todayHours).toBe('09:00 – 23:00')
         expect(result.isOpen).toBeDefined()
+    })
+})
+
+describe('normalizeOpeningHoursToJSON', () => {
+    it('returns null for null/undefined', () => {
+        expect(normalizeOpeningHoursToJSON(null)).toBeNull()
+        expect(normalizeOpeningHoursToJSON(undefined)).toBeNull()
+    })
+
+    it('converts simple 24h string to JSON', () => {
+        const result = normalizeOpeningHoursToJSON('09:00 - 23:00')
+        expect(typeof result).toBe('string')
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('09:00-23:00')
+        expect(parsed.sunday).toBe('09:00-23:00')
+    })
+
+    it('parses Google Places weekday_text (AM/PM)', () => {
+        const weekdayText = [
+            'Monday: 8:00 AM – 6:00 PM',
+            'Tuesday: 8:00 AM – 6:00 PM',
+            'Wednesday: 8:00 AM – 6:00 PM',
+            'Thursday: 8:00 AM – 6:00 PM',
+            'Friday: 8:00 AM – 10:00 PM',
+            'Saturday: 9:00 AM – 10:00 PM',
+            'Sunday: 9:00 AM – 6:00 PM'
+        ]
+        
+        const result = normalizeOpeningHoursToJSON(weekdayText)
+        expect(typeof result).toBe('string')
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('08:00-18:00')
+        expect(parsed.friday).toBe('08:00-22:00')
+        expect(parsed.saturday).toBe('09:00-22:00')
+    })
+
+    it('parses Google Places weekday_text (24h format)', () => {
+        const weekdayText = [
+            'Monday: 08:00-18:00',
+            'Tuesday: 08:00-18:00',
+            'Wednesday: 08:00-18:00'
+        ]
+        
+        const result = normalizeOpeningHoursToJSON(weekdayText)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('08:00-18:00')
+    })
+
+    it('parses Apify format', () => {
+        const apifyHours = [
+            { day: 'Monday', hours: '8:00 AM – 6:00 PM' },
+            { day: 'Tuesday', hours: '8:00 AM – 6:00 PM' },
+            { day: 'Saturday', hours: '10:00 AM – 8:00 PM' }
+        ]
+        
+        const result = normalizeOpeningHoursToJSON(apifyHours)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('08:00-18:00')
+        expect(parsed.saturday).toBe('10:00-20:00')
+    })
+
+    it('normalizes already-JSON object', () => {
+        const obj = {
+            monday: '8:00-18:00',
+            tuesday: '8:00 - 18:00',
+            wednesday: '08:00-18:00'
+        }
+        
+        const result = normalizeOpeningHoursToJSON(obj)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('08:00-18:00')
+        expect(parsed.tuesday).toBe('08:00-18:00')
+    })
+
+    it('normalizes JSON string', () => {
+        const jsonStr = '{"monday":"8:00-18:00","tuesday":"9:00 - 17:00"}'
+        const result = normalizeOpeningHoursToJSON(jsonStr)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('08:00-18:00')
+        expect(parsed.tuesday).toBe('09:00-17:00')
+    })
+
+    it('handles overnight hours (AM/PM)', () => {
+        const weekdayText = ['Monday: 10:00 PM – 2:00 AM']
+        const result = normalizeOpeningHoursToJSON(weekdayText)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('22:00-02:00')
+    })
+
+    it('handles 12:00 AM/PM edge cases', () => {
+        // 12:00 AM = 00:00, 12:00 PM = 12:00
+        const apifyHours = [
+            { day: 'Monday', hours: '12:00 AM – 12:00 PM' }
+        ]
+        const result = normalizeOpeningHoursToJSON(apifyHours)
+        const parsed = JSON.parse(result)
+        expect(parsed.monday).toBe('00:00-12:00')
     })
 })

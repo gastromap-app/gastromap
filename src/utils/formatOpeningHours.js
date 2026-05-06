@@ -241,3 +241,165 @@ export function isCurrentlyOpen(input) {
 }
 
 export default formatOpeningHours
+
+/**
+ * normalizeOpeningHoursToJSON — converts any opening hours format to standardized JSON string.
+ * 
+ * Used by Telegram bot to save structured hours to Supabase.
+ * 
+ * Accepts:
+ *   - Google Places weekday_text: ["Monday: 8:00 AM – 6:00 PM", ...]
+ *   - Apify format: [{day: "Monday", hours: "8:00 AM – 6:00 PM"}, ...]
+ *   - Simple string: "09:00 - 23:00"
+ *   - Already JSON: '{"monday":"08:00-18:00",...}'
+ * 
+ * Returns:
+ *   - JSON string: '{"monday":"08:00-18:00","tuesday":"08:00-18:00",...}'
+ *   - null if cannot parse
+ */
+export function normalizeOpeningHoursToJSON(input) {
+    if (!input) return null
+
+    // Already a JSON object
+    if (typeof input === 'object') {
+        if (Array.isArray(input)) {
+            // Check if it's Google Places weekday_text (strings) or Apify format (objects)
+            if (input.length > 0 && typeof input[0] === 'string') {
+                return parseGoogleWeekdayText(input)
+            } else if (input.length > 0 && typeof input[0] === 'object') {
+                return parseApifyHours(input)
+            }
+        } else {
+            // Already an object — normalize and stringify
+            const result = parseHours(input)
+            return result ? JSON.stringify(result) : null
+        }
+    }
+
+    // JSON string
+    if (typeof input === 'string' && input.trim().startsWith('{')) {
+        try {
+            const parsed = JSON.parse(input)
+            const result = parseHours(parsed)
+            return result ? JSON.stringify(result) : null
+        } catch {
+            // Not valid JSON — try other parsers
+        }
+    }
+
+    // Simple string: "09:00 - 23:00"
+    if (typeof input === 'string') {
+        const simple = input.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/)
+        if (simple) {
+            const range = `${normalizeTime(simple[1])}-${normalizeTime(simple[2])}`
+            const result = {}
+            DAYS_ORDER.forEach(d => { result[d] = range })
+            return JSON.stringify(result)
+        }
+    }
+
+    return null
+}
+
+/**
+ * Parse Google Places weekday_text format
+ * ["Monday: 8:00 AM – 6:00 PM", "Tuesday: 8:00 AM – 6:00 PM", ...]
+ */
+function parseGoogleWeekdayText(weekdayText) {
+    const dayMap = {
+        'Monday': 'monday', 'Tuesday': 'tuesday', 'Wednesday': 'wednesday',
+        'Thursday': 'thursday', 'Friday': 'friday', 'Saturday': 'saturday', 'Sunday': 'sunday'
+    }
+    
+    const result = {}
+    
+    for (const line of weekdayText) {
+        // Match: "Monday: 8:00 AM – 6:00 PM" or "Monday: 08:00-18:00"
+        const match = line.match(/^(\w+):\s*(.+)$/)
+        if (!match) continue
+        
+        const dayKey = dayMap[match[1]]
+        if (!dayKey) continue
+        
+        const hoursStr = match[2].trim()
+        
+        // Check if AM/PM format
+        if (hoursStr.includes('AM') || hoursStr.includes('PM') || hoursStr.includes('am') || hoursStr.includes('pm')) {
+            result[dayKey] = convertAmPmTo24Hour(hoursStr)
+        } else {
+            // Already 24h format — normalize
+            result[dayKey] = normalizeTimeRange(hoursStr)
+        }
+    }
+    
+    return Object.keys(result).length > 0 ? JSON.stringify(result) : null
+}
+
+/**
+ * Parse Apify opening hours format
+ * [{day: "Monday", hours: "8:00 AM – 6:00 PM"}, ...]
+ */
+function parseApifyHours(hoursArray) {
+    const dayMap = {
+        'Monday': 'monday', 'Tuesday': 'tuesday', 'Wednesday': 'wednesday',
+        'Thursday': 'thursday', 'Friday': 'friday', 'Saturday': 'saturday', 'Sunday': 'sunday'
+    }
+    
+    const result = {}
+    
+    for (const item of hoursArray) {
+        if (!item.day || !item.hours) continue
+        
+        const dayKey = dayMap[item.day]
+        if (!dayKey) continue
+        
+        const hoursStr = item.hours.trim()
+        
+        // Check if AM/PM format
+        if (hoursStr.includes('AM') || hoursStr.includes('PM') || hoursStr.includes('am') || hoursStr.includes('pm')) {
+            result[dayKey] = convertAmPmTo24Hour(hoursStr)
+        } else {
+            // Already 24h format — normalize
+            result[dayKey] = normalizeTimeRange(hoursStr)
+        }
+    }
+    
+    return Object.keys(result).length > 0 ? JSON.stringify(result) : null
+}
+
+/**
+ * Convert AM/PM time range to 24-hour format
+ * "8:00 AM – 6:00 PM" → "08:00-18:00"
+ * "10:00 AM – 2:00 AM" → "10:00-02:00" (overnight)
+ */
+function convertAmPmTo24Hour(timeStr) {
+    // Match: "8:00 AM – 6:00 PM" or "10:00AM - 2:00PM"
+    const match = timeStr.match(
+        /(\d{1,2}):(\d{2})\s*(AM|PM)\s*[–-]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i
+    )
+    
+    if (!match) return normalizeTimeRange(timeStr)
+    
+    const [, h1, m1, ampm1, h2, m2, ampm2] = match
+    
+    const start24 = to24Hour(parseInt(h1), parseInt(m1), ampm1.toUpperCase())
+    const end24 = to24Hour(parseInt(h2), parseInt(m2), ampm2.toUpperCase())
+    
+    return `${start24}-${end24}`
+}
+
+/**
+ * Convert individual time to 24-hour format
+ * to24Hour(8, 0, 'AM') → '08:00'
+ * to24Hour(6, 0, 'PM') → '18:00'
+ * to24Hour(12, 0, 'AM') → '00:00'
+ * to24Hour(12, 30, 'PM') → '12:30'
+ */
+function to24Hour(hours, minutes, ampm) {
+    if (ampm === 'AM') {
+        if (hours === 12) hours = 0
+    } else {
+        if (hours !== 12) hours += 12
+    }
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}

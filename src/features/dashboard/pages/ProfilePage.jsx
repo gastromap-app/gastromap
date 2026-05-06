@@ -181,7 +181,7 @@ const ProfilePage = () => {
             items: [
                 ...(authUser?.role === 'admin' ? [{ icon: ShieldCheck, label: t('profile.admin_panel'), link: "/admin", highlight: true }] : []),
                 { icon: User, label: t('profile.personal_info'), link: "/profile/edit" },
-                { icon: Globe, label: t('profile.language_region'), link: "/profile/language", value: i18n.language?.toUpperCase() ?? "EN" },
+                { icon: Globe, label: t('profile.language_region'), disabled: true, value: "Coming Soon" },
                 { icon: Lock, label: t('profile.security'), link: "/profile/security" },
             ]
         },
@@ -560,8 +560,13 @@ const ProfilePage = () => {
                             {group.items.map((item, idx) => (
                                 <button
                                     key={idx}
-                                    onClick={() => item.action ? item.action() : navigate(item.link)}
-                                    className={`w-full flex items-center justify-between p-4 transition-colors ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : itemHover} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
+                                    onClick={() => {
+                                        if (item.disabled) return;
+                                        if (item.action) { item.action(); return; }
+                                        navigate(item.link);
+                                    }}
+                                    disabled={item.disabled}
+                                    className={`w-full flex items-center justify-between p-4 transition-colors ${item.disabled ? 'opacity-60 cursor-not-allowed' : ''} ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : (item.disabled ? '' : itemHover)} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
                                 >
                                     <div className="flex items-center gap-3.5">
                                         <div className={`p-2 rounded-xl ${item.highlight ? (isDark ? 'bg-indigo-500/15 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-600')}`}>

@@ -99,9 +99,10 @@ export function UniversalHeader() {
                                 <button onClick={toggleTheme} aria-label={isDark ? t('header.switch_to_light') : t('header.switch_to_dark')} className={`hidden sm:block p-2.5 rounded-full backdrop-blur-md transition-all border ${glassStyle}`}>
                                     {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-600" />}
                                 </button>
-                                <div className="hidden sm:block">
+                                {/* Language selector hidden — English-only mode (Phase 1) */}
+                                {/* <div className="hidden sm:block">
                                     <LanguageSelector className="" />
-                                </div>
+                                </div> */}
 
                                 {/* Desktop Sign Out */}
                                 <button
@@ -160,7 +161,8 @@ export function UniversalHeader() {
                                                         {t('header.install_app')}
                                                     </button>
                                                 )}
-                                                <LanguageSelector variant="menuItem" isDark={isDark} />
+                                                {/* Language selector hidden — English-only mode (Phase 1) */}
+                                                {/* <LanguageSelector variant="menuItem" isDark={isDark} /> */}
                                                 <div className={`h-px my-1 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
                                                 <button
                                                     onClick={async () => {

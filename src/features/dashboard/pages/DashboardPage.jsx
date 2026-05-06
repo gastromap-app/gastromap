@@ -61,7 +61,7 @@ const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
         <div className="flex justify-between items-end mb-6">
             <div className="space-y-1">
                 {subtitle && <p className="text-eyebrow-muted">{subtitle}</p>}
-                <h2 className="text-2xl md:text-[1.75rem] font-extrabold leading-[1.2] tracking-tight text-t-primary">{title}</h2>
+                <h2 className="text-[1.25rem] md:text-[1.5rem] font-semibold md:font-bold leading-[1.2] tracking-[-0.022em] text-t-primary">{title}</h2>
             </div>
             {onSeeAll && (
                 <button 
@@ -99,9 +99,9 @@ const DashboardPage = () => {
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
-    const debouncedSearch = useDebounce(searchQuery, 300)
     const storeSearchQuery = useLocationsStore(state => state.searchQuery)
+    const [searchQuery, setSearchQuery] = useState(storeSearchQuery || '')
+    const debouncedSearch = useDebounce(searchQuery, 300)
 
     useEffect(() => {
         if (!useLocationsStore.getState().isInitialized) initialize()
@@ -111,17 +111,12 @@ const DashboardPage = () => {
         if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
     }, [geoLat, geoLng])
 
-    // Sync search input with store
+    // Sync search input → store (debounced)
     useEffect(() => {
         useLocationsStore.getState().setSearchQuery(debouncedSearch)
     }, [debouncedSearch])
 
-    useEffect(() => {
-        if (storeSearchQuery !== searchQuery && !debouncedSearch) {
-            const t = setTimeout(() => setSearchQuery(storeSearchQuery || ''), 0)
-            return () => clearTimeout(t)
-        }
-    }, [storeSearchQuery, searchQuery, debouncedSearch])
+
 
     // Pull-to-refresh
     const handleRefresh = async () => {

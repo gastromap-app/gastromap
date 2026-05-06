@@ -28,7 +28,6 @@ export default function LocationCard({ location }) {
                 <LazyImage
                     src={location.image}
                     alt={location.title}
-                    crossOrigin="anonymous"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-2 right-2 z-10">

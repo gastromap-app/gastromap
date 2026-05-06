@@ -23,6 +23,7 @@ import { useOpenStatus } from '@/hooks/useOpenStatus'
 import LazyImage from '@/components/ui/LazyImage'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import LocationImage from '@/components/ui/LocationImage'
+import PhotoLightbox from '@/components/ui/PhotoLightbox'
 import { getLocationMenu, saveScannedMenu, incrementView } from '@/shared/api/locations.api'
 import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
@@ -230,6 +231,7 @@ const LocationDetailsPage = () => {
     const [menuLoading, setMenuLoading] = useState(false)
     const [menuSaving, setMenuSaving] = useState(false)
     const [menuToast, setMenuToast] = useState(null)
+    const [lightbox, setLightbox] = useState({ open: false, index: 0 })
 
     useEffect(() => {
         if (location?.id) {
@@ -840,14 +842,28 @@ const LocationDetailsPage = () => {
             ]
 
         return (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
-                {displayPhotos.map((url, i) => (
-                    <div key={i} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100">
-                        <LazyImage src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`gallery-${i}`} />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                ))}
-            </motion.div>
+            <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12">
+                    {displayPhotos.map((url, i) => (
+                        <button
+                            type="button"
+                            key={i}
+                            onClick={() => setLightbox({ open: true, index: i })}
+                            aria-label={`Open photo ${i + 1}`}
+                            className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        >
+                            <LazyImage src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`gallery-${i}`} />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                    ))}
+                </motion.div>
+                <PhotoLightbox
+                    photos={displayPhotos}
+                    open={lightbox.open}
+                    initialIndex={lightbox.index}
+                    onClose={() => setLightbox(s => ({ ...s, open: false }))}
+                />
+            </>
         )
     }
 

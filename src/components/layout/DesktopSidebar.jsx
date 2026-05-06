@@ -200,7 +200,8 @@ export function DesktopSidebar() {
 
             {/* Bottom actions */}
             <div className="flex flex-col items-center gap-2">
-                <LanguageSidebarButton />
+                {/* Language selector hidden — English-only mode (Phase 1) */}
+                {/* <LanguageSidebarButton /> */}
                 <Link
                     to="/dashboard/add-place"
                     className={cn(

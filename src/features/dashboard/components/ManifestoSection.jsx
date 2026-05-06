@@ -86,7 +86,7 @@ const ManifestoSection = ({ isDark }) => {
                     </motion.p>
                     
                     <div className="overflow-hidden">
-                        <motion.h2 className="text-[2rem] md:text-[3rem] font-extrabold tracking-[-0.03em] leading-[1.05] flex flex-wrap gap-x-3 md:gap-x-6">
+                        <motion.h2 className="text-[1.75rem] md:text-[2.75rem] font-semibold md:font-bold tracking-[-0.028em] leading-[1.08] flex flex-wrap gap-x-3 md:gap-x-6">
                             {t('manifesto.title').split(' ').map((word, i) => (
                                 <span key={i} className="inline-block overflow-hidden">
                                     <motion.span 
@@ -137,7 +137,7 @@ const ManifestoSection = ({ isDark }) => {
                     className="flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-12 pt-8 md:pt-12 border-t border-current/5"
                 >
                     <div className="text-center lg:text-left max-w-lg">
-                        <h3 className="text-[1.375rem] md:text-[1.75rem] font-extrabold mb-2 md:mb-4 tracking-tight">
+                        <h3 className="text-[1.25rem] md:text-[1.5rem] font-semibold md:font-bold mb-2 md:mb-4 tracking-[-0.022em]">
                             {t('manifesto.join_title')}
                         </h3>
                         <p className={`text-[0.9375rem] font-medium leading-relaxed ${

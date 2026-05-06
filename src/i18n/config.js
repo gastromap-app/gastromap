@@ -1,6 +1,8 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
+// NOTE: LanguageDetector disabled — English-only mode (Phase 1).
+// Translations for ru/pl/ua are kept in resources for future re-enable.
+// import LanguageDetector from 'i18next-browser-languagedetector'
 
 // English translations
 import enTranslation from '../locales/en/translation.json'
@@ -21,20 +23,23 @@ const resources = {
     ua: { translation: uaTranslation }
 }
 
+// Clear any previously persisted language preference so the UI is always English.
+try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('i18nextLng')
+    }
+} catch (_) { /* ignore storage errors */ }
+
 i18n
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources,
+        lng: 'en',
         fallbackLng: 'en',
-        supportedLngs: ['en', 'ru', 'pl', 'ua'],
+        supportedLngs: ['en'],
         debug: false,
         interpolation: {
             escapeValue: false // React already escapes by default
-        },
-        detection: {
-            order: ['localStorage', 'navigator'],
-            caches: ['localStorage']
         }
     })
 

@@ -15,6 +15,7 @@ import { config } from '@/shared/config/env'
 import { CATEGORIES_FULL } from '../config/filterOptions'
 import { sanitizePayload } from '../lib/schema-validator.js'
 import { log as safeLog, warn as safeWarn, error as safeError } from '../lib/safe-console.js'
+import { normalizeSearchTerm } from '@/utils/searchNormalization'
 // import { 
 //     processLocationTranslations, 
 //     saveTranslations,
@@ -231,11 +232,14 @@ export async function getLocations(filters = {}) {
     if (vibe?.length) q = q.overlaps('vibe', vibe)
 
     if (query) {
+        // Normalize multilingual query (EN/RU/PL/UA) → English canonical
+        // terms before feeding to `to_tsvector('english', ...)` FTS.
+        const normalizedQuery = normalizeSearchTerm(query) || query
         // Use the GIN-indexed fts column for high-performance search
         // '.textSearch' uses the standard PostgreSQL full-text search
-        q = q.textSearch('fts', query, { 
+        q = q.textSearch('fts', normalizedQuery, {
             type: 'websearch', // Allows standard search operators like quotes and minus
-            config: 'english'  // Or 'simple', 'russian' depending on your DB setup
+            config: 'english'  // DB data is canonically English
         })
     }
 

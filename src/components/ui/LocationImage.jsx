@@ -140,8 +140,8 @@ export function LocationImage({
                     <img
                         src={resized || null}
                         alt={alt}
-                        crossOrigin="anonymous"
                         decoding="async"
+                        referrerPolicy="no-referrer"
                         fetchPriority={priority ? 'high' : 'auto'}
                         onLoad={() => setLoaded(true)}
                         onError={handleError}

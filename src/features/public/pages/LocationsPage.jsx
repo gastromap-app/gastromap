@@ -372,21 +372,12 @@ const LocationsPage = () => {
     const [localSearch, setLocalSearch] = useState(storeQuery)
     const debouncedSearch = useDebounce(localSearch, 300)
 
-    // Sync local input -> store query (debounced)
+    // Sync local input → store (debounced)
     useEffect(() => {
         if (debouncedSearch !== storeQuery) {
             storeSetSearch(debouncedSearch)
         }
     }, [debouncedSearch, storeQuery, storeSetSearch])
-
-    // Sync store query -> local input (only when debounced search is empty,
-    // to avoid overwriting the user's current input during typing)
-    useEffect(() => {
-        if (storeQuery !== localSearch && !debouncedSearch) {
-            const t = setTimeout(() => setLocalSearch(storeQuery), 0)
-            return () => clearTimeout(t)
-        }
-    }, [storeQuery, localSearch, debouncedSearch])
 
     // Sync from URL query param on mount
     useEffect(() => {

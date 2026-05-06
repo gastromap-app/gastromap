@@ -6,7 +6,7 @@ import { Search, MapPin, Star, X } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
-import { translate } from '@/utils/translation'
+import { normalizeSearchTerm } from '@/utils/searchNormalization'
 
 /**
  * SmartSearchBar
@@ -27,8 +27,10 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
     const suggestions = useMemo(() => {
         const q = value.trim().toLowerCase()
         if (q.length < 2) return []
-        
-        const qEn = translate(value).toLowerCase().trim()
+
+        // Multilingual (EN/RU/PL/UA) — translate foreign tokens to English
+        // canonical terms so client-side filter can match English DB data.
+        const qEn = normalizeSearchTerm(value)
 
         return locations
             .filter(l =>

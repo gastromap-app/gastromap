@@ -52,10 +52,12 @@ export default async function handler(req, res) {
       if (embRes.ok) {
         const embData = await embRes.json()
         const raw = embData.data?.[0]?.embedding
-        if (raw?.length) {
+        if (raw?.length === 768) {
           // Normalize to unit vector (cosine similarity)
           const norm = Math.sqrt(raw.reduce((s, x) => s + x * x, 0))
           queryEmbedding = norm > 0 ? raw.map(x => x / norm) : raw
+        } else if (raw?.length) {
+          console.warn(`[semantic-search] Embedding dimension mismatch: got ${raw.length}, expected 768. Falling back to FTS.`)
         }
       } else {
         console.warn(`[semantic-search] embedding API ${embRes.status}`)

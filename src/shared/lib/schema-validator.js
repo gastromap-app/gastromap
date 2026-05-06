@@ -25,9 +25,9 @@ export const VALID_LOCATION_COLUMNS = new Set([
     'amenities', 'features', 'dietary_options', 'dietary',
     
     // Amenities (specific)
-    'wifi_quality', 'has_wifi',
-    'outdoor_seating', 'has_outdoor_seating',
-    'reservation_required', 'reservations_required',
+    'has_wifi',
+    'has_outdoor_seating',
+    'reservations_required',
     
     // Content
     'opening_hours', 'website', 'phone', 'booking_url',

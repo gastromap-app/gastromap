@@ -299,8 +299,14 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 }).catch(() => {});
             }
         } catch (err) {
-            setError(err.message ?? t('ai.response_failed'))
-            addMessage('assistant', t('ai.general_error'), { isError: true })
+            if (err?.message?.includes('rate-limited') || err?.message?.includes('rate_limit') || err?.status === 429) {
+                const msg = t ? t('ai.rate_limited_retry') : 'All AI models are busy. Please try again in 1 minute.';
+                setError(msg)
+                addMessage('assistant', msg, { isError: true })
+            } else {
+                setError(err.message ?? t('ai.response_failed'))
+                addMessage('assistant', t('ai.general_error'), { isError: true })
+            }
         } finally {
             setTyping(false)
         }

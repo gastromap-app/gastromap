@@ -100,9 +100,9 @@ function normalise(row) {
         dietary: row.dietary_options ?? [],
         dietary_options: row.dietary_options ?? [],
 
-        has_wifi: row.wifi_quality ? row.wifi_quality !== 'none' : false,
-        has_outdoor_seating: row.outdoor_seating ?? false,
-        reservations_required: row.reservation_required ?? false,
+        has_wifi: row.has_wifi ?? false,
+        has_outdoor_seating: row.has_outdoor_seating ?? false,
+        reservations_required: row.reservations_required ?? false,
 
         michelin_stars: row.michelin_stars ?? 0,
         michelin_bib: row.michelin_bib ?? false,
@@ -644,14 +644,14 @@ function _toRow(d) {
 
     if (d.special_labels !== undefined) row.special_labels = d.special_labels
     
-    if (d.wifi_quality !== undefined)    row.wifi_quality = d.wifi_quality
-    else if (d.has_wifi !== undefined)   row.wifi_quality = d.has_wifi ? 'high' : 'none'
+    if (d.wifi_quality !== undefined)    row.has_wifi = typeof d.wifi_quality === 'boolean' ? d.wifi_quality : d.wifi_quality !== 'none'
+    else if (d.has_wifi !== undefined)   row.has_wifi = d.has_wifi
     
-    if (d.outdoor_seating !== undefined) row.outdoor_seating = d.outdoor_seating
-    else if (d.has_outdoor_seating !== undefined) row.outdoor_seating = d.has_outdoor_seating
+    if (d.outdoor_seating !== undefined) row.has_outdoor_seating = d.outdoor_seating
+    else if (d.has_outdoor_seating !== undefined) row.has_outdoor_seating = d.has_outdoor_seating
 
-    if (d.reservation_required !== undefined) row.reservation_required = d.reservation_required
-    else if (d.reservations_required !== undefined) row.reservation_required = d.reservations_required
+    if (d.reservation_required !== undefined) row.reservations_required = d.reservation_required
+    else if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
 
     if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
 

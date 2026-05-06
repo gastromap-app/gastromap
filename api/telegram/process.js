@@ -733,6 +733,21 @@ export default async function handler(req, res) {
         const created = await insertLocation(finalData, apifyData?.apify_opening_hours || null)
         console.log('[process] Created location:', created.id)
 
+        // Fire-and-forget KG enrichment for the new location
+        try {
+          const kgSupabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+          const kgServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+          if (kgSupabaseUrl && kgServiceKey && created?.id) {
+            fetch(`${kgSupabaseUrl}/functions/v1/kg-enrich`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${kgServiceKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mode: 'single', id: created.id })
+            }).catch(err => console.warn('[telegram/process] kg-enrich fire-and-forget failed:', err.message));
+          }
+        } catch (kgErr) {
+          console.warn('[telegram/process] kg-enrich trigger error:', kgErr.message);
+        }
+
         // Запускаем автоперевод в фоне (non-blocking)
         const translationData = {
             title: finalData.title || created.title,

@@ -40,6 +40,8 @@ if (!SUPABASE_URL || !SUPABASE_KEY || !OPENROUTER_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const AI_MODEL = 'openrouter/auto'
 
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
 async function enrichLocation(location, kgData) {
     console.log(`🧠 Enriching location: ${location.title}...`)
     
@@ -65,15 +67,20 @@ async function enrichLocation(location, kgData) {
         
         kgData.cuisines.forEach(c => {
             const names = [c.name, ...(c.aliases || [])].map(n => n.toLowerCase())
-            if (names.some(n => textToMatch.includes(n))) kgMatches.push(c.name)
+            if (names.some(n => {
+                const regex = new RegExp(`\\b${escapeRegex(n)}\\b`, 'i')
+                return regex.test(textToMatch)
+            })) kgMatches.push(c.name)
         })
 
         kgData.dishes.forEach(d => {
-            if (textToMatch.includes(d.name.toLowerCase())) kgMatches.push(d.name)
+            const regex = new RegExp(`\\b${escapeRegex(d.name.toLowerCase())}\\b`, 'i')
+            if (regex.test(textToMatch)) kgMatches.push(d.name)
         })
 
         kgData.ingredients.forEach(i => {
-            if (textToMatch.includes(i.name.toLowerCase())) kgMatches.push(i.name)
+            const regex = new RegExp(`\\b${escapeRegex(i.name.toLowerCase())}\\b`, 'i')
+            if (regex.test(textToMatch)) kgMatches.push(i.name)
         })
 
         // 2. Generate AI Keywords and Context

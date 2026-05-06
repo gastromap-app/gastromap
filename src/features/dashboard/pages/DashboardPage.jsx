@@ -642,7 +642,9 @@ const DesktopDashboard = ({
                     {/* Recommended */}
                     <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
-                            title={t('dashboard.recommended')}
+                            title={currentCity && currentCity !== 'Unknown'
+                                ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
+                                : t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
                             onSeeAll={() => navigate('/explore')}
                             isDark={isDark}
@@ -657,7 +659,9 @@ const DesktopDashboard = ({
                     {/* Trending */}
                     <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
-                            title={t('dashboard.trending')}
+                            title={currentCity && currentCity !== 'Unknown'
+                                ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
+                                : t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
                             onSeeAll={() => navigate('/explore')}
                             isDark={isDark}

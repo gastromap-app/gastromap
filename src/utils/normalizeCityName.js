@@ -234,10 +234,10 @@ function toTitleCase(str) {
  * normalizeCityName('Қарағанды') // → 'Қарағанды' (unknown → stripped diacritics + title-case)
  */
 export function normalizeCityName(city) {
-    if (!city || typeof city !== 'string') return city
+    if (!city || typeof city !== 'string') return typeof city === 'string' ? null : city
 
     const trimmed = city.trim()
-    if (!trimmed) return trimmed
+    if (!trimmed) return null
 
     // 1. Check override map (case-insensitive, diacritic-stripped key)
     const key = stripDiacritics(trimmed).toLowerCase()
@@ -263,10 +263,10 @@ export function normalizeCityName(city) {
  * normalizeCountryName('United Kingdom') // → 'United Kingdom'
  */
 export function normalizeCountryName(country) {
-    if (!country || typeof country !== 'string') return country
+    if (!country || typeof country !== 'string') return typeof country === 'string' ? null : country
 
     const trimmed = country.trim()
-    if (!trimmed) return trimmed
+    if (!trimmed) return null
 
     // 1. Check override map
     const key = stripDiacritics(trimmed).toLowerCase()
@@ -293,15 +293,34 @@ export function extractCityCountryFromAddress(address) {
     const parts = address.split(',').map(p => p.trim()).filter(Boolean)
     if (parts.length === 0) return { city: null, country: null }
 
-    // Last part is often the country
-    const rawCountry = parts.length >= 2 ? parts[parts.length - 1] : null
-    // City is usually the part before country (may include postal code)
-    const rawCity = parts.length >= 2
-        ? parts[parts.length - 2].replace(/^\d{2}[-\s]?\d{0,3}\s*/, '').trim() // strip postal code
-        : parts[0]
-
-    return {
-        city: rawCity || null,
-        country: rawCountry || null,
+    if (parts.length === 1) {
+        // Single part — assume it's a city name
+        return { city: parts[0], country: null }
     }
+
+    // Known country names (last part matching = country)
+    const COUNTRY_NAMES = new Set([
+        'poland', 'ukraine', 'germany', 'france', 'spain', 'italy', 'czech republic',
+        'czechia', 'hungary', 'austria', 'netherlands', 'belgium', 'portugal',
+        'greece', 'turkey', 'georgia', 'israel', 'japan', 'united kingdom',
+        'united states', 'usa', 'canada', 'australia', 'russia', 'belarus',
+    ])
+
+    // Last part might be a country
+    const lastPart = parts[parts.length - 1]
+    const lastPartLower = lastPart.toLowerCase()
+    const isCountry = COUNTRY_NAMES.has(lastPartLower)
+
+    if (isCountry) {
+        // Format: Street, Postal City, Country
+        const rawCountry = lastPart
+        const rawCity = parts[parts.length - 2]
+            .replace(/^\d{2}[-\s]?\d{0,3}\s*/, '').trim() // strip postal code
+        return { city: rawCity || null, country: rawCountry }
+    }
+
+    // No recognized country — assume last part is the city
+    // Format: Street, City  OR  Street, Postal City
+    const rawCity = lastPart.replace(/^\d{2}[-\s]?\d{0,3}\s*/, '').trim()
+    return { city: rawCity || null, country: null }
 }

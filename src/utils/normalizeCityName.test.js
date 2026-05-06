@@ -10,8 +10,8 @@ describe('normalizeCityName', () => {
         expect(normalizeCityName(undefined)).toBe(undefined)
     })
 
-    it('returns empty string for empty string', () => {
-        expect(normalizeCityName('')).toBe('')
+    it('returns null for empty string', () => {
+        expect(normalizeCityName('')).toBe(null)
     })
 
     // ── Polish cities ────────────────────────────────────────────────────
@@ -195,6 +195,12 @@ describe('extractCityCountryFromAddress', () => {
         const result = extractCityCountryFromAddress('Kraków, Poland')
         expect(result.city).toBe('Kraków')
         expect(result.country).toBe('Poland')
+    })
+
+    it('handles 2-part address without country (city assumed as last part)', () => {
+        const result = extractCityCountryFromAddress('Świętego Wawrzyńca 10, Kraków')
+        expect(result.city).toBe('Kraków')
+        expect(result.country).toBe(null)
     })
 
     it('handles single-word address', () => {

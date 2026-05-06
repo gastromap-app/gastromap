@@ -5,6 +5,7 @@ import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
 import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
+import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
 import { useNavigate } from 'react-router-dom'
 import { 
     Search, MapPin, TrendingUp, Star, Clock, Heart, 
@@ -99,8 +100,11 @@ const DashboardPage = () => {
 
     // Build explore URL with current city + optional sort param
     const buildExploreUrl = useCallback((sort) => {
-        const city = currentCity && currentCity !== 'Unknown' ? currentCity.toLowerCase().replace(/\s+/g, '-') : null
-        const country = currentCountry ? currentCountry.toLowerCase().replace(/\s+/g, '-') : null
+        const rawCity = currentCity && currentCity !== 'Unknown' ? currentCity : null
+        const rawCountry = currentCountry || null
+        // Normalize to English + slugify for URL
+        const city = rawCity ? normalizeCityName(rawCity).toLowerCase().replace(/\s+/g, '-') : null
+        const country = rawCountry ? normalizeCountryName(rawCountry).toLowerCase().replace(/\s+/g, '-') : null
         if (city && country) {
             const base = `/explore/${country}/${city}`
             return sort ? `${base}?sort=${sort}` : base

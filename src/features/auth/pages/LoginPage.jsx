@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle2, ChevronRight, Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
 
 const LoginPage = () => {

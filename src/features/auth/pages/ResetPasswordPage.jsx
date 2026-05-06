@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Lock, Eye, EyeOff, CheckCircle2, ChevronRight } from 'lucide-react'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const ResetPasswordPage = () => {
     const { setNewPassword, isLoading, error, clearError } = useAuthStore()

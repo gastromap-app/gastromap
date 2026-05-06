@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const SecurityPrivacyPage = () => {
     const { theme } = useTheme()

@@ -4,7 +4,7 @@ import { Trophy, Star, TrendingUp, Medal, Crown, Loader2 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { useLeaderboard, useUserRank } from '@/shared/api/queries'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 export default function LeaderboardPage() {
     const { theme } = useTheme()

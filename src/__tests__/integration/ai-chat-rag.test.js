@@ -65,7 +65,7 @@ vi.mock('@/shared/hooks/useAIChatStore', () => ({
 }))
 
 // Mock user pref store
-vi.mock('@/features/auth/hooks/useUserPrefsStore', () => ({
+vi.mock('@/shared/store/useUserPrefsStore', () => ({
     useUserPrefsStore: () => ({
         prefs: {
             lastVisited:       ['loc-1'],
@@ -94,7 +94,7 @@ vi.mock('@/shared/store/useLocationsStore', () => ({
 }))
 
 // Mock auth store
-vi.mock('@/features/auth/hooks/useAuthStore', () => ({
+vi.mock('@/shared/store/useAuthStore', () => ({
     useAuthStore: () => ({ user: { id: 'u1', name: 'Alice' } }),
 }))
 

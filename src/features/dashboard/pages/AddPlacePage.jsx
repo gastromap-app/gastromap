@@ -7,7 +7,7 @@ import {
     MapPin, Sparkles, CheckCircle2, Lock, ChevronLeft, ChevronRight,
     AlertCircle, Globe, Search, X, Upload, Trash2, Image as ImageIcon,
 } from 'lucide-react'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { createSubmission, compressImage, uploadSubmissionPhoto } from '@/shared/api/submissions.api'
 import { enrichLocation } from '@/shared/api/ai'
 import { searchPlaces, searchCities, searchAddresses } from '../hooks/useNominatim'

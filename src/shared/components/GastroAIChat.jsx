@@ -5,7 +5,7 @@ import { ChefHat, MoveUp, Sparkles, MapPin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAIChat } from '@/hooks/useAIChat'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import LazyImage from '@/components/ui/LazyImage'
 

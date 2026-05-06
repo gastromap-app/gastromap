@@ -65,7 +65,7 @@ const mockLocations = [
     }
 ]
 
-vi.mock('@/features/public/hooks/useLocationsStore', () => ({
+vi.mock('@/shared/store/useLocationsStore', () => ({
     useLocationsStore: {
         getState: vi.fn(() => ({ locations: mockLocations })),
     }

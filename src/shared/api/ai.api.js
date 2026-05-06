@@ -27,7 +27,7 @@
 import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { config } from '@/shared/config/env'
 import { ApiError } from './client'
-import { useLocationsStore } from '@/features/public/hooks/useLocationsStore'
+import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { semanticSearch } from './ai/search'
 

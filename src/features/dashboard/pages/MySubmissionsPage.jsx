@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MapPin, Clock, CheckCircle2, XCircle, AlertCircle, Plus } from 'lucide-react'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 import { getMySubmissions } from '@/shared/api/submissions.api'
 
 // ─── Config ────────────────────────────────────────────────────────────────

@@ -1,4 +1,3 @@
-```
 # Compiled and build artifacts
 *.pyc
 __pycache__/
@@ -25,13 +24,14 @@ zig-cache/
 # Environment
 .env
 .env.local
-*.env.*
+.env.production
+.env.staging
+.env.test
+.env*.local
 
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # System files
 .DS_Store
@@ -61,17 +61,17 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
-```
 .env*.local
 
 # AI & Local Tools
+.agent/
+.agents/
 .qoder/
 scratch/
 tmp/
 incoming_files/
 locations_pending/
 memory.md
-.agent/scripts/logs/
 
 # Vercel & Build
 .vercel/
@@ -84,17 +84,10 @@ modularize_queries_plan.md
 # Local Test Scripts
 test_*.js
 check_env.js
-test_db.js
-test_dist.js
-test_supabase.js
 
 # Legacy/Backups
 Gastromap_StandAlone/
 
-# System
-.DS_Store
-Thumbs.db
+# Supabase CLI
+supabase/.temp/
 
-# Agent Skills (Local Only)
-.agent/skills/open-design/
-DESIGN.md

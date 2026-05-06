@@ -64,7 +64,7 @@ vi.mock('@/shared/store/useFavoritesStore', () => ({
 }))
 
 // User prefs store
-vi.mock('@/features/auth/hooks/useUserPrefsStore', () => ({
+vi.mock('@/shared/store/useUserPrefsStore', () => ({
     useUserPrefsStore: () => ({
         prefs: { lastVisited: [] },
         addVisited: vi.fn(),

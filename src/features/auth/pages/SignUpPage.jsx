@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, ChevronRight, Mail, Lock, Eye, EyeOff, User, MailCheck } from 'lucide-react'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
-import { useAuthStore } from '@/features/auth/hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const SignUpPage = () => {
     const navigate = useNavigate()

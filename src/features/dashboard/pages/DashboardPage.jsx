@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useGeoCovers } from '@/shared/api/queries'
+import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
 import { useNavigate } from 'react-router-dom'
 import { 
     Search, MapPin, TrendingUp, Star, Clock, Heart, 
@@ -89,6 +89,7 @@ const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
     const { locations, filteredLocations, isLoading, initialize } = useLocationsStore()
+    const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -173,13 +174,61 @@ const DashboardPage = () => {
         navigate(`/explore/${country.slug}`)
     }, [navigate])
     const recommended = useMemo(() => {
-        return [...filteredLocations]
-            .sort((a, b) => (b.google_rating || b.rating || 0) - (a.google_rating || a.rating || 0))
+        const dna = userPrefs?.longTerm || {}
+        const cuisines = (dna.favoriteCuisines || []).map(c => c.toLowerCase())
+        const vibes = (dna.vibePreference || []).map(v => v.toLowerCase())
+        const dietary = (dna.dietaryRestrictions || []).map(d => d.toLowerCase())
+        const priceRange = dna.priceRange || []
+
+        // If no DNA data, fall back to highest-rated
+        if (!cuisines.length && !vibes.length && !dietary.length && !priceRange.length) {
+            return [...filteredLocations]
+                .sort((a, b) => (b.google_rating || b.rating || 0) - (a.google_rating || a.rating || 0))
+                .slice(0, 10)
+        }
+
+        // Score each location based on DNA match
+        const scored = filteredLocations.map(loc => {
+            let score = 0
+
+            // Cuisine match (+3 points)
+            const locCuisine = (loc.cuisine || '').toLowerCase()
+            if (cuisines.some(c => locCuisine.includes(c) || c.includes(locCuisine))) score += 3
+
+            // Vibe match (+2 points)
+            const locVibes = (loc.vibe || []).map(v => v.toLowerCase())
+            if (vibes.some(v => locVibes.includes(v))) score += 2
+
+            // Dietary match (+2 points)
+            const locDietary = (loc.dietary || []).map(d => d.toLowerCase())
+            if (dietary.some(d => locDietary.includes(d))) score += 2
+
+            // Price range match (+1 point)
+            if (priceRange.length && loc.price_range && priceRange.includes(loc.price_range)) score += 1
+
+            // Boost by rating (0-5 points normalized)
+            const rating = loc.google_rating || loc.rating || 0
+            score += rating / 2
+
+            return { ...loc, _dnaScore: score }
+        })
+
+        return scored
+            .sort((a, b) => b._dnaScore - a._dnaScore)
             .slice(0, 10)
-    }, [filteredLocations])
+    }, [filteredLocations, userPrefs])
     const trending = useMemo(() => {
         return [...filteredLocations]
-            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+            .map(loc => {
+                const rating = loc.google_rating || loc.rating || 0
+                const views = loc.views_count || 0
+                // Combined score: 60% rating + 40% views (normalized)
+                // Views normalized: assume max 1000 views = 5.0 score
+                const viewScore = Math.min(views / 200, 5)
+                const combinedScore = (rating * 0.6) + (viewScore * 0.4)
+                return { ...loc, _trendingScore: combinedScore }
+            })
+            .sort((a, b) => b._trendingScore - a._trendingScore)
             .slice(0, 10)
     }, [filteredLocations])
     const openNowLocations = useMemo(() => {

@@ -14,6 +14,15 @@ import { createClient } from '@supabase/supabase-js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
 import { normalizeOpeningHoursToJSON, formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
 
+// Polyfill AbortSignal.timeout for older Node.js
+if (!AbortSignal.timeout) {
+    AbortSignal.timeout = (ms) => {
+        const controller = new AbortController()
+        setTimeout(() => controller.abort(new DOMException('Timeout', 'TimeoutError')), ms)
+        return controller.signal
+    }
+}
+
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -469,6 +478,8 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
         'mistralai/mistral-7b-instruct:free',
     ]
 
+    let lastError = null
+
     for (const model of models) {
         try {
             const res = await fetch(OPENROUTER_URL, {
@@ -485,13 +496,21 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
                     max_tokens: 1000,
                     temperature: 0.3,
                 }),
+                signal: AbortSignal.timeout(15000), // 15s timeout per model
             })
 
-            if (!res.ok) { console.warn(`[process] ${model} HTTP ${res.status}`); continue }
+            if (!res.ok) {
+                console.warn(`[process] ${model} HTTP ${res.status}`)
+                lastError = `HTTP ${res.status}`
+                continue
+            }
 
             const data = await res.json()
             const content = data.choices?.[0]?.message?.content?.trim()
-            if (!content) continue
+            if (!content) {
+                lastError = 'Empty response'
+                continue
+            }
 
             // Убираем markdown если модель всё равно добавила
             const jsonStr = content
@@ -500,15 +519,45 @@ IMPORTANT: Return ONLY valid JSON. No markdown. No explanation. No \`\`\`.`
                 .trim()
 
             const parsed = JSON.parse(jsonStr)
+
+            // Validate minimum data quality
+            if (!parsed.description && !parsed.cuisine && !parsed.tags) {
+                console.warn(`[process] ${model} returned empty data`)
+                lastError = 'Insufficient data'
+                continue
+            }
+
             console.log(`[process] LLM OK with ${model}`)
             return parsed
         } catch (err) {
             console.warn(`[process] LLM ${model} failed:`, err.message)
+            lastError = err.message
         }
     }
 
-    console.error('[process] All LLM models failed')
-    return {}
+    // All models failed — use fallback data from Google/Apify
+    console.error('[process] All LLM models failed, using fallback data')
+
+    const fallback = {
+        description: placesData?.description || apifyData?.apify_reviews?.[0]?.text?.slice(0, 200) || null,
+        cuisine: null,
+        tags: (placesData?._raw_types || []).slice(0, 5),
+        vibe: ['Local Favorite'],
+        features: placesData?.features || apifyData?.apify_about_flat || [],
+        best_for: ['Casual Dining'],
+        what_to_try: apifyData?.apify_popular_dishes || [],
+        insider_tip: null,
+        dietary: [],
+        city: placesData?.address?.split(',').pop()?.trim() || null,
+        country: 'Poland',
+        opening_hours: placesData?.opening_hours || apifyData?.apify_opening_hours || null,
+        has_wifi: (placesData?.features || []).includes('Free Wi-Fi'),
+        has_outdoor_seating: (placesData?.features || []).includes('Outdoor Seating'),
+        reservations_required: (placesData?.features || []).includes('Reservations'),
+    }
+
+    console.warn(`[process] Fallback data used. Last error: ${lastError}`)
+    return fallback
 }
 
 // ── Step 5: Supabase Insert ───────────────────────────────────────────────────

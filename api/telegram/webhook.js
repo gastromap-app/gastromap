@@ -13,6 +13,15 @@
 import { setCorsHeaders } from '../_shared/cors.js'
 import { applyRateLimit, checkRateLimit } from '../_shared/rate-limit.js'
 
+// Polyfill AbortSignal.timeout for older Node.js
+if (!AbortSignal.timeout) {
+    AbortSignal.timeout = (ms) => {
+        const controller = new AbortController()
+        setTimeout(() => controller.abort(new DOMException('Timeout', 'TimeoutError')), ms)
+        return controller.signal
+    }
+}
+
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -127,20 +136,36 @@ export default async function handler(req, res) {
             `🔍 Ищу данные о <b>${escapeHtml(parsed.value.slice(0, 60))}</b>...\n\nЭто займёт ~30 секунд. Я пришлю результат как только создам карточку.`
         )
 
-        // Запускаем pipeline асинхронно — НЕ await
+        // Запускаем pipeline — Vercel serverless timeout 60s должно хватить
+        // Важно: НЕ fire-and-forget, иначе Vercel может убить процесс
         const processUrl = process.env.VERCEL_URL
             ? `https://${process.env.VERCEL_URL}/api/telegram/process`
             : 'https://gastromap-five.vercel.app/api/telegram/process'
 
-        fetch(processUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId,
-                query: parsed,
-                username,
-            }),
-        }).catch(err => console.error('[telegram/webhook] Process fetch failed:', err.message))
+        try {
+            const processRes = await fetch(processUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId,
+                    query: parsed,
+                    username,
+                }),
+                signal: AbortSignal.timeout(55000), // 55s timeout (buffer before 60s limit)
+            })
+
+            if (!processRes.ok) {
+                console.error(`[telegram/webhook] Process failed: ${processRes.status}`)
+                await sendMessage(token, chatId,
+                    `⚠️ Не удалось создать локацию. Попробуй еще раз позже.`
+                )
+            }
+        } catch (err) {
+            console.error('[telegram/webhook] Process timeout/error:', err.message)
+            await sendMessage(token, chatId,
+                `⏳ Поиск занял слишком много времени. Попробуй еще раз или уточни запрос.`
+            )
+        }
 
         return res.status(200).json({ ok: true })
     }

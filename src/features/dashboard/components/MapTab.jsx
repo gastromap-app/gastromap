@@ -164,11 +164,18 @@ const createClusterCustomIcon = (cluster) => {
     })
 }
 
-const MapTab = () => {
+const MapTab = ({ activeFilter }) => {
     const locations = useLocationsStore(state => state.mapMarkers)
     const { userLocation } = useLocationsStore()
     const { theme } = useTheme()
     const { t } = useTranslation()
+
+    // Apply category filter if active
+    const visibleLocations = activeFilter && activeFilter !== 'All'
+        ? locations.filter(loc =>
+            loc.category?.toLowerCase() === activeFilter.toLowerCase()
+        )
+        : locations
 
     const mapCenter = userLocation ? [userLocation.lat, userLocation.lng] : [41.0082, 28.9784]
 
@@ -210,7 +217,7 @@ const MapTab = () => {
                     maxClusterRadius={60}
                     iconCreateFunction={createClusterCustomIcon}
                 >
-                    {locations.map(loc => (
+                    {visibleLocations.map(loc => (
                         <Marker 
                             key={loc.id}
                             position={[loc.lat, loc.lng]}

@@ -30,14 +30,37 @@ export function AuthLayout({ children, leftChildren, reverse = false, backTo = '
             </div>
 
             {/* Right Side — Form */}
-            <div className="flex-1 relative flex items-center justify-center bg-gray-50/50 lg:bg-gray-50/50 overflow-y-auto"
-                style={{
-                    background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
-                }}>
-                {/* Mobile aurora blobs */}
+            <div className="flex-1 relative flex items-center justify-center overflow-y-auto bg-[#0A0A0A] lg:bg-gray-50/50">
+                {/* Mobile animated gradient mesh — same style as Community First section */}
                 <div className="lg:hidden absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className={`absolute top-[-10%] left-[-20%] w-[70%] h-[50%] ${topClass} rounded-full blur-[100px] opacity-40 animate-pulse`} />
-                    <div className={`absolute bottom-[-10%] right-[-20%] w-[70%] h-[50%] ${bottomClass} rounded-full blur-[100px] opacity-40 animate-pulse delay-700`} />
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background: 'radial-gradient(ellipse at 20% 50%, rgba(225,29,72,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.12) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(16,185,129,0.1) 0%, transparent 50%)',
+                            animation: 'authGradientMove 12s ease-in-out infinite',
+                        }}
+                    />
+                    {/* Grid overlay */}
+                    <div
+                        className="absolute inset-0 opacity-[0.03]"
+                        style={{
+                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                            backgroundSize: '60px 60px',
+                        }}
+                    />
+                    <style>{`
+                        @keyframes authGradientMove {
+                            0%, 100% {
+                                background: radial-gradient(ellipse at 20% 50%, rgba(225,29,72,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.12) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(16,185,129,0.1) 0%, transparent 50%);
+                            }
+                            33% {
+                                background: radial-gradient(ellipse at 60% 30%, rgba(225,29,72,0.18) 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, rgba(59,130,246,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, rgba(16,185,129,0.12) 0%, transparent 50%);
+                            }
+                            66% {
+                                background: radial-gradient(ellipse at 40% 60%, rgba(225,29,72,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 40%, rgba(59,130,246,0.1) 0%, transparent 50%), radial-gradient(ellipse at 20% 30%, rgba(16,185,129,0.15) 0%, transparent 50%);
+                            }
+                        }
+                    `}</style>
                 </div>
 
                 {/* Back button — safe-area aware */}

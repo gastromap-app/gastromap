@@ -94,6 +94,28 @@ export async function signUp(email, password, name) {
     }
 
     // ── Supabase ──
+    // Pre-check: ensure email is not already registered.
+    // Supabase Auth usually prevents duplicates, but project mis-config
+    // or race conditions can slip through. This is an app-level guard.
+    try {
+        const checkResp = await fetch('/api/auth/check-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        })
+        if (checkResp.ok) {
+            const checkData = await checkResp.json()
+            if (checkData.exists) {
+                throw new ApiError('An account with this email already exists. Please sign in instead.', 409, 'EMAIL_EXISTS')
+            }
+        }
+    } catch (err) {
+        // Re-throw our own ApiError; ignore network errors to avoid
+        // blocking signup when the check endpoint is unreachable.
+        if (err instanceof ApiError) throw err
+        console.warn('[auth] Pre-signup email check failed:', err?.message)
+    }
+
     const { data, error } = await supabase.auth.signUp({
         email,
         password,

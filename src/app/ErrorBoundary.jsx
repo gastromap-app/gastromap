@@ -25,10 +25,9 @@ export class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, info) {
+        // Always log — silent prod errors are impossible to diagnose otherwise.
         // TODO: send to Sentry / analytics when available
-        if (import.meta.env.DEV) {
-            console.error('[ErrorBoundary] caught:', error, info.componentStack)
-        }
+        console.error('[ErrorBoundary] caught:', error, info?.componentStack)
     }
 
     handleReset = () => {
@@ -70,8 +69,8 @@ function DefaultErrorUI({ error, onReset }) {
                     {t('errors.unexpected_desc')}
                 </p>
 
-                {/* Dev-only error details */}
-                {import.meta.env.DEV && error?.message && (
+                {/* Error details — shown in all environments to aid diagnosis */}
+                {error?.message && (
                     <pre className="mt-4 mb-6 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-left text-[11px] text-red-600 dark:text-red-400 overflow-auto max-h-32 font-mono">
                         {error.message}
                     </pre>
@@ -117,7 +116,7 @@ export function RouteErrorFallback({ error, reset }) {
                 <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] font-medium max-w-xs">
                     This page encountered an error. Try refreshing or go back.
                 </p>
-                {import.meta.env.DEV && error?.message && (
+                {error?.message && (
                     <pre className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-left text-[11px] text-red-600 dark:text-red-400 overflow-auto max-h-24 font-mono">
                         {error.message}
                     </pre>

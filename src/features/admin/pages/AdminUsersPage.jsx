@@ -540,7 +540,7 @@ const AdminUsersPage = () => {
                                             <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
                                                 <UtensilsCrossed size={12} /> DNA Preferences
                                             </h4>
-                                            {(!preferences.favorite_cuisines?.length && !preferences.vibe_preference?.length && !preferences.price_range?.length && !preferences.dietary_restrictions?.length && !preferences.foodie_dna) ? (
+                                            {(!preferences.favorite_cuisines?.length && !preferences.vibe_preferences?.length && !preferences.price_range && !preferences.dietary_restrictions?.length && !preferences.foodie_dna) ? (
                                                 <div className="text-[13px] font-medium text-slate-400 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl p-5 border border-slate-100 dark:border-white/[0.03]">
                                                     No preferences configured
                                                 </div>
@@ -568,11 +568,11 @@ const AdminUsersPage = () => {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        {preferences.vibe_preference?.length > 0 && (
+                                                        {preferences.vibe_preferences?.length > 0 && (
                                                             <div>
                                                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Vibe Preferences</p>
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {preferences.vibe_preference.map((v, i) => (
+                                                                    {preferences.vibe_preferences.map((v, i) => (
                                                                         <span key={i} className="px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-bold">{v}</span>
                                                                     ))}
                                                                 </div>

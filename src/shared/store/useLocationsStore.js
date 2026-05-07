@@ -181,8 +181,9 @@ export const useLocationsStore = create((set, get) => ({
         if (state.activeVibes?.length > 0) count++
         if (state.activeBestTime !== null) count++
         if (state.radius > 0) count++
-        if (state.activeCity !== 'All') count++
-        if (state.activeCountry !== 'All') count++
+        // NOTE: activeCity / activeCountry are route context (URL params), not
+        // user-applied filters. Counting them here caused false "1 filter" badge
+        // when navigating Dashboard → Country → City.
         if (state.isOpenNow) count++
         return count
     },

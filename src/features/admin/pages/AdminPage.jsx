@@ -11,9 +11,9 @@ export default function AdminPage() {
     const { data: { data: locations = [] } = {} } = useAdminLocationsQuery()
     const navigate = useNavigate()
 
-    const handleLogout = () => {
-        logout()
-        navigate('/')
+    const handleLogout = async () => {
+        await logout()
+        window.location.href = '/login'
     }
 
     if (!user || user.role !== 'admin') {

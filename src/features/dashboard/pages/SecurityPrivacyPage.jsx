@@ -25,7 +25,10 @@ const SecurityPrivacyPage = () => {
         showToast('Password reset link sent to ' + user.email)
     }
 
-    const handleLogout = async () => { await logout(); navigate('/login') }
+    const handleLogout = async () => {
+        await logout()
+        window.location.href = '/login'
+    }
 
     const securityItems = [
         { icon: Lock, label: "Change Password", description: "Send reset link to your email", action: handleChangePassword },

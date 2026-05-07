@@ -127,6 +127,11 @@ export const useAuthStore = create(
 
                     // 5. Sign out from Supabase (network call last)
                     await signOut()
+
+                    // 6. Defensive: ensure Supabase session key is gone even if signOut()
+                    //    raced with a background token refresh (lock override makes this
+                    //    possible) or the network call failed.
+                    localStorage.removeItem('sb-gastromap-auth')
                     
                 } catch (error) {
                     console.error('Logout error:', error)

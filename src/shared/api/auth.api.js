@@ -70,7 +70,17 @@ export async function signIn(email, password) {
     }
 
     // ── Supabase ──
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const authPromise = supabase.auth.signInWithPassword({ email, password })
+
+    // Timeout safety: if signInWithPassword hangs (e.g. Web Locks deadlock,
+    // network stall), reject after 15s so the user sees an error instead
+    // of an infinite spinner.
+    const timeoutMs = 15_000
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new ApiError('Login request timed out. Please check your connection and try again.', 408, 'TIMEOUT')), timeoutMs)
+    )
+
+    const { data, error } = await Promise.race([authPromise, timeoutPromise])
     if (error) throw new ApiError(error.message, 401, 'AUTH_ERROR')
 
     const profile = await _fetchProfile(data.user.id)

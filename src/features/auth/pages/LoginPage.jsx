@@ -38,9 +38,22 @@ const LoginPage = () => {
         const email = formData.get('email')
         const password = formData.get('password')
 
-        const result = await login(email, password)
-        if (result.success) {
-            navigate(result.user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
+        try {
+            const result = await login(email, password)
+            if (result.success) {
+                const target = result.user?.role === 'admin' ? '/admin' : '/dashboard'
+                navigate(target, { replace: true })
+                // Fallback: if soft navigation hasn't moved us within 2s,
+                // force a hard redirect — guards against React Router issues.
+                setTimeout(() => {
+                    if (window.location.pathname !== target) {
+                        window.location.href = target
+                    }
+                }, 2000)
+            }
+        } catch (err) {
+            // login() already sets error state, but catch any unexpected errors
+            console.error('[Login] Unexpected error:', err)
         }
     }
 

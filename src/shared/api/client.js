@@ -21,6 +21,35 @@ export const supabase = config.supabase.isConfigured
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: true,
+            // Override the Web Locks API lock with a timeout safety net.
+            // The default navigator.locks.request() can deadlock when
+            // onAuthStateChange callback does async work (e.g. _fetchProfile)
+            // while signInWithPassword holds the lock — the callback's async
+            // continuation can request the same lock and block forever.
+            // Our override adds a 10s timeout: if the lock can't be acquired
+            // within that window, we proceed anyway (better than a frozen UI).
+            lock: async (name, acquireTimeout, fn) => {
+                // Try the real Web Locks API with a timeout
+                if (typeof navigator !== 'undefined' && navigator.locks) {
+                    const controller = new AbortController()
+                    const timeoutId = setTimeout(() => controller.abort(), acquireTimeout || 10000)
+                    try {
+                        return await navigator.locks.request(name, { signal: controller.signal }, fn)
+                    } catch (err) {
+                        if (err.name === 'AbortError') {
+                            // Lock acquisition timed out — proceed without lock
+                            // rather than freezing the UI forever.
+                            console.warn('[Supabase] Lock timeout, proceeding without lock:', name)
+                            return fn()
+                        }
+                        throw err
+                    } finally {
+                        clearTimeout(timeoutId)
+                    }
+                }
+                // Fallback for environments without Web Locks (SSR, old browsers)
+                return fn()
+            },
         },
     })
     : null

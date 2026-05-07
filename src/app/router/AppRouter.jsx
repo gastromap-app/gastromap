@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import PublicLayout from '@/components/layout/PublicLayout'
@@ -35,12 +35,10 @@ const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()
     const navigate = useNavigate()
     const location = useLocation()
-    const didRedirect = useRef(false)
 
     useEffect(() => {
-        if (isLoading || didRedirect.current) return
+        if (isLoading) return
         if (isAuthenticated && PUBLIC_PATHS.has(location.pathname)) {
-            didRedirect.current = true
             navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
         }
     }, [isAuthenticated, isLoading, user, location.pathname, navigate])

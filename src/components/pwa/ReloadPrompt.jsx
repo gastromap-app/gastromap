@@ -33,13 +33,9 @@ function ReloadPrompt() {
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
     }, [])
 
-    // Авто-обновление: применить новую версию через 3 сек после появления баннера.
-    // skipWaiting + clientsClaim в workbox гарантируют мгновенное переключение SW.
-    useEffect(() => {
-        if (!needRefresh) return
-        const timer = setTimeout(() => updateServiceWorker(true), 3000)
-        return () => clearTimeout(timer)
-    }, [needRefresh, updateServiceWorker])
+    // NOTE: auto-reload removed — it was interrupting active user flows (login,
+    // form submission) by reloading the page without warning. The banner already
+    // provides a manual "Now" button; the user decides when to reload.
 
     return (
         <AnimatePresence>

@@ -202,6 +202,7 @@ export const useAuthStore = create(
             },
 
             clearError: () => set({ error: null }),
+            setError: (error) => set({ error }),
         }),
         {
             name: 'auth-storage',

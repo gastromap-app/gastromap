@@ -79,9 +79,8 @@ const ManifestoSection = ({ isDark }) => {
                 <motion.div style={{ y: titleY }} className="mb-8 md:mb-12">
                     <motion.p 
                         variants={itemVariants}
-                        className="text-eyebrow-muted mb-4 flex items-center gap-3"
+                        className="text-eyebrow-muted mb-4"
                     >
-                        <span className="w-6 md:w-8 h-px bg-blue-500/30" />
                         {t('manifesto.title_eyebrow') || 'MANIFESTO'}
                     </motion.p>
                     

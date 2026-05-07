@@ -29,7 +29,7 @@ const RequireAdmin = () => {
 }
 
 // ─── Post-confirmation redirect — when Supabase resolves auth from URL hash ─
-const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/features', '/pricing', '/about', '/contact'])
+const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/features', '/pricing', '/about', '/contact', '/classic'])
 
 const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()
@@ -49,9 +49,10 @@ const AuthRedirect = () => {
 }
 
 // ─── CRITICAL PUBLIC PAGES (no lazy loading) ───────────────────────────────
-import LandingPage from '@/features/public/pages/LandingPage'
+import LandingPageV2 from '@/features/public/pages/LandingPageV2'
 
 // ─── LAZY: Public pages (rarely visited from cold start) ───────────────────
+const LandingPage = lazy(() => import('@/features/public/pages/LandingPage'))
 const FeaturesPage = lazy(() => import('@/features/public/pages/FeaturesPage'))
 const PricingPage = lazy(() => import('@/features/public/pages/PricingPage'))
 const AboutPage = lazy(() => import('@/features/public/pages/AboutPage'))
@@ -131,10 +132,11 @@ export const AppRouter = () => {
                 <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/" element={<LandingPageV2 />} />
 
                 {/* Public Routes (Wrapped in PublicLayout) */}
                 <Route element={<PublicLayout />}>
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/classic" element={<LandingPage />} />
                     <Route path="/features" element={<FeaturesPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
                     <Route path="/about" element={<AboutPage />} />

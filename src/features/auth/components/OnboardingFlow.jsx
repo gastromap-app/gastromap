@@ -448,73 +448,75 @@ export function OnboardingFlow({ onComplete }) {
 
     const handleFinish = async () => {
         setSaving(true)
+
+        // CamelCase shape — updatePrefs and updateUserPreferences both expect this
         const dna = {
-            onboarding_completed: true,
-            favorite_cuisines: cuisines.length > 0 ? cuisines : ['any'],
-            vibe_preferences: vibes,
-            price_range: budget,
-            dietary_restrictions: allergens,
-            atmosphere_preference: atmosphere,
+            onboardingCompleted: true,
+            favoriteCuisines: cuisines.length > 0 ? cuisines : ['any'],
+            vibePreference: vibes,
+            priceRange: budget,
+            dietaryRestrictions: allergens,
+            atmospherePreference: atmosphere,
             features: features,
         }
 
         // 1. Save to Zustand + localStorage (instant)
-        updatePrefs({
-            onboardingCompleted: true,
-            favoriteCuisines: dna.favorite_cuisines,
-            vibePreference: dna.vibe_preferences,
-            priceRange: dna.price_range,
-            dietaryRestrictions: dna.dietary_restrictions,
-            atmospherePreference: dna.atmosphere_preference,
-            features: dna.features,
-        })
+        await updatePrefs(dna)
 
         // 2. Save to Supabase via API
         try {
-            const { data: { session } } = await (await import('@/shared/api/client')).supabase.auth.getSession()
+            const { supabase } = await import('@/shared/api/client')
+            const { data: { session } } = await supabase.auth.getSession()
             if (session?.user?.id) {
                 await updateUserPreferences(session.user.id, { longTerm: dna })
                 console.log('[Onboarding] ✅ DNA saved to Supabase')
             }
         } catch (err) {
-            console.warn('[Onboarding] Supabase save failed:', err.message)
+            console.warn('[Onboarding] Supabase save failed:', err?.message || err)
         }
 
         setSaving(false)
         onComplete()
     }
 
+    const [isSkipping, setIsSkipping] = useState(false)
+
     const handleSkip = async () => {
-        // Mark as completed with defaults
+        setIsSkipping(true)
+
+        // CamelCase shape expected by updateUserPreferences and updatePrefs
         const defaults = {
-            onboarding_completed: true,
-            favorite_cuisines: ['any'],
-            vibe_preferences: [],
-            price_range: ['$$'],
-            dietary_restrictions: [],
-            atmosphere_preference: '',
+            onboardingCompleted: true,
+            favoriteCuisines: ['any'],
+            vibePreference: [],
+            priceRange: ['$$'],
+            dietaryRestrictions: [],
+            atmospherePreference: '',
             features: [],
         }
 
-        updatePrefs({
-            onboardingCompleted: true,
-            favoriteCuisines: defaults.favorite_cuisines,
-            vibePreference: defaults.vibe_preferences,
-            priceRange: defaults.price_range,
-            dietaryRestrictions: defaults.dietary_restrictions,
-            atmospherePreference: defaults.atmosphere_preference,
-            features: defaults.features,
-        })
-
         try {
-            const { data: { session } } = await (await import('@/shared/api/client')).supabase.auth.getSession()
+            // 1. Persist locally first (instant)
+            await updatePrefs(defaults)
+
+            // 2. Sync to Supabase in background
+            const { supabase } = await import('@/shared/api/client')
+            const { data: { session } } = await supabase.auth.getSession()
             if (session?.user?.id) {
                 await updateUserPreferences(session.user.id, { longTerm: defaults })
             }
         } catch (err) {
-            console.warn('[Onboarding] Skip save failed:', err.message)
+            console.warn('[Onboarding] Skip save failed:', err?.message || err)
+            // Still mark onboarding completed locally so the gate closes
+            try {
+                await updatePrefs({ onboardingCompleted: true })
+            } catch (e) {
+                console.error('[Onboarding] Critical: cannot even save local prefs', e)
+            }
+        } finally {
+            setIsSkipping(false)
+            onComplete()
         }
-        onComplete()
     }
 
     const steps = [
@@ -547,9 +549,14 @@ export function OnboardingFlow({ onComplete }) {
                 </div>
                 <button
                     onClick={handleSkip}
-                    className="text-xs font-bold text-white/30 hover:text-white/60 transition-colors"
+                    disabled={isSkipping}
+                    className={`text-xs font-bold transition-colors ${
+                        isSkipping
+                            ? 'text-white/20 cursor-wait'
+                            : 'text-white/30 hover:text-white/60'
+                    }`}
                 >
-                    {t('onboarding.skip')}
+                    {isSkipping ? '...' : t('onboarding.skip')}
                 </button>
             </div>
 
@@ -578,9 +585,9 @@ export function OnboardingFlow({ onComplete }) {
                 <button
                     type="button"
                     onClick={handleNext}
-                    disabled={!canContinue || saving}
+                    disabled={!canContinue || saving || isSkipping}
                     className={`w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                        canContinue && !saving
+                        canContinue && !saving && !isSkipping
                             ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 active:scale-95'
                             : 'bg-white/10 text-white/30 cursor-not-allowed'
                     }`}

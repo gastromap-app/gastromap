@@ -94,49 +94,66 @@ vi.mock('@/shared/store/useAppConfigStore', () => {
     return { useAppConfigStore }
 })
 
-// Mock auth store — lightweight zustand store, no persistence side effects, fast initAuth
+// Mock auth store — lightweight zustand store with persist middleware,
+// using in-memory storage so tests exercise serialization logic without
+// touching real localStorage.
 vi.mock('@/shared/store/useAuthStore', async () => {
     const { create } = await vi.importActual('zustand')
-    const store = create((set) => ({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-        _unsubscribeAuth: null,
+    const { persist } = await vi.importActual('zustand/middleware')
 
-        initAuth: () => set({ isLoading: false }),
+    // In-memory storage for tests (no localStorage side effects)
+    const memoryStorage = {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+    }
 
-        login: async (email, _password) => {
-            const ADMIN_EMAILS = ['admin@gastromap.com', 'alik2191@gmail.com']
-            const isAdmin = ADMIN_EMAILS.includes(email)
-            const name = isAdmin
-                ? 'Admin User'
-                : email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-            const user = {
-                id: isAdmin ? 'admin1' : 'user_test123',
-                name,
-                email,
-                role: isAdmin ? 'admin' : 'user',
-                avatar: null,
-                createdAt: isAdmin ? '2024-01-01T00:00:00Z' : new Date().toISOString(),
-            }
-            set({ user, token: isAdmin ? 'mock-admin-jwt' : 'mock-user-jwt', isAuthenticated: true, isLoading: false })
-            return { success: true, user }
-        },
+    const store = create(
+        persist(
+            (set) => ({
+                user: null,
+                token: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+                _unsubscribeAuth: null,
 
-        logout: async () => {
-            set({ user: null, token: null, isAuthenticated: false, isLoading: false })
-        },
+                initAuth: () => set({ isLoading: false }),
 
-        clearError: () => set({ error: null }),
-        register: async () => ({ success: true }),
-        updateUserProfile: async () => {},
-        requestPasswordReset: async () => ({ success: true }),
-        setNewPassword: async () => ({ success: true }),
-        resendVerificationEmail: async () => ({ success: true }),
-        uploadAvatar: async () => ({ success: true }),
-    }))
+                login: async (email, _password) => {
+                    const ADMIN_EMAILS = ['admin@gastromap.com', 'alik2191@gmail.com']
+                    const isAdmin = ADMIN_EMAILS.includes(email)
+                    const name = isAdmin
+                        ? 'Admin User'
+                        : email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    const user = {
+                        id: isAdmin ? 'admin1' : 'user_test123',
+                        name,
+                        email,
+                        role: isAdmin ? 'admin' : 'user',
+                        avatar: null,
+                        createdAt: isAdmin ? '2024-01-01T00:00:00Z' : new Date().toISOString(),
+                    }
+                    set({ user, token: isAdmin ? 'mock-admin-jwt' : 'mock-user-jwt', isAuthenticated: true, isLoading: false })
+                    return { success: true, user }
+                },
+
+                logout: async () => {
+                    set({ user: null, token: null, isAuthenticated: false, isLoading: false })
+                },
+
+                clearError: () => set({ error: null }),
+                setError: (error) => set({ error }),
+                register: async () => ({ success: true }),
+                updateUserProfile: async () => {},
+                requestPasswordReset: async () => ({ success: true }),
+                setNewPassword: async () => ({ success: true }),
+                resendVerificationEmail: async () => ({ success: true }),
+                uploadAvatar: async () => ({ success: true }),
+            }),
+            { name: 'auth-test-storage', storage: memoryStorage }
+        )
+    )
     return { useAuthStore: store }
 })
 

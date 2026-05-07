@@ -21,12 +21,6 @@ export const supabase = config.supabase.isConfigured
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: true,
-            // Override the Web Locks API lock so concurrent requests
-            // (e.g. getCuisines + getDishes + getIngredients firing at the
-            // same time) don't steal each other's token-refresh lock.
-            // Safe to do here because we never run multiple tabs that need
-            // coordinated session refresh for the same user.
-            lock: async (_name, _acquireTimeout, fn) => fn(),
         },
     })
     : null

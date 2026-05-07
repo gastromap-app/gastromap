@@ -11,7 +11,7 @@ import { config } from '@/shared/config/env'
 const USE_SUPABASE = config.supabase.isConfigured
 
 // ─── Admin emails (used as role fallback when DB profile not yet seeded) ───
-const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'admin@gastromap.com').split(',').map(e => e.trim());
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'admin@gastromap.com').split(',').map(e => e.trim()).filter(Boolean);
 
 // ─── Mock users (fallback when Supabase not configured) ────────────────────
 const MOCK_USERS = [
@@ -300,10 +300,15 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
     if (!USE_SUPABASE || !supabase) return () => {}
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        // Token expired — force sign out to prevent silent 401 errors
+        // Token refreshed silently — re-fetch profile so role changes are picked up
         if (event === 'TOKEN_REFRESHED' && session?.user) {
-            // Token refreshed silently — update stored token without re-fetching profile
-            onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            try {
+                const profile = await _fetchProfile(session.user.id)
+                onSession({ user: _mapUser(session.user, profile), token: session.access_token })
+            } catch (err) {
+                console.warn('[auth] Failed to fetch profile on token refresh:', err.message)
+                onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            }
             return
         }
 

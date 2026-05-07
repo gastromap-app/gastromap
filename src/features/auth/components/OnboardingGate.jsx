@@ -54,8 +54,10 @@ export function OnboardingGate({ children }) {
                 setTimeout(() => setShowOnboarding(true), 600)
             }
         }).catch(() => {
-            // Don't set hasTriggeredRef on error — allow retry on next render
-            console.warn('[OnboardingGate] loadFromSupabase failed, will retry')
+            // Set hasTriggeredRef to prevent request spam on every render,
+            // but don't show onboarding since we can't verify state.
+            hasTriggeredRef.current = true
+            console.warn('[OnboardingGate] loadFromSupabase failed, skipping onboarding this session')
         })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, prefs.onboardingCompleted])

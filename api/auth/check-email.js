@@ -1,7 +1,8 @@
 /**
  * Vercel Serverless Function — Check if an email is already registered.
  *
- * Uses SUPABASE_SERVICE_ROLE_KEY to query auth.users directly.
+ * Uses SUPABASE_SERVICE_ROLE_KEY to query the profiles table
+ * (public schema, populated by auth.users trigger).
  * Prevents duplicate account creation at the application level.
  */
 

@@ -24,6 +24,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email_unique
 CREATE INDEX IF NOT EXISTS idx_profiles_email
     ON public.profiles (email);
 
+-- 3b. Add onboarding_completed column if missing (referenced by useUserPrefsStore)
+ALTER TABLE public.profiles
+    ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE;
+
 -- 4. Update trigger function to handle duplicate email gracefully.
 --    If the profile already exists (same id), skip insert.
 --    Auth-level duplicate check is the primary guard; this prevents trigger blow-up.

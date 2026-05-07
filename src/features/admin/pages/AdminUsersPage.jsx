@@ -578,11 +578,11 @@ const AdminUsersPage = () => {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        {preferences.price_range?.length > 0 && (
+                                                        {preferences.price_range && (
                                                             <div>
                                                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Price Range</p>
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {preferences.price_range.map((p, i) => (
+                                                                    {(Array.isArray(preferences.price_range) ? preferences.price_range : [preferences.price_range]).map((p, i) => (
                                                                         <span key={i} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">{p}</span>
                                                                     ))}
                                                                 </div>

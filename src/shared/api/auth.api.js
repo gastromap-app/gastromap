@@ -42,8 +42,11 @@ function _mapUser(authUser, profile) {
         id: authUser.id,
         name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email.split('@')[0],
         email: authUser.email,
-        // DB profile role takes priority; ADMIN_EMAILS is a fallback for fresh installs
-        role: profile?.role || (ADMIN_EMAILS.includes(authUser.email) ? 'admin' : 'user'),
+        // ADMIN_EMAILS is the source of truth for admin access.
+        // profile.role can be 'user' (the default) even for admin emails
+        // because the DB trigger always sets role='user'. If we let
+        // profile.role take priority, admin users get downgraded.
+        role: ADMIN_EMAILS.includes(authUser.email) ? 'admin' : (profile?.role || 'user'),
         avatar: profile?.avatar_url || null,
         createdAt: authUser.created_at,
     }
@@ -310,15 +313,13 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
     if (!USE_SUPABASE || !supabase) return () => {}
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        // Token refreshed silently — re-fetch profile so role changes are picked up
+        // Token refreshed silently — update stored token.
+        // NOTE: Do NOT call _fetchProfile here. The callback runs inside
+        // the Supabase lock, and _fetchProfile → getSession() would try to
+        // re-acquire the same lock → deadlock. Role is handled by
+        // ADMIN_EMAILS in _mapUser, so a null profile is safe.
         if (event === 'TOKEN_REFRESHED' && session?.user) {
-            try {
-                const profile = await _fetchProfile(session.user.id)
-                onSession({ user: _mapUser(session.user, profile), token: session.access_token })
-            } catch (err) {
-                console.warn('[auth] Failed to fetch profile on token refresh:', err.message)
-                onSession({ user: _mapUser(session.user, null), token: session.access_token })
-            }
+            onSession({ user: _mapUser(session.user, null), token: session.access_token })
             return
         }
 

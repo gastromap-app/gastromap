@@ -25,9 +25,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email
     ON public.profiles (email);
 
 -- 4. Update trigger function to handle duplicate email gracefully.
---    If an auth user is created with an existing email, we skip the profile insert
---    to avoid breaking the trigger. The auth-level duplicate check should catch
---    this earlier, but this prevents silent trigger failures.
+--    If the profile already exists (same id), skip insert.
+--    Auth-level duplicate check is the primary guard; this prevents trigger blow-up.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -35,7 +34,7 @@ BEGIN
     VALUES (
         NEW.id,
         NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
         'user'
     )
     ON CONFLICT (id) DO NOTHING;

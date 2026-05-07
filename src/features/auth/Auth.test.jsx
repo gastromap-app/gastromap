@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/test/helpers'
 import App from '@/app/App'
-import { useAuthStore } from './hooks/useAuthStore'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 vi.mock('@/components/auth/SubscriptionGate', () => ({
     default: ({ children }) => children,

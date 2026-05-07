@@ -21,8 +21,12 @@ const SecurityPrivacyPage = () => {
 
     const handleChangePassword = async () => {
         if (!user?.email) return
-        await requestPasswordReset(user.email)
-        showToast('Password reset link sent to ' + user.email)
+        try {
+            await requestPasswordReset(user.email)
+            showToast('Password reset link sent to ' + user.email)
+        } catch {
+            showToast('Failed to send reset link. Please try again.')
+        }
     }
 
     const handleLogout = async () => {

@@ -29,7 +29,7 @@ const RequireAdmin = () => {
 }
 
 // ─── Post-confirmation redirect — when Supabase resolves auth from URL hash ─
-const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/features', '/pricing', '/about', '/contact', '/classic'])
+const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/auth/forgot-password', '/auth/reset-password', '/features', '/pricing', '/about', '/contact', '/classic'])
 
 const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()

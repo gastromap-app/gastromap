@@ -30,7 +30,21 @@ const ResetPasswordPage = () => {
         const confirmPassword = formData.get('confirmPassword')
 
         if (password !== confirmPassword) {
-            return // Error will be shown via validation
+            useAuthStore.getState().setError('Passwords do not match')
+            return
+        }
+
+        if (password.length < 8) {
+            useAuthStore.getState().setError('Password must be at least 8 characters')
+            return
+        }
+        if (!/[A-Z]/.test(password)) {
+            useAuthStore.getState().setError('Password must contain at least one uppercase letter')
+            return
+        }
+        if (!/[0-9]/.test(password)) {
+            useAuthStore.getState().setError('Password must contain at least one number')
+            return
         }
 
         const result = await setNewPassword(password)

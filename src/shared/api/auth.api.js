@@ -169,7 +169,18 @@ export async function resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
     })
-    if (error) throw new ApiError(error.message, 400, 'RESET_ERROR')
+    if (error) {
+        // Map Supabase rate-limit error to a user-friendly message
+        const msg = error.message || ''
+        if (msg.includes('rate limit') || msg.includes('too many') || error.status === 429) {
+            throw new ApiError(
+                'Too many reset attempts. Please wait a few minutes before trying again.',
+                429,
+                'RATE_LIMIT'
+            )
+        }
+        throw new ApiError(msg, 400, 'RESET_ERROR')
+    }
     return { success: true, message: 'Password reset email sent' }
 }
 

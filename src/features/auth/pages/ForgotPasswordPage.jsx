@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Mail, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Mail, CheckCircle2, ChevronRight, AlertTriangle, Clock } from 'lucide-react'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
@@ -94,8 +94,12 @@ const ForgotPasswordPage = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
-                                    {error}
+                                <div className={`${error.includes('Too many') ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-600'} border text-sm font-medium px-4 py-3 rounded-2xl flex items-start gap-2`}>
+                                    {error.includes('Too many')
+                                        ? <Clock size={16} className="shrink-0 mt-0.5" />
+                                        : <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                                    }
+                                    <span>{error}</span>
                                 </div>
                             )}
 

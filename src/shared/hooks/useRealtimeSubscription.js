@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/api/client'
 import { queryKeys } from '@/shared/api/queries/queryKeys'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 /**
  * useRealtimeSubscription — subscribes to Supabase Realtime for
@@ -45,6 +46,22 @@ export function useRealtimeSubscription(userId) {
                     // Invalidate both visits queries for this user
                     qc.invalidateQueries({ queryKey: queryKeys.visits.all(uid) })
                     qc.invalidateQueries({ queryKey: queryKeys.visits.withLocations(uid) })
+                }
+            )
+            // Profile changed (role update by admin) — refresh auth store
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+                (payload) => {
+                    const newRole = payload.new?.role
+                    if (!newRole) return
+                    const { user } = useAuthStore.getState()
+                    if (user && user.role !== newRole) {
+                        // Update the role in auth store immediately
+                        useAuthStore.setState({
+                            user: { ...user, role: newRole },
+                        })
+                    }
                 }
             )
             .subscribe()

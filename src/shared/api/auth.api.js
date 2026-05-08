@@ -42,11 +42,16 @@ function _mapUser(authUser, profile) {
         id: authUser.id,
         name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email.split('@')[0],
         email: authUser.email,
-        // ADMIN_EMAILS is the source of truth for admin access.
-        // profile.role can be 'user' (the default) even for admin emails
-        // because the DB trigger always sets role='user'. If we let
-        // profile.role take priority, admin users get downgraded.
-        role: ADMIN_EMAILS.includes(authUser.email) ? 'admin' : (profile?.role || 'user'),
+        // Role resolution order:
+        // 1. profile.role from DB — the source of truth (admin can change it)
+        // 2. ADMIN_EMAILS fallback — grants admin to env-listed emails even
+        //    if the DB trigger hasn't updated their role yet
+        // 3. 'user' — default for everyone else
+        role: (profile?.role && profile.role !== 'user')
+            ? profile.role
+            : ADMIN_EMAILS.includes(authUser.email)
+                ? 'admin'
+                : (profile?.role || 'user'),
         avatar: profile?.avatar_url || null,
         createdAt: authUser.created_at,
     }

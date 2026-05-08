@@ -24,6 +24,12 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- Profiles: role changes by admin → auth store updated instantly
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 -- ──────────────────────────────────────────────────────────────
 -- REPLICA IDENTITY FULL ensures Realtime payloads contain the
 -- complete row (not just changed columns). Without this,

@@ -2,7 +2,7 @@ import React from 'react'
 import LocationImage from '@/components/ui/LocationImage'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock, Trash2 } from 'lucide-react'
+import { CheckCircle, Star, MapPin, ArrowRight, Compass, Clock, Trash2, RefreshCw, AlertCircle } from 'lucide-react'
 import { useUserVisitsWithLocations, useDeleteVisitMutation } from '@/shared/api/queries'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
@@ -160,7 +160,7 @@ const VisitedPage = () => {
     const isDark = theme === 'dark'
 
     const { user } = useAuthStore()
-    const { data: visits = [], isLoading } = useUserVisitsWithLocations(user?.id)
+    const { data: visits = [], isLoading, isError, refetch } = useUserVisitsWithLocations(user?.id)
     const deleteVisitMutation = useDeleteVisitMutation()
 
     const handleDelete = (visitId, locationId) => {
@@ -191,6 +191,27 @@ const VisitedPage = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+        )
+    }
+    
+    // Error state
+    if (isError) {
+        return (
+            <div className="w-full max-w-2xl mx-auto px-4 pb-32 min-h-[100dvh] relative z-10 flex flex-col items-center justify-center" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+                <div className={`p-6 rounded-2xl text-center ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <AlertCircle size={32} className={`mx-auto mb-3 ${isDark ? 'text-white/30' : 'text-gray-300'}`} />
+                    <p className={`text-sm font-medium mb-4 ${isDark ? 'text-white/50' : 'text-slate-500'}`}>
+                        {t('visited.load_error', 'Failed to load visited places')}
+                    </p>
+                    <button
+                        onClick={() => refetch()}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+                    >
+                        <RefreshCw size={14} />
+                        {t('common.retry', 'Retry')}
+                    </button>
                 </div>
             </div>
         )

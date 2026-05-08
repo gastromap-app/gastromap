@@ -11,7 +11,7 @@ export function useUserFavorites(userId) {
             return getUserFavorites(userId)
         }, 
         enabled: !!userId, 
-        staleTime: 60_000 
+        staleTime: 5 * 60_000 
     })
 }
 
@@ -23,7 +23,7 @@ export function useUserFavoritesWithLocations(userId) {
             return getUserFavoritesWithLocations(userId)
         }, 
         enabled: !!userId, 
-        staleTime: 60_000 
+        staleTime: 5 * 60_000 
     })
 }
 
@@ -91,7 +91,7 @@ export function useUserVisits(userId) {
             return getUserVisits(userId)
         }, 
         enabled: !!userId, 
-        staleTime: 60_000 
+        staleTime: 5 * 60_000 
     })
 }
 
@@ -103,7 +103,7 @@ export function useUserVisitsWithLocations(userId) {
             return getUserVisitsWithLocations(userId)
         }, 
         enabled: !!userId, 
-        staleTime: 60_000 
+        staleTime: 5 * 60_000 
     })
 }
 

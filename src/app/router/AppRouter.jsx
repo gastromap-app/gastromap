@@ -29,7 +29,10 @@ const RequireAdmin = () => {
 }
 
 // ─── Post-confirmation redirect — when Supabase resolves auth from URL hash ─
-const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/auth/forgot-password', '/auth/reset-password', '/features', '/pricing', '/about', '/contact', '/classic'])
+// NOTE: /auth/reset-password is intentionally EXCLUDED from this set.
+// When a user clicks the password reset link from email, Supabase auto-authenticates
+// them. If we redirected away, the user would never see the reset password form.
+const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '/auth/forgot-password', '/features', '/pricing', '/about', '/contact', '/classic'])
 
 const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()
@@ -38,6 +41,9 @@ const AuthRedirect = () => {
 
     useEffect(() => {
         if (isLoading) return
+        // /auth/reset-password is a special case — user must stay there to enter
+        // a new password even though Supabase has already authenticated them.
+        if (location.pathname === '/auth/reset-password') return
         if (isAuthenticated && PUBLIC_PATHS.has(location.pathname)) {
             navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
         }
@@ -103,6 +109,7 @@ const AdminStatsPage = lazy(() => import('@/features/admin/pages/AdminStatsPage'
 const AdminSettingsPage = lazy(() => import('@/features/admin/pages/AdminSettingsPage'))
 const AdminGeoCoversPage = lazy(() => import('@/features/admin/pages/AdminGeoCoversPage'))
 const AdminMenuScannerPage = lazy(() => import('@/features/admin/pages/AdminMenuScannerPage'))
+const AdminDineWithMePage = lazy(() => import('@/features/admin/pages/AdminDineWithMePage'))
 
 // ─── Fallback UI while a page chunk loads ──────────────────────────────────
 const PageLoader = () => (
@@ -208,6 +215,7 @@ export const AppRouter = () => {
                         <Route path="settings" element={<AdminSettingsPage />} />
                         <Route path="geo-covers" element={<AdminGeoCoversPage />} />
                         <Route path="menu-scanner" element={<AdminMenuScannerPage />} />
+                        <Route path="dine-with-me" element={<AdminDineWithMePage />} />
                     </Route>
                 </Route>
 

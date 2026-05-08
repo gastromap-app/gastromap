@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTranslation } from 'react-i18next'
+import { useRealtimeSubscription } from '@/shared/hooks/useRealtimeSubscription'
 
 export function MainLayout() {
     const { theme } = useTheme()
@@ -18,6 +19,11 @@ export function MainLayout() {
     const { isChatOpen, setIsChatOpen } = useAIChatStore()
     const { t } = useTranslation()
     const location = useLocation()
+
+    // Subscribe to Realtime for user-specific data (favorites, visits).
+    // When data changes in the DB, React Query cache is invalidated
+    // and the next read fetches fresh data — no polling needed.
+    useRealtimeSubscription(user?.id)
     const isMap = location.pathname === '/map'
     const isAIGuide = location.pathname === '/ai-guide'
     // Location detail page has its own scroll-aware header (Apple Maps pattern)

@@ -1,4 +1,11 @@
 {
+  "auth": {
+    "reset_password": {
+      "success_title": "Пароль оновлено!",
+      "success_message": "Ваш пароль успішно скинуто. Перенаправляємо на головну...",
+      "redirecting": "Перенаправлення..."
+    }
+  },
   "language_settings": {
     "title": "Мова та Регіон",
     "app_language_title": "Мова Додатку",
@@ -770,6 +777,35 @@
       "subtitle": "Натуральна мова → Knowledge Graph",
       "thinking": "Думаю…",
       "items_ready": "об'єктів готово: {{count}}"
+    },
+    "dine": {
+      "title": "Dine With Me",
+      "subtitle": "Monitor activity, manage waitlist, and handle reports",
+      "stat_active": "Active Diners",
+      "stat_waves": "Total Waves",
+      "stat_reports": "Open Reports",
+      "stat_waitlist": "Waitlist Pending",
+      "tabs": {
+        "activity": "Activity",
+        "waitlist": "Waitlist",
+        "reports": "Reports"
+      },
+      "active_presences": "Active Presences",
+      "no_presences": "No active presences right now",
+      "recent_waves": "Recent Waves",
+      "no_waves": "No waves sent yet",
+      "waitlist_pending": "Pending",
+      "waitlist_approved": "Approved",
+      "waitlist_rejected": "Rejected",
+      "no_waitlist": "No {{status}} waitlist entries",
+      "approve": "Approve",
+      "reject": "Reject",
+      "report_open": "Open",
+      "report_resolved": "Resolved",
+      "report_dismissed": "Dismissed",
+      "no_reports": "No {{status}} reports",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss"
     }
   },
   "common": {

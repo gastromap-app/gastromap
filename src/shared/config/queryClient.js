@@ -13,9 +13,19 @@ export const queryClient = new QueryClient({
         queries: {
             refetchOnWindowFocus: true,
             refetchOnMount: true,
-            retry: 1,
+            retry: (failureCount, error) => {
+                // Don't retry auth errors (401/403) — they'll always fail
+                if (error?.status === 401 || error?.status === 403 || error?.code === 'NOT_AUTH') return 0
+                // Don't retry validation errors (400)
+                if (error?.status === 400) return 0
+                // Retry network errors up to 2 times
+                return failureCount < 2 ? 1 : 0
+            },
             staleTime: 5 * 60 * 1000, // 5 min
             gcTime: 10 * 60 * 1000,
+            // On error, keep showing stale data instead of empty state
+            // This prevents the "skeleton forever" issue on flaky networks
+            placeholderData: (previousData) => previousData,
         },
         mutations: {
             retry: 0,

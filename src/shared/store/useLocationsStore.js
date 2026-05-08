@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { MOCK_LOCATIONS } from '@/mocks/locations'
+import { supabase } from '@/shared/api/client'
 
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 
@@ -43,6 +44,8 @@ export const useLocationsStore = create((set, get) => ({
     locations: INITIAL_LOCATIONS,
     isInitialized: false, // true after first successful full fetch (no city/country filter)
     initError: null,      // error message if last init failed (allows retry)
+    _initGen: 0,          // generation counter — discard stale fetch results
+    _realtimeChannel: null, // Supabase Realtime channel for locations table
     filteredLocations: INITIAL_LOCATIONS,
     mapMarkers: [],       // New: Specific locations currently visible/relevant to the map view
     isLoading: false,
@@ -56,20 +59,19 @@ export const useLocationsStore = create((set, get) => ({
 
     // ─── Filter setters ───────────────────────────────────────────────────
 
-    setCategory: async (cat) => {
-        set({ activeCategories: [cat], activeCategory: cat, isInitialized: false });
-        await get().initialize();
+    setCategory: (cat) => {
+        const updates = { activeCategories: [cat], activeCategory: cat };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    toggleCategory: async (cat) => {
+    toggleCategory: (cat) => {
         const state = get();
         const next = state.activeCategories.includes(cat)
             ? state.activeCategories.filter(c => c !== cat)
             : [...state.activeCategories, cat];
         const nextActive = next.length > 0 ? next[0] : 'All';
-        
-        set({ activeCategories: next, activeCategory: nextActive, isInitialized: false });
-        await get().initialize();
+        const updates = { activeCategories: next, activeCategory: nextActive };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
     setIsOpenNow: (isOpenNow) => set(state => ({
@@ -77,35 +79,34 @@ export const useLocationsStore = create((set, get) => ({
         filteredLocations: applyAllFilters(state.locations, { ...state, isOpenNow }),
     })),
 
-    setSearchQuery: async (query) => {
+    setSearchQuery: (query) => {
         if (get().searchQuery === query) return;
-        set({ searchQuery: query, isInitialized: false });
-        await get().initialize();
+        const updates = { searchQuery: query };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    setPriceLevels: async (activePriceLevels) => {
-        set({ activePriceLevels, isInitialized: false });
-        await get().initialize();
+    setPriceLevels: (activePriceLevels) => {
+        const updates = { activePriceLevels };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    setMinRating: async (minRating) => {
-        set({ minRating, isInitialized: false });
-        await get().initialize();
+    setMinRating: (minRating) => {
+        const updates = { minRating };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    setVibes: async (activeVibes) => {
-        set({ activeVibes, isInitialized: false });
-        await get().initialize();
+    setVibes: (activeVibes) => {
+        const updates = { activeVibes };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    toggleVibe: async (vibe) => {
+    toggleVibe: (vibe) => {
         const state = get();
         const next = state.activeVibes.includes(vibe)
             ? state.activeVibes.filter(v => v !== vibe)
             : [...state.activeVibes, vibe];
-        
-        set({ activeVibes: next, isInitialized: false });
-        await get().initialize();
+        const updates = { activeVibes: next };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
     // FIX BUG-6: Best Time setter (was missing)
@@ -129,19 +130,19 @@ export const useLocationsStore = create((set, get) => ({
             filteredLocations: applyAllFilters(state.locations, { ...state, userLocation }),
         })),
 
-    setSortBy: async (sortBy) => {
-        set({ sortBy, isInitialized: false });
-        await get().initialize();
+    setSortBy: (sortBy) => {
+        const updates = { sortBy };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    setCity: async (activeCity) => {
-        set({ activeCity, isInitialized: false });
-        await get().initialize();
+    setCity: (activeCity) => {
+        const updates = { activeCity };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
-    setCountry: async (activeCountry) => {
-        set({ activeCountry, isInitialized: false });
-        await get().initialize();
+    setCountry: (activeCountry) => {
+        const updates = { activeCountry };
+        set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 
     /**
@@ -297,13 +298,21 @@ export const useLocationsStore = create((set, get) => ({
 
     initialize: async (_customFilters = {}) => {
         const state = get();
-        if (state.isLoading) return;
-        
+
+        // Skip if already initialized and not forced — prevents duplicate fetches
+        // on route changes (Dashboard → Map → Dashboard).
+        if (state.isInitialized && state.locations.length > 0 && !_customFilters.force) return;
+
+        // If a fetch is already in-flight, don't start another — but do
+        // increment a generation counter so the stale fetch result is discarded.
+        const currentGen = (state._initGen || 0) + 1
+
         // Only clear if we don't have any locations yet to avoid flicker
         const shouldClear = state.locations.length === 0;
         
         set({ 
             isLoading: true, 
+            _initGen: currentGen,
             currentPage: 0, 
             hasMore: true,
             ...(shouldClear ? { locations: [], filteredLocations: [] } : {})
@@ -311,22 +320,29 @@ export const useLocationsStore = create((set, get) => ({
         
         try {
             const { getLocations } = await import('@/shared/api/locations.api');
+            const freshState = get();
+            // If another initialize() started after us, discard our result
+            if (freshState._initGen !== currentGen) return;
+
             const filters = {
-                category: state.activeCategory !== 'All' ? state.activeCategory : null,
-                city: state.activeCity !== 'All' ? state.activeCity : null,
-                country: state.activeCountry !== 'All' ? state.activeCountry : null,
-                query: state.searchQuery,
-                price_range: state.activePriceLevels,
-                minRating: state.minRating,
-                vibe: state.activeVibes,
-                sortBy: state.sortBy,
-                bounds: state.currentBounds,
-                limit: state.pageSize,
+                category: freshState.activeCategory !== 'All' ? freshState.activeCategory : null,
+                city: freshState.activeCity !== 'All' ? freshState.activeCity : null,
+                country: freshState.activeCountry !== 'All' ? freshState.activeCountry : null,
+                query: freshState.searchQuery,
+                price_range: freshState.activePriceLevels,
+                minRating: freshState.minRating,
+                vibe: freshState.activeVibes,
+                sortBy: freshState.sortBy,
+                bounds: freshState.currentBounds,
+                limit: freshState.pageSize,
                 offset: 0
             };
 
             const result = await getLocations(filters);
             const data = result?.data ?? result;
+
+            // Check again — a newer initialize() might have started
+            if (get()._initGen !== currentGen) return;
             
             if (Array.isArray(data)) {
                 set({
@@ -337,14 +353,17 @@ export const useLocationsStore = create((set, get) => ({
                     isInitialized: true,
                     initError: null,
                     currentPage: 1,
-                    hasMore: result?.hasMore ?? data.length >= state.pageSize,
+                    hasMore: result?.hasMore ?? data.length >= freshState.pageSize,
                 });
             } else {
                 set({ isLoading: false, isInitialized: true, initError: null, hasMore: false });
             }
         } catch (err) {
             console.error('[useLocationsStore] initialize failed:', err.message);
-            set({ isLoading: false, initError: err.message });
+            // Only set error if we're still the active generation
+            if (get()._initGen === currentGen) {
+                set({ isLoading: false, initError: err.message });
+            }
         }
     },
 
@@ -394,7 +413,63 @@ export const useLocationsStore = create((set, get) => ({
 
     /** Force re-fetch locations from Supabase (pull-to-refresh, admin action). */
     reinitialize: async () => {
-        set({ isLoading: false, isInitialized: false })
-        await get().initialize()
+        set({ isInitialized: false })
+        await get().initialize({ force: true })
+    },
+
+    /**
+     * Subscribe to Supabase Realtime for the locations table.
+     * When admin adds/edits/removes a location, the Zustand store
+     * updates automatically — no re-fetch needed.
+     * Returns an unsubscribe function.
+     */
+    subscribeToRealtime: () => {
+        if (!supabase) return () => {}
+
+        // Clean up any existing subscription first
+        const prev = get()._realtimeChannel
+        if (prev) {
+            try { supabase.removeChannel(prev) } catch { /* already removed */ }
+        }
+
+        const channel = supabase
+            .channel('locations-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'locations' },
+                (payload) => {
+                    const state = get()
+                    if (payload.eventType === 'INSERT') {
+                        // Avoid duplicates (upsert from admin)
+                        if (state.locations.some(l => l.id === payload.new.id)) return
+                        const updated = [...state.locations, payload.new]
+                        set({ locations: updated, filteredLocations: applyAllFilters(updated, state) })
+                    } else if (payload.eventType === 'UPDATE') {
+                        // REPLICA IDENTITY FULL ensures payload.new has all columns.
+                        // If it wasn't set, payload.new.id may be missing —
+                        // fall back to the primary key from payload.old.
+                        const targetId = payload.new.id || payload.old?.id
+                        if (!targetId) return
+                        const updated = state.locations.map(l =>
+                            l.id === targetId ? { ...l, ...payload.new } : l
+                        )
+                        set({ locations: updated, filteredLocations: applyAllFilters(updated, state) })
+                    } else if (payload.eventType === 'DELETE') {
+                        const targetId = payload.old?.id
+                        if (!targetId) return
+                        const updated = state.locations.filter(l => l.id !== targetId)
+                        set({ locations: updated, filteredLocations: applyAllFilters(updated, state) })
+                    }
+                }
+            )
+            .subscribe()
+
+        set({ _realtimeChannel: channel })
+
+        // Return unsubscribe function
+        return () => {
+            try { supabase.removeChannel(channel) } catch { /* already removed */ }
+            set({ _realtimeChannel: null })
+        }
     },
 }))

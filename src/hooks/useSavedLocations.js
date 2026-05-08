@@ -20,7 +20,7 @@ export function useSavedLocations() {
     const { user } = useAuthStore()
 
     // Auth path: Supabase DB
-    const { data: dbFavorites = [], isLoading } = useUserFavoritesWithLocations(user?.id)
+    const { data: dbFavorites = [], isLoading, isError, refetch } = useUserFavoritesWithLocations(user?.id)
     const removeMut = useRemoveFavoriteMutation()
 
     // Guest path: localStorage + locations store hydration
@@ -48,6 +48,8 @@ export function useSavedLocations() {
     return {
         favorites,
         isLoading: user?.id ? isLoading : false,
+        isError: user?.id ? isError : false,
+        refetch,
         remove,
     }
 }

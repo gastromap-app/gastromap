@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
-import { useUserVisits, useUserFavorites, useUserReviews, useUserRank, useSendFeedbackMutation, useUserPreferences } from '@/shared/api/queries'
+import { useUserVisits, useUserFavorites, useUserReviews, useUserRank, useSendFeedbackMutation, useUserPreferences, useUserWaitlistStatus, useJoinWaitlistMutation } from '@/shared/api/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -111,13 +111,19 @@ const ProfilePage = () => {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [toast, setToast] = useState(null)
 
-    // ── Dine With Me waitlist ──
-    const WAITLIST_KEY = 'gastromap_dine_waitlist'
-    const [waitlistJoined, setWaitlistJoined] = useState(() => localStorage.getItem(WAITLIST_KEY) === 'true')
-    const handleJoinWaitlist = () => {
-        localStorage.setItem(WAITLIST_KEY, 'true')
-        setWaitlistJoined(true)
-        setToast({ message: t('profile.dine_waitlist_toast', 'You\'re on the list! We\'ll notify you when it\'s ready.'), type: 'success' })
+    // ── Dine With Me waitlist (Supabase-backed) ──
+    const { data: waitlistData } = useUserWaitlistStatus(authUser?.id)
+    const joinWaitlistMut = useJoinWaitlistMutation()
+    const waitlistJoined = !!waitlistData || localStorage.getItem('gastromap_dine_waitlist') === 'true'
+
+    const handleJoinWaitlist = async () => {
+        try {
+            await joinWaitlistMut.mutateAsync({ userId: authUser?.id, message: null })
+        } catch {
+            // Even if Supabase call fails, fall back to localStorage
+        }
+        localStorage.setItem('gastromap_dine_waitlist', 'true')
+        setToast({ message: t('profile.dine_waitlist_toast', "You're on the list! We'll notify you when it's ready."), type: 'success' })
     }
 
     // Styling (derived from hooks, not hooks themselves)

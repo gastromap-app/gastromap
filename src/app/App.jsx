@@ -10,6 +10,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const App = ({ includeRouter = true }) => {
     const initialize = useLocationsStore(s => s.initialize)
+    const subscribeToRealtime = useLocationsStore(s => s.subscribeToRealtime)
     const initAuth = useAuthStore(s => s.initAuth)
 
     useEffect(() => {
@@ -18,6 +19,10 @@ const App = ({ includeRouter = true }) => {
         // Load locations from Supabase into the single source of truth store.
         // initialize() is idempotent — skips if already loaded.
         initialize()
+        // Subscribe to Realtime: when admin adds/edits/removes a location,
+        // the Zustand store auto-updates without a full re-fetch.
+        const unsubscribe = subscribeToRealtime()
+        return () => { unsubscribe() }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (

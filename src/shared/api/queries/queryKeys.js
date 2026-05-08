@@ -75,5 +75,13 @@ export const queryKeys = {
         presence: (userId) => ['dine-presence', userId],
         nearby: (coords) => ['dine-nearby', coords],
         waves: ['dine-waves'],
+
+        // Admin
+        adminPresences: (opts) => ['dine-admin-presences', opts],
+        adminWaves: (limit) => ['dine-admin-waves', limit],
+        adminReports: (opts) => ['dine-admin-reports', opts],
+        adminWaitlist: (opts) => ['dine-admin-waitlist', opts],
+        adminStats: ['dine-admin-stats'],
+        userWaitlist: (userId) => ['dine-user-waitlist', userId],
     },
 }

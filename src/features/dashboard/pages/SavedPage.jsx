@@ -2,7 +2,7 @@ import React from 'react'
 import LocationImage from '@/components/ui/LocationImage'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Heart, Star, MapPin, ArrowRight, Compass } from 'lucide-react'
+import { Heart, Star, MapPin, ArrowRight, Compass, RefreshCw, AlertCircle } from 'lucide-react'
 import { useSavedLocations } from '@/hooks/useSavedLocations'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
@@ -137,7 +137,7 @@ const SavedPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const { favorites, isLoading, remove } = useSavedLocations()
+    const { favorites, isLoading, isError, refetch, remove } = useSavedLocations()
 
     return (
         <div className="w-full max-w-2xl mx-auto px-4 pb-32 min-h-[100dvh] relative z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
@@ -170,6 +170,20 @@ const SavedPage = () => {
             {isLoading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className={`w-8 h-8 border-2 border-t-blue-600 rounded-full animate-spin ${isDark ? 'border-white/10' : 'border-gray-200'}`} />
+                </div>
+            ) : isError ? (
+                <div className={`p-6 rounded-2xl text-center ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <AlertCircle size={32} className={`mx-auto mb-3 ${isDark ? 'text-white/30' : 'text-gray-300'}`} />
+                    <p className={`text-sm font-medium mb-4 ${isDark ? 'text-white/50' : 'text-slate-500'}`}>
+                        {t('saved.load_error', 'Failed to load saved places')}
+                    </p>
+                    <button
+                        onClick={() => refetch()}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+                    >
+                        <RefreshCw size={14} />
+                        {t('common.retry', 'Retry')}
+                    </button>
                 </div>
             ) : favorites.length === 0 ? (
                 <EmptyState isDark={isDark} />

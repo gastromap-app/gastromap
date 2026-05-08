@@ -1,17 +1,29 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, CheckCircle2, ChevronRight } from 'lucide-react'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useTranslation } from 'react-i18next'
 
 const ResetPasswordPage = () => {
     const { setNewPassword, error, clearError } = useAuthStore()
+    const navigate = useNavigate()
+    const { t } = useTranslation()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [success, setSuccess] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
+
+    // After successful password reset, auto-redirect to dashboard after 3 seconds
+    useEffect(() => {
+        if (!success) return
+        const timer = setTimeout(() => {
+            navigate('/dashboard', { replace: true })
+        }, 3000)
+        return () => clearTimeout(timer)
+    }, [success, navigate])
 
     const checkPasswordStrength = (password) => {
         let strength = 0
@@ -115,16 +127,14 @@ const ResetPasswordPage = () => {
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 size={32} className="text-green-600" />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Password updated!</h2>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('auth.reset_password.success_title', 'Password updated!')}</h2>
                         <p className="text-gray-500 mb-8">
-                            Your password has been successfully reset. You can now sign in with your new password.
+                            {t('auth.reset_password.success_message', 'Your password has been successfully reset. Redirecting to dashboard...')}
                         </p>
-                        <Link
-                            to="/login"
-                            className="inline-flex items-center justify-center w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all"
-                        >
-                            Sign in
-                        </Link>
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                            <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-blue-500 animate-spin" />
+                            {t('auth.reset_password.redirecting', 'Redirecting...')}
+                        </div>
                     </motion.div>
                 ) : (
                     <>

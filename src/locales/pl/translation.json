@@ -13,6 +13,13 @@
     "server": "Server error. Please try again later.",
     "unauthorized": "Unauthorized."
   },
+  "auth": {
+    "reset_password": {
+      "success_title": "Hasło zaktualizowane!",
+      "success_message": "Twoje hasło zostało pomyślnie zresetowane. Przekierowujemy do panelu...",
+      "redirecting": "Przekierowywanie..."
+    }
+  },
   "ai": {
     "geo_permission_request": "📍 To find places nearby, I need access to your geolocation. Please allow access…",
     "found_places": "I found some places for you:",
@@ -928,6 +935,35 @@
         "revision_success": "Prośba o poprawkę wysłana",
         "revision_error": "Błąd podczas wysyłania prośby o poprawkę."
       }
+    },
+    "dine": {
+      "title": "Dine With Me",
+      "subtitle": "Monitor activity, manage waitlist, and handle reports",
+      "stat_active": "Active Diners",
+      "stat_waves": "Total Waves",
+      "stat_reports": "Open Reports",
+      "stat_waitlist": "Waitlist Pending",
+      "tabs": {
+        "activity": "Activity",
+        "waitlist": "Waitlist",
+        "reports": "Reports"
+      },
+      "active_presences": "Active Presences",
+      "no_presences": "No active presences right now",
+      "recent_waves": "Recent Waves",
+      "no_waves": "No waves sent yet",
+      "waitlist_pending": "Pending",
+      "waitlist_approved": "Approved",
+      "waitlist_rejected": "Rejected",
+      "no_waitlist": "No {{status}} waitlist entries",
+      "approve": "Approve",
+      "reject": "Reject",
+      "report_open": "Open",
+      "report_resolved": "Resolved",
+      "report_dismissed": "Dismissed",
+      "no_reports": "No {{status}} reports",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss"
     }
   },
   "manifesto": {

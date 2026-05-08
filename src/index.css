@@ -110,6 +110,15 @@
     overflow-x: hidden;
     /* Prevent horizontal scrollbar on mobile PWA */
     max-width: 100vw;
+    /* Hide vertical scrollbar for native app feel —
+       scrolling still works via touch/swipe and JS scroll APIs */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
   }
 
   #root {

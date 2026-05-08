@@ -7,7 +7,8 @@ import { AuthLayout } from '@/features/auth/components/AuthLayout'
 
 const LoginPage = () => {
     const navigate = useNavigate()
-    const { login, isLoading, error, clearError, isAuthenticated, user } = useAuthStore()
+    const { login, error, clearError, isAuthenticated, user } = useAuthStore()
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Redirect if already logged in
     React.useEffect(() => {
@@ -38,6 +39,7 @@ const LoginPage = () => {
         const email = formData.get('email')
         const password = formData.get('password')
 
+        setIsSubmitting(true)
         try {
             const result = await login(email, password)
             if (result.success) {
@@ -54,6 +56,8 @@ const LoginPage = () => {
         } catch (err) {
             // login() already sets error state, but catch any unexpected errors
             console.error('[Login] Unexpected error:', err)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -178,10 +182,10 @@ const LoginPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                         className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                     >
-                        {isLoading ? (
+                        {isSubmitting ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                             <>Sign in <ChevronRight size={18} /></>

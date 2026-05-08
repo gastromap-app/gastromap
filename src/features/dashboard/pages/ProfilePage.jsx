@@ -111,6 +111,15 @@ const ProfilePage = () => {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [toast, setToast] = useState(null)
 
+    // ── Dine With Me waitlist ──
+    const WAITLIST_KEY = 'gastromap_dine_waitlist'
+    const [waitlistJoined, setWaitlistJoined] = useState(() => localStorage.getItem(WAITLIST_KEY) === 'true')
+    const handleJoinWaitlist = () => {
+        localStorage.setItem(WAITLIST_KEY, 'true')
+        setWaitlistJoined(true)
+        setToast({ message: t('profile.dine_waitlist_toast', 'You\'re on the list! We\'ll notify you when it\'s ready.'), type: 'success' })
+    }
+
     // Styling (derived from hooks, not hooks themselves)
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-white/55" : "text-slate-600"
@@ -269,7 +278,7 @@ const ProfilePage = () => {
                         exit={{ opacity: 0, y: 24 }}
                         className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white bg-gray-900/95 backdrop-blur-md border border-white/10 max-w-xs text-center"
                     >
-                        {toast}
+                        {toast.message}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -527,27 +536,55 @@ const ProfilePage = () => {
                         </button>
                     </div>
 
-                    {/* Dine With Me Placeholder */}
-                    <div className={`p-5 rounded-[24px] border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-transparent relative overflow-hidden group`}>
-                        <div className="flex items-center gap-3 mb-3 relative z-10">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                                <Users size={20} />
+                    {/* Dine With Me Card */}
+                    {authUser?.role === 'admin' || authUser?.role === 'moderator' ? (
+                        /* Admin/Mod: active link to Dine With Me */
+                        <Link to="/map?dine=true" className="block">
+                            <div className={`p-5 rounded-[24px] border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-transparent relative overflow-hidden group hover:border-indigo-500/50 transition-colors`}>
+                                <div className="flex items-center gap-3 mb-3 relative z-10">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                                        <Users size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.dine_title')}</h4>
+                                        <p className="text-xs text-indigo-500 font-bold tracking-wide uppercase">{t('profile.dine_beta')}</p>
+                                    </div>
+                                </div>
+                                <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
+                                    {t('profile.dine_desc')}
+                                </p>
+                                <div className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs relative z-10 text-center group-hover:bg-indigo-500/30 transition-colors">
+                                    {t('profile.dine_btn')}
+                                </div>
                             </div>
-                            <div>
-                                <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.dine_title')}</h4>
-                                <p className="text-xs text-indigo-500 font-bold tracking-wide uppercase">{t('profile.dine_beta')}</p>
+                        </Link>
+                    ) : (
+                        /* Regular user: waitlist card */
+                        <div className={`p-5 rounded-[24px] border border-white/10 dark:border-white/5 bg-gradient-to-br from-indigo-500/5 to-transparent relative overflow-hidden`}>
+                            <div className="flex items-center gap-3 mb-3 relative z-10">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isDark ? 'bg-white/10' : 'bg-gray-100'}`}>
+                                    <Users size={20} className="text-indigo-400" />
+                                </div>
+                                <div>
+                                    <h4 className={`text-base font-bold ${textStyle}`}>{t('profile.dine_title')}</h4>
+                                    <p className={`text-xs font-bold tracking-wide uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('profile.dine_coming_soon')}</p>
+                                </div>
                             </div>
+                            <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
+                                {t('profile.dine_waitlist_desc')}
+                            </p>
+                            <button
+                                onClick={() => handleJoinWaitlist()}
+                                className={`mt-4 w-full px-4 py-2 rounded-xl font-bold text-xs text-center transition-colors ${
+                                    waitlistJoined
+                                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/30'
+                                }`}
+                            >
+                                {waitlistJoined ? t('profile.dine_waitlist_joined') : t('profile.dine_waitlist_btn')}
+                            </button>
                         </div>
-                        <p className={`text-sm ${subTextStyle} relative z-10 leading-relaxed`}>
-                            {t('profile.dine_desc')}
-                        </p>
-                        <button
-                            onClick={() => showToast('🍽️ Dine With Me is in beta — invite coming soon!')}
-                            className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs relative z-10 hover:bg-indigo-500/30 transition-colors active:scale-95"
-                        >
-                            {t('profile.dine_btn')}
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
 

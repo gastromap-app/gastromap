@@ -30,6 +30,12 @@ export async function enrichLocationData(locationData, apiKey = null) {
         return locationData
     }
 
+    // Create a shallow copy to avoid mutating the input
+    const enriched = { ...locationData }
+
+    // Set attempt timestamp
+    enriched.ai_enrichment_last_attempt = new Date().toISOString()
+
     try {
         // Collect text for AI analysis
         const textForAI = [
@@ -44,12 +50,6 @@ export async function enrichLocationData(locationData, apiKey = null) {
             ...(locationData.best_for || []),
             locationData.insider_tip,
         ].filter(Boolean).join(', ')
-
-        // Create a shallow copy to avoid mutating the input
-        const enriched = { ...locationData }
-        
-        // Set attempt timestamp
-        enriched.ai_enrichment_last_attempt = new Date().toISOString()
 
         safeLog('[enrichment] Calling OpenRouter for structured data enrichment...')
 
@@ -122,6 +122,12 @@ Return ONLY valid JSON with this exact structure:
                 enriched.ai_enrichment_status = 'success'
                 enriched.ai_enrichment_error = null
 
+                // Also generate ai_keywords and ai_context (were previously unreachable due to early return)
+                await Promise.allSettled([
+                    generateAIKeywords(enriched, apiKey),
+                    generateAIContext(enriched, apiKey),
+                ])
+
                 return enriched
             } catch (parseError) {
                 safeWarn('[enrichment] Failed to parse AI response:', parseError.message, content)
@@ -134,31 +140,33 @@ Return ONLY valid JSON with this exact structure:
             enriched.ai_enrichment_error = `API error: ${response.status}`
         }
 
-        // Generate AI keywords and context in parallel for efficiency
+        // Failure path: still try to generate keywords/context
         await Promise.allSettled([
-            generateAIKeywords(locationData, apiKey),
-            generateAIContext(locationData, apiKey)
+            generateAIKeywords(enriched, apiKey),
+            generateAIContext(enriched, apiKey),
         ])
+
+        return enriched
 
     } catch (error) {
         safeError('[enrichment] AI enrichment failure:', error)
-        const errorEnriched = { ...locationData }
-        errorEnriched.ai_enrichment_status = 'failed'
-        errorEnriched.ai_enrichment_error = error.message
-        return errorEnriched
+        enriched.ai_enrichment_status = 'failed'
+        enriched.ai_enrichment_error = error.message
+        return enriched
     }
 }
 
 /**
  * Generate search keywords for location
+ * Mutates the `target` object's ai_keywords field.
  */
-async function generateAIKeywords(locationData, _apiKey) {
+async function generateAIKeywords(target, _apiKey) {
     const textForAI = [
-        locationData.title,
-        locationData.description,
-        locationData.city,
-        locationData.cuisine_types?.join(', '),
-        ...(locationData.tags || []),
+        target.title,
+        target.description,
+        target.city,
+        target.cuisine_types?.join(', '),
+        ...(target.tags || []),
     ].filter(Boolean).join(', ')
 
     try {
@@ -178,7 +186,7 @@ async function generateAIKeywords(locationData, _apiKey) {
             const content = data.choices?.[0]?.message?.content || '[]'
             const match = content.match(/\[[\s\S]*\]/)
             if (match) {
-                locationData.ai_keywords = JSON.parse(match[0])
+                target.ai_keywords = JSON.parse(match[0])
             }
         }
     } catch (error) {
@@ -188,13 +196,14 @@ async function generateAIKeywords(locationData, _apiKey) {
 
 /**
  * Generate expert summary (context) for AI assistant
+ * Mutates the `target` object's ai_context field.
  */
-async function generateAIContext(locationData, _apiKey) {
+async function generateAIContext(target, _apiKey) {
     const textForAI = [
-        locationData.title,
-        locationData.description,
-        locationData.cuisine_types?.join(', '),
-        locationData.insider_tip,
+        target.title,
+        target.description,
+        target.cuisine_types?.join(', '),
+        target.insider_tip,
     ].filter(Boolean).join(', ')
 
     try {
@@ -211,7 +220,7 @@ async function generateAIContext(locationData, _apiKey) {
 
         if (response.ok) {
             const data = await response.json()
-            locationData.ai_context = data.choices?.[0]?.message?.content || ''
+            target.ai_context = data.choices?.[0]?.message?.content || ''
         }
     } catch (error) {
         safeWarn('[enrichment] Context generation failed:', error.message)

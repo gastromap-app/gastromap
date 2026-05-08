@@ -68,5 +68,12 @@ export const queryKeys = {
     // ─── Geo ───
     geo: {
         covers: (geoType) => ['geo-covers', geoType],
-    }
+    },
+
+    // ─── Dine With Me ───
+    dine: {
+        presence: (userId) => ['dine-presence', userId],
+        nearby: (coords) => ['dine-nearby', coords],
+        waves: ['dine-waves'],
+    },
 }

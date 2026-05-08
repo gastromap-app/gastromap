@@ -42,11 +42,11 @@ export default function GastroGuideChat({ isOpen, onClose }) {
     return (
         <AnimatePresence>
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ type: "spring", duration: 0.5 }}
-                className="fixed inset-0 z-[100] flex flex-col items-center justify-center md:inset-auto md:right-6 md:bottom-24 md:w-[420px] md:h-[650px] p-4 md:p-0 pointer-events-none"
+                initial={{ opacity: 0, y: 60, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                className="fixed inset-0 z-[100] flex flex-col items-center justify-center md:inset-auto md:left-0 md:right-0 md:mx-auto md:bottom-24 md:w-[420px] md:h-[650px] p-4 md:p-0 pointer-events-none"
             >
                 {/* Chat Container */}
                 <div className={`pointer-events-auto relative w-full h-full md:max-h-[650px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-white/50 dark:border-gray-700/50 overflow-hidden flex flex-col ${isTyping ? 'ring-2 ring-indigo-400/50' : ''}`}>

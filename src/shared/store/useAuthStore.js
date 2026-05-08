@@ -28,10 +28,21 @@ export const useAuthStore = create(
             // ─── Actions ─────────────────────────────────────────────────
 
             initAuth: () => {
+                // Guard: unsubscribe existing listener before creating a new one.
+                // Prevents duplicate onAuthStateChange callbacks when App
+                // remounts (e.g. ErrorBoundary recovery or HMR).
+                const prev = get()._unsubscribeAuth
+                if (prev) {
+                    try { prev() } catch { /* already unsubscribed */ }
+                }
+
                 set({ isLoading: true })
 
                 const timeout = setTimeout(() => {
-                    if (get().isLoading) set({ isLoading: false })
+                    if (get().isLoading) {
+                        console.warn('[auth] initAuth timed out — clearing stale state')
+                        set({ isLoading: false })
+                    }
                 }, 5000)
 
                 const unsubscribe = subscribeToAuthChanges(

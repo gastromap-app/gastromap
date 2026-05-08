@@ -313,6 +313,20 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
     if (!USE_SUPABASE || !supabase) return () => {}
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        // Validate session expiry — stale tokens from localStorage cause
+        // isAuthenticated: true → redirect → API 401 → SIGNED_OUT →
+        // redirect back → loop. Reject expired sessions upfront.
+        if (session?.expires_at) {
+            const nowSec = Math.floor(Date.now() / 1000)
+            // Allow 60s clock skew; if token is about to expire let Supabase
+            // try to refresh it normally.
+            if (session.expires_at < nowSec - 60) {
+                console.warn('[auth] Session expired (expires_at:', session.expires_at, 'now:', nowSec, ') — treating as signed out')
+                onSignOut()
+                return
+            }
+        }
+
         // Token refreshed silently — update stored token.
         // NOTE: Do NOT call _fetchProfile here. The callback runs inside
         // the Supabase lock, and _fetchProfile → getSession() would try to

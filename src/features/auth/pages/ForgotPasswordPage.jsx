@@ -6,7 +6,8 @@ import { AuthLayout } from '@/features/auth/components/AuthLayout'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const ForgotPasswordPage = () => {
-    const { requestPasswordReset, isLoading, error, clearError } = useAuthStore()
+    const { requestPasswordReset, error, clearError } = useAuthStore()
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
     const [submittedEmail, setSubmittedEmail] = useState('')
 
@@ -17,7 +18,9 @@ const ForgotPasswordPage = () => {
         const email = formData.get('email')
         setSubmittedEmail(email)
         
+        setIsSubmitting(true)
         const result = await requestPasswordReset(email)
+        setIsSubmitting(false)
         if (result.success) {
             setEmailSent(true)
         }
@@ -116,10 +119,10 @@ const ForgotPasswordPage = () => {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isSubmitting}
                                 className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                             >
-                                {isLoading ? (
+                                {isSubmitting ? (
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 ) : (
                                     <>Send reset link <ChevronRight size={18} /></>

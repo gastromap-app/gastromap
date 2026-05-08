@@ -1,14 +1,21 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Star, LocateFixed, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import LocationImage from '@/components/ui/LocationImage'
+import { DineModeToggle } from '@/features/dinewithme/components/DineModeToggle'
+import { DineWithMeLayer } from '@/features/dinewithme/components/DineWithMeLayer'
+import { CommunityGuidelinesModal } from '@/features/dinewithme/components/CommunityGuidelinesModal'
+import { PresenceSetupSheet } from '@/features/dinewithme/components/PresenceSetupSheet'
+import { useDiningPresence } from '@/features/dinewithme/hooks/useDiningPresence'
+import { useNearbyDiners } from '@/features/dinewithme/hooks/useNearbyDiners'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 // ─── Fix Leaflet default icon paths ──────────────────────────────────────
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -169,6 +176,63 @@ const MapTab = ({ activeFilter }) => {
     const { userLocation } = useLocationsStore()
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const [searchParams] = useSearchParams()
+    const { user } = useAuthStore()
+
+    // ── Dine With Me: only admin/moderator ─────────────────────────────
+    const dineAllowed = user?.role === 'admin' || user?.role === 'moderator'
+
+    // ── Dine With Me state ────────────────────────────────────────────
+    const [dineModeActive, setDineModeActive] = useState(false)
+    const [showGuidelines, setShowGuidelines] = useState(false)
+    const [showSetup, setShowSetup] = useState(false)
+    const { isPresent, goInvisible, isGoingInvisible } = useDiningPresence()
+    const { diners } = useNearbyDiners(dineModeActive)
+
+    // Check if user has acknowledged guidelines before
+    const GUIDELINES_KEY = 'gastromap_dine_guidelines_accepted'
+    const hasAcceptedGuidelines = localStorage.getItem(GUIDELINES_KEY) === 'true'
+
+    // Auto-activate dine mode via URL param ?dine=true (only for allowed roles)
+    useEffect(() => {
+        if (dineAllowed && searchParams.get('dine') === 'true' && !dineModeActive) {
+            handleDineToggle()
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleDineToggle = useCallback(() => {
+        if (dineModeActive) {
+            // Exit dine mode
+            setDineModeActive(false)
+            goInvisible()
+            return
+        }
+
+        // Enter dine mode — check guidelines first
+        if (!hasAcceptedGuidelines) {
+            setShowGuidelines(true)
+        } else {
+            setShowSetup(true)
+        }
+    }, [dineModeActive, goInvisible, hasAcceptedGuidelines])
+
+    const handleGuidelinesAccept = useCallback(() => {
+        localStorage.setItem(GUIDELINES_KEY, 'true')
+        setShowGuidelines(false)
+        setShowSetup(true)
+    }, [])
+
+    const handleSetupComplete = useCallback(() => {
+        setShowSetup(false)
+        setDineModeActive(true)
+    }, [])
+
+    // Auto-activate dine mode when presence is set
+    useEffect(() => {
+        if (isPresent && !dineModeActive) {
+            setDineModeActive(true)
+        }
+    }, [isPresent]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Apply category filter if active
     const visibleLocations = activeFilter && activeFilter !== 'All'
@@ -200,6 +264,17 @@ const MapTab = ({ activeFilter }) => {
                 <MapBoundsHandler />
                 <LocateMeButton />
 
+                {/* Dine With Me toggle — admin/moderator only */}
+                {dineAllowed && (
+                    <DineModeToggle
+                        isActive={dineModeActive}
+                        isLoading={isGoingInvisible}
+                        onToggle={handleDineToggle}
+                        dinerCount={diners.length}
+                    />
+                )}
+
+                {/* User location dot */}
                 {userLocation && (
                     <Marker 
                         position={[userLocation.lat, userLocation.lng]}
@@ -212,68 +287,102 @@ const MapTab = ({ activeFilter }) => {
                     />
                 )}
 
-                <MarkerClusterGroup
-                    chunkedLoading
-                    maxClusterRadius={60}
-                    iconCreateFunction={createClusterCustomIcon}
-                >
-                    {visibleLocations.map(loc => (
-                        <Marker 
-                            key={loc.id}
-                            position={[loc.lat, loc.lng]}
-                            icon={makeMarkerIcon(loc)}
-                        >
-                            <Popup className="custom-popup">
-                                <div className="flex flex-col w-full group">
-                                    {/* Image Section */}
-                                    <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                                        <LocationImage 
-                                            src={loc.image_url} 
-                                            alt={loc.name || loc.title}
-                                            width={400}
-                                            wrapperClassName="h-full"
-                                        />
-                                        
-                                        {/* Top Badges Overlay */}
-                                        <div className="absolute top-2 inset-x-2 flex justify-between items-start pointer-events-none">
-                                            <span className="flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
-                                                {getCategoryConfig(loc.category).emoji} {loc.category}
-                                            </span>
+                {/* Dine With Me layer OR location markers */}
+                {dineAllowed && dineModeActive ? (
+                    <DineWithMeLayer isActive={dineModeActive} />
+                ) : (
+                    <MarkerClusterGroup
+                        chunkedLoading
+                        maxClusterRadius={60}
+                        iconCreateFunction={createClusterCustomIcon}
+                    >
+                        {visibleLocations.map(loc => (
+                            <Marker 
+                                key={loc.id}
+                                position={[loc.lat, loc.lng]}
+                                icon={makeMarkerIcon(loc)}
+                            >
+                                <Popup className="custom-popup">
+                                    <div className="flex flex-col w-full group">
+                                        {/* Image Section */}
+                                        <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                            <LocationImage 
+                                                src={loc.image_url} 
+                                                alt={loc.name || loc.title}
+                                                width={400}
+                                                wrapperClassName="h-full"
+                                            />
                                             
-                                            {(loc.google_rating || loc.rating) && (
-                                                <div className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md rounded-full border border-black/5 dark:border-white/10 shadow-sm">
-                                                    <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
-                                                    <span className="text-[10px] font-black text-slate-900 dark:text-white">
-                                                        {loc.google_rating || loc.rating}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            {/* Top Badges Overlay */}
+                                            <div className="absolute top-2 inset-x-2 flex justify-between items-start pointer-events-none">
+                                                <span className="flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
+                                                    {getCategoryConfig(loc.category).emoji} {loc.category}
+                                                </span>
+                                                
+                                                {(loc.google_rating || loc.rating) && (
+                                                    <div className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md rounded-full border border-black/5 dark:border-white/10 shadow-sm">
+                                                        <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                                                        <span className="text-[10px] font-black text-slate-900 dark:text-white">
+                                                            {loc.google_rating || loc.rating}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Content Section */}
+                                        <div className="p-3">
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate mb-0.5 leading-tight">
+                                                {loc.name || loc.title}
+                                            </h3>
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-3">
+                                                {loc.address}
+                                            </p>
+
+                                            <Link 
+                                                to={`/location/${loc.id}`}
+                                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+                                            >
+                                                <Navigation size={12} />
+                                                {t('common.viewDetails', 'View Details')}
+                                            </Link>
                                         </div>
                                     </div>
-
-                                    {/* Content Section */}
-                                    <div className="p-3">
-                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate mb-0.5 leading-tight">
-                                            {loc.name || loc.title}
-                                        </h3>
-                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-3">
-                                            {loc.address}
-                                        </p>
-
-                                        <Link 
-                                            to={`/location/${loc.id}`}
-                                            className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
-                                        >
-                                            <Navigation size={12} />
-                                            {t('common.viewDetails', 'View Details')}
-                                        </Link>
-                                    </div>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    ))}
-                </MarkerClusterGroup>
+                                </Popup>
+                            </Marker>
+                        ))}
+                    </MarkerClusterGroup>
+                )}
             </MapContainer>
+
+            {/* Dine With Me overlays (outside MapContainer, fixed position) — admin/moderator only */}
+            {dineAllowed && (
+                <>
+                    <CommunityGuidelinesModal
+                        isOpen={showGuidelines}
+                        onAccept={handleGuidelinesAccept}
+                        onClose={() => setShowGuidelines(false)}
+                    />
+                    <PresenceSetupSheet
+                        isOpen={showSetup}
+                        onClose={() => setShowSetup(false)}
+                    />
+                </>
+            )}
+
+            {/* Dine mode active banner — admin/moderator only */}
+            {dineAllowed && dineModeActive && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
+                    <div className={`px-4 py-2 rounded-2xl ${theme === 'dark' ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'} backdrop-blur-xl shadow-lg`}>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className={`text-xs font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                {t('dine.nearby_count', { count: diners.length, plural: diners.length !== 1 ? 's' : '' })}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

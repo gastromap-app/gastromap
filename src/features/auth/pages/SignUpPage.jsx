@@ -10,7 +10,8 @@ const SignUpPage = () => {
     const [searchParams] = useSearchParams()
     const action = searchParams.get('action')
 
-    const { register, isLoading, error, clearError } = useAuthStore()
+    const { register, error, clearError } = useAuthStore()
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
 
@@ -50,7 +51,9 @@ const SignUpPage = () => {
             return
         }
 
+        setIsSubmitting(true)
         const result = await register(email, password, name)
+        setIsSubmitting(false)
         if (result.success) {
             if (result.emailConfirmation) {
                 sessionStorage.setItem('pending_verification_email', email)
@@ -220,10 +223,10 @@ const SignUpPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                         className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2 mt-6"
                     >
-                        {isLoading ? (
+                        {isSubmitting ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                             <>Sign up <ChevronRight size={18} /></>

@@ -13,6 +13,9 @@ import { matchLocationWithKG } from './knowledge-graph.api'
 
 /**
  * Admin: Deep semantic indexing for a single location.
+ *
+ * IMPORTANT: Passes `enableTranslation: false` to updateLocation to prevent
+ * background re-enrichment / translation loops during explicit enrichment.
  */
 export async function reindexLocationSemantic(id) {
     console.log('[ai-assistant.service] Reindexing semantic:', id)
@@ -26,7 +29,7 @@ export async function reindexLocationSemantic(id) {
         ai_keywords:                 keywords,
         ai_enrichment_status:        'success',
         ai_enrichment_last_attempt:  new Date().toISOString(),
-    })
+    }, false /* prevent background re-enrichment loop */)
 }
 
 /**
@@ -60,6 +63,9 @@ export async function bulkReindexLocations(config = {}) {
 /**
  * Admin: Generate & save vector embedding for a single location.
  * Uses all semantic fields: title, cuisine, description, tags, vibe, ai_keywords, ai_context.
+ *
+ * IMPORTANT: Passes `enableTranslation: false` to updateLocation to prevent
+ * background re-enrichment / translation loops during explicit enrichment.
  */
 export async function updateLocationEmbedding(id) {
     console.log('[ai-assistant.service] Updating embedding:', id)
@@ -69,7 +75,7 @@ export async function updateLocationEmbedding(id) {
     const embedding = await generateEmbeddingForLocation(location)
     if (!embedding) throw new Error('Embedding generation failed')
 
-    return await updateLocation(id, { embedding })
+    return await updateLocation(id, { embedding }, false /* prevent background re-enrichment loop */)
 }
 
 /**
@@ -109,6 +115,9 @@ export async function bulkUpdateEmbeddings(config = {}) {
 /**
  * Synchronize a location with Knowledge Graph.
  * Writes structured data to kg_cuisines / kg_dishes / kg_ingredients / kg_allergens.
+ *
+ * IMPORTANT: Passes `enableTranslation: false` to updateLocation to prevent
+ * background re-enrichment / translation loops during explicit enrichment.
  *
  * @param {string} id - Location ID
  * @returns {Promise<Object>} Updated location
@@ -155,27 +164,45 @@ export async function syncLocationWithKnowledgeGraph(id) {
         kg_allergens,
         ai_keywords,
         kg_enriched_at: new Date().toISOString(),
-    })
+    }, false /* prevent background re-enrichment loop */)
 }
 
 /**
  * Full KG enrichment pipeline for a location:
- *   1. Semantic reindex (ai_context + ai_keywords)
+ *   1. Semantic reindex (ai_context + ai_keywords) — must run FIRST
  *   2. KG match (kg_cuisines / kg_dishes / kg_ingredients / kg_allergens)
+ *      — runs AFTER semantic reindex so it can merge LLM keywords into ai_keywords
+ *   3. Embedding update — depends on both ai_context and ai_keywords from steps 1 & 2
+ *
+ * Previously steps 1 & 2 ran in parallel, causing a race condition on the
+ * `ai_keywords` field: both steps write it, and the second to complete would
+ * overwrite the first's data. Now sequential to ensure proper data flow.
  *
  * @param {string} id - Location ID
- * @returns {Promise<{ semantic: Object, kg: Object }>}
+ * @returns {Promise<{ semantic: Object, kg: Object, embedding: Object }>}
  */
 export async function enrichLocationFull(id) {
     console.log('[ai-assistant.service] Full enrich:', id)
 
-    // Step 1 & 2 in parallel — semantic summary + KG sync
-    const [semantic, kg] = await Promise.allSettled([
-        reindexLocationSemantic(id),
-        syncLocationWithKnowledgeGraph(id),
-    ])
+    // Step 1 — Semantic reindex (writes ai_context + ai_keywords)
+    let semanticResult
+    try {
+        semanticResult = await reindexLocationSemantic(id)
+    } catch (err) {
+        console.error('[ai-assistant.service] Semantic step failed:', err.message)
+        semanticResult = { error: err.message }
+    }
 
-    // Step 3 — embedding (sequential, depends on updated ai_context from step 1)
+    // Step 2 — KG sync (reads latest ai_keywords from step 1, merges KG data)
+    let kgResult
+    try {
+        kgResult = await syncLocationWithKnowledgeGraph(id)
+    } catch (err) {
+        console.error('[ai-assistant.service] KG sync step failed:', err.message)
+        kgResult = { error: err.message }
+    }
+
+    // Step 3 — Embedding (depends on updated ai_context + ai_keywords from steps 1 & 2)
     let embeddingResult = null
     try {
         embeddingResult = await updateLocationEmbedding(id)
@@ -185,8 +212,8 @@ export async function enrichLocationFull(id) {
     }
 
     return {
-        semantic:  semantic.status  === 'fulfilled' ? semantic.value  : { error: semantic.reason?.message },
-        kg:        kg.status        === 'fulfilled' ? kg.value        : { error: kg.reason?.message },
+        semantic:  semanticResult,
+        kg:        kgResult,
         embedding: embeddingResult,
     }
 }

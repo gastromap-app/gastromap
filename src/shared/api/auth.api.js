@@ -171,9 +171,17 @@ export async function resetPassword(email) {
     }
 
     // ── Supabase ──
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const resetPromise = supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
     })
+
+    // Timeout safety: prevent infinite spinner on network stall / deadlock
+    const timeoutMs = 15_000
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new ApiError('Reset request timed out. Please check your connection and try again.', 408, 'TIMEOUT')), timeoutMs)
+    )
+
+    const { error } = await Promise.race([resetPromise, timeoutPromise])
     if (error) {
         // Map Supabase rate-limit error to a user-friendly message
         const msg = error.message || ''
@@ -204,7 +212,15 @@ export async function updatePassword(newPassword) {
     }
 
     // ── Supabase ──
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    const updatePromise = supabase.auth.updateUser({ password: newPassword })
+
+    // Timeout safety: prevent infinite spinner on network stall / Web Locks deadlock
+    const timeoutMs = 15_000
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new ApiError('Password update timed out. Please check your connection and try again.', 408, 'TIMEOUT')), timeoutMs)
+    )
+
+    const { error } = await Promise.race([updatePromise, timeoutPromise])
     if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR')
     return { success: true, message: 'Password updated' }
 }
@@ -220,11 +236,19 @@ export async function resendVerification(email) {
     }
 
     // ── Supabase ──
-    const { error } = await supabase.auth.resend({
+    const resendPromise = supabase.auth.resend({
         type: 'signup',
         email,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
+
+    // Timeout safety: prevent infinite spinner on network stall / deadlock
+    const timeoutMs = 15_000
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new ApiError('Resend request timed out. Please check your connection and try again.', 408, 'TIMEOUT')), timeoutMs)
+    )
+
+    const { error } = await Promise.race([resendPromise, timeoutPromise])
     if (error) throw new ApiError(error.message, 400, 'RESEND_ERROR')
     return { success: true, message: 'Verification email sent' }
 }

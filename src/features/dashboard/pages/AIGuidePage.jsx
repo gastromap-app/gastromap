@@ -22,25 +22,25 @@ const AIGuidePage = () => {
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     const scrollRef = useRef(null)
-    const isInitialMount = useRef(true)
+    const hasDoneInitialScroll = useRef(false)
 
-    // INSTANT scroll to bottom on initial mount — runs BEFORE first paint
-    // so user never sees the un-scrolled state
+    // INSTANT scroll to bottom when messages first appear — runs BEFORE first paint
+    // so user never sees the un-scrolled state. Resets when history is cleared.
     useLayoutEffect(() => {
-        if (!scrollRef.current || messages.length === 0) return
+        if (!scrollRef.current) return
+        if (messages.length === 0) {
+            hasDoneInitialScroll.current = false
+            return
+        }
+        if (hasDoneInitialScroll.current) return
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }, [])
+        hasDoneInitialScroll.current = true
+    }, [messages.length])
 
     // Auto-scroll on new messages or typing indicator, but ONLY if user is already near bottom
     // (respects manual scrolling when reading history)
     useEffect(() => {
-        if (!scrollRef.current) return
-
-        // Skip first run — handled by useLayoutEffect above
-        if (isInitialMount.current) {
-            isInitialMount.current = false
-            return
-        }
+        if (!scrollRef.current || !hasDoneInitialScroll.current) return
 
         const container = scrollRef.current
         const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight

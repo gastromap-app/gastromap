@@ -157,7 +157,7 @@ export const useLocationsStore = create((set, get) => ({
             const next = { ...state, ...updates }
             // Sync activeCategory if activeCategories was updated
             if (updates.activeCategories) {
-                updates.activeCategory = updates.activeCategories.length > 0 ? updates.activeCategories[0] : 'All'
+                next.activeCategory = updates.activeCategories.length > 0 ? updates.activeCategories[0] : 'All'
             }
             
             // Defensive check for the filtering utility function
@@ -165,7 +165,11 @@ export const useLocationsStore = create((set, get) => ({
                 ? applyAllFilters(state.locations, next)
                 : state.locations;
 
-            return { ...updates, filteredLocations: filtered }
+            return { 
+                ...updates, 
+                ...(updates.activeCategories ? { activeCategory: next.activeCategory } : {}),
+                filteredLocations: filtered 
+            }
         }),
 
     /** Reset all filters to defaults — single re-render */

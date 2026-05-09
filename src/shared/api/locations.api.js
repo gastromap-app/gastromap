@@ -242,12 +242,18 @@ export async function getLocations(filters = {}) {
         // Normalize multilingual query (EN/RU/PL/UA) → English canonical
         // terms before feeding to `to_tsvector('english', ...)` FTS.
         const normalizedQuery = normalizeSearchTerm(query) || query
-        // Use the GIN-indexed fts column for high-performance search
-        // '.textSearch' uses the standard PostgreSQL full-text search
-        q = q.textSearch('fts', normalizedQuery, {
-            type: 'websearch', // Allows standard search operators like quotes and minus
-            config: 'english'  // DB data is canonically English
-        })
+        const cleanQuery = normalizedQuery.replace(/[%_]/g, '')
+        if (cleanQuery.length <= 4) {
+            // Short query: use ilike for substring/prefix matching since FTS
+            // only matches complete words. E.g. "Cof" → matches "Coffee Shop".
+            q = q.or(`title.ilike.%${cleanQuery}%,description.ilike.%${cleanQuery}%,city.ilike.%${cleanQuery}%`)
+        } else {
+            // Long query: use the GIN-indexed fts column for high-performance search
+            q = q.textSearch('fts', normalizedQuery, {
+                type: 'websearch',
+                config: 'english'
+            })
+        }
     }
 
     const { data, error, count } = await q

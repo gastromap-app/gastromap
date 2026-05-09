@@ -38,7 +38,7 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
     // Server-side FTS search with debounce
     useEffect(() => {
         const q = value.trim()
-        if (q.length < 2) {
+        if (q.length < 3) {
             setSuggestions([])
             setIsSearching(false)
             return

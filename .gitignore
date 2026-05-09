@@ -85,6 +85,11 @@ modularize_queries_plan.md
 test_*.js
 check_env.js
 
+# react-doctor reports
+.react-doctor/
+react-doctor-report/
+react-doctor-report.*
+
 # Legacy/Backups
 Gastromap_StandAlone/
 

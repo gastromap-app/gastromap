@@ -142,6 +142,7 @@ export function ChatInterface({
     scrollContainerRef = null,
     geoStatus = 'idle',
     requestGeo = () => {},
+    autoScroll = true,
 }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -154,6 +155,8 @@ export function ChatInterface({
 
     // Scroll to bottom whenever messages change or typing starts/stops
     useEffect(() => {
+        if (!autoScroll) return
+
         const scrollToBottom = () => {
             if (bottomRef.current) {
                 // Determine if we should use smooth scroll (for AI response) or instant (for history load)
@@ -165,12 +168,12 @@ export function ChatInterface({
         // Multiple triggers to ensure scroll happens after DOM settles
         const timer1 = setTimeout(scrollToBottom, 50)
         const timer2 = setTimeout(scrollToBottom, 300)
-        
+
         return () => {
             clearTimeout(timer1)
             clearTimeout(timer2)
         }
-    }, [messages.length, isTyping]) // length check is more robust for message lists
+    }, [messages.length, isTyping, autoScroll]) // length check is more robust for message lists
 
     return (
         <div

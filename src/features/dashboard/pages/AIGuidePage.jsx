@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useLayoutEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
@@ -8,7 +8,11 @@ import { useUIStore } from '@/shared/store/useUIStore'
 // BottomNav: height=64px, bottom=calc(12px + env(safe-area-inset-bottom))
 // Input bar sits just above it with extra breathing room
 const INPUT_BOTTOM = 'calc(68px + env(safe-area-inset-bottom, 12px))'
+// Physical padding for manual scrolling — ensures last message sits 15px above input
 const SCROLL_PADDING_BOTTOM = 'calc(150px + env(safe-area-inset-bottom, 12px))'
+// Logical offset for scrollIntoView — must be slightly larger than padding
+// to account for the 13px spacing between last message and bottomRef anchor
+const SCROLL_SNAP_BOTTOM = 'calc(158px + env(safe-area-inset-bottom, 12px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
@@ -18,21 +22,34 @@ const AIGuidePage = () => {
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     const scrollRef = useRef(null)
+    const isInitialMount = useRef(true)
 
-    // Scroll to bottom whenever messages change OR on mount
+    // INSTANT scroll to bottom on initial mount — runs BEFORE first paint
+    // so user never sees the un-scrolled state
+    useLayoutEffect(() => {
+        if (!scrollRef.current || messages.length === 0) return
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }, [])
+
+    // Auto-scroll on new messages or typing indicator, but ONLY if user is already near bottom
+    // (respects manual scrolling when reading history)
     useEffect(() => {
         if (!scrollRef.current) return
-        
-        const scrollToBottom = () => {
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-            }
+
+        // Skip first run — handled by useLayoutEffect above
+        if (isInitialMount.current) {
+            isInitialMount.current = false
+            return
         }
 
-        // Small timeout to ensure DOM has updated
-        const timer = setTimeout(scrollToBottom, 50)
-        return () => clearTimeout(timer)
-    }, [messages.length])
+        const container = scrollRef.current
+        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+        const isNearBottom = distanceFromBottom < 200
+
+        if (isNearBottom) {
+            container.scrollTop = container.scrollHeight
+        }
+    }, [messages.length, isTyping])
 
     // Reset header state on mount
     useEffect(() => {
@@ -80,8 +97,9 @@ const AIGuidePage = () => {
                 onScroll={handleScroll}
                 data-lenis-prevent
                 className="relative z-10 flex-1 overflow-y-auto scroll-smooth overscroll-contain"
-                style={{ 
-                    paddingBottom: SCROLL_PADDING_BOTTOM 
+                style={{
+                    paddingBottom: SCROLL_PADDING_BOTTOM,
+                    scrollPaddingBottom: SCROLL_SNAP_BOTTOM
                 }}
             >
                 {/* Header Spacer to push content below UniversalHeader */}
@@ -98,6 +116,7 @@ const AIGuidePage = () => {
                         contentClassName=""
                         geoStatus={geoStatus}
                         requestGeo={requestGeo}
+                        autoScroll={false}
                     />
                 </div>
             </div>

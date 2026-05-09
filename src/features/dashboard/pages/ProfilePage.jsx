@@ -222,42 +222,68 @@ const ProfilePage = () => {
                     icon: Shield,
                     label: t('profile.check_updates'),
                     action: async () => {
-                        if ('serviceWorker' in navigator) {
-                            try {
-                                const registration = await navigator.serviceWorker.getRegistration();
-                                showToast(t('profile.sw_checking') || 'Checking for updates…');
-                                
-                                if (registration) {
-                                    // First check if there is already a waiting worker
-                                    if (registration.waiting) {
-                                        showToast(t('profile.sw_ready') || 'New version ready! Reloading...');
-                                        setTimeout(() => window.location.reload(), 1500);
-                                        return;
-                                    }
-
-                                    // Otherwise, trigger an update check
-                                    await registration.update();
-                                    
-                                    // Wait a bit for the update to be processed
-                                    await new Promise(resolve => setTimeout(resolve, 1000));
-
-                                    if (registration.waiting || registration.installing) {
-                                        showToast(t('profile.sw_updating') || 'Updating to latest version...');
-                                        // Most SWs are configured to skipWaiting on message or automatically.
-                                        // If it's waiting, we can reload.
-                                        setTimeout(() => window.location.reload(), 2000);
-                                    } else {
-                                        showToast(t('profile.sw_latest') || 'You are on the latest version');
-                                    }
-                                } else {
-                                    showToast(t('profile.sw_latest') || 'You are on the latest version');
-                                }
-                            } catch (err) {
-                                console.error('SW Update check failed:', err);
-                                showToast(t('profile.sw_error') || 'Failed to check for updates');
+                        if (!('serviceWorker' in navigator)) {
+                            showToast(t('profile.sw_unsupported') || 'Updates not supported in this browser');
+                            return;
+                        }
+                        try {
+                            const registration = await navigator.serviceWorker.getRegistration();
+                            if (!registration) {
+                                showToast(t('profile.sw_not_registered') || 'Service Worker not registered');
+                                return;
                             }
-                        } else {
-                            showToast(t('profile.sw_unsupported') || 'Update check not supported');
+
+                            // 1. If a new version is already waiting → apply immediately
+                            if (registration.waiting) {
+                                showToast(t('profile.sw_downloaded') || 'New version downloaded! Reloading...');
+                                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                setTimeout(() => window.location.reload(), 1500);
+                                return;
+                            }
+
+                            showToast(t('profile.sw_checking') || 'Checking for updates...');
+
+                            // 2. Listen for the new SW to be found / installed / activated
+                            const updateResult = await new Promise((resolve) => {
+                                let foundNew = false;
+
+                                // When a new SW is found
+                                registration.addEventListener('updatefound', () => {
+                                    foundNew = true;
+                                    const newWorker = registration.installing;
+
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed') {
+                                            // New version downloaded and ready
+                                            resolve('downloaded');
+                                        } else if (newWorker.state === 'redundant') {
+                                            // New SW failed to install
+                                            resolve('error');
+                                        }
+                                    });
+                                });
+
+                                // Trigger the update check
+                                registration.update().catch(() => {});
+
+                                // Timeout: if no updatefound fires in 5s, assume up-to-date
+                                setTimeout(() => {
+                                    if (!foundNew) resolve('up-to-date');
+                                }, 5000);
+                            });
+
+                            if (updateResult === 'downloaded') {
+                                showToast(t('profile.sw_downloaded') || 'New version downloaded! Reloading...');
+                                // With skipWaiting + clientsClaim, a reload activates it
+                                setTimeout(() => window.location.reload(), 1500);
+                            } else if (updateResult === 'up-to-date') {
+                                showToast(t('profile.sw_latest') || 'You\'re using the latest version');
+                            } else {
+                                showToast(t('profile.sw_error') || 'Update check failed');
+                            }
+                        } catch (err) {
+                            console.error('SW Update check failed:', err);
+                            showToast(t('profile.sw_error') || 'Failed to check for updates');
                         }
                     }
                 },

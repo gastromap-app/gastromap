@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX } from 'lucide-react'
+import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX, Trash2, HardDrive } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useStorageQuota } from '@/hooks/useStorageQuota'
 
 const SecurityPrivacyPage = () => {
     const { theme } = useTheme()
@@ -11,6 +12,7 @@ const SecurityPrivacyPage = () => {
     const navigate = useNavigate()
     const { logout, requestPasswordReset, user } = useAuthStore()
     const [toastMsg, setToastMsg] = useState('')
+    const { usage, quota, percent, isWarning, clearCache, formatBytes } = useStorageQuota()
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
@@ -18,6 +20,14 @@ const SecurityPrivacyPage = () => {
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
     const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 3000) }
+
+    const handleClearCache = async () => {
+        try {
+            await clearCache()
+        } catch {
+            showToast('Failed to clear cache. Please try again.')
+        }
+    }
 
     const handleChangePassword = async () => {
         if (!user?.email) return
@@ -104,6 +114,44 @@ const SecurityPrivacyPage = () => {
                                 </div>
                             </button>
                         ))}
+                    </div>
+                </div>
+                <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Storage</h3>
+                    <div className={`rounded-[32px] overflow-hidden border ${cardBg}`}>
+                        <div className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    <HardDrive size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    <div className={`text-[15px] font-bold ${textStyle}`}>App Cache</div>
+                                    <div className={`text-[12px] ${subTextStyle}`}>
+                                        {formatBytes(usage)} used of {formatBytes(quota)}
+                                    </div>
+                                    {/* Progress bar */}
+                                    <div className="mt-2 w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${isWarning ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min(percent, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={handleClearCache}
+                            className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${isDark ? 'border-t border-white/5' : 'border-t border-gray-50'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
+                                    <Trash2 size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <div className={`text-[15px] font-bold ${textStyle}`}>Clear Cache</div>
+                                    <div className={`text-[12px] ${subTextStyle}`}>Free up space and reload the app</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={18} className="opacity-30" />
+                        </button>
                     </div>
                 </div>
                 <button onClick={handleLogout}

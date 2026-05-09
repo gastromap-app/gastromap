@@ -32,6 +32,7 @@ export const config = {
         model: getEnv('VITE_AI_MODEL', 'nvidia/nemotron-3-super-120b-a12b:free'),
         modelFallback: getEnv('VITE_AI_MODEL_FALLBACK', 'meta-llama/llama-3.3-70b-instruct:free'),
         maxHistoryLength: 50,
+        maxStorageBytes: 512 * 1024, // ~500KB cap for persisted chat history (IndexedDB)
         maxResponseTokens: 1024,
         /**
          * Primary proxy: Supabase Edge Function (lower latency, no cold starts).

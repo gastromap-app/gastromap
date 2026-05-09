@@ -38,7 +38,7 @@ export function LazyImage({
     className,
     wrapperClassName,
     rootMargin = '200px',
-    transform = { width: 800, quality: 80 }, // Default transformations
+    transform = { width: 800, quality: 80, format: 'webp' }, // Default: WebP ~25-35% smaller than JPEG
     priority = false,
     ...rest
 }) {
@@ -65,16 +65,17 @@ export function LazyImage({
         }
 
         // 2. Supabase Storage Transformation (if enabled on the bucket)
-        // Check if it's a supabase storage URL
+        // WebP format saves ~25-35% vs JPEG without visible quality loss
         if (cleanSrc.includes('.supabase.co/storage/v1/object/public/')) {
             const baseUrl = cleanSrc.split('?')[0]
             const params = new URLSearchParams()
             if (transform.width) params.set('width', transform.width)
             if (transform.height) params.set('height', transform.height)
             if (transform.quality) params.set('quality', transform.quality)
+            if (transform.format) params.set('format', transform.format)
             if (transform.resize) params.set('resize', transform.resize)
             else params.set('resize', 'cover')
-            
+
             return `${baseUrl}?${params.toString()}`
         }
 

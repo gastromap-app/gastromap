@@ -41,6 +41,36 @@ function normalizeMessage(msg) {
     }
 }
 
+/**
+ * Estimate serialized size of messages in bytes.
+ * Used to keep IndexedDB under ~500KB and prevent iOS storage eviction.
+ */
+function estimateMessagesSize(messages) {
+    if (!Array.isArray(messages)) return 0
+    try {
+        // Fast path: JSON.stringify length is a good proxy for byte size
+        return new Blob([JSON.stringify(messages)]).size
+    } catch {
+        return 0
+    }
+}
+
+/**
+ * Trim messages to stay under a byte limit, keeping the most recent.
+ * @param {ChatMessage[]} messages
+ * @param {number} maxBytes
+ * @returns {ChatMessage[]}
+ */
+function trimByByteSize(messages, maxBytes) {
+    if (!Array.isArray(messages) || messages.length === 0) return messages
+    let trimmed = messages
+    while (estimateMessagesSize(trimmed) > maxBytes && trimmed.length > 10) {
+        // Remove oldest message, but keep at least 10 for context
+        trimmed = trimmed.slice(1)
+    }
+    return trimmed
+}
+
 export const useAIChatStore = create(
     persist(
         (set) => ({
@@ -62,11 +92,17 @@ export const useAIChatStore = create(
 
             toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
 
-            loadHistory: (sessionId, messages, userId) => set({
-                sessionId,
-                userId,
-                messages: (messages || []).map(normalizeMessage),
-            }),
+            loadHistory: (sessionId, messages, userId) => {
+                let normalized = (messages || []).map(normalizeMessage)
+                // Enforce both count and size limits on load
+                const maxCount = config.ai.maxHistoryLength
+                if (normalized.length > maxCount) {
+                    normalized = normalized.slice(-maxCount)
+                }
+                const maxBytes = config.ai.maxStorageBytes || 512 * 1024
+                normalized = trimByByteSize(normalized, maxBytes)
+                set({ sessionId, userId, messages: normalized })
+            },
 
             /**
              * Append a new message. Accepts first-class extras:
@@ -89,7 +125,18 @@ export const useAIChatStore = create(
                     toolCallId: extras.toolCallId || null,
                     ...extras,
                 })
-                set((state) => ({ messages: [...state.messages, message] }))
+                set((state) => {
+                    let nextMessages = [...state.messages, message]
+                    // Enforce count limit
+                    const maxCount = config.ai.maxHistoryLength
+                    if (nextMessages.length > maxCount) {
+                        nextMessages = nextMessages.slice(-maxCount)
+                    }
+                    // Enforce size limit (~500KB) to prevent IndexedDB bloat
+                    const maxBytes = config.ai.maxStorageBytes || 512 * 1024
+                    nextMessages = trimByByteSize(nextMessages, maxBytes)
+                    return { messages: nextMessages }
+                })
                 return message
             },
 

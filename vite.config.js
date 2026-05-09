@@ -61,7 +61,7 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 365, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
@@ -71,20 +71,23 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-webfonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase Storage (фото локаций) — небольшой кэш ───────────────────
-          // Только 20 последних просмотренных, чтобы уложиться в iOS лимит
+          // ─── Supabase Storage (фото локаций) — сжатый кэш ──────────────────────
+          // Оптимизация: maxEntries снижен с 20 до 10, purgeOnQuotaError включает
+          // автоочистку при приближении к iOS лимиту 50MB.
+          // LazyImage.jsx добавляет ?format=webp — фото весят ~30% меньше.
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage-cache',
               expiration: {
-                maxEntries: 20,               // ~20 фото × ~200KB = ~4MB
-                maxAgeSeconds: 60 * 60 * 24 * 3  // 3 дня
+                maxEntries: 10,               // 10 фото × ~200KB (webp) = ~2MB
+                maxAgeSeconds: 60 * 60 * 24 * 3,  // 3 дня
+                purgeOnQuotaError: true       // Автоочистка при нехватке места
               },
               cacheableResponse: { statuses: [0, 200] }
             }
@@ -98,7 +101,8 @@ export default defineConfig({
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 30,               // ~30 запросов, небольшие JSON
-                maxAgeSeconds: 60 * 60 * 2    // 2 часа
+                maxAgeSeconds: 60 * 60 * 2,   // 2 часа
+                purgeOnQuotaError: true
               },
               cacheableResponse: { statuses: [0, 200] }
             }
@@ -127,7 +131,7 @@ export default defineConfig({
             options: {
               cacheName: 'vercel-api-cache',
               networkTimeoutSeconds: 8,
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 15 },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 15, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [200] }
             }
           }

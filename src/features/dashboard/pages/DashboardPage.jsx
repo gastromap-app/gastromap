@@ -166,13 +166,20 @@ const DashboardPage = () => {
     const text = isDark ? 'text-white' : 'text-gray-900'
     const sub  = isDark ? 'text-gray-500' : 'text-slate-600'
     const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || t('dashboard.traveler')
+    // Derive a "time-of-day period" that changes every hour, so the greeting
+    // (Good morning / Good afternoon / …) updates even if the user keeps the
+    // app open across noon, 6 PM, etc. without a full re-mount.
+    const [hourNow, setHourNow] = useState(() => new Date().getHours())
+    useEffect(() => {
+        const id = setInterval(() => setHourNow(new Date().getHours()), 60_000)
+        return () => clearInterval(id)
+    }, [])
     const greeting = useMemo(() => {
-        const hour = new Date().getHours()
-        if (hour >= 6 && hour < 12) return t('dashboard.greeting_morning', { name: firstName })
-        if (hour >= 12 && hour < 18) return t('dashboard.greeting_afternoon', { name: firstName })
-        if (hour >= 18 && hour < 24) return t('dashboard.greeting_evening', { name: firstName })
+        if (hourNow >= 6 && hourNow < 12) return t('dashboard.greeting_morning', { name: firstName })
+        if (hourNow >= 12 && hourNow < 18) return t('dashboard.greeting_afternoon', { name: firstName })
+        if (hourNow >= 18 && hourNow < 24) return t('dashboard.greeting_evening', { name: firstName })
         return t('dashboard.greeting_night', { name: firstName })
-    }, [firstName, t])
+    }, [hourNow, firstName, t])
     const cityTagline = useMemo(() => {
         const validCity = currentCity && currentCity !== 'Unknown' && currentCity.trim() !== ''
         return validCity

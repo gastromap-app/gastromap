@@ -173,9 +173,16 @@ export async function getLocations(filters = {}) {
 
     safeLog('[locations.api] 🚀 Fetching locations with filters:', filters)
 
+    // Column selection: must be explicit for public/anon queries because the DB
+    // uses column-level GRANT (see 20260511_anon_column_grant.sql). select('*')
+    // fails with 401 for anon sessions — they can't read protected columns
+    // (insider_tip, phone, booking_url, kg_*, etc.). Admin queries (all=true)
+    // always come from authenticated users who have full SELECT.
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,created_at,updated_at'
+
     let q = supabase
         .from('locations')
-        .select('*', { count: 'exact' })
+        .select(bypassStatus ? '*' : ANON_COLS, { count: 'exact' })
 
     // ─── Bounding Box Filter (High Performance) ──────────────────────────
     if (bounds) {
@@ -260,9 +267,13 @@ export async function getLocations(filters = {}) {
 export async function getLocation(id, { adminMode = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocation(id)
 
+    // Column selection: same column-level GRANT issue as getLocations.
+    // adminMode always comes from authenticated users → select('*') is safe.
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,created_at,updated_at'
+
     let q = supabase
         .from('locations')
-        .select('*')
+        .select(adminMode ? '*' : ANON_COLS)
         .eq('id', id)
 
     // Public facing: only show active (approved) locations. Admin mode: show any status.
@@ -766,7 +777,7 @@ export async function getLocationsCount() {
 
     const { count, error } = await supabase
         .from('locations')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .in('status', ['approved', 'active'])
 
     if (error) {

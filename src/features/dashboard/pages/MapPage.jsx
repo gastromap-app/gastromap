@@ -27,7 +27,8 @@ const MapPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const { activeCategory, setCategory } = useLocationsStore()
+    const activeCategory = useLocationsStore(state => state.activeCategory)
+    const setCategory = useLocationsStore(state => state.setCategory)
     // Local search — NOT synced to store. SmartSearchBar dropdown uses server
     // FTS globally (no city/country scope) so users can find any location in
     // the database. Map markers are NOT filtered by this input.

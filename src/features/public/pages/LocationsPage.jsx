@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useVirtualizer } from '@tanstack/react-virtual'
 // import { useInfiniteLocations } from '@/hooks/useLocationsQuery' (Removed duplicate)
 import {
-    MapPin, Search, SlidersHorizontal, Star, Clock,
+    MapPin, SlidersHorizontal, Star, Clock,
     Heart, Share2, ChevronRight, Home, Utensils,
     Coffee, Wine, Store, List,
     ArrowUpDown, X, SearchX, AlertCircle
@@ -254,7 +254,7 @@ const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentElement,
-        estimateSize: () => 400, // height of a card + gap
+        estimateSize: () => 440, // height of a card + gap-6 (24px) vertical spacing
         overscan: 3,
     })
 
@@ -277,7 +277,7 @@ const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
                         height: `${virtualRow.size}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                     }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-1"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-1 pb-6"
                 >
                     {rows[virtualRow.index].map((item) => (
                         <DesktopCard
@@ -317,7 +317,7 @@ function ErrorState({ isDark }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 function EmptyState({ query, isDark }) {
-    const { resetFilters } = useLocationsStore()
+    const resetFilters = useLocationsStore(s => s.resetFilters)
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -568,26 +568,15 @@ const LocationsPage = () => {
 
                         {/* Search bar */}
                         <div className="flex gap-4 items-center">
-                            <div className="relative flex-1 group">
-                                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                                    <Search size={22} className="text-blue-600" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder={city ? t('explore.search_in', { city: `${city}${country ? `, ${country}` : ''}` }) : t('explore.search_everywhere')}
-                                    value={localSearch}
-                                    onChange={(e) => setLocalSearch(e.target.value)}
-                                    className={`w-full h-16 pl-14 pr-12 rounded-[24px] border-2 border-transparent outline-none text-lg transition-all ${isDark ? 'bg-white/5 text-white border-white/10 focus:border-blue-500' : 'bg-white shadow-xl focus:border-blue-500'}`}
-                                />
-                                {localSearch && (
-                                    <button
-                                        onClick={() => setLocalSearch('')}
-                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-600"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                )}
-                            </div>
+                            <SmartSearchBar
+                                value={localSearch}
+                                onChange={(e) => setLocalSearch(e.target.value)}
+                                onFilter={() => setIsFilterOpen(true)}
+                                placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
+                                city={city}
+                                country={country}
+                                className="flex-1"
+                            />
 
                             {/* Sort dropdown */}
                             <div className="relative">

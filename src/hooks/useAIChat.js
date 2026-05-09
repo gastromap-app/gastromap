@@ -58,7 +58,7 @@ export function useAIChat() {
 
     const { prefs } = useUserPrefsStore()
     const { favoriteIds } = useFavoritesStore()
-    const { locations } = useLocationsStore()
+    const locations = useLocationsStore(state => state.locations)
     const { user } = useAuthStore()
     // Request geo silently on chat mount — shared with the Map component via GeoStore
     const { city: userCity, country: userCountry, requestGeo, status } = useUserGeo({ autoRequest: true })

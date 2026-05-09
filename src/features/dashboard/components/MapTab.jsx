@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
@@ -82,22 +82,37 @@ function makeMarkerIcon(loc) {
 }
 
 // ─── Map Events Handler ──────────────────────────────────────────────────
+// FIX: Replaced useMapEvents with manual map.on/off to avoid handler
+// accumulation. useMapEvents receives a new handler object on every render,
+// but map.off(newHandler) cannot remove the OLD handler (different reference),
+// causing multiple moveend listeners to pile up and trigger cascading
+// setState calls → "Maximum update depth exceeded".
 function MapBoundsHandler() {
     const map = useMap()
     const fetchInBounds = useLocationsStore(state => state.fetchInBounds)
     const setBounds = useLocationsStore(state => state.setBounds)
+    const lastFetchRef = useRef(0)
 
-    useMapEvents({
-        moveend: () => {
+    useEffect(() => {
+        const handleMoveEnd = () => {
             const b = map.getBounds()
             const bounds = {
                 sw: { lat: b.getSouthWest().lat, lng: b.getSouthWest().lng },
                 ne: { lat: b.getNorthEast().lat, lng: b.getNorthEast().lng }
             }
             setBounds(bounds)
-            fetchInBounds(bounds)
+
+            // Debounce: skip fetch if less than 300ms since last one
+            const now = Date.now()
+            if (now - lastFetchRef.current > 300) {
+                lastFetchRef.current = now
+                fetchInBounds(bounds)
+            }
         }
-    })
+
+        map.on('moveend', handleMoveEnd)
+        return () => map.off('moveend', handleMoveEnd)
+    }, [map, fetchInBounds, setBounds])
 
     return null
 }
@@ -105,7 +120,7 @@ function MapBoundsHandler() {
 // ─── Locate Me Control ───────────────────────────────────────────────────
 function LocateMeButton() {
     const map = useMap()
-    const { updateUserLocation } = useLocationsStore()
+    const updateUserLocation = useLocationsStore(state => state.updateUserLocation)
     const [isLocating, setIsLocating] = React.useState(false)
     const { t } = useTranslation()
 
@@ -195,21 +210,22 @@ function MapPoseMemory() {
         if (lastMapPose) {
             map.setView([lastMapPose.lat, lastMapPose.lng], lastMapPose.zoom, { animate: false })
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-    // Keep track of latest view
-    useMapEvents({
-        moveend: () => {
+    }, [map])
+    // Keep track of latest view — stable handler, no useMapEvents
+    useEffect(() => {
+        const handleMoveEnd = () => {
             const c = map.getCenter()
             lastMapPose = { lat: c.lat, lng: c.lng, zoom: map.getZoom() }
-        },
-    })
+        }
+        map.on('moveend', handleMoveEnd)
+        return () => map.off('moveend', handleMoveEnd)
+    }, [map])
     return null
 }
 
 const MapTab = ({ activeFilter, focusLocation }) => {
     const locations = useLocationsStore(state => state.mapMarkers)
-    const { userLocation } = useLocationsStore()
+    const userLocation = useLocationsStore(state => state.userLocation)
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [searchParams] = useSearchParams()

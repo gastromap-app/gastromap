@@ -248,6 +248,13 @@ export const useLocationsStore = create((set, get) => ({
         }),
 
     setBounds: (bounds) => {
+        // Skip no-op update: avoid re-render cascade when bounds haven't changed
+        const prev = get().currentBounds
+        if (prev &&
+            prev.sw.lat === bounds.sw.lat && prev.sw.lng === bounds.sw.lng &&
+            prev.ne.lat === bounds.ne.lat && prev.ne.lng === bounds.ne.lng) {
+            return
+        }
         set({ currentBounds: bounds });
     },
 

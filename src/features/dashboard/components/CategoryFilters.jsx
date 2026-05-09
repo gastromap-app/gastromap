@@ -13,7 +13,8 @@ const QUICK_FILTERS = [
 
 const CategoryFilters = ({ isDark }) => {
     const { t } = useTranslation()
-    const { activeCategories, toggleCategory } = useLocationsStore()
+    const activeCategories = useLocationsStore(state => state.activeCategories)
+    const toggleCategory = useLocationsStore(state => state.toggleCategory)
 
     const handleToggle = (id) => {
         toggleCategory(id)

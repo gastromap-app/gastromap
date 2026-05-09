@@ -70,8 +70,18 @@ async function fetchGeoByIP() {
  * @param {{ autoRequest?: boolean }} [options]
  */
 export function useUserGeo({ autoRequest = false } = {}) {
-    const { lat, lng, city, country, address, status, error, setCoords, setLocation, setStatus, setError, setVisitData } =
-        useGeoStore()
+    const lat = useGeoStore(state => state.lat)
+    const lng = useGeoStore(state => state.lng)
+    const city = useGeoStore(state => state.city)
+    const country = useGeoStore(state => state.country)
+    const address = useGeoStore(state => state.address)
+    const status = useGeoStore(state => state.status)
+    const error = useGeoStore(state => state.error)
+    const setCoords = useGeoStore(state => state.setCoords)
+    const setLocation = useGeoStore(state => state.setLocation)
+    const setStatus = useGeoStore(state => state.setStatus)
+    const setError = useGeoStore(state => state.setError)
+    const setVisitData = useGeoStore(state => state.setVisitData)
     const { user } = useAuthStore()
 
     const requestGeo = useCallback(async () => {

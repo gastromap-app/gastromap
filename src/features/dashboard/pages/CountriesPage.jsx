@@ -101,7 +101,8 @@ const CountriesPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const { locations, isLoading } = useLocationsStore()
+    const locations = useLocationsStore(state => state.locations)
+    const isLoading = useLocationsStore(state => state.isLoading)
 
     // Geo cover images from DB (admin-uploaded)
     const { data: geoCoversData = [] } = useGeoCovers('country')

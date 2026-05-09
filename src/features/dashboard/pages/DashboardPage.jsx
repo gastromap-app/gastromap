@@ -89,12 +89,17 @@ const FooterDisclaimer = ({ isDark }) => {
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
-    const { locations, filteredLocations, isLoading, initialize } = useLocationsStore()
+    const locations = useLocationsStore(state => state.locations)
+    const filteredLocations = useLocationsStore(state => state.filteredLocations)
+    const isLoading = useLocationsStore(state => state.isLoading)
+    const initialize = useLocationsStore(state => state.initialize)
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { city: currentCity = 'Unknown', country: currentCountry, visitCount = 0 } = useGeoStore()
+    const currentCity = useGeoStore(state => state.city) || 'Unknown'
+    const currentCountry = useGeoStore(state => state.country)
+    const visitCount = useGeoStore(state => state.visitCount) || 0
     const { lat: geoLat, lng: geoLng, status: geoStatus, requestGeo } = useUserGeo({ autoRequest: true })
 
     // Build explore URL with current city + optional sort param

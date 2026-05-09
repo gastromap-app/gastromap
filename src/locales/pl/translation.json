@@ -18,7 +18,15 @@
       "success_title": "Hasło zaktualizowane!",
       "success_message": "Twoje hasło zostało pomyślnie zresetowane. Przekierowujemy do panelu...",
       "redirecting": "Przekierowywanie..."
-    }
+    },
+    "sign_in": "Zaloguj się",
+    "sign_up": "Zarejestruj się",
+    "sign_out": "Wyloguj się",
+    "email": "Email",
+    "password": "Hasło",
+    "forgot_password": "Zapomniałeś hasła?",
+    "no_account": "Nie masz konta? Utwórz",
+    "has_account": "Masz już konto? Zaloguj się"
   },
   "ai": {
     "geo_permission_request": "📍 To find places nearby, I need access to your geolocation. Please allow access…",
@@ -1002,16 +1010,6 @@
     "near_me": "Blisko mnie",
     "view_all": "Zobacz wszystko",
     "search_placeholder": "Gdzie idziemy dzisiaj?"
-  },
-  "auth": {
-    "sign_in": "Zaloguj się",
-    "sign_up": "Zarejestruj się",
-    "sign_out": "Wyloguj się",
-    "email": "Email",
-    "password": "Hasło",
-    "forgot_password": "Zapomniałeś hasła?",
-    "no_account": "Nie masz konta? Utwórz",
-    "has_account": "Masz już konto? Zaloguj się"
   },
   "dine": {
     "title": "Dine With Me",

@@ -60,7 +60,10 @@ export const useLocationsStore = create((set, get) => ({
     // ─── Filter setters ───────────────────────────────────────────────────
 
     setCategory: (cat) => {
-        const updates = { activeCategories: [cat], activeCategory: cat };
+        // 'All' means no category filter — use empty array (consistent with resetFilters)
+        const updates = cat === 'All'
+            ? { activeCategories: [], activeCategory: 'All' }
+            : { activeCategories: [cat], activeCategory: cat };
         set(state => ({ ...updates, filteredLocations: applyAllFilters(state.locations, { ...state, ...updates }) }));
     },
 

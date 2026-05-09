@@ -278,29 +278,29 @@ const CuisineFormModal = ({ cuisine, onSave, onClose, disabled = false }) => {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
-                    <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Italian" />
+                    <input className={inp} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} placeholder="e.g. Italian" />
                 </div>
                 <div>
                     <label className={lbl}>Region</label>
-                    <input className={inp} value={form.region} onChange={e => setForm({...form, region: e.target.value})} placeholder="e.g. Southern Europe" />
+                    <input className={inp} value={form.region} onChange={e => setForm(prev => ({...prev, region: e.target.value}))} placeholder="e.g. Southern Europe" />
                 </div>
             </div>
             <div>
                 <label className={lbl}>Aliases</label>
-                <input className={inp} value={form.aliases} onChange={e => setForm({...form, aliases: e.target.value})} placeholder="Comma separated alternate names..." />
+                <input className={inp} value={form.aliases} onChange={e => setForm(prev => ({...prev, aliases: e.target.value}))} placeholder="Comma separated alternate names..." />
             </div>
             <div>
                 <label className={lbl}>Description</label>
-                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context and characteristics..." />
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm(prev => ({...prev, description: e.target.value}))} placeholder="Cultural context and characteristics..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Typical Dishes</label>
-                    <input className={inp} value={form.typical_dishes} onChange={e => setForm({...form, typical_dishes: e.target.value})} placeholder="Pizza, Pasta, Risotto..." />
+                    <input className={inp} value={form.typical_dishes} onChange={e => setForm(prev => ({...prev, typical_dishes: e.target.value}))} placeholder="Pizza, Pasta, Risotto..." />
                 </div>
                 <div>
                     <label className={lbl}>Key Ingredients</label>
-                    <input className={inp} value={form.key_ingredients} onChange={e => setForm({...form, key_ingredients: e.target.value})} placeholder="Olive Oil, Basil..." />
+                    <input className={inp} value={form.key_ingredients} onChange={e => setForm(prev => ({...prev, key_ingredients: e.target.value}))} placeholder="Olive Oil, Basil..." />
                 </div>
             </div>
         </FormModalBase>
@@ -333,34 +333,34 @@ const DishFormModal = ({ dish, onSave, onClose, disabled = false }) => {
         <FormModalBase title={dish ? 'Edit Dish' : 'New Dish'} onSave={handleSubmit} onClose={onClose} disabled={disabled}>
             <div>
                 <label className={lbl}>Dish Name</label>
-                <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Margherita Pizza" />
+                <input className={inp} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} placeholder="e.g. Margherita Pizza" />
             </div>
             <div>
                 <label className={lbl}>Description</label>
-                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Dish profile and origin..." />
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm(prev => ({...prev, description: e.target.value}))} placeholder="Dish profile and origin..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Flavor Notes</label>
-                    <input className={inp} value={form.flavor_notes} onChange={e => setForm({...form, flavor_notes: e.target.value})} placeholder="Savory, umami, rich..." />
+                    <input className={inp} value={form.flavor_notes} onChange={e => setForm(prev => ({...prev, flavor_notes: e.target.value}))} placeholder="Savory, umami, rich..." />
                 </div>
                 <div>
                     <label className={lbl}>Preparation Style</label>
-                    <input className={inp} value={form.preparation_style} onChange={e => setForm({...form, preparation_style: e.target.value})} placeholder="Baked, Grilled..." />
+                    <input className={inp} value={form.preparation_style} onChange={e => setForm(prev => ({...prev, preparation_style: e.target.value}))} placeholder="Baked, Grilled..." />
                 </div>
             </div>
             <div>
                 <label className={lbl}>Ingredients</label>
-                <input className={inp} value={form.ingredients} onChange={e => setForm({...form, ingredients: e.target.value})} placeholder="Comma separated list..." />
+                <input className={inp} value={form.ingredients} onChange={e => setForm(prev => ({...prev, ingredients: e.target.value}))} placeholder="Comma separated list..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Dietary Tags</label>
-                    <input className={inp} value={form.dietary_tags} onChange={e => setForm({...form, dietary_tags: e.target.value})} placeholder="Vegan, Gluten-free..." />
+                    <input className={inp} value={form.dietary_tags} onChange={e => setForm(prev => ({...prev, dietary_tags: e.target.value}))} placeholder="Vegan, Gluten-free..." />
                 </div>
                 <div>
                     <label className={lbl}>Best Pairing</label>
-                    <input className={inp} value={form.best_pairing} onChange={e => setForm({...form, best_pairing: e.target.value})} placeholder="Wine, Salad..." />
+                    <input className={inp} value={form.best_pairing} onChange={e => setForm(prev => ({...prev, best_pairing: e.target.value}))} placeholder="Wine, Salad..." />
                 </div>
             </div>
         </FormModalBase>
@@ -393,11 +393,11 @@ const IngredientFormModal = ({ ingredient, onSave, onClose, disabled = false }) 
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
-                    <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Saffron" />
+                    <input className={inp} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} placeholder="e.g. Saffron" />
                 </div>
                 <div>
                     <label className={lbl}>Category</label>
-                    <select className={cn(inp, "appearance-none cursor-pointer")} value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                    <select className={cn(inp, "appearance-none cursor-pointer")} value={form.category} onChange={e => setForm(prev => ({...prev, category: e.target.value}))}>
                         <option value="">Select category...</option>
                         <option value="spice">Spice</option>
                         <option value="herb">Herb</option>
@@ -412,21 +412,21 @@ const IngredientFormModal = ({ ingredient, onSave, onClose, disabled = false }) 
             </div>
             <div>
                 <label className={lbl}>Description</label>
-                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Cultural context and characteristics..." />
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm(prev => ({...prev, description: e.target.value}))} placeholder="Cultural context and characteristics..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Dietary Classification</label>
-                    <input className={inp} value={form.dietary_info} onChange={e => setForm({...form, dietary_info: e.target.value})} placeholder="Vegan, Nut-free..." />
+                    <input className={inp} value={form.dietary_info} onChange={e => setForm(prev => ({...prev, dietary_info: e.target.value}))} placeholder="Vegan, Nut-free..." />
                 </div>
                 <div>
                     <label className={lbl}>Season</label>
-                    <input className={inp} value={form.season} onChange={e => setForm({...form, season: e.target.value})} placeholder="Autumn, Year-round..." />
+                    <input className={inp} value={form.season} onChange={e => setForm(prev => ({...prev, season: e.target.value}))} placeholder="Autumn, Year-round..." />
                 </div>
             </div>
             <div>
                 <label className={lbl}>Common Pairings</label>
-                <input className={inp} value={form.common_pairings} onChange={e => setForm({...form, common_pairings: e.target.value})} placeholder="Comma separated..." />
+                <input className={inp} value={form.common_pairings} onChange={e => setForm(prev => ({...prev, common_pairings: e.target.value}))} placeholder="Comma separated..." />
             </div>
         </FormModalBase>
     )
@@ -457,16 +457,16 @@ const VibeFormModal = ({ vibe, onSave, onClose, disabled = false }) => {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className={lbl}>Name</label>
-                    <input className={inp} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Romantic" />
+                    <input className={inp} value={form.name} onChange={e => setForm(prev => ({...prev, name: e.target.value}))} placeholder="e.g. Romantic" />
                 </div>
                 <div>
                     <label className={lbl}>Slug</label>
-                    <input className={inp} value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} placeholder="auto-generated from name" />
+                    <input className={inp} value={form.slug} onChange={e => setForm(prev => ({...prev, slug: e.target.value}))} placeholder="auto-generated from name" />
                 </div>
             </div>
             <div>
                 <label className={lbl}>Category</label>
-                <select className={cn(inp, "appearance-none cursor-pointer")} value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                <select className={cn(inp, "appearance-none cursor-pointer")} value={form.category} onChange={e => setForm(prev => ({...prev, category: e.target.value}))}>
                     <option value="atmosphere">Atmosphere</option>
                     <option value="occasion">Occasion</option>
                     <option value="crowd">Crowd</option>
@@ -474,11 +474,11 @@ const VibeFormModal = ({ vibe, onSave, onClose, disabled = false }) => {
             </div>
             <div>
                 <label className={lbl}>Description</label>
-                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Describe the vibe..." />
+                <textarea className={cn(inp, "min-h-[90px] resize-none")} value={form.description} onChange={e => setForm(prev => ({...prev, description: e.target.value}))} placeholder="Describe the vibe..." />
             </div>
             <div>
                 <label className={lbl}>Synonyms</label>
-                <input className={inp} value={form.synonyms} onChange={e => setForm({...form, synonyms: e.target.value})} placeholder="Comma separated alternate names..." />
+                <input className={inp} value={form.synonyms} onChange={e => setForm(prev => ({...prev, synonyms: e.target.value}))} placeholder="Comma separated alternate names..." />
             </div>
         </FormModalBase>
     )

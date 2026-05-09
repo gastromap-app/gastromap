@@ -32,6 +32,16 @@ import { MenuScanner } from '@/features/public/components/MenuScanner'
 import { getLabelEmoji } from '@/shared/config/filterOptions'
 import { REVIEW_STATUSES } from '@/shared/constants/statuses'
 
+// Module-level component — avoids recreation on every render (react-doctor fix)
+const DietaryBadge = ({ label, active, colorClass }) => {
+    if (!active) return null
+    return (
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${colorClass}`}>
+            {label}
+        </span>
+    )
+}
+
 
 
 const LocationDetailsPage = () => {
@@ -544,16 +554,6 @@ const LocationDetailsPage = () => {
         }, {})
 
         const hasRealMenu = allDishes.length > 0
-
-        // Dietary badge helper
-        const DietaryBadge = ({ label, active, colorClass }) => {
-            if (!active) return null
-            return (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${colorClass}`}>
-                    {label}
-                </span>
-            )
-        }
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">

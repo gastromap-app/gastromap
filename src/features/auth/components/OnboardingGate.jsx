@@ -44,6 +44,8 @@ export function OnboardingGate({ children }) {
         // Local prefs already populated — no onboarding needed
         if (prefs.onboardingCompleted) return
 
+        let timerId = null
+
         // Local store is empty — check Supabase before showing onboarding
         // FIX: only set hasTriggeredRef AFTER loadFromSupabase completes to avoid
         // blocking retry on network failure (race condition fix)
@@ -51,7 +53,7 @@ export function OnboardingGate({ children }) {
             hasTriggeredRef.current = true
             if (!completed) {
                 // Truly first time — show onboarding after layout renders
-                setTimeout(() => setShowOnboarding(true), 600)
+                timerId = setTimeout(() => setShowOnboarding(true), 600)
             }
         }).catch(() => {
             // Set hasTriggeredRef to prevent request spam on every render,
@@ -59,6 +61,8 @@ export function OnboardingGate({ children }) {
             hasTriggeredRef.current = true
             console.warn('[OnboardingGate] loadFromSupabase failed, skipping onboarding this session')
         })
+
+        return () => { if (timerId) clearTimeout(timerId) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, prefs.onboardingCompleted])
 

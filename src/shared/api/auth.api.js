@@ -21,7 +21,7 @@ const MOCK_USERS = [
 
 // ─── Supabase helpers ──────────────────────────────────────────────────────
 
-async function _fetchProfile(userId) {
+export async function _fetchProfile(userId) {
     // Try `profiles` table first (legacy schema)
     try {
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
@@ -344,12 +344,35 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
         }
 
         // Token refreshed silently — update stored token.
-        // NOTE: Do NOT call _fetchProfile here. The callback runs inside
-        // the Supabase lock, and _fetchProfile → getSession() would try to
-        // re-acquire the same lock → deadlock. Role is handled by
-        // ADMIN_EMAILS in _mapUser, so a null profile is safe.
+        // CRITICAL: Re-fetch profile to keep role in sync. Previously we
+        // passed null profile which caused _mapUser to fall back to
+        // ADMIN_EMAILS / 'user' — meaning moderators lost their role on
+        // every token refresh. We now fetch the profile AFTER the lock
+        // releases by using a microtask to avoid the Supabase Web Locks
+        // deadlock (calling getSession inside onAuthStateChange would
+        // re-acquire the same lock).
         if (event === 'TOKEN_REFRESHED' && session?.user) {
-            onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            // Lazy import to avoid circular dependency (auth.api ← useAuthStore)
+            const { useAuthStore } = await import('@/shared/store/useAuthStore')
+            const { user: currentUser } = useAuthStore.getState()
+            // Emit the cached user first so the token is updated immediately
+            onSession({ user: currentUser || _mapUser(session.user, null), token: session.access_token })
+            // Then fetch fresh profile in a microtask (outside the Supabase lock)
+            // to update the role if it changed on the server.
+            Promise.resolve().then(async () => {
+                try {
+                    const profile = await _fetchProfile(session.user.id)
+                    const freshUser = _mapUser(session.user, profile)
+                    const { user: latestUser } = useAuthStore.getState()
+                    // Only update if role actually changed (avoid unnecessary re-renders)
+                    if (latestUser?.role !== freshUser.role || latestUser?.name !== freshUser.name) {
+                        onSession({ user: freshUser, token: session.access_token })
+                    }
+                } catch (err) {
+                    // Profile fetch failed — keep the cached user data, it's still valid
+                    console.warn('[auth] Failed to refresh profile on TOKEN_REFRESHED:', err.message)
+                }
+            })
             return
         }
 

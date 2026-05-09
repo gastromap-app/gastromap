@@ -9,6 +9,7 @@ const SignUpPage = () => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const action = searchParams.get('action')
+    const redirectAfterSignup = searchParams.get('redirect') || null
 
     const { register, error, clearError } = useAuthStore()
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,7 +61,7 @@ const SignUpPage = () => {
                 setEmailSent(true)
                 return
             }
-            const dest = action === 'add-place' ? '/dashboard/add-place' : '/dashboard'
+            const dest = redirectAfterSignup || (action === 'add-place' ? '/dashboard/add-place' : '/dashboard')
             navigate(dest, { replace: true })
         }
     }

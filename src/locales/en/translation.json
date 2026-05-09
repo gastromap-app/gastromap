@@ -121,7 +121,15 @@
     "must_try": "Must Try",
     "venue_gallery": "Venue Gallery",
     "full_album": "Full Album",
-    "find_online": "Find them online"
+    "find_online": "Find them online",
+    "auth_wall_title": "Unlock the full experience",
+    "auth_wall_subtitle": "Sign in to see insider tips, reviews, contact details, menu, and more.",
+    "auth_wall_insider": "Insider tips",
+    "auth_wall_reviews": "Reviews & ratings",
+    "auth_wall_contact": "Phone & website",
+    "auth_wall_menu": "Full menu",
+    "auth_wall_sign_in": "Sign in",
+    "auth_wall_sign_up": "Create free account"
   },
   "reviews": {
     "based_on": "Based on {{count}} reviews",

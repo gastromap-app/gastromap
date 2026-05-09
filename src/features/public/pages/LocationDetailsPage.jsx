@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -9,7 +9,8 @@ import {
     UtensilsCrossed, Camera, User, ChevronRight, CheckCircle2,
     FileText, Image as ImageIcon, Plus, Edit3, Send, Trash2,
     AlertCircle,
-    Instagram, Facebook, Twitter, ExternalLink, Globe, X
+    Instagram, Facebook, Twitter, ExternalLink, Globe, X,
+    Lock, LogIn, Eye
 } from 'lucide-react'
 import { getDisplayRating } from '@/utils/ratingUtils'
 import { formatOpeningHours } from '@/utils/formatOpeningHours'
@@ -37,10 +38,14 @@ const LocationDetailsPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
 
-
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+
+    // Preview mode: unauthenticated users see limited info + auth wall
+    const { user, isAuthenticated } = useAuthStore()
+    const isPreview = !isAuthenticated
+    const canScanMenu = user?.role === 'admin' || user?.role === 'moderator'
 
     // Find location: try store first (instant if already loaded), then Supabase query
     // Use String() coercion — URL params are always strings, DB ids may be numbers
@@ -78,12 +83,10 @@ const LocationDetailsPage = () => {
     // FIX: DB is the source of truth for authenticated users; localStorage only for guests
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
     const { prefs, addVisited: localAddVisited } = useUserPrefsStore()
-    const { user } = useAuthStore()
-    const canScanMenu = user?.role === 'admin' || user?.role === 'moderator'
     const addFavMut   = useAddFavoriteMutation()
     const removeFavMut = useRemoveFavoriteMutation()
     const addVisitMut = useAddVisitMutation()
-    const { data: dbFavs = [] } = useUserFavorites(user?.id)
+    const { data: dbFavs = [] } = useUserFavorites(isAuthenticated ? user?.id : null)
     const dbFavIds = dbFavs.map(f => f.location_id)
     // DB takes precedence for auth users; localStorage fallback for guests
     const isSaved   = user?.id ? dbFavIds.includes(location?.id) : isLocalFav(location?.id)
@@ -115,8 +118,8 @@ const LocationDetailsPage = () => {
     }
     const { label: openLabel, isOpen } = useOpenStatus(location?.openingHours)
 
-    // Reviews — Supabase
-    const { data: allReviews = [] } = useLocationReviews(location?.id)
+    // Reviews — Supabase (only for authenticated users; anon can't see them)
+    const { data: allReviews = [] } = useLocationReviews(isAuthenticated ? location?.id : null)
     const createReview = useCreateReviewMutation()
     const reviews = useMemo(
         () => allReviews.filter((r) => r.status === REVIEW_STATUSES.PUBLISHED),
@@ -308,8 +311,11 @@ const LocationDetailsPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {[
                     { id: 'hours',     icon: Clock,         label: openLabel || t('location.hours_today'), value: formatOpeningHours(location.openingHours || location.opening_hours) || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
-                    { id: 'contact',   icon: Phone,         label: t('location.contact'),        value: location.phone || '—', color: "text-green-500", bg: "bg-green-500/8", hidden: !location.phone },
-                    { id: 'reviews',   icon: MessageSquare, label: t('location.total_reviews'),  value: aggregate.count ? `${aggregate.count}` : '—', sub: aggregate.count ? t('location.review_count_short', { defaultValue: 'reviews' }) : t('location.no_reviews'), color: "text-indigo-500", bg: "bg-indigo-500/8" },
+                    // Phone and reviews hidden in preview mode
+                    ...(!isPreview ? [
+                        { id: 'contact',   icon: Phone,         label: t('location.contact'),        value: location.phone || '—', color: "text-green-500", bg: "bg-green-500/8", hidden: !location.phone },
+                        { id: 'reviews',   icon: MessageSquare, label: t('location.total_reviews'),  value: aggregate.count ? `${aggregate.count}` : '—', sub: aggregate.count ? t('location.review_count_short', { defaultValue: 'reviews' }) : t('location.no_reviews'), color: "text-indigo-500", bg: "bg-indigo-500/8" },
+                    ] : []),
                     { id: 'directions',icon: Navigation,   label: t('location.get_directions'), value: location.address ? t('location.open_in_maps') : '—', color: "text-orange-500", bg: "bg-orange-500/8" }
                 ].filter(info => !info.hidden).map((info, i) => (
                     <motion.div
@@ -394,8 +400,8 @@ const LocationDetailsPage = () => {
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Curator Tips from DB */}
-                {(location.insider_tip || location.must_try) && (
+                {/* Curator Tips from DB — hidden in preview mode */}
+                {!isPreview && (location.insider_tip || location.must_try) && (
                     <div className="space-y-4 pt-4 border-t border-white/5">
                         {location.insider_tip && (
                             <div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100'}`}>
@@ -435,7 +441,7 @@ const LocationDetailsPage = () => {
             <section className="space-y-3">
                 <div className="flex justify-between items-center">
                     <h3 className={`text-lg font-black ${textStyle}`}>{t('location.venue_gallery')}</h3>
-                    <button onClick={() => setActiveTab('Photos')} className="text-blue-600 font-black text-xs hover:underline">{t('location.full_album')}</button>
+                    <button onClick={() => !isPreview && setActiveTab('Photos')} className={`text-blue-600 font-black text-xs ${isPreview ? 'opacity-40 cursor-not-allowed' : 'hover:underline'}`}>{t('location.full_album')}</button>
                 </div>
 
                 {/* Bento Style Gallery Grid */}
@@ -473,7 +479,8 @@ const LocationDetailsPage = () => {
                 </div>
             </section>
 
-            {/* 5. Connect & External Links */}
+            {/* 5. Connect & External Links — hidden in preview mode */}
+            {!isPreview && (
             <section className="pt-8 space-y-6">
                 <div className={`flex flex-col md:flex-row gap-6 items-center justify-between p-10 rounded-3xl border overflow-hidden relative group transition-all duration-700 hover:border-blue-500/30 ${isDark ? 'bg-white/[0.02] border-white/5 shadow-2xl shadow-blue-500/5' : 'bg-gray-50 border-gray-100 shadow-xl shadow-gray-200/50'}`}>
                     <div className="absolute top-0 left-0 w-40 h-40 bg-blue-600/5 rounded-full -ml-20 -mt-20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -512,6 +519,7 @@ const LocationDetailsPage = () => {
                     </div>
                 </div>
             </section>
+            )}
         </div>
     )
 
@@ -929,13 +937,13 @@ const LocationDetailsPage = () => {
     return (
         <div className="relative min-h-screen">
             {/* ── Unified Sticky Navigation Header ───────────────────────────────── */}
-            <header 
+            <header
                 className="fixed top-0 left-0 right-0 z-[120] transition-all duration-300 ease-out"
                 style={{ paddingTop: 'env(safe-area-inset-top)' }}
             >
                 {/* Background Layer: Transitions from transparent to solid/glass */}
                 <div className={`absolute inset-0 transition-opacity duration-300 ${
-                    showCompactHeader 
+                    showCompactHeader
                         ? (isDark ? 'bg-[hsl(220,20%,3%)]/90 border-b border-white/10 opacity-100' : 'bg-white/90 border-b border-black/5 opacity-100')
                         : 'opacity-0'
                 } backdrop-blur-2xl shadow-sm`} />
@@ -969,7 +977,7 @@ const LocationDetailsPage = () => {
                         </h2>
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Action Buttons — simplified in preview mode */}
                     <div className="flex gap-2 items-center">
                         <button
                             onClick={shareLocation}
@@ -982,32 +990,37 @@ const LocationDetailsPage = () => {
                         >
                             <Share2 size={18} />
                         </button>
-                        <button
-                            onClick={() => addVisited(location.id)}
-                            aria-label={isVisited ? 'Visited' : 'Mark as visited'}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                isVisited 
-                                    ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-lg' 
-                                    : showCompactHeader
-                                        ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
-                                        : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
-                            }`}
-                        >
-                            <CheckCircle2 size={18} className={isVisited ? 'fill-white' : ''} />
-                        </button>
-                        <button
-                            onClick={() => toggleFavorite(location.id)}
-                            aria-label={isSaved ? 'Remove from saved' : 'Save'}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                isSaved 
-                                    ? 'bg-red-500 border-red-300/60 text-white shadow-lg' 
-                                    : showCompactHeader
-                                        ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
-                                        : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
-                            }`}
-                        >
-                            <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
-                        </button>
+                        {/* Hide visited/save buttons in preview mode */}
+                        {!isPreview && (
+                            <>
+                                <button
+                                    onClick={() => addVisited(location.id)}
+                                    aria-label={isVisited ? 'Visited' : 'Mark as visited'}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                        isVisited
+                                            ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-lg'
+                                            : showCompactHeader
+                                                ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                                : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                                    }`}
+                                >
+                                    <CheckCircle2 size={18} className={isVisited ? 'fill-white' : ''} />
+                                </button>
+                                <button
+                                    onClick={() => toggleFavorite(location.id)}
+                                    aria-label={isSaved ? 'Remove from saved' : 'Save'}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                        isSaved
+                                            ? 'bg-red-500 border-red-300/60 text-white shadow-lg'
+                                            : showCompactHeader
+                                                ? (isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100')
+                                                : 'bg-black/45 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:bg-black/60'
+                                    }`}
+                                >
+                                    <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </header>
@@ -1052,13 +1065,16 @@ const LocationDetailsPage = () => {
                         <span className="bg-blue-600 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white shadow-lg">
                             {location.category}
                         </span>
-                        <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/25 text-white text-[11px] font-black">
-                            <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                            {location.google_rating ?? location.rating ?? '—'}
-                            {aggregate.count > 0 && (
-                                <span className="text-white/70 font-semibold">· {aggregate.count}</span>
-                            )}
-                        </div>
+                        {/* Rating badge — only for authenticated users */}
+                        {!isPreview && (
+                            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/25 text-white text-[11px] font-black">
+                                <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                                {location.google_rating ?? location.rating ?? '—'}
+                                {aggregate.count > 0 && (
+                                    <span className="text-white/70 font-semibold">· {aggregate.count}</span>
+                                )}
+                            </div>
+                        )}
                         {openLabel && (
                             <div className={`flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${isOpen ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-100' : 'bg-red-500/20 border-red-400/40 text-red-100'}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
@@ -1090,13 +1106,16 @@ const LocationDetailsPage = () => {
                             onScroll={handleScroll}
                             className="p-1.5 rounded-2xl flex gap-1 items-center overflow-x-auto scrollbar-hide w-full"
                         >
+                            {/* In preview mode: only show Overview tab */}
                             {[
                                 { id: 'Overview', label: t('location.overview') },
-                                { id: 'Menu',     label: t('location.menu') },
-                                { id: 'Booking',  label: t('location.booking') },
-                                { id: 'Reviews',  label: t('location.reviews') },
-                                { id: 'Photos',   label: t('location.photos') },
-                                { id: 'Notes',    label: t('location.notes') }
+                                ...(!isPreview ? [
+                                    { id: 'Menu',     label: t('location.menu') },
+                                    { id: 'Booking',  label: t('location.booking') },
+                                    { id: 'Reviews',  label: t('location.reviews') },
+                                    { id: 'Photos',   label: t('location.photos') },
+                                    { id: 'Notes',    label: t('location.notes') },
+                                ] : [])
                             ].map((tab) => {
                                 const isComingSoon = ['Menu', 'Booking'].includes(tab.id)
                                 return (
@@ -1104,9 +1123,9 @@ const LocationDetailsPage = () => {
                                         key={tab.id}
                                         onClick={() => !isComingSoon && setActiveTab(tab.id)}
                                         className={`relative flex-shrink-0 px-5 md:px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
-                                            activeTab === tab.id 
-                                                ? 'text-white' 
-                                                : isComingSoon 
+                                            activeTab === tab.id
+                                                ? 'text-white'
+                                                : isComingSoon
                                                     ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                                                     : isDark ? 'text-white/60 hover:text-white' : 'text-gray-600 hover:text-gray-900'
                                         }`}
@@ -1133,20 +1152,92 @@ const LocationDetailsPage = () => {
                         </div>
                     </div>
                 </div>
-
+            
                 <div className="pt-6">
                     {activeTab === 'Overview' && renderOverview()}
-                    {activeTab === 'Menu' && renderMenu()}
-                    {activeTab === 'Reviews' && renderReviews()}
-                    {activeTab === 'Photos' && renderPhotos()}
-                    {activeTab === 'Notes' && renderNotes()}
+                    {!isPreview && activeTab === 'Menu' && renderMenu()}
+                    {!isPreview && activeTab === 'Reviews' && renderReviews()}
+                    {!isPreview && activeTab === 'Photos' && renderPhotos()}
+                    {!isPreview && activeTab === 'Notes' && renderNotes()}
                 </div>
+            
+                {/* ── Auth Wall (preview mode only) ────────────────────────────── */}
+                {isPreview && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className={`mt-8 rounded-3xl border overflow-hidden relative ${
+                            isDark
+                                ? 'bg-gradient-to-br from-blue-600/10 to-indigo-600/10 border-blue-500/20'
+                                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/60 shadow-lg shadow-blue-500/5'
+                        }`}
+                    >
+                        {/* Decorative blur */}
+                        <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+                        <div className="relative p-8 text-center space-y-5">
+                            <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center ${
+                                isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                            }`}>
+                                <Lock size={28} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
+                            </div>
+            
+                            <div className="space-y-2">
+                                <h3 className={`text-xl font-black ${textStyle}`}>
+                                    {t('location.auth_wall_title', { defaultValue: 'Unlock the full experience' })}
+                                </h3>
+                                <p className={`text-sm max-w-md mx-auto ${subTextStyle}`}>
+                                    {t('location.auth_wall_subtitle', { defaultValue: 'Sign in to see insider tips, reviews, contact details, menu, and more.' })}
+                                </p>
+                            </div>
+            
+                            {/* What you get */}
+                            <div className={`grid grid-cols-2 gap-2 max-w-sm mx-auto text-left`}>
+                                {[
+                                    { icon: Sparkles, text: t('location.auth_wall_insider', { defaultValue: 'Insider tips' }) },
+                                    { icon: Star, text: t('location.auth_wall_reviews', { defaultValue: 'Reviews & ratings' }) },
+                                    { icon: Phone, text: t('location.auth_wall_contact', { defaultValue: 'Phone & website' }) },
+                                    { icon: UtensilsCrossed, text: t('location.auth_wall_menu', { defaultValue: 'Full menu' }) },
+                                ].map((item, i) => (
+                                    <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${
+                                        isDark ? 'bg-white/5 text-white/70' : 'bg-white/80 text-gray-600'
+                                    }`}>
+                                        <item.icon size={14} className={isDark ? 'text-blue-400' : 'text-blue-500'} />
+                                        {item.text}
+                                    </div>
+                                ))}
+                            </div>
+            
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                                <Link
+                                    to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-blue-600/25 transition-all active:scale-95"
+                                >
+                                    <LogIn size={18} />
+                                    {t('location.auth_wall_sign_in', { defaultValue: 'Sign in' })}
+                                </Link>
+                                <Link
+                                    to={`/auth/signup?redirect=${encodeURIComponent(window.location.pathname)}`}
+                                    className={`inline-flex items-center justify-center gap-2 px-8 py-4 font-black text-sm rounded-2xl transition-all active:scale-95 ${
+                                        isDark
+                                            ? 'bg-white/10 text-white hover:bg-white/15 border border-white/10'
+                                            : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                                    }`}
+                                >
+                                    <Eye size={18} />
+                                    {t('location.auth_wall_sign_up', { defaultValue: 'Create free account' })}
+                                </Link>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* ── Action bar (Now in flow, at the bottom of content) ─────────────────── */}
                 <div className="py-12 px-4 border-t border-gray-100 dark:border-white/5 mt-12 mb-8">
                     <div className="max-w-md mx-auto">
                         <div className={`flex gap-2 p-2 rounded-[22px] border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100 shadow-sm'}`}>
-                            {location?.phone && (
+                            {!isPreview && location?.phone && (
                                 <button
                                     onClick={callNumber}
                                     aria-label="Call"

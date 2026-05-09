@@ -121,7 +121,15 @@
     "must_try": "Обязательно попробуйте",
     "venue_gallery": "Галерея заведения",
     "full_album": "Полный альбом",
-    "find_online": "Найти в интернете"
+    "find_online": "Найти в интернете",
+    "auth_wall_title": "Откройте полный доступ",
+    "auth_wall_subtitle": "Войдите, чтобы увидеть инсайдерские советы, отзывы, контакты, меню и многое другое.",
+    "auth_wall_insider": "Инсайдерские советы",
+    "auth_wall_reviews": "Отзывы и оценки",
+    "auth_wall_contact": "Телефон и сайт",
+    "auth_wall_menu": "Полное меню",
+    "auth_wall_sign_in": "Войти",
+    "auth_wall_sign_up": "Создать аккаунт"
   },
   "reviews": {
     "based_on": "На основе {{count}} отзывов",

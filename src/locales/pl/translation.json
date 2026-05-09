@@ -121,7 +121,15 @@
     "must_try": "Must Try",
     "venue_gallery": "Venue Gallery",
     "full_album": "Full Album",
-    "find_online": "Find them online"
+    "find_online": "Znajdź ich online",
+    "auth_wall_title": "Odblokuj pełne doświadczenie",
+    "auth_wall_subtitle": "Zaloguj się, aby zobaczyć wskazówki ekspertów, recenzje, dane kontaktowe, menu i więcej.",
+    "auth_wall_insider": "Wskazówki ekspertów",
+    "auth_wall_reviews": "Recenzje i oceny",
+    "auth_wall_contact": "Telefon i strona",
+    "auth_wall_menu": "Pełne menu",
+    "auth_wall_sign_in": "Zaloguj się",
+    "auth_wall_sign_up": "Utwórz darmowe konto"
   },
   "reviews": {
     "based_on": "Based on {{count}} reviews",

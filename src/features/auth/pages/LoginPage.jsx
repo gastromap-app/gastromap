@@ -1,21 +1,24 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, ChevronRight, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { AuthLayout } from '@/features/auth/components/AuthLayout'
 
 const LoginPage = () => {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const redirectAfterLogin = searchParams.get('redirect') || null
     const { login, error, clearError, isAuthenticated, user } = useAuthStore()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Redirect if already logged in
     React.useEffect(() => {
         if (isAuthenticated) {
-            navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
+            const target = redirectAfterLogin || (user?.role === 'admin' ? '/admin' : '/dashboard')
+            navigate(target, { replace: true })
         }
-    }, [isAuthenticated, user, navigate])
+    }, [isAuthenticated, user, navigate, redirectAfterLogin])
     const [showPassword, setShowPassword] = useState(false)
 
     // Form variants
@@ -43,7 +46,7 @@ const LoginPage = () => {
         try {
             const result = await login(email, password)
             if (result.success) {
-                const target = result.user?.role === 'admin' ? '/admin' : '/dashboard'
+                const target = redirectAfterLogin || (result.user?.role === 'admin' ? '/admin' : '/dashboard')
                 navigate(target, { replace: true })
                 // Fallback: if soft navigation hasn't moved us within 2s,
                 // force a hard redirect — guards against React Router issues.

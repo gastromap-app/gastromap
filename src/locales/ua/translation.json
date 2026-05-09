@@ -90,7 +90,15 @@
     "must_try": "Обов'язково спробуйте",
     "venue_gallery": "Галерея закладу",
     "full_album": "Повний альбом",
-    "find_online": "Знайти в інтернеті"
+    "find_online": "Знайти в інтернеті",
+    "auth_wall_title": "Відкрийте повний доступ",
+    "auth_wall_subtitle": "Увійдіть, щоб побачити інсайдерські поради, відгуки, контакти, меню та багато іншого.",
+    "auth_wall_insider": "Інсайдерські поради",
+    "auth_wall_reviews": "Відгуки та оцінки",
+    "auth_wall_contact": "Телефон та сайт",
+    "auth_wall_menu": "Повне меню",
+    "auth_wall_sign_in": "Увійти",
+    "auth_wall_sign_up": "Створити акаунт"
   },
   "reviews": {
     "based_on": "На основі {{count}} відгуків",

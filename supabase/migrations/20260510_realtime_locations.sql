@@ -37,3 +37,6 @@ END $$;
 -- making it impossible to reliably update the Zustand store.
 -- ──────────────────────────────────────────────────────────────
 ALTER TABLE locations REPLICA IDENTITY FULL;
+ALTER TABLE profiles REPLICA IDENTITY FULL;
+ALTER TABLE user_favorites REPLICA IDENTITY FULL;
+ALTER TABLE user_visits REPLICA IDENTITY FULL;

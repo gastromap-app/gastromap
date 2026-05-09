@@ -13,9 +13,7 @@ import {
 import { useTheme } from '@/hooks/useTheme'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 import FilterModal from '@/features/dashboard/components/FilterModal'
-const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab'))
 import { useShallow } from 'zustand/react/shallow'
-import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useInfiniteLocations } from '@/shared/api/queries/location.queries'
 import { SmartSearchBar } from '@/features/dashboard/components/SmartSearchBar'
@@ -442,8 +440,7 @@ const LocationsPage = () => {
     const [mobileScrollEl, setMobileScrollEl] = useState(null)
     const [showFloatingSearch, setShowFloatingSearch] = useState(true)
     const lastScrollY = useRef(0)
-    const [activeTab, setActiveTab] = useState('overview')
-    const [isFilterOpen, setIsFilterOpen] = useState(false)
+        const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [sortOpen, setSortOpen] = useState(false)
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
@@ -645,26 +642,8 @@ const LocationsPage = () => {
                         </div>
                     </div>
 
-                    {/* Controls row */}
-                    <div className="flex justify-between items-center gap-6 mt-10">
-                        {/* Tab switcher */}
-                        <div className="bg-blue-600 p-1.5 rounded-full flex shadow-lg">
-                            {['overview', 'map'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    role="tab"
-                                    aria-selected={activeTab === tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`relative px-10 py-3 rounded-full text-base font-bold capitalize transition-all z-10 ${activeTab === tab ? 'text-blue-600' : 'text-white hover:bg-white/10'}`}
-                                >
-                                    {activeTab === tab && (
-                                        <motion.div layoutId="activeTabLocations" className="absolute inset-0 bg-white rounded-full shadow-sm z-[-1]" />
-                                    )}
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-
+                    {/* Controls row — breadcrumb + results count + reset */}
+                    <div className="flex justify-between items-center gap-6 mt-8">
                         {/* Breadcrumb */}
                         <nav className={`hidden md:flex items-center px-5 py-2.5 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-gray-100'}`}>
                             <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
@@ -698,9 +677,7 @@ const LocationsPage = () => {
 
                     {/* Content */}
                     <div className="mt-8 min-h-[400px]">
-                        {activeTab === 'map' ? (
-                            <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}><MapTab activeFilter={activeCategory} /></React.Suspense>
-                        ) : isLoading ? (
+                        {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {Array.from({ length: 8 }).map((_, i) => (
                                     <LocationCardDesktopSkeleton key={i} isDark={isDark} />

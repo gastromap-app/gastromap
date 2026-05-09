@@ -592,7 +592,7 @@ const ProfilePage = () => {
                         </Link>
                     ) : (
                         /* Regular user: waitlist card */
-                        <div className={`p-5 rounded-[24px] border border-white/10 dark:border-white/5 bg-gradient-to-br from-indigo-500/5 to-transparent relative overflow-hidden`}>
+                        <div className={`p-5 rounded-[24px] border ${isDark ? 'border-white/5' : 'border-gray-200'} bg-gradient-to-br from-indigo-500/5 to-transparent relative overflow-hidden`}>>
                             <div className="flex items-center gap-3 mb-3 relative z-10">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isDark ? 'bg-white/10' : 'bg-gray-100'}`}>
                                     <Users size={20} className="text-indigo-400" />

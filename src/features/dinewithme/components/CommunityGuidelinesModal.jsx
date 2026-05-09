@@ -45,9 +45,8 @@ export function CommunityGuidelinesModal({ isOpen, onAccept, onClose }) {
                     className={`
                         relative w-full max-w-md mx-4 mb-4 md:mb-0
                         rounded-3xl overflow-hidden
-                        bg-white/[0.08] dark:bg-white/[0.05]
+                        ${isDark ? 'bg-[#1c1c1e] border border-white/10' : 'bg-white border border-gray-200'}
                         backdrop-blur-2xl
-                        border border-white/20 dark:border-white/10
                         text-gray-900 dark:text-white
                         shadow-2xl
                     `}

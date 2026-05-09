@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
@@ -31,7 +31,7 @@ import LazyImage from '@/components/ui/LazyImage'
 import ManifestoSection from '../components/ManifestoSection'
 import FilterModal from '../components/FilterModal'
 
-const MapTab = React.lazy(() => import('../components/MapTab'))
+
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────
 
@@ -555,48 +555,22 @@ const DesktopDashboard = ({
                         {cityTagline}
                     </p>
 
-                    {/* Search + Filters Integrated */}
-                    <div className="flex flex-col gap-6">
-                        <div className="w-full max-w-4xl">
-                            <SmartSearchBar
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onFilter={() => setIsFilterOpen(true)}
-                                placeholder={t('dashboard.search_placeholder')}
-                                showFilter={false}
-                            />
-                        </div>
-                        <div className="w-full">
-                            <CategoryFilters isDark={isDark} />
-                        </div>
+                    {/* Search bar */}
+                    <div className="w-full max-w-4xl">
+                        <SmartSearchBar
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFilter={() => setIsFilterOpen(true)}
+                            placeholder={t('dashboard.search_placeholder')}
+                            showFilter={false}
+                        />
                     </div>
                 </motion.div>
             </div>
 
-            {/* Tab bar + filter */}
-            <div className="flex items-center justify-between mb-12 border-b border-border pb-6">
-                <div className="flex items-center p-1 rounded-2xl gap-1 bg-secondary/50 backdrop-blur-sm">
-                    {['overview', 'map'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`relative px-8 py-2.5 rounded-xl text-sm font-bold capitalize transition-all duration-300 ${
-                                activeTab === tab
-                                    ? 'bg-white dark:bg-white/10 text-t-primary shadow-lg shadow-black/5 dark:shadow-none'
-                                    : 'text-t-tertiary hover:text-t-primary'
-                            }`}
-                        >
-                            {tab === 'overview' ? t('dashboard.tab_overview') : t('dashboard.tab_map')}
-                            {activeTab === tab && (
-                                <motion.div 
-                                    layoutId="activeTab" 
-                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-xl -z-10"
-                                />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
+            {/* Filter button — sits inline with category chips */}
+            <div className="mb-12 flex items-center gap-4">
+                <CategoryFilters isDark={isDark} />
                 <button
                     onClick={() => setIsFilterOpen(true)}
                     className="flex items-center gap-2 px-5 h-11 rounded-xl text-sm font-bold transition-all active:scale-95 bg-secondary hover:bg-secondary/80 text-t-primary border border-border"
@@ -607,19 +581,12 @@ const DesktopDashboard = ({
             </div>
 
             {/* Content */}
-            {activeTab === 'map' ? (
-                <Suspense fallback={<div className="h-[70vh] flex items-center justify-center"><Skeleton className="h-12 w-12 rounded-full" /></div>}>
-                    <div className="h-[70vh] rounded-[32px] overflow-hidden border border-border shadow-2xl">
-                        <MapTab />
-                    </div>
-                </Suspense>
-            ) : (
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-                    className="space-y-20"
-                >
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                className="space-y-20"
+            >
                     {/* Nearby Locations */}
                     <motion.div variants={itemVariants} className="space-y-8">
                         <SectionHeader
@@ -772,7 +739,6 @@ const DesktopDashboard = ({
                         <FooterDisclaimer isDark={isDark} />
                     </div>
                 </motion.div>
-            )}
         </div>
     )
 }

@@ -107,7 +107,7 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
         w-full px-4 py-3 rounded-xl text-sm
         ${isDark
             ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-emerald-500/50'
-            : 'bg-white/10 border border-white/20 text-gray-900 placeholder-gray-500 focus:border-emerald-500'
+            : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-emerald-500'
         }
         outline-none transition-colors backdrop-blur-sm
     `
@@ -129,16 +129,15 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="
+                    className={`
                         relative w-full max-w-lg
                         rounded-3xl overflow-hidden
-                        bg-white/[0.08] dark:bg-white/[0.05]
-                        backdrop-blur-2xl
-                        border border-white/20 dark:border-white/10
+                        ${isDark ? 'bg-[#1c1c1e] border-white/10' : 'bg-white border-gray-200'}
+                        backdrop-blur-2xl border
                         text-gray-900 dark:text-white
                         shadow-2xl shadow-black/20
                         max-h-[85vh] overflow-y-auto
-                    "
+                    `}
                 >
                     {/* Header */}
                     <div className="px-6 pb-4 flex items-center justify-between pt-5">
@@ -186,7 +185,7 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
 
                                     {/* Search results */}
                                     {venueSearch.trim() && venueResults.length > 0 && (
-                                        <div className={`mt-2 rounded-xl border overflow-hidden max-h-48 overflow-y-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/10 border-white/20'} backdrop-blur-sm`}>
+                                        <div className={`mt-2 rounded-xl border overflow-hidden max-h-48 overflow-y-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'} backdrop-blur-sm`}>
                                             {venueResults.map(venue => (
                                                 <button
                                                     key={venue.id}
@@ -197,9 +196,9 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                                                     className={`
                                                         w-full text-left px-4 py-3 text-sm
                                                         flex items-center gap-2
-                                                        ${isDark ? 'hover:bg-white/5' : 'hover:bg-white/10'}
+                                                        ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}
                                                         border-b last:border-b-0
-                                                        ${isDark ? 'border-white/5' : 'border-white/10'}
+                                                        ${isDark ? 'border-white/5' : 'border-gray-100'}
                                                     `}
                                                 >
                                                     <MapPin size={14} className="text-blue-500 flex-shrink-0" />

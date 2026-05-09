@@ -42,7 +42,7 @@ export function useInfiniteLocations(filters = {}) {
         queryKey: [...queryKeys.locations.filtered(filters), 'infinite'],
         queryFn: async ({ pageParam = 0 }) => {
             const { getLocations } = await import('../locations.api')
-            return getLocations({ ...filters, limit: 10, offset: pageParam })
+            return getLocations({ ...filters, limit: filters.limit || 10, offset: pageParam })
         },
         getNextPageParam: (lastPage, pages) =>
             lastPage.hasMore ? pages.length * 10 : undefined,

@@ -417,7 +417,7 @@ const LocationsPage = () => {
         fetchNextPage, 
         hasNextPage,
         isFetchingNextPage
-    } = useInfiniteLocations(city, country, 24)
+    } = useInfiniteLocations({ city, country, query: storeQuery, category: activeCategory !== 'All' ? activeCategory : null, price_range: activePriceLevels, minRating, sortBy, limit: 24 })
 
     // Flatten pages into a single array for rendering
     const localFilteredLocations = useMemo(() => {

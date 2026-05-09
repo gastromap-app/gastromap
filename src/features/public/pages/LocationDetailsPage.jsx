@@ -27,7 +27,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import LocationImage from '@/components/ui/LocationImage'
 import PhotoLightbox from '@/components/ui/PhotoLightbox'
 import { getLocationMenu, saveScannedMenu, incrementView } from '@/shared/api/locations.api'
-import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useLocation as useLocationQuery } from '@/shared/api/queries'
+import { useCreateReviewMutation, useLocationReviews, useAddFavoriteMutation, useRemoveFavoriteMutation, useUserFavorites, useAddVisitMutation, useDeleteVisitMutation, useUserVisits, useLocation as useLocationQuery } from '@/shared/api/queries'
 import { MenuScanner } from '@/features/public/components/MenuScanner'
 import { getLabelEmoji } from '@/shared/config/filterOptions'
 import { REVIEW_STATUSES } from '@/shared/constants/statuses'
@@ -92,10 +92,12 @@ const LocationDetailsPage = () => {
     // Connect to real stores
     // FIX: DB is the source of truth for authenticated users; localStorage only for guests
     const { isFavorite: isLocalFav, toggleFavorite: localToggle } = useFavoritesStore()
-    const { prefs, addVisited: localAddVisited } = useUserPrefsStore()
+    const { prefs, addVisited: localAddVisited, removeVisited: localRemoveVisited } = useUserPrefsStore()
     const addFavMut   = useAddFavoriteMutation()
     const removeFavMut = useRemoveFavoriteMutation()
     const addVisitMut = useAddVisitMutation()
+    const deleteVisitMut = useDeleteVisitMutation()
+    const { data: userVisits = [] } = useUserVisits(isAuthenticated ? user?.id : null)
     const { data: dbFavs = [] } = useUserFavorites(isAuthenticated ? user?.id : null)
     const dbFavIds = dbFavs.map(f => f.location_id)
     // DB takes precedence for auth users; localStorage fallback for guests
@@ -106,13 +108,16 @@ const LocationDetailsPage = () => {
         if (!user?.id) {
             // Guest mode: only localStorage
             localToggle(id)
+            showShareToast(isLocalFav(id) ? t('location.removed_from_saved') : t('location.saved_this_place'))
             return
         }
         // Auth user: DB is truth — toggle based on current DB state
         if (dbFavIds.includes(id)) {
             await removeFavMut.mutateAsync({ userId: user.id, locationId: id })
+            showShareToast(t('location.removed_from_saved'))
         } else {
             await addFavMut.mutateAsync({ userId: user.id, locationId: id })
+            showShareToast(t('location.saved_this_place'))
         }
         // Sync localStorage to match DB state after toggle
         if (!dbFavIds.includes(id) !== isLocalFav(id)) {
@@ -120,10 +125,22 @@ const LocationDetailsPage = () => {
         }
     }
 
-    const addVisited = async (id) => {
-        localAddVisited(id)  // optimistic local
-        if (user?.id) {
-            await addVisitMut.mutateAsync({ userId: user.id, locationId: id })
+    const toggleVisited = async (id) => {
+        if (!isVisited) {
+            localAddVisited(id)
+            if (user?.id) {
+                await addVisitMut.mutateAsync({ userId: user.id, locationId: id })
+            }
+            showShareToast(t('location.marked_visited'))
+        } else {
+            localRemoveVisited(id)
+            if (user?.id) {
+                const visit = userVisits.find(v => v.location_id === id)
+                if (visit?.id) {
+                    await deleteVisitMut.mutateAsync({ visitId: visit.id, locationId: id, userId: user.id })
+                }
+            }
+            showShareToast(t('location.unmarked_visited'))
         }
     }
     const { label: openLabel, isOpen } = useOpenStatus(location?.openingHours)
@@ -996,8 +1013,8 @@ const LocationDetailsPage = () => {
                         {!isPreview && (
                             <>
                                 <button
-                                    onClick={() => addVisited(location.id)}
-                                    aria-label={isVisited ? 'Visited' : 'Mark as visited'}
+                                    onClick={() => toggleVisited(location.id)}
+                                    aria-label={isVisited ? 'Unmark as visited' : 'Mark as visited'}
                                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                                         isVisited
                                             ? 'bg-emerald-600 border-emerald-400/60 text-white shadow-lg'

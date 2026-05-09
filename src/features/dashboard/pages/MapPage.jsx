@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import MapTab from '../components/MapTab'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 import FilterModal from '../components/FilterModal'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 import { Coffee, Utensils, Wine, Star } from 'lucide-react'
 
@@ -29,21 +28,20 @@ const MapPage = () => {
     const isDark = theme === 'dark'
     const { t } = useTranslation()
     const { activeCategory, setCategory } = useLocationsStore()
+    // Local search — NOT synced to store. SmartSearchBar dropdown uses server
+    // FTS globally (no city/country scope) so users can find any location in
+    // the database. Map markers are NOT filtered by this input.
     const [mapSearch, setMapSearch] = useState('')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const debouncedMapSearch = useDebounce(mapSearch, 300)
+    // Coordinates to pan/zoom the map to when a dropdown result is picked.
+    // We store a new reference every time so MapTab's FlyToFocus effect re-fires
+    // even if the user picks the same location twice.
+    const [focusLocation, setFocusLocation] = useState(null)
 
-    useEffect(() => {
-        useLocationsStore.getState().setSearchQuery(debouncedMapSearch)
-    }, [debouncedMapSearch])
-
-    // Sync local search with store (e.g. if reset in modal)
-    const storeSearchQuery = useLocationsStore.getState().searchQuery
-    useEffect(() => {
-        if (storeSearchQuery !== mapSearch && !debouncedMapSearch) {
-            setMapSearch(storeSearchQuery || '')
-        }
-    }, [storeSearchQuery, mapSearch, debouncedMapSearch])
+    const handlePickLocation = (loc) => {
+        if (typeof loc?.lat !== 'number' || typeof loc?.lng !== 'number') return
+        setFocusLocation({ lat: loc.lat, lng: loc.lng, id: loc.id, _t: Date.now() })
+    }
 
     return (
         <div className="fixed inset-0 z-0">
@@ -59,6 +57,7 @@ const MapPage = () => {
                         onFilter={() => setIsFilterOpen(true)}
                         placeholder={t('dashboard.search_placeholder')}
                         className="w-full shadow-lg"
+                        onSelectLocation={handlePickLocation}
                     />
 
                     {/* Category chips */}
@@ -86,7 +85,7 @@ const MapPage = () => {
                 </div>
             </div>
 
-            <MapTab activeFilter={activeCategory} />
+            <MapTab activeFilter={activeCategory} focusLocation={focusLocation} />
 
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
         </div>

@@ -38,14 +38,15 @@ export function useAdminLocationsQuery(filters = {}) {
  * Infinite scroll / pagination variant.
  */
 export function useInfiniteLocations(filters = {}) {
+    const pageSize = filters.limit || 10
     return useInfiniteQuery({
         queryKey: [...queryKeys.locations.filtered(filters), 'infinite'],
         queryFn: async ({ pageParam = 0 }) => {
             const { getLocations } = await import('../locations.api')
-            return getLocations({ ...filters, limit: filters.limit || 10, offset: pageParam })
+            return getLocations({ ...filters, limit: pageSize, offset: pageParam })
         },
         getNextPageParam: (lastPage, pages) =>
-            lastPage.hasMore ? pages.length * 10 : undefined,
+            lastPage.hasMore ? pages.length * pageSize : undefined,
         initialPageParam: 0,
     })
 }

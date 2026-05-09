@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import LocationImage from '@/components/ui/LocationImage'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Star, X } from 'lucide-react'
+import { Search, MapPin, Star, X, Loader2 } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
@@ -10,45 +10,72 @@ import { normalizeSearchTerm } from '@/utils/searchNormalization'
 
 /**
  * SmartSearchBar
- * Показывает выпадающий список: макс 3 совпадения по названию/категории/городу.
- * Совпадающая часть подсвечивается.
+ *
+ * Searches the ENTIRE database via server-side FTS (not just loaded cards).
+ * The dropdown shows up to 5 matching locations from all cities.
+ * Typing does NOT affect the page's location card list — only the dropdown.
+ *
+ * Props:
+ *   city / country    — optional scope for the search (e.g. explore page)
+ *   onSelectLocation  — optional override; receives the selected loc. When
+ *                       provided, SmartSearchBar will NOT navigate away —
+ *                       useful on the map page where selecting a result
+ *                       should pan the map instead of opening details.
  */
-export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Search…', className = '', showFilter = true }) {
+export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Search…', className = '', showFilter = true, city, country, onSelectLocation }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const navigate = useNavigate()
-    const { locations } = useLocationsStore()
     const [open, setOpen] = useState(false)
     const [focused, setFocused] = useState(false)
+    const [suggestions, setSuggestions] = useState([])
+    const [isSearching, setIsSearching] = useState(false)
     const containerRef = useRef(null)
+    const abortRef = useRef(null)
 
     useClickOutside(containerRef, () => setOpen(false))
 
-    const suggestions = useMemo(() => {
-        const q = value.trim().toLowerCase()
-        if (q.length < 2) return []
+    // Server-side FTS search with debounce
+    useEffect(() => {
+        const q = value.trim()
+        if (q.length < 2) {
+            setSuggestions([])
+            setIsSearching(false)
+            return
+        }
 
-        // Multilingual (EN/RU/PL/UA) — translate foreign tokens to English
-        // canonical terms so client-side filter can match English DB data.
-        const qEn = normalizeSearchTerm(value)
+        // Cancel previous in-flight request
+        if (abortRef.current) abortRef.current.abort()
+        const controller = new AbortController()
+        abortRef.current = controller
 
-        return locations
-            .filter(l =>
-                (l.title?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(qEn)) ||
-                (l.category?.toLowerCase().includes(q) || l.category?.toLowerCase().includes(qEn)) ||
-                (l.city?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(qEn)) ||
-                (l.address?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(qEn)) ||
-                (l.cuisine?.toLowerCase().includes(q) || l.cuisine?.toLowerCase().includes(qEn)) ||
-                (l.tags?.some(t => t.toLowerCase().includes(q) || t.toLowerCase().includes(qEn))) ||
-                (l.kg_dishes?.some(d => d.toLowerCase().includes(q) || d.toLowerCase().includes(qEn))) ||
-                (l.kg_cuisines?.some(c => c.toLowerCase().includes(q) || c.toLowerCase().includes(qEn))) ||
-                (l.ai_keywords?.some(k => k.toLowerCase().includes(q) || k.toLowerCase().includes(qEn))) ||
-                (l.description?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(qEn))
-            )
-            .slice(0, 3)
-    }, [value, locations])
+        const timer = setTimeout(async () => {
+            setIsSearching(true)
+            try {
+                const { getLocations } = await import('@/shared/api/locations.api')
+                const result = await getLocations({
+                    query: q,
+                    ...(city ? { city } : {}),
+                    ...(country ? { country } : {}),
+                    limit: 5,
+                })
+                // Discard if a newer search was started
+                if (controller.signal.aborted) return
+                setSuggestions(result.data || [])
+            } catch {
+                if (!controller.signal.aborted) setSuggestions([])
+            } finally {
+                if (!controller.signal.aborted) setIsSearching(false)
+            }
+        }, 300) // 300ms debounce
 
-    const showDropdown = open && focused && suggestions.length > 0
+        return () => {
+            clearTimeout(timer)
+            controller.abort()
+        }
+    }, [value, city, country])
+
+    const showDropdown = open && focused && (suggestions.length > 0 || isSearching)
 
     // Highlight matching substring
     const highlight = (text = '', query = '') => {
@@ -68,6 +95,10 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
         setOpen(false)
         setFocused(false)
         onChange({ target: { value: '' } }) // clear input
+        if (onSelectLocation) {
+            onSelectLocation(loc)
+            return
+        }
         navigate(`/location/${loc.id}`)
     }
 
@@ -151,56 +182,67 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                         }`}
                         style={{ boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.6)' : '0 16px 48px rgba(0,0,0,0.12)' }}
                     >
-                        {suggestions.map((loc, i) => (
-                            <React.Fragment key={loc.id}>
-                                {i > 0 && (
-                                    <div className={`h-px mx-4 ${isDark ? 'bg-white/[0.04]' : 'bg-gray-50'}`} />
-                                )}
-                                <button
-                                    onMouseDown={() => handleSelect(loc)}
-                                    onTouchEnd={() => handleSelect(loc)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:scale-[0.98] ${
-                                        isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-50'
-                                    }`}
-                                >
-                                    {/* Thumbnail */}
-                                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                        <LocationImage
-                                            src={loc.image}
-                                            alt=""
-                                            width={200}
-                                        />
-                                    </div>
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                            {highlight(loc.title, value)}
-                                        </p>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <MapPin size={10} className={isDark ? 'text-gray-400 flex-shrink-0' : 'text-slate-500 flex-shrink-0'} />
-                                            <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-                                                {highlight(loc.city || loc.address || '', value)}
-                                            </p>
-                                            {loc.rating && (
-                                                <>
-                                                    <span className={isDark ? 'text-gray-500' : 'text-slate-400'}>·</span>
-                                                    <Star size={10} className="text-blue-500 fill-blue-500 flex-shrink-0" />
-                                                    <span className="text-xs font-semibold text-blue-500">{loc.rating}</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {/* Category pill */}
-                                    {loc.category && (
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                            isDark ? 'bg-white/[0.06] text-white/40' : 'bg-slate-100 text-slate-700'
-                                        }`}>
-                                            {loc.category}
-                                        </span>
+                        {isSearching && suggestions.length === 0 ? (
+                            <div className={`flex items-center justify-center gap-2 px-4 py-4 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span className="text-xs font-medium">Searching…</span>
+                            </div>
+                        ) : suggestions.length === 0 ? (
+                            <div className={`px-4 py-4 text-xs font-medium ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                                No locations found
+                            </div>
+                        ) : (
+                            suggestions.map((loc, i) => (
+                                <React.Fragment key={loc.id}>
+                                    {i > 0 && (
+                                        <div className={`h-px mx-4 ${isDark ? 'bg-white/[0.04]' : 'bg-gray-50'}`} />
                                     )}
-                                </button>
-                            </React.Fragment>
-                        ))}
+                                    <button
+                                        onMouseDown={() => handleSelect(loc)}
+                                        onTouchEnd={() => handleSelect(loc)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:scale-[0.98] ${
+                                            isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {/* Thumbnail */}
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                                            <LocationImage
+                                                src={loc.image}
+                                                alt=""
+                                                width={200}
+                                            />
+                                        </div>
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                {highlight(loc.title, value)}
+                                            </p>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <MapPin size={10} className={isDark ? 'text-gray-400 flex-shrink-0' : 'text-slate-500 flex-shrink-0'} />
+                                                <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+                                                    {highlight(loc.city || loc.address || '', value)}
+                                                </p>
+                                                {loc.rating && (
+                                                    <>
+                                                        <span className={isDark ? 'text-gray-500' : 'text-slate-400'}>·</span>
+                                                        <Star size={10} className="text-blue-500 fill-blue-500 flex-shrink-0" />
+                                                        <span className="text-xs font-semibold text-blue-500">{loc.rating}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Category pill */}
+                                        {loc.category && (
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                                isDark ? 'bg-white/[0.06] text-white/40' : 'bg-slate-100 text-slate-700'
+                                            }`}>
+                                                {loc.category}
+                                            </span>
+                                        )}
+                                    </button>
+                                </React.Fragment>
+                            ))
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -17,10 +17,9 @@ const MapTab = React.lazy(() => import('@/features/dashboard/components/MapTab')
 import { useShallow } from 'zustand/react/shallow'
 import { MapIcon, ListIcon, FilterIcon, RefreshCcw, Navigation } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useInfiniteLocations } from '@/hooks/useLocationsQuery'
+import { useInfiniteLocations } from '@/shared/api/queries/location.queries'
 import { SmartSearchBar } from '@/features/dashboard/components/SmartSearchBar'
 import { useFavorites } from '@/hooks/useFavorites'
-import { useDebounce } from '@/hooks/useDebounce'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { useOpenStatus } from '@/hooks/useOpenStatus'
 import { formatOpeningHours } from '@/utils/formatOpeningHours'
@@ -353,39 +352,28 @@ const LocationsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    // Store state values
+    // Store state values (search is LOCAL to SmartSearchBar — not synced to store)
     const {
         activeCategories,
         activeCategory,
-        storeQuery,
         sortBy,
         minRating,
         activePriceLevels,
     } = useLocationsStore(useShallow(s => ({
         activeCategories: s.activeCategories,
         activeCategory: s.activeCategory,
-        storeQuery: s.searchQuery,
         sortBy: s.sortBy,
         minRating: s.minRating,
         activePriceLevels: s.activePriceLevels,
     })))
 
     // Store actions (stable)
-    const storeSetSearch = useLocationsStore(s => s.setSearchQuery)
     const setSortBy = useLocationsStore(s => s.setSortBy)
     const resetFilters = useLocationsStore(s => s.resetFilters)
     const activeFiltersCount = useLocationsStore(s => s.getActiveFiltersCount())
 
-    // Local search input → debounce → store
-    const [localSearch, setLocalSearch] = useState(storeQuery)
-    const debouncedSearch = useDebounce(localSearch, 300)
-
-    // Sync local input → store (debounced)
-    useEffect(() => {
-        if (debouncedSearch !== storeQuery) {
-            storeSetSearch(debouncedSearch)
-        }
-    }, [debouncedSearch, storeQuery, storeSetSearch])
+    // Local search input — purely for the search bar, does NOT affect page list
+    const [localSearch, setLocalSearch] = useState('')
 
     // Sync from URL query param on mount
     useEffect(() => {
@@ -393,39 +381,34 @@ const LocationsPage = () => {
         const q = params.get('q')
         const sort = params.get('sort')
         if (q) {
-            const t = setTimeout(() => {
-                setLocalSearch(q)
-                storeSetSearch(q)
-            }, 0)
-            return () => clearTimeout(t)
+            setLocalSearch(q)
         }
         if (sort && sort !== sortBy) {
             setSortBy(sort)
         }
-    }, [storeSetSearch, setSortBy, sortBy])
+    }, [setSortBy, sortBy])
 
     // Note: filters are NOT reset on unmount — they persist in the global store.
     // Users can clear them via the "Reset" button in the filter modal or the
     // active-filters badge. Dashboard "See All" calls resetFilters() before
     // navigating here, providing a clean entry point.
 
-    // Fetch city-scoped locations with infinite scroll & server-side filtering
-    const { 
-        data: infiniteData, 
-        isPending: isLoading, 
-        isError, 
-        fetchNextPage, 
+    // Fetch city-scoped locations with infinite scroll — search query is NOT passed
+    // here so the page always shows all locations for the city. Search is handled
+    // independently by SmartSearchBar (server-side FTS in dropdown).
+    const {
+        data: infiniteData,
+        isPending: isLoading,
+        isError,
+        fetchNextPage,
         hasNextPage,
         isFetchingNextPage
-    } = useInfiniteLocations({ city, country, query: storeQuery, category: activeCategory !== 'All' ? activeCategory : null, price_range: activePriceLevels, minRating, sortBy, limit: 24 })
+    } = useInfiniteLocations({ city, country, category: activeCategory !== 'All' ? activeCategory : null, price_range: activePriceLevels, minRating, sortBy, limit: 24 })
 
     // Flatten pages into a single array for rendering
     const localFilteredLocations = useMemo(() => {
         const items = infiniteData?.pages?.flatMap(page => page.data) || []
-        // We still call applyAllFilters to handle distance calculation if userLocation is present
-        // and to handle any client-only flags (like is_open_now if not fully handled by server)
-        const filters = { 
-            searchQuery: storeQuery,
+        const filters = {
             activeCategories,
             activeCity: city,
             activeCountry: country,
@@ -438,7 +421,7 @@ const LocationsPage = () => {
             return items
         }
         return applyAllFilters(items, filters)
-    }, [infiniteData, storeQuery, activeCategories, city, country, activePriceLevels, minRating, sortBy])
+    }, [infiniteData, activeCategories, city, country, activePriceLevels, minRating, sortBy])
 
     // Infinite Scroll (Mobile Intersection Observer)
     const mobileSentinelRef = useRef(null)
@@ -514,6 +497,8 @@ const LocationsPage = () => {
                         onChange={(e) => setLocalSearch(e.target.value)}
                         onFilter={() => setIsFilterOpen(true)}
                         placeholder={city ? t('explore.search_in', { city }) : t('explore.search_everywhere')}
+                        city={city}
+                        country={country}
                     />
                 </motion.div>
 

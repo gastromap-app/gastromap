@@ -171,7 +171,43 @@ const createClusterCustomIcon = (cluster) => {
     })
 }
 
-const MapTab = ({ activeFilter }) => {
+// ─── Fly to focus location (triggered by search dropdown select) ────────
+function FlyToFocus({ focus }) {
+    const map = useMap()
+    useEffect(() => {
+        if (!focus || typeof focus.lat !== 'number' || typeof focus.lng !== 'number') return
+        map.flyTo([focus.lat, focus.lng], Math.max(map.getZoom(), 16), {
+            animate: true,
+            duration: 1.2,
+        })
+    }, [focus, map])
+    return null
+}
+
+// ─── Module-level cache of the last map pose so that navigating to a details
+// page and pressing Back returns the user to the exact same view. The cache
+// survives MapPage/MapTab unmount because it lives outside React. ──────────
+let lastMapPose = null
+function MapPoseMemory() {
+    const map = useMap()
+    // Restore on mount (if we have a remembered pose)
+    useEffect(() => {
+        if (lastMapPose) {
+            map.setView([lastMapPose.lat, lastMapPose.lng], lastMapPose.zoom, { animate: false })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    // Keep track of latest view
+    useMapEvents({
+        moveend: () => {
+            const c = map.getCenter()
+            lastMapPose = { lat: c.lat, lng: c.lng, zoom: map.getZoom() }
+        },
+    })
+    return null
+}
+
+const MapTab = ({ activeFilter, focusLocation }) => {
     const locations = useLocationsStore(state => state.mapMarkers)
     const { userLocation } = useLocationsStore()
     const { theme } = useTheme()
@@ -262,7 +298,9 @@ const MapTab = ({ activeFilter }) => {
                 />
 
                 <MapBoundsHandler />
+                <MapPoseMemory />
                 <LocateMeButton />
+                <FlyToFocus focus={focusLocation} />
 
                 {/* Dine With Me toggle — admin/moderator only */}
                 {dineAllowed && (
@@ -341,10 +379,11 @@ const MapTab = ({ activeFilter }) => {
 
                                             <Link 
                                                 to={`/location/${loc.id}`}
-                                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+                                                style={{ color: '#ffffff' }}
+                                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] !text-white no-underline rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
                                             >
-                                                <Navigation size={12} />
-                                                {t('common.viewDetails', 'View Details')}
+                                                <Navigation size={12} color="#ffffff" />
+                                                <span style={{ color: '#ffffff' }}>{t('common.viewDetails', 'View Details')}</span>
                                             </Link>
                                         </div>
                                     </div>

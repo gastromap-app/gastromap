@@ -18,7 +18,6 @@ import { useTheme } from '@/hooks/useTheme'
 import { PageTransition } from '@/components/ui/PageTransition'
 
 import { DashboardCardSkeleton, Skeleton } from '@/components/ui/Skeleton'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from 'react-i18next'
 import LocationImage from '@/components/ui/LocationImage'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
@@ -117,9 +116,9 @@ const DashboardPage = () => {
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const storeSearchQuery = useLocationsStore(state => state.searchQuery)
-    const [searchQuery, setSearchQuery] = useState(storeSearchQuery || '')
-    const debouncedSearch = useDebounce(searchQuery, 300)
+    // Local search — NOT synced to store. SmartSearchBar dropdown uses server
+    // FTS independently; card lists on the page are unaffected by typing.
+    const [searchQuery, setSearchQuery] = useState('')
 
     useEffect(() => {
         if (!useLocationsStore.getState().isInitialized) initialize()
@@ -128,11 +127,6 @@ const DashboardPage = () => {
     useEffect(() => {
         if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
     }, [geoLat, geoLng])
-
-    // Sync search input → store (debounced)
-    useEffect(() => {
-        useLocationsStore.getState().setSearchQuery(debouncedSearch)
-    }, [debouncedSearch])
 
 
 

@@ -78,6 +78,14 @@ const AdminUsersPage = () => {
     const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
     const pagedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
+    // True when any filter deviates from its default — drives the Reset button.
+    const hasActiveFilters = Boolean(searchQuery) || roleFilter !== 'All' || statusFilter !== 'All'
+    const resetFilters = () => {
+        setSearchQuery('')
+        setRoleFilter('All')
+        setStatusFilter('All')
+    }
+
     const openUser = (user) => {
         setSelectedUser(user)
         setEditRole(user.role || 'user')
@@ -290,6 +298,17 @@ const AdminUsersPage = () => {
                                             </button>
                                         ))}
                                     </div>
+                                    {hasActiveFilters && (
+                                        <div className="flex justify-end pt-1">
+                                            <button
+                                                onClick={resetFilters}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                            >
+                                                <X size={12} strokeWidth={3} />
+                                                Reset filters
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}

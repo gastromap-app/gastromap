@@ -517,6 +517,7 @@ const DashboardPage = () => {
                     t={t}
                     visitCount={visitCount || 0}
                     currentCity={currentCity || 'Unknown'}
+                    buildExploreUrl={buildExploreUrl}
                 />
             </div>
         </PageTransition>
@@ -531,7 +532,8 @@ const DesktopDashboard = ({
     activeTab, setActiveTab, geoStatus, isLoading,
     requestGeo, nearbyLocations, countries, handleSelectCountry,
     recommended, trending, openNowLocations, navigate, t,
-    visitCount = 0, currentCity = 'Unknown'
+    visitCount = 0, currentCity = 'Unknown',
+    buildExploreUrl
 }) => {
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },

@@ -327,11 +327,13 @@ const LocationDetailsPage = () => {
                         { id: 'reviews',   icon: MessageSquare, label: t('location.total_reviews'),  value: aggregate.count ? `${aggregate.count}` : '—', sub: aggregate.count ? t('location.review_count_short', { defaultValue: 'reviews' }) : t('location.no_reviews'), color: "text-indigo-500", bg: "bg-indigo-500/8" },
                     ] : []),
                     { id: 'directions',icon: Navigation,   label: t('location.get_directions'), value: location.address ? t('location.open_in_maps') : '—', color: "text-orange-500", bg: "bg-orange-500/8" }
-                ].filter(info => !info.hidden).map((info, i) => (
+                ].filter(info => !info.hidden).map((info, i) => {
+                    const isActionable = info.id === 'directions' || info.id === 'contact'
+                    return (
                     <motion.div
                         key={info.id}
-                        role="button"
-                        tabIndex={0}
+                        role={isActionable ? 'button' : undefined}
+                        tabIndex={isActionable ? 0 : undefined}
                         aria-label={info.label}
                         variants={fadeInUp}
                         initial="hidden"
@@ -347,7 +349,7 @@ const LocationDetailsPage = () => {
                                 if (info.id === 'contact') callNumber()
                             }
                         }}
-                        className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-300 group cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]' : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
+                        className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-300 group ${isActionable ? 'cursor-pointer' : ''} ${isDark ? `bg-white/[0.03] border-white/5 ${isActionable ? 'hover:bg-white/[0.06]' : ''}` : `bg-white border-gray-100 ${isActionable ? 'hover:border-gray-200 hover:shadow-sm' : ''}`}`}
                     >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${info.bg}`}>
                             <info.icon size={15} className={info.color} />
@@ -358,7 +360,7 @@ const LocationDetailsPage = () => {
                             {info.sub && <p className={`text-[10px] opacity-40 ${textStyle}`}>{info.sub}</p>}
                         </div>
                     </motion.div>
-                ))}
+                )})}
             </div>
 
             {/* ── Cuisine & Menu (compact inline) ─────────────────────────────── */}

@@ -75,10 +75,10 @@ export const config = {
         defaultCenter: { lat: 50.0619, lng: 19.9368 },
         defaultZoom: 14,
         tiles: {
-            light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            light: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
             dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
         },
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        attribution: '&copy; Google Maps',
     },
 
     // ─── App ──────────────────────────────────────────────────────────────────

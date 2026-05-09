@@ -308,9 +308,12 @@ const MapTab = ({ activeFilter, focusLocation }) => {
                 <TileLayer
                     url={theme === 'dark' 
                         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                        : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
                     }
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    attribution={theme === 'dark'
+                        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        : '&copy; Google Maps'
+                    }
                 />
 
                 <MapBoundsHandler />

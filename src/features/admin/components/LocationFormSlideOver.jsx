@@ -1,13 +1,16 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import PlacesAutocomplete from '@/shared/components/PlacesAutocomplete'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Building2, Sparkles, Wand2, MapPin, Phone, Globe,
-    Clock, Star, DollarSign, ChevronDown, Image, Plus, Trash2,
-    RefreshCw, Zap, Info, ChevronUp, AlertCircle, Save, Upload,
-    Instagram, Facebook, Calendar
+       Clock, Star, DollarSign, ChevronDown, Image, Plus, Trash2,
+       RefreshCw, Zap, Info, ChevronUp, AlertCircle, Save, Upload,
+       Instagram, Facebook, Calendar, Crosshair
 } from 'lucide-react'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import { compressImage, uploadFile } from '@/shared/api/storage.api'
 import { cn } from '@/lib/utils'
 import LazyImage from '@/components/ui/LazyImage'
@@ -65,6 +68,75 @@ const Field = ({ label, required, hint, children, className }) => (
 
 const input = "w-full px-4 py-4 sm:py-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 rounded-xl border border-slate-200/80 dark:border-white/[0.04] text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all"
 const textarea = cn(input, "resize-none min-h-[120px]")
+
+// ─── Draggable Map Marker for coordinate editing ─────────────────────────────
+// Admin-only: shows the location on a mini-map with a draggable marker.
+// Dragging the marker updates formData.lat / formData.lng in real time.
+
+// Fix Leaflet default icon paths for the draggable marker
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+})
+
+function DraggableMarker({ position, onDragEnd }) {
+    const markerRef = useRef(null)
+    return (
+        <Marker
+            draggable
+            position={position}
+            ref={markerRef}
+            eventHandlers={{
+                dragend() {
+                    const marker = markerRef.current
+                    if (marker) {
+                        const { lat, lng } = marker.getLatLng()
+                        onDragEnd({ lat: +lat.toFixed(7), lng: +lng.toFixed(7) })
+                    }
+                },
+            }}
+        />
+    )
+}
+
+/** Re-center the map when formData.lat/lng change from inputs */
+function RecenterMap({ lat, lng }) {
+    const map = useMap()
+    const prevRef = useRef({ lat, lng })
+    useEffect(() => {
+        if (lat && lng) {
+            const prev = prevRef.current
+            // Only re-center if coordinates changed by more than ~1m
+            if (!prev.lat || !prev.lng ||
+                Math.abs(lat - prev.lat) > 0.00001 ||
+                Math.abs(lng - prev.lng) > 0.00001) {
+                prevRef.current = { lat, lng }
+                map.setView([lat, lng], map.getZoom(), { animate: true })
+            }
+        }
+    }, [lat, lng, map])
+    return null
+}
+
+/** Click-to-place handler: tap on map to move the marker */
+function ClickToPlace({ onMapClick }) {
+    const map = useMap()
+    useEffect(() => {
+        const handler = (e) => {
+            const { lat, lng } = e.latlng
+            onMapClick({ lat: +lat.toFixed(7), lng: +lng.toFixed(7) })
+        }
+        map.on('click', handler)
+        return () => map.off('click', handler)
+    }, [map, onMapClick])
+    return null
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -260,14 +332,14 @@ const LocationFormSlideOver = ({
                 className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm"
             />
 
-            {/* Panel container */}
-            <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 pointer-events-none">
+            {/* Panel container — fullscreen on desktop */}
+            <div className="fixed inset-0 z-[110] flex items-end md:items-stretch justify-center p-0 md:p-0 pointer-events-none">
                 <motion.div
                     initial={{ y: '100%', opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: '100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-                    className="w-full sm:max-w-[95vw] lg:aspect-video h-[100dvh] sm:h-auto sm:max-h-[95vh] bg-white dark:bg-[hsl(220,20%,3%)] pointer-events-auto flex flex-col shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] rounded-t-[32px] sm:rounded-[40px] overflow-hidden border-t sm:border border-white/40 dark:border-white/[0.03]"
+                    className="w-full md:w-full md:h-full h-[100dvh] md:h-screen bg-white dark:bg-[hsl(220,20%,3%)] pointer-events-auto flex flex-col shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] rounded-t-[32px] md:rounded-none overflow-hidden border-t md:border-0 border-white/40 dark:border-white/[0.03]"
                 >
                     {/* ── Drag Handle (Mobile Only) ── */}
                     <div className="sm:hidden w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mt-4 mb-2 shrink-0" />
@@ -489,25 +561,68 @@ const LocationFormSlideOver = ({
                                             />
                                         </Field>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-5 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl sm:rounded-[24px] border border-slate-100 dark:border-white/[0.03]">
-                                            <Field label={t('admin.locations.form.fields.lat')}>
-                                                <input
-                                                    type="number" step="any"
-                                                    value={formData.lat || ''}
-                                                    onChange={e => set('lat', parseFloat(e.target.value) || null)}
-                                                    className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50")}
-                                                    placeholder="50.0647"
-                                                />
-                                            </Field>
-                                            <Field label={t('admin.locations.form.fields.lng')}>
-                                                <input
-                                                    type="number" step="any"
-                                                    value={formData.lng || ''}
-                                                    onChange={e => set('lng', parseFloat(e.target.value) || null)}
-                                                    className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50")}
-                                                    placeholder="19.9450"
-                                                />
-                                            </Field>
+                                        <div className="space-y-3">
+                                            {/* Coordinate inputs */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Field label={t('admin.locations.form.fields.lat')}>
+                                                    <input
+                                                        type="number" step="any"
+                                                        value={formData.lat || ''}
+                                                        onChange={e => set('lat', parseFloat(e.target.value) || null)}
+                                                        className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50 font-mono text-xs")}
+                                                        placeholder="50.0647"
+                                                    />
+                                                </Field>
+                                                <Field label={t('admin.locations.form.fields.lng')}>
+                                                    <input
+                                                        type="number" step="any"
+                                                        value={formData.lng || ''}
+                                                        onChange={e => set('lng', parseFloat(e.target.value) || null)}
+                                                        className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50 font-mono text-xs")}
+                                                        placeholder="19.9450"
+                                                    />
+                                                </Field>
+                                            </div>
+
+                                            {/* Draggable mini-map */}
+                                            <div className="relative rounded-2xl overflow-hidden border border-slate-200/60 dark:border-white/[0.06] shadow-sm">
+                                                {formData.lat && formData.lng ? (
+                                                    <MapContainer
+                                                        center={[formData.lat, formData.lng]}
+                                                        zoom={16}
+                                                        scrollWheelZoom
+                                                        zoomControl={false}
+                                                        attributionControl={false}
+                                                        style={{ height: '220px', width: '100%' }}
+                                                        className="touch-manipulation"
+                                                    >
+                                                        <TileLayer url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" />
+                                                        <DraggableMarker
+                                                            position={[formData.lat, formData.lng]}
+                                                            onDragEnd={({ lat, lng }) => {
+                                                                setFormData(prev => ({ ...prev, lat, lng }))
+                                                            }}
+                                                        />
+                                                        <ClickToPlace
+                                                            onMapClick={({ lat, lng }) => {
+                                                                setFormData(prev => ({ ...prev, lat, lng }))
+                                                            }}
+                                                        />
+                                                        <RecenterMap lat={formData.lat} lng={formData.lng} />
+                                                    </MapContainer>
+                                                ) : (
+                                                    <div className="h-[220px] flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 text-slate-400">
+                                                        <MapPin size={28} strokeWidth={1.5} />
+                                                        <p className="text-xs font-medium">{t('admin.locations.form.fields.no_coords_hint', 'Enter coordinates or use Google Places to set the pin')}</p>
+                                                    </div>
+                                                )}
+                                                {/* Drag/click hint overlay */}
+                                                {formData.lat && formData.lng && (
+                                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-[10px] font-bold text-white pointer-events-none whitespace-nowrap">
+                                                        Drag pin or tap to place
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">

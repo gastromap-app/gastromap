@@ -400,6 +400,23 @@
     display: none !important;
 }
 
+/* Fix Leaflet marker icons broken by Tailwind's img reset */
+.leaflet-marker-icon img {
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Larger hit area for draggable markers on touch */
+.leaflet-marker-draggable {
+    cursor: grab !important;
+}
+.leaflet-marker-draggable:active {
+    cursor: grabbing !important;
+}
+.leaflet-dragging .leaflet-marker-draggable {
+    cursor: grabbing !important;
+}
+
 /* ─── Scrollbar hiding utilities ──────────────────────────────────────── */
 /* Used by horizontal scroll containers (category chips, card carousels)
    to match native app feel — no visible scrollbar on any device. */

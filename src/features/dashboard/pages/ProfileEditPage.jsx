@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Camera, User, Mail, Save, Sparkles } from 'lucide-react'
+import { ArrowLeft, User, Mail, Save, Sparkles } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 import { useUserPreferences, useUpdatePreferencesMutation } from '@/shared/api/queries'
@@ -67,7 +67,7 @@ const ProfileEditPage = () => {
         setSaveError('')
         setSaveLoading(true)
         try {
-            await updateUserProfile({ name: formData.name, avatar: formData.avatar, bio: formData.bio })
+            await updateUserProfile({ name: formData.name, bio: formData.bio })
             if (authUser?.id) {
                 await updatePrefs.mutateAsync({ userId: authUser.id, preferences: formData.preferences })
                 
@@ -113,13 +113,8 @@ const ProfileEditPage = () => {
             <div className="px-5 space-y-6">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center mb-8">
-                    <div className="relative">
-                        <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
-                            {formData.name.charAt(0)}
-                        </div>
-                        <button className="absolute -bottom-1 -right-1 bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg border-[4px] border-[#0F1115] hover:scale-105 transition-transform">
-                            <Camera size={18} />
-                        </button>
+                    <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
+                        {formData.name.charAt(0)}
                     </div>
                 </div>
 

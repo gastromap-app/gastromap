@@ -11,10 +11,12 @@ const SignUpPage = () => {
     const action = searchParams.get('action')
     const redirectAfterSignup = searchParams.get('redirect') || null
 
-    const { register, error, clearError } = useAuthStore()
+    const { register, error, clearError, resendVerificationEmail } = useAuthStore()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
+    const [attemptedEmail, setAttemptedEmail] = useState('')
+    const [resendSuccess, setResendSuccess] = useState(false)
 
     // Form variants
     const formContainerVariants = {
@@ -37,6 +39,8 @@ const SignUpPage = () => {
         const name = formData.get('name')
         const email = formData.get('email')
         const password = formData.get('password')
+
+        setAttemptedEmail(email)
 
         // FIX: Frontend password validation — give user clear feedback before API call
         if (password.length < 8) {
@@ -123,7 +127,44 @@ const SignUpPage = () => {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
                     <p className="text-gray-500 mb-6">We sent a confirmation link. Click it to activate your account.</p>
-                    <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">Back to Sign in</Link>
+                    
+                    {error && (
+                        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
+                            {error}
+                        </div>
+                    )}
+                    
+                    {resendSuccess && (
+                        <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium px-4 py-3 rounded-2xl">
+                            Verification email sent successfully!
+                        </div>
+                    )}
+
+                    <div className="flex flex-col gap-4">
+                        <button
+                            onClick={async () => {
+                                const emailToResend = attemptedEmail || sessionStorage.getItem('pending_verification_email')
+                                if (!emailToResend) return
+                                
+                                setResendSuccess(false)
+                                setIsSubmitting(true)
+                                const res = await resendVerificationEmail(emailToResend)
+                                setIsSubmitting(false)
+                                
+                                if (res.success) {
+                                    clearError()
+                                    setResendSuccess(true)
+                                } else {
+                                    useAuthStore.getState().setError(res.error || 'Failed to resend email')
+                                }
+                            }}
+                            disabled={isSubmitting}
+                            className="font-bold text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+                        >
+                            {isSubmitting ? 'Sending...' : 'Resend verification email'}
+                        </button>
+                        <Link to="/login" className="font-bold text-gray-500 hover:text-gray-700 transition-colors">Back to Sign in</Link>
+                    </div>
                 </motion.div>
             ) : (
             <motion.div
@@ -145,8 +186,27 @@ const SignUpPage = () => {
                 <form onSubmit={handleSignUp} className="space-y-5">
                     {/* Error message */}
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
-                            {error}
+                        <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl flex flex-col gap-2">
+                            <span>{error}</span>
+                            {(error.toLowerCase().includes('already registered') || error.toLowerCase().includes('already exists')) && attemptedEmail && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        setIsSubmitting(true);
+                                        const res = await resendVerificationEmail(attemptedEmail);
+                                        setIsSubmitting(false);
+                                        if (res.success) {
+                                            setEmailSent(true);
+                                            clearError();
+                                        } else {
+                                            useAuthStore.getState().setError(res.error || 'Failed to resend email');
+                                        }
+                                    }}
+                                    className="text-left font-bold text-red-700 hover:text-red-800 underline decoration-red-300 underline-offset-2"
+                                >
+                                    Resend verification email to {attemptedEmail}
+                                </button>
+                            )}
                         </div>
                     )}
 

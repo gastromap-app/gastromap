@@ -7,12 +7,13 @@
  * - Returns { diners, isLoading, error }
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useId } from 'react'
 import { supabase } from '@/shared/api/client'
 
 export function useAllDiners(enabled = false) {
     const qc = useQueryClient()
     const channelRef = useRef(null)
+    const hookId = useId()
 
     // ── Query all active diners ──────────────────────────────────────────
     const { data: diners = [], isLoading, error } = useQuery({
@@ -27,11 +28,14 @@ export function useAllDiners(enabled = false) {
     })
 
     // ── Realtime subscription ────────────────────────────────────────────
+    // Use a unique channel name per hook instance to avoid conflicts when
+    // multiple components call useAllDiners simultaneously (e.g. MapPage + MapTab).
     useEffect(() => {
         if (!enabled || !supabase) return
 
+        const channelName = `dine-all-presence-changes-${hookId}`
         const channel = supabase
-            .channel('dine-all-presence-changes')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'dining_presence' },
@@ -49,7 +53,7 @@ export function useAllDiners(enabled = false) {
                 channelRef.current = null
             }
         }
-    }, [enabled, qc])
+    }, [enabled, qc, hookId])
 
     return { diners, isLoading, error }
 }

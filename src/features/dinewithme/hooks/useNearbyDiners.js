@@ -8,7 +8,7 @@
  * - Returns { diners, isLoading, error }
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useId } from 'react'
 import { queryKeys } from '@/shared/api/queries/queryKeys'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { supabase } from '@/shared/api/client'
@@ -17,6 +17,7 @@ export function useNearbyDiners(enabled = false) {
     const qc = useQueryClient()
     const { lat, lng } = useGeoStore()
     const channelRef = useRef(null)
+    const hookId = useId()
 
     // ── Query nearby diners ──────────────────────────────────────────────
     const coordsKey = lat && lng ? `${lat.toFixed(3)},${lng.toFixed(3)}` : 'none'
@@ -34,11 +35,14 @@ export function useNearbyDiners(enabled = false) {
     })
 
     // ── Realtime subscription ────────────────────────────────────────────
+    // Use a unique channel name per hook instance to avoid conflicts when
+    // multiple components call useNearbyDiners simultaneously.
     useEffect(() => {
         if (!enabled || !supabase) return
 
+        const channelName = `dine-presence-changes-${hookId}`
         const channel = supabase
-            .channel('dine-presence-changes')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'dining_presence' },
@@ -57,14 +61,16 @@ export function useNearbyDiners(enabled = false) {
                 channelRef.current = null
             }
         }
-    }, [enabled, qc])
+    }, [enabled, qc, hookId])
 
     // ── Subscribe to incoming waves ──────────────────────────────────────
+    // Use a unique channel name per hook instance.
     useEffect(() => {
         if (!enabled || !supabase) return
 
+        const channelName = `dine-waves-incoming-${hookId}`
         const channel = supabase
-            .channel('dine-waves-incoming')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'dine_waves' },
@@ -85,7 +91,7 @@ export function useNearbyDiners(enabled = false) {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [enabled, qc])
+    }, [enabled, qc, hookId])
 
     return { diners, isLoading, error }
 }

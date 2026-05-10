@@ -66,13 +66,13 @@ const LocationDetailsPage = () => {
         ?? (import.meta.env.DEV ? MOCK_LOCATIONS.find(loc => String(loc.id) === id) : null)
         ?? null
 
-    // BUG-5 FIX: if user lands directly on /location/:id, store may be empty.
-    // Fall back to a direct Supabase query for this specific location.
-    const { data: locationQuery, isLoading: queryLoading } = useLocationQuery(
-        !locationFromStore ? id : null   // only fetch if store doesn't have it
-    )
+    // Always fetch full location data from Supabase for detail page.
+    // Store cache only has ANON_COLS (limited columns for list view).
+    // Detail page needs full data: tags, insider_tip, must_try, kg_*, etc.
+    const { data: locationQuery, isLoading: queryLoading } = useLocationQuery(id)
 
-    const location = locationFromStore ?? locationQuery ?? null
+    // Prefer full query result over store cache (which has limited columns)
+    const location = locationQuery ?? locationFromStore ?? null
     const isPageLoading = !locationFromStore && (storeIsLoading || queryLoading)
 
     // Also trigger store.initialize() if store is empty and we have no location yet

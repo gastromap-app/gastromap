@@ -273,13 +273,18 @@ export async function getLocations(filters = {}) {
 export async function getLocation(id, { adminMode = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocation(id)
 
-    // Column selection: same column-level GRANT issue as getLocations.
-    // adminMode always comes from authenticated users → select('*') is safe.
+    // Check auth status: authenticated users have full SELECT on locations.
+    // Anon users are restricted by column-level GRANT (see 20260511_anon_column_grant.sql).
+    const { data: { session } } = await supabase.auth.getSession()
+    const isAuthenticated = !!session
+
+    // Column selection: authenticated users get all columns (insider_tip, tags, kg_*, etc.)
+    // Anon users get only public-safe columns to avoid 401/403 errors.
     const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,created_at,updated_at'
 
     let q = supabase
         .from('locations')
-        .select(adminMode ? '*' : ANON_COLS)
+        .select(adminMode || isAuthenticated ? '*' : ANON_COLS)
         .eq('id', id)
 
     // Public facing: only show active (approved) locations. Admin mode: show any status.

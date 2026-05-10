@@ -1033,6 +1033,11 @@
     "report_submit": "Submit Report",
     "report_success": "Report submitted. We'll review it shortly.",
     "no_diners": "No diners nearby right now. Be the first to go visible!",
-    "distance_away": "{{distance}}m away"
+    "distance_away": "{{distance}}m away",
+    "create_meetup": "Create Meetup",
+    "your_meetup": "Your Meetup",
+    "delete_meetup": "Delete Meetup",
+    "active_meetup_exists": "You already have an active meetup",
+    "delete_current_meetup": "Delete Current Meetup"
   }
 }

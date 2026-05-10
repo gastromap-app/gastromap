@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX, Trash2, HardDrive } from 'lucide-react'
+import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX, Trash2, HardDrive, Monitor, Globe, Clock, MapPin } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useStorageQuota } from '@/hooks/useStorageQuota'
@@ -20,6 +20,40 @@ const SecurityPrivacyPage = () => {
     const itemHover = isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
 
     const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 3000) }
+
+    // ── Profile Visibility (localStorage-backed until DB column is added) ──
+    const [profileVisibility, setProfileVisibility] = useState(() => {
+        try { return localStorage.getItem('gastromap_profile_visibility') || 'Public' } catch { return 'Public' }
+    })
+    const toggleVisibility = useCallback(() => {
+        const next = profileVisibility === 'Public' ? 'Private' : 'Public'
+        setProfileVisibility(next)
+        try { localStorage.setItem('gastromap_profile_visibility', next) } catch {}
+        showToast(`Profile is now ${next.toLowerCase()}`)
+    }, [profileVisibility])
+
+    // ── Login Activity (derived from current session + browser info) ──
+    const [showSessions, setShowSessions] = useState(false)
+    const getDeviceInfo = () => {
+        const ua = navigator.userAgent
+        let device = 'Unknown Device'
+        let browser = 'Unknown Browser'
+        if (/iPhone|iPad|iPod/.test(ua)) device = 'Apple Mobile'
+        else if (/Android/.test(ua)) device = 'Android'
+        else if (/Mac/.test(ua)) device = 'Mac'
+        else if (/Windows/.test(ua)) device = 'Windows'
+        else if (/Linux/.test(ua)) device = 'Linux'
+        if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome'
+        else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari'
+        else if (/Firefox/.test(ua)) browser = 'Firefox'
+        else if (/Edg/.test(ua)) browser = 'Edge'
+        return { device, browser }
+    }
+    const { device, browser } = getDeviceInfo()
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const sessionTime = user?.createdAt
+        ? new Date(user.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'Current session'
 
     const handleClearCache = async () => {
         try {
@@ -46,12 +80,12 @@ const SecurityPrivacyPage = () => {
 
     const securityItems = [
         { icon: Lock, label: "Change Password", description: "Send reset link to your email", action: handleChangePassword },
-        { icon: Smartphone, label: "Two-Factor Authentication", description: "Currently disabled", toggle: true, action: () => showToast('2FA coming soon') },
-        { icon: Eye, label: "Login Activity", description: "View active sessions", action: () => showToast('Session management coming soon') },
+        { icon: Smartphone, label: "Two-Factor Authentication", description: "Coming soon", badge: 'Soon', action: () => {} },
+        { icon: Eye, label: "Login Activity", description: showSessions ? "Hide session details" : "View active sessions", action: () => setShowSessions(s => !s) },
     ]
 
     const privacyItems = [
-        { icon: Shield, label: "Profile Visibility", value: "Public", action: () => showToast('Visibility settings coming soon') },
+        { icon: Shield, label: "Profile Visibility", value: profileVisibility, action: toggleVisibility, toggle: true },
         { icon: UserX, label: "Request Data Deletion", description: "Permanent deletion of your account", action: () => navigate('/privacy/delete-request') },
     ]
 
@@ -86,12 +120,63 @@ const SecurityPrivacyPage = () => {
                                         <div className={`text-[12px] ${subTextStyle}`}>{item.description}</div>
                                     </div>
                                 </div>
-                                {item.toggle
-                                    ? <div className={`w-12 h-6 rounded-full relative ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}><div className="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm" /></div>
-                                    : <ChevronRight size={18} className="opacity-30" />}
+                                {item.badge ? (
+                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-500'}`}>{item.badge}</span>
+                                ) : item.toggle ? (
+                                    <div className={`w-12 h-6 rounded-full relative transition-colors ${profileVisibility === 'Private' ? 'bg-emerald-500' : (isDark ? 'bg-white/10' : 'bg-gray-200')}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${profileVisibility === 'Private' ? 'left-7' : 'left-1'}`} />
+                                    </div>
+                                ) : (
+                                    <ChevronRight size={18} className="opacity-30" />
+                                )}
                             </button>
                         ))}
                     </div>
+                    {/* ── Login Activity expanded panel ── */}
+                    <AnimatePresence>
+                        {showSessions && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className={`mt-3 rounded-[24px] border p-5 space-y-4 ${cardBg}`}>
+                                    <div className={`text-[13px] font-bold ${textStyle} mb-1`}>Current Session</div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <Monitor size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
+                                            <div>
+                                                <div className={`text-[13px] font-bold ${textStyle}`}>{device} · {browser}</div>
+                                                <div className={`text-[11px] ${subTextStyle}`}>Device & Browser</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Clock size={16} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
+                                            <div>
+                                                <div className={`text-[13px] font-bold ${textStyle}`}>{sessionTime}</div>
+                                                <div className={`text-[11px] ${subTextStyle}`}>Session started</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Globe size={16} className={isDark ? 'text-emerald-400' : 'text-emerald-600'} />
+                                            <div>
+                                                <div className={`text-[13px] font-bold ${textStyle}`}>{timezone}</div>
+                                                <div className={`text-[11px] ${subTextStyle}`}>Timezone</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <MapPin size={16} className={isDark ? 'text-rose-400' : 'text-rose-600'} />
+                                            <div>
+                                                <div className={`text-[13px] font-bold ${textStyle}`}>Approximate</div>
+                                                <div className={`text-[11px] ${subTextStyle}`}>Location (derived from timezone)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Privacy</h3>

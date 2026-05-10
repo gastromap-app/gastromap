@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { APP_CONFIG } from '@/shared/config/appConfig'
 
 // Simple Feedback Modal Component nested for convenience
-const FeedbackModal = ({ isOpen, onClose, theme, userId }) => {
+const FeedbackModal = ({ isOpen, onClose, theme, userId, onSuccess }) => {
     const { t } = useTranslation()
     const [message, setMessage] = useState('')
     const [type, setType] = useState('suggestion') // default type
@@ -36,8 +36,7 @@ const FeedbackModal = ({ isOpen, onClose, theme, userId }) => {
             })
             setMessage('')
             onClose()
-            // Assume toast is handled by parent or just closing is enough. 
-            // Better to show success feedback here if possible, but onClose is called.
+            onSuccess?.()
         } catch (error) {
             console.error('Failed to send feedback:', error)
         }
@@ -299,6 +298,7 @@ const ProfilePage = () => {
                 onClose={() => setIsFeedbackOpen(false)} 
                 theme={theme} 
                 userId={authUser?.id}
+                onSuccess={() => showToast(t('profile.feedback_success') || 'Feedback sent successfully!')}
             />
 
             {/* Inline toast */}

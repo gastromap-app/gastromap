@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Star, LocateFixed, Navigation } from 'lucide-react'
+import { Star, LocateFixed, Navigation, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import MarkerClusterGroup from 'react-leaflet-cluster'
@@ -14,7 +15,7 @@ import { DineWithMeLayer } from '@/features/dinewithme/components/DineWithMeLaye
 import { CommunityGuidelinesModal } from '@/features/dinewithme/components/CommunityGuidelinesModal'
 import { PresenceSetupSheet } from '@/features/dinewithme/components/PresenceSetupSheet'
 import { useDiningPresence } from '@/features/dinewithme/hooks/useDiningPresence'
-import { useNearbyDiners } from '@/features/dinewithme/hooks/useNearbyDiners'
+import { useAllDiners } from '@/features/dinewithme/hooks/useAllDiners'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
 // ─── Fix Leaflet default icon paths ──────────────────────────────────────
@@ -238,8 +239,8 @@ const MapTab = ({ activeFilter, focusLocation }) => {
     const [dineModeActive, setDineModeActive] = useState(false)
     const [showGuidelines, setShowGuidelines] = useState(false)
     const [showSetup, setShowSetup] = useState(false)
-    const { isPresent, goInvisible, isGoingInvisible } = useDiningPresence()
-    const { diners } = useNearbyDiners(dineModeActive)
+    const { isPresent, goInvisible, isGoingInvisible, myPresence } = useDiningPresence()
+    const { diners } = useAllDiners(dineModeActive)
 
     // Check if user has acknowledged guidelines before
     const GUIDELINES_KEY = 'gastromap_dine_guidelines_accepted'
@@ -264,19 +265,18 @@ const MapTab = ({ activeFilter, focusLocation }) => {
         if (!hasAcceptedGuidelines) {
             setShowGuidelines(true)
         } else {
-            setShowSetup(true)
+            setDineModeActive(true)
         }
     }, [dineModeActive, goInvisible, hasAcceptedGuidelines])
 
     const handleGuidelinesAccept = useCallback(() => {
         localStorage.setItem(GUIDELINES_KEY, 'true')
         setShowGuidelines(false)
-        setShowSetup(true)
+        setDineModeActive(true)
     }, [])
 
-    const handleSetupComplete = useCallback(() => {
-        setShowSetup(false)
-        setDineModeActive(true)
+    const handleCreateMeetup = useCallback(() => {
+        setShowSetup(true)
     }, [])
 
     // Auto-activate dine mode when presence is set
@@ -346,7 +346,7 @@ const MapTab = ({ activeFilter, focusLocation }) => {
 
                 {/* Dine With Me layer OR location markers */}
                 {dineAllowed && dineModeActive ? (
-                    <DineWithMeLayer isActive={dineModeActive} />
+                    <DineWithMeLayer isActive={dineModeActive} diners={diners} onDeleteOwn={goInvisible} />
                 ) : (
                     <MarkerClusterGroup
                         chunkedLoading
@@ -424,6 +424,8 @@ const MapTab = ({ activeFilter, focusLocation }) => {
                     <PresenceSetupSheet
                         isOpen={showSetup}
                         onClose={() => setShowSetup(false)}
+                        existingPresence={myPresence}
+                        onDelete={goInvisible}
                     />
                 </>
             )}
@@ -439,6 +441,28 @@ const MapTab = ({ activeFilter, focusLocation }) => {
                             </span>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Create Meetup button — visible when in dine browse mode */}
+            {dineAllowed && dineModeActive && (
+                <div className="absolute bottom-32 left-4 z-[1000] md:bottom-20 md:left-6 pointer-events-auto">
+                    <motion.button
+                        onClick={handleCreateMeetup}
+                        whileTap={{ scale: 0.9 }}
+                        className={`
+                            flex items-center gap-2 px-4 py-3 rounded-2xl
+                            backdrop-blur-xl border shadow-lg
+                            text-xs font-bold transition-all
+                            ${theme === 'dark'
+                                ? 'bg-emerald-500/90 border-emerald-400/40 text-white shadow-emerald-500/30'
+                                : 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30'
+                            }
+                        `}
+                    >
+                        <Plus size={16} />
+                        {t('dine.create_meetup', 'Create Meetup')}
+                    </motion.button>
                 </div>
             )}
         </div>

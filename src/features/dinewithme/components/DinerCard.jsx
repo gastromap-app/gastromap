@@ -8,7 +8,7 @@
  */
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hand, Flag, Clock, Users, MapPin, MessageCircle } from 'lucide-react'
+import { Hand, Flag, Clock, Users, MapPin, MessageCircle, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { formatDistance } from '@/lib/geo'
@@ -21,7 +21,7 @@ const STATUS_CONFIG = {
     heading_to: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 dark:bg-amber-500/20', dot: 'bg-amber-500' },
 }
 
-export function DinerCard({ diner, userLat, userLng, onWaveSent }) {
+export function DinerCard({ diner, userLat, userLng, onWaveSent, isOwn, onDelete }) {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -73,7 +73,14 @@ export function DinerCard({ diner, userLat, userLng, onWaveSent }) {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold truncate">{diner.displayName}</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold truncate">{diner.displayName}</h3>
+                            {isOwn && (
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    {t('dine.your_meetup', 'Your Meetup')}
+                                </span>
+                            )}
+                        </div>
                         <div className={`flex items-center gap-1.5 mt-0.5`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
                             <span className={`text-[11px] font-semibold ${statusCfg.color}`}>
@@ -143,39 +150,56 @@ export function DinerCard({ diner, userLat, userLng, onWaveSent }) {
 
             {/* Actions */}
             <div className={`px-4 pb-4 pt-1 flex items-center gap-2`}>
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => waveMutation.mutate()}
-                    disabled={waveMutation.isPending || waveMutation.isSuccess}
-                    className={`
-                        flex-1 flex items-center justify-center gap-1.5
-                        py-2.5 rounded-xl text-xs font-bold transition-all
-                        ${waveMutation.isSuccess
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20'
-                        }
-                    `}
-                >
-                    {waveMutation.isSuccess ? (
-                        t('dine.wave_sent')
-                    ) : (
-                        <>
-                            <Hand size={14} />
-                            {t('dine.wave_btn', 'Wave')}
-                        </>
-                    )}
-                </motion.button>
+                {isOwn ? (
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => onDelete?.()}
+                        className={`
+                            flex-1 flex items-center justify-center gap-1.5
+                            py-2.5 rounded-xl text-xs font-bold transition-all
+                            bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20
+                        `}
+                    >
+                        <Trash2 size={14} />
+                        {t('dine.delete_meetup', 'Delete Meetup')}
+                    </motion.button>
+                ) : (
+                    <>
+                        <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => waveMutation.mutate()}
+                            disabled={waveMutation.isPending || waveMutation.isSuccess}
+                            className={`
+                                flex-1 flex items-center justify-center gap-1.5
+                                py-2.5 rounded-xl text-xs font-bold transition-all
+                                ${waveMutation.isSuccess
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20'
+                                }
+                            `}
+                        >
+                            {waveMutation.isSuccess ? (
+                                t('dine.wave_sent')
+                            ) : (
+                                <>
+                                    <Hand size={14} />
+                                    {t('dine.wave_btn', 'Wave')}
+                                </>
+                            )}
+                        </motion.button>
 
-                <button
-                    onClick={() => setShowReport(true)}
-                    className={`
-                        p-2.5 rounded-xl text-xs transition-colors
-                        ${isDark ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}
-                    `}
-                    title={t('dine.report_title')}
-                >
-                    <Flag size={14} />
-                </button>
+                        <button
+                            onClick={() => setShowReport(true)}
+                            className={`
+                                p-2.5 rounded-xl text-xs transition-colors
+                                ${isDark ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}
+                            `}
+                            title={t('dine.report_title')}
+                        >
+                            <Flag size={14} />
+                        </button>
+                    </>
+                )}
             </div>
 
             {/* Error */}

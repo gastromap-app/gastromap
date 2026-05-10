@@ -11,10 +11,10 @@
  * - Visibility toggle
  * - "Go Visible" button
  */
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, Minus, Plus, Eye, EyeOff, Loader2, MapPin } from 'lucide-react'
+import { X, Search, Minus, Plus, Eye, EyeOff, Loader2, MapPin, Trash2, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
@@ -34,11 +34,12 @@ const STATUS_DOTS = {
     heading_to: 'bg-amber-500',
 }
 
-export function PresenceSetupSheet({ isOpen, onClose }) {
+export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete }) {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { goVisible, isGoingVisible } = useDiningPresence()
+    const [isDeleting, setIsDeleting] = useState(false)
 
     const locations = useLocationsStore(state => state.locations)
     const isLoadingLocations = useLocationsStore(state => state.isLoading)
@@ -101,6 +102,19 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
         }
     }
 
+    const handleDelete = useCallback(async () => {
+        if (!onDelete) return
+        setIsDeleting(true)
+        try {
+            await onDelete()
+            onClose()
+        } catch (err) {
+            console.error('[PresenceSetupSheet] delete error:', err)
+        } finally {
+            setIsDeleting(false)
+        }
+    }, [onDelete, onClose])
+
     if (!isOpen) return null
 
     const inputCls = `
@@ -151,7 +165,41 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                     </div>
 
                     <div className="px-6 pb-8 space-y-5">
-                        {/* Venue picker */}
+                        {existingPresence ? (
+                            <div className={`rounded-2xl border p-5 space-y-4 ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            {t('dine.active_meetup_exists', 'You already have an active meetup')}
+                                        </h3>
+                                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            {existingPresence.venueName || t('dine.venue_required')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <motion.button
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                    className="
+                                        w-full py-3 rounded-2xl font-bold text-sm transition-all
+                                        bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20
+                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                        flex items-center justify-center gap-2
+                                    "
+                                >
+                                    {isDeleting ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        <Trash2 size={16} />
+                                    )}
+                                    {t('dine.delete_current_meetup', 'Delete Current Meetup')}
+                                </motion.button>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Venue picker */}
                         <div>
                             <label className={`text-[11px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                 {t('dine.venue_label')}
@@ -261,8 +309,8 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                         </div>
 
                         {/* Arriving at + Party size */}
-                        <div className="flex gap-3">
-                            <div className="flex-1">
+                        <div className="flex gap-3 min-w-0">
+                            <div className="flex-1 min-w-0">
                                 <label className={`text-[11px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                     {t('dine.arriving_at')}
                                 </label>
@@ -270,10 +318,10 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                                     type="time"
                                     value={arrivingAt}
                                     onChange={e => setArrivingAt(e.target.value)}
-                                    className={inputCls}
+                                    className={`${inputCls} min-w-0 max-w-[140px] sm:max-w-full`}
                                 />
                             </div>
-                            <div className="w-32">
+                            <div className="w-32 shrink-0">
                                 <label className={`text-[11px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                     {t('dine.party_size')}
                                 </label>
@@ -386,7 +434,9 @@ export function PresenceSetupSheet({ isOpen, onClose }) {
                                 </p>
                             )}
                         </div>
-                    </div>
+                    </>
+                )}
+            </div>
                 </motion.div>
             </motion.div>
         </AnimatePresence>,

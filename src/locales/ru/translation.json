@@ -1030,6 +1030,11 @@
     "report_submit": "Отправить жалобу",
     "report_success": "Жалоба отправлена. Мы рассмотрим её в ближайшее время.",
     "no_diners": "Пока никого рядом. Станьте первым видимым!",
-    "distance_away": "{{distance}}м от вас"
+    "distance_away": "{{distance}}м от вас",
+    "create_meetup": "Создать встречу",
+    "your_meetup": "Ваша встреча",
+    "delete_meetup": "Удалить встречу",
+    "active_meetup_exists": "У вас уже есть активная встреча",
+    "delete_current_meetup": "Удалить текущую встречу"
   }
 }

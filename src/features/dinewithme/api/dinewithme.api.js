@@ -178,6 +178,44 @@ export async function getNearbyDiners({ lat, lng, radiusMeters = DEFAULT_RADIUS_
     return diners.filter(p => !reportedIds.has(p.user_id))
 }
 
+/**
+ * Get ALL active diners across the entire platform (no radius filter).
+ * Includes the current user's own presence so they can see their meetup on the map.
+ *
+ * @returns {Promise<Array>} All active diners with profile + venue info
+ */
+export async function getAllActiveDiners() {
+    if (!supabase) return []
+
+    const { data, error } = await supabase
+        .from('dining_presence')
+        .select(`
+            *,
+            profile:profiles(id, full_name, name, avatar_url),
+            location:locations(id, title, name, address, image_url)
+        `)
+        .gte('expires_at', new Date().toISOString())
+        .eq('visibility', 'everyone')
+
+    if (error) {
+        console.warn('[dinewithme.api] getAllActiveDiners failed:', error.message)
+        return []
+    }
+
+    const diners = (data || []).map(p => ({
+        ...p,
+        _distance: null,
+        displayName: formatDisplayName(p.profile?.full_name || p.profile?.name),
+        avatarUrl: p.profile?.avatar_url || null,
+        venueName: p.location?.title || p.location?.name || 'Unknown venue',
+        venueImageUrl: p.location?.image_url || null,
+    }))
+
+    // Filter out reported users
+    const reportedIds = await getReportedUserIds()
+    return diners.filter(p => !reportedIds.has(p.user_id))
+}
+
 // ─── Waves (One-way Interest Signal) ────────────────────────────────────────
 
 /**

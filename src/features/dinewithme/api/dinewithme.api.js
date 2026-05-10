@@ -141,8 +141,8 @@ export async function getNearbyDiners({ lat, lng, radiusMeters = DEFAULT_RADIUS_
         .from('dining_presence')
         .select(`
             *,
-            profile:profiles(id, full_name, name, avatar_url),
-            location:locations(id, title, name, address, image_url)
+            profile:profiles(id, name, avatar_url),
+            location:locations(id, title, address, image_url)
         `)
         .gte('lat', lat - latRange)
         .lte('lat', lat + latRange)
@@ -191,8 +191,8 @@ export async function getAllActiveDiners() {
         .from('dining_presence')
         .select(`
             *,
-            profile:profiles(id, full_name, name, avatar_url),
-            location:locations(id, title, name, address, image_url)
+            profile:profiles(id, name, avatar_url),
+            location:locations(id, title, address, image_url)
         `)
         .gte('expires_at', new Date().toISOString())
         .eq('visibility', 'everyone')

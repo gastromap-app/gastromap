@@ -46,7 +46,7 @@ export function DinerCard({ diner, userLat, userLng, onWaveSent, isOwn, onDelete
 
     return (
         <div className={`
-            w-[320px] max-w-[90vw] rounded-2xl overflow-hidden
+            w-full min-w-[260px] rounded-2xl overflow-hidden
             ${isDark ? 'bg-[#1c1c1e] text-white' : 'bg-white text-gray-900'}
             shadow-xl
         `}>

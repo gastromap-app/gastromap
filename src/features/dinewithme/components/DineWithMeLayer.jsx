@@ -36,7 +36,7 @@ export function DineWithMeLayer({ isActive, diners = [], onDeleteOwn }) {
                             isOwn,
                         })}
                     >
-                        <Popup className="diner-popup" maxWidth={300} minWidth={280}>
+                        <Popup className="diner-popup" maxWidth={340} minWidth={300}>
                             <DinerCard
                                 diner={diner}
                                 userLat={userLat}

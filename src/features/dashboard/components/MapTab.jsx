@@ -224,7 +224,7 @@ function MapPoseMemory() {
     return null
 }
 
-const MapTab = ({ activeFilter, focusLocation }) => {
+const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
     const locations = useLocationsStore(state => state.mapMarkers)
     const userLocation = useLocationsStore(state => state.userLocation)
     const { theme } = useTheme()
@@ -245,6 +245,11 @@ const MapTab = ({ activeFilter, focusLocation }) => {
     // Check if user has acknowledged guidelines before
     const GUIDELINES_KEY = 'gastromap_dine_guidelines_accepted'
     const hasAcceptedGuidelines = localStorage.getItem(GUIDELINES_KEY) === 'true'
+
+    // Notify parent when dine mode changes
+    useEffect(() => {
+        onDineModeChange?.(dineModeActive)
+    }, [dineModeActive, onDineModeChange])
 
     // Auto-activate dine mode via URL param ?dine=true (only for allowed roles)
     useEffect(() => {
@@ -428,20 +433,6 @@ const MapTab = ({ activeFilter, focusLocation }) => {
                         onDelete={goInvisible}
                     />
                 </>
-            )}
-
-            {/* Dine mode active banner — admin/moderator only */}
-            {dineAllowed && dineModeActive && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
-                    <div className={`px-4 py-2 rounded-2xl ${theme === 'dark' ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200'} backdrop-blur-xl shadow-lg`}>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className={`text-xs font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                                {t('dine.nearby_count', { count: diners.length, plural: diners.length !== 1 ? 's' : '' })}
-                            </span>
-                        </div>
-                    </div>
-                </div>
             )}
 
             {/* Create Meetup button — visible when in dine browse mode */}

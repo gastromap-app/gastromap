@@ -1035,6 +1035,9 @@
     "your_meetup": "Ваша встреча",
     "delete_meetup": "Удалить встречу",
     "active_meetup_exists": "У вас уже есть активная встреча",
-    "delete_current_meetup": "Удалить текущую встречу"
+    "delete_current_meetup": "Удалить текущую встречу",
+    "no_active_meetups": "Нет активных встреч",
+    "active_meetups_count": "{{count}} активная встреча",
+    "active_meetups_count_plural": "{{count}} активных встречи"
   }
 }

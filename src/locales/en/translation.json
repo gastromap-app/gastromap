@@ -1038,6 +1038,9 @@
     "your_meetup": "Your Meetup",
     "delete_meetup": "Delete Meetup",
     "active_meetup_exists": "You already have an active meetup",
-    "delete_current_meetup": "Delete Current Meetup"
+    "delete_current_meetup": "Delete Current Meetup",
+    "no_active_meetups": "No active meetups",
+    "active_meetups_count": "{{count}} active meetup",
+    "active_meetups_count_plural": "{{count}} active meetups"
   }
 }

@@ -1,19 +1,22 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform, useMotionValue } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Heart, Instagram, ArrowUpRight } from 'lucide-react'
+import { Plus, Heart, Instagram, ArrowUpRight, Loader2 } from 'lucide-react'
+import { supabase } from '@/shared/api/client'
+import { useAuthStore } from '@/shared/store/useAuthStore'
+// import { loadStripe } from '@stripe/stripe-js'
+// import DonationModal from '@/components/ui/DonationModal'
 
 const ManifestoSection = ({ isDark }) => {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const containerRef = useRef(null)
+    // const { isAuthenticated, user } = useAuthStore()
 
     // Mouse parallax - very subtle
     const mouseX = useMotionValue(0)
     const mouseY = useMotionValue(0)
-
-
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -104,7 +107,7 @@ const ManifestoSection = ({ isDark }) => {
                 <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 md:gap-20 items-start mb-10 md:mb-16">
                     <motion.div variants={itemVariants} className="space-y-4 md:space-y-8">
                         <p className={`text-[1.375rem] md:text-[1.75rem] leading-tight font-light tracking-tight ${
-                            isDark ? 'text-white/80' : 'text-slate-800'
+                            isDark ? 'text-t-primary' : 'text-slate-800'
                         }`}>
                             {t('manifesto.description')}
                         </p>
@@ -113,7 +116,9 @@ const ManifestoSection = ({ isDark }) => {
                     </motion.div>
 
                     <motion.div variants={itemVariants} className="space-y-4 md:space-y-6">
-                        <p className="text-[1.125rem] md:text-[1.375rem] leading-relaxed font-normal italic font-serif opacity-60">
+                        <p className={`text-[1.125rem] md:text-[1.375rem] leading-relaxed font-normal italic font-serif ${
+                            isDark ? 'text-t-secondary' : 'text-slate-600'
+                        }`}>
                             "{t('manifesto.creator_story')}"
                         </p>
                         
@@ -121,7 +126,9 @@ const ManifestoSection = ({ isDark }) => {
                             href="https://instagram.com/Alikovit" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="group flex items-center gap-4 py-1 opacity-60 hover:opacity-100 transition-opacity"
+                            className={`group flex items-center gap-4 py-1 transition-opacity ${
+                                isDark ? 'text-t-secondary hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                            }`}
                         >
                             <Instagram size={18} className="group-hover:text-blue-500 transition-colors" />
                             <span className="text-[1.125rem] font-bold tracking-tight">@Alikovit</span>
@@ -140,7 +147,7 @@ const ManifestoSection = ({ isDark }) => {
                             {t('manifesto.join_title')}
                         </h3>
                         <p className={`text-[0.9375rem] font-medium leading-relaxed ${
-                            isDark ? 'text-white/40' : 'text-slate-500'
+                            isDark ? 'text-t-tertiary' : 'text-slate-600'
                         }`}>
                             {t('manifesto.join_description')}
                         </p>
@@ -161,7 +168,10 @@ const ManifestoSection = ({ isDark }) => {
                             <Plus size={16} />
                         </motion.button>
                         
-                        <motion.button 
+                        <motion.a 
+                            href="https://send.monobank.ua/jar/5tZhMJXSMQ"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`h-12 md:h-16 px-6 md:px-8 rounded-xl md:rounded-2xl font-black text-sm md:text-base flex items-center justify-center gap-3 transition-all border cursor-pointer w-full sm:w-auto ${
@@ -172,7 +182,7 @@ const ManifestoSection = ({ isDark }) => {
                         >
                             {t('manifesto.donate')}
                             <Heart size={16} className="text-red-500" />
-                        </motion.button>
+                        </motion.a>
                     </div>
                 </motion.div>
             </motion.div>

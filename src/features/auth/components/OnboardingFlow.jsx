@@ -504,29 +504,18 @@ export function OnboardingFlow({ onComplete }) {
             features: features,
         }
 
-        // 1. Save to Zustand + localStorage (instant)
+        // Save to Zustand + localStorage (instant) + Supabase (background via syncToSupabase)
         try {
             await updatePrefs(dna)
         } catch (err) {
-            console.warn('[Onboarding] Local save failed:', err)
+            console.warn('[Onboarding] Save failed:', err)
         }
 
-        // 2. Save to Supabase via API (with timeout to prevent freeze)
-        try {
-            const { supabase } = await import('@/shared/api/client')
-            const sessionPromise = supabase.auth.getSession()
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 5000))
-            const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-            if (session?.user?.id) {
-                await updateUserPreferences(session.user.id, { longTerm: dna })
-                console.log('[Onboarding] ✅ DNA saved to Supabase')
-            }
-        } catch (err) {
-            console.warn('[Onboarding] Supabase save failed (non-blocking):', err?.message || err)
-        }
-
-        setSaving(false)
-        onComplete()
+        // Small delay to let syncToSupabase fire, then close
+        setTimeout(() => {
+            setSaving(false)
+            onComplete()
+        }, 300)
     }
 
     const [isSkipping, setIsSkipping] = useState(false)
@@ -534,7 +523,6 @@ export function OnboardingFlow({ onComplete }) {
     const handleSkip = async () => {
         setIsSkipping(true)
 
-        // CamelCase shape expected by updateUserPreferences and updatePrefs
         const defaults = {
             onboardingCompleted: true,
             favoriteCuisines: ['any'],
@@ -546,27 +534,16 @@ export function OnboardingFlow({ onComplete }) {
         }
 
         try {
-            // 1. Persist locally first (instant)
             await updatePrefs(defaults)
-
-            // 2. Sync to Supabase in background
-            const { supabase } = await import('@/shared/api/client')
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user?.id) {
-                await updateUserPreferences(session.user.id, { longTerm: defaults })
-            }
         } catch (err) {
             console.warn('[Onboarding] Skip save failed:', err?.message || err)
-            // Still mark onboarding completed locally so the gate closes
-            try {
-                await updatePrefs({ onboardingCompleted: true })
-            } catch (e) {
-                console.error('[Onboarding] Critical: cannot even save local prefs', e)
-            }
-        } finally {
+        }
+
+        // Small delay then close — syncToSupabase runs in background
+        setTimeout(() => {
             setIsSkipping(false)
             onComplete()
-        }
+        }, 300)
     }
 
     const steps = [

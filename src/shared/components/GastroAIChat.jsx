@@ -211,11 +211,13 @@ export function ChatInterface({
                         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                         className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
                             transparent
-                                ? 'bg-white/20 dark:bg-white/10 backdrop-blur-xl border border-white/30'
+                                ? isDark
+                                    ? 'bg-white/10 backdrop-blur-xl border border-white/20'
+                                    : 'bg-indigo-50 border border-indigo-100'
                                 : 'bg-indigo-50 dark:bg-indigo-500/20'
                         }`}
                     >
-                        <Sparkles className={`w-7 h-7 ${transparent ? 'text-white' : 'text-indigo-500'}`} />
+                        <Sparkles className={`w-7 h-7 ${transparent ? (isDark ? 'text-white' : 'text-indigo-500') : 'text-indigo-500'}`} />
                     </motion.div>
                     <motion.div
                         initial={{ y: 10, opacity: 0 }}
@@ -223,12 +225,16 @@ export function ChatInterface({
                         transition={{ delay: 0.1 }}
                     >
                         <h3 className={`text-lg font-bold mb-1 ${
-                            transparent ? 'text-white' : 'text-gray-900 dark:text-white'
+                            transparent
+                                ? isDark ? 'text-white' : 'text-gray-900'
+                                : 'text-gray-900 dark:text-white'
                         }`}>
                             {t('ai.welcome_title', { name: user?.name ? `, ${user.name}` : '' })}
                         </h3>
                         <p className={`text-sm leading-relaxed max-w-xs ${
-                            transparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
+                            transparent
+                                ? isDark ? 'text-white/70' : 'text-gray-500'
+                                : 'text-gray-500 dark:text-gray-400'
                         }`}>
                         {t('ai.welcome_subtitle')}
                     </p>
@@ -241,7 +247,9 @@ export function ChatInterface({
                             onClick={requestGeo}
                             className={`flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border transition-all ${
                                 transparent
-                                    ? 'bg-blue-600/20 border-blue-400/30 text-white hover:bg-blue-600/30'
+                                    ? isDark
+                                        ? 'bg-blue-600/20 border-blue-400/30 text-white hover:bg-blue-600/30'
+                                        : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'
                                     : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'
                             }`}
                         >
@@ -266,7 +274,9 @@ export function ChatInterface({
                                 onClick={() => onSendMessage?.(hint)}
                                 className={`text-xs px-3 py-2 rounded-full border transition-all active:scale-95 ${
                                     transparent
-                                        ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                                        ? isDark
+                                            ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                                         : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                             >

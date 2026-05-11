@@ -558,3 +558,53 @@
 @keyframes shiny-spin {
   to { --shiny-angle: 360deg; }
 }
+
+/* ─── Shiny CTA Button (dark/transparent variant for hero sections) ────────── */
+.shiny-cta-dark {
+  --highlight: #3b82f6;
+  --highlight-subtle: #93c5fd;
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: #ffffff;
+  background:
+    linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02)) padding-box,
+    conic-gradient(
+      from var(--shiny-angle),
+      transparent 25%,
+      var(--highlight) 30%,
+      var(--highlight-subtle) 35%,
+      var(--highlight) 40%,
+      transparent 45%
+    ) border-box;
+  backdrop-filter: blur(8px);
+  animation: shiny-spin 3s linear infinite;
+  transition: box-shadow 0.4s ease, transform 0.15s ease, background 0.4s ease;
+}
+
+.shiny-cta-dark:hover {
+  box-shadow: 0 0 28px rgba(59, 130, 246, 0.3);
+  background:
+    linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.05)) padding-box,
+    conic-gradient(
+      from var(--shiny-angle),
+      transparent 20%,
+      var(--highlight) 28%,
+      var(--highlight-subtle) 35%,
+      var(--highlight) 42%,
+      transparent 50%
+    ) border-box;
+}
+
+.shiny-cta-dark:active {
+  transform: translateY(1px);
+}

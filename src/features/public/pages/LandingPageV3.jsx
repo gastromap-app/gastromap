@@ -177,9 +177,16 @@ function HeroSection() {
                     <Link to="/auth/signup" className="h-12 px-8 rounded-full bg-white text-black text-sm font-medium flex items-center gap-2 hover:bg-white/90 transition-colors">
                         Get Started <ArrowUpRight size={14} />
                     </Link>
-                    <Link to="/explore" className="h-12 px-8 rounded-full border border-white/20 text-white text-sm font-medium flex items-center gap-2 hover:bg-white/10 transition-colors">
-                        Explore
-                    </Link>
+                    <a
+                        href="https://send.monobank.ua/jar/5tZhMJXSMQ"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shiny-cta-dark h-12 px-8"
+                    >
+                        <span className="relative z-10 flex items-center gap-2">
+                            Support <Heart size={14} className="text-red-400" />
+                        </span>
+                    </a>
                 </motion.div>
 
                 {locationCount > 0 && (
@@ -214,16 +221,12 @@ function AboutSection() {
                     "Every great meal starts with a recommendation from someone who cares."
                 </p>
                 <p className="mt-3 text-sm text-white/30 font-light">— Alikovit</p>
-                <a
-                    href="https://send.monobank.ua/jar/5tZhMJXSMQ"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shiny-cta-light mt-6"
+                <Link
+                    to="/explore"
+                    className="mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full border border-white/20 text-white text-sm font-medium hover:bg-white/10 transition-colors"
                 >
-                    <span className="relative z-10 flex items-center gap-2">
-                        Support the Project <Heart size={14} className="text-red-500" />
-                    </span>
-                </a>
+                    Explore Map <ArrowUpRight size={14} />
+                </Link>
             </div>
         </section>
     )

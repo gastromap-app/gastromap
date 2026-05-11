@@ -148,49 +148,68 @@ const AdminLocationsPage = () => {
                 actions={
                     <div className="flex items-center gap-2">
                         <div className="hidden sm:flex items-center gap-2">
-                            <button
-                                onClick={() => setIsImportWizardOpen(true)}
-                                className={adminBtnSecondary}
-                            >
-                                <Upload size={16} />
-                                <span className="hidden lg:inline ml-1">{t('admin.import')}</span>
-                            </button>
-                            <button
-                                onClick={handleExport}
-                                disabled={isExporting}
-                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
-                            >
-                                <Download size={16} />
-                                <span className="hidden lg:inline ml-1">{isExporting ? t('admin.exporting') : t('admin.export')}</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (confirm(t('admin.bulk_reindex_confirm'))) {
-                                        bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
-                                    }
-                                }}
-                                disabled={bulkReindexMutation.isPending}
-                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
-                            >
-                                <Sparkles size={16} className="text-indigo-500" />
-                                <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? t('admin.reindexing') : t('admin.ai_reindex')}</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const mode = confirm(t('admin.bulk_embedding_confirm'))
-                                    bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
-                                }}
-                                disabled={bulkEmbeddingMutation.isPending}
-                                className={cn(adminBtnSecondary, "disabled:opacity-40")}
-                                title={t('admin.update_embeddings_title')}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
-                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                    <polyline points="3.29 7 12 12 20.71 7"/>
-                                    <line x1="12" y1="22" x2="12" y2="12"/>
-                                </svg>
-                                <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('admin.embedding') : t('admin.embeddings')}</span>
-                            </button>
+                            <div className="relative group">
+                                <button
+                                    onClick={() => setIsImportWizardOpen(true)}
+                                    className={adminBtnSecondary}
+                                >
+                                    <Upload size={16} />
+                                    <span className="hidden lg:inline ml-1">{t('admin.import')}</span>
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                                    Import locations from CSV/JSON file
+                                </div>
+                            </div>
+                            <div className="relative group">
+                                <button
+                                    onClick={handleExport}
+                                    disabled={isExporting}
+                                    className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                                >
+                                    <Download size={16} />
+                                    <span className="hidden lg:inline ml-1">{isExporting ? t('admin.exporting') : t('admin.export')}</span>
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                                    Export all locations to CSV
+                                </div>
+                            </div>
+                            <div className="relative group">
+                                <button
+                                    onClick={() => {
+                                        if (confirm(t('admin.bulk_reindex_confirm'))) {
+                                            bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
+                                        }
+                                    }}
+                                    disabled={bulkReindexMutation.isPending}
+                                    className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                                >
+                                    <Sparkles size={16} className="text-indigo-500" />
+                                    <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? t('admin.reindexing') : t('admin.ai_reindex')}</span>
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg max-w-[220px] text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                                    Generate AI descriptions & keywords for up to 50 locations (ai_context + ai_keywords)
+                                </div>
+                            </div>
+                            <div className="relative group">
+                                <button
+                                    onClick={() => {
+                                        const mode = confirm(t('admin.bulk_embedding_confirm'))
+                                        bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
+                                    }}
+                                    disabled={bulkEmbeddingMutation.isPending}
+                                    className={cn(adminBtnSecondary, "disabled:opacity-40")}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-500">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                        <polyline points="3.29 7 12 12 20.71 7"/>
+                                        <line x1="12" y1="22" x2="12" y2="12"/>
+                                    </svg>
+                                    <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('admin.embedding') : t('admin.embeddings')}</span>
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg max-w-[220px] text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                                    Generate vector embeddings for semantic search (OK = only missing, Cancel = regenerate all)
+                                </div>
+                            </div>
                         </div>
                         <button
                             onClick={handleCreateNew}

@@ -30,30 +30,29 @@ import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
 const SectionHeader = ({ title, icon: Icon, iconColor, count, subtitle }) => (
-    <div className="flex items-center gap-5 pb-6 border-b border-border/20 mb-10 group/section">
+    <div className="flex items-center gap-4 pb-5 border-b border-slate-100 dark:border-white/[0.04] mb-8">
         {Icon && (
             <div className={cn(
-                "w-14 h-14 rounded-input flex items-center justify-center transition-all duration-500",
-                "bg-secondary/40 backdrop-blur-xl border border-white/[0.08] shadow-sm",
-                "group-hover/section:bg-primary/10 group-hover/section:border-primary/20 group-hover/section:scale-105 group-hover/section:shadow-lg group-hover/section:shadow-primary/5",
+                "w-11 h-11 rounded-xl flex items-center justify-center",
+                "bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06]",
                 iconColor
             )}>
-                <Icon size={24} className="shrink-0 transition-transform duration-500 group-hover/section:rotate-3" strokeWidth={1.5} />
+                <Icon size={20} className="shrink-0" strokeWidth={1.5} />
             </div>
         )}
         <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3">
-                <h3 className="text-h3 text-t-primary font-bold tracking-tight">
+                <h3 className="text-base font-medium text-slate-900 dark:text-white tracking-tight">
                     {title}
                 </h3>
                 {count !== undefined && (
-                    <span className="text-[10px] px-2.5 py-1 rounded-pill bg-primary/10 text-primary border border-primary/20 font-black tabular-nums tracking-wider shadow-sm">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 font-medium tabular-nums">
                         {count}
                     </span>
                 )}
             </div>
             {subtitle && (
-                <p className="text-micro text-t-tertiary mt-2 font-medium leading-relaxed tracking-wide opacity-90">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-light leading-relaxed">
                     {subtitle}
                 </p>
             )}
@@ -62,26 +61,26 @@ const SectionHeader = ({ title, icon: Icon, iconColor, count, subtitle }) => (
 )
 
 const Field = ({ label, required, hint, children, className }) => (
-    <div className={cn("space-y-3", className)}>
-        <div className="flex items-center justify-between px-1">
-            <label className="flex items-center gap-2 text-eyebrow font-bold uppercase tracking-[0.14em] text-t-secondary">
+    <div className={cn("space-y-2", className)}>
+        <div className="flex items-center justify-between px-0.5">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {label}
-                {required && <span className="text-primary font-black ml-0.5">*</span>}
+                {required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             {hint && (
-                <span className="text-[9px] font-bold text-t-tertiary uppercase tracking-widest opacity-80">
+                <span className="text-[10px] font-light text-slate-400 italic">
                     {hint}
                 </span>
             )}
         </div>
-        <div className="relative group/field">
+        <div className="relative">
             {children}
         </div>
     </div>
 )
 
-const input = "w-full px-5 py-4 bg-secondary/40 hover:bg-secondary/60 focus:bg-background/50 rounded-input border border-border/15 text-body-sm font-semibold text-t-primary placeholder:text-t-tertiary/60 outline-none focus:border-primary/40 focus:ring-4 focus:ring-primary/5 transition-all duration-300 shadow-sm backdrop-blur-xl"
-const textarea = cn(input, "resize-none min-h-[140px] rounded-card pt-5 leading-relaxed")
+const input = "w-full px-4 py-3 bg-slate-50/50 dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.05] focus:bg-white dark:focus:bg-white/[0.06] rounded-xl border border-slate-200 dark:border-white/[0.08] text-sm font-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-300 dark:focus:border-indigo-500/40 focus:ring-2 focus:ring-indigo-500/10 transition-all"
+const textarea = cn(input, "resize-none min-h-[120px] pt-4 leading-relaxed")
 
 // ─── Draggable Map Marker for coordinate editing ─────────────────────────────
 // Admin-only: shows the location on a mini-map with a draggable marker.
@@ -488,12 +487,12 @@ const LocationFormSlideOver = ({
                         </div>
                         <div className="flex-1 min-w-0 mt-[env(safe-area-inset-top)] sm:mt-0">
                             <div className="flex items-center flex-wrap gap-4 sm:gap-6">
-                                <h2 className="text-h1 text-t-primary font-black tracking-tighter truncate max-w-[220px] sm:max-w-none">
+                                <h2 className="text-xl font-light text-slate-900 dark:text-white tracking-tight truncate max-w-[220px] sm:max-w-none">
                                     {formData.title || (isNew ? t('admin.locations.form.title_new') : t('admin.locations.form.title_edit'))}
                                 </h2>
                                 <span className={cn(
-                                    "px-4 py-1.5 rounded-pill text-[9px] font-black uppercase tracking-[0.25em]",
-                                    "bg-primary/10 text-primary border border-primary/20 backdrop-blur-md shadow-sm shadow-primary/5"
+                                    "px-3 py-1 rounded-full text-[9px] font-medium uppercase tracking-wider",
+                                    "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20"
                                 )}>
                                     {isNew ? t('admin.locations.form.status_draft') : (formData.status || 'Active')}
                                 </span>
@@ -1301,14 +1300,14 @@ const LocationFormSlideOver = ({
                         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                             <button
                                 onClick={onSave}
-                                className="order-1 sm:order-2 w-full sm:flex-[2.5] py-5 sm:py-6 rounded-card bg-primary hover:brightness-110 text-primary-foreground text-body-sm font-black shadow-2xl shadow-primary/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-[0.25em]"
+                                className="order-1 sm:order-2 w-full sm:flex-[2.5] py-4 sm:py-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 uppercase tracking-wider"
                             >
                                 <Save size={22} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
                                 <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
                             </button>
                             <button
                                 onClick={onClose}
-                                className="order-2 sm:order-1 w-full sm:flex-1 py-5 sm:py-6 rounded-card border-2 border-border text-t-secondary text-body-sm font-black hover:bg-secondary hover:border-t-quaternary transition-all uppercase tracking-[0.25em] active:scale-[0.98]"
+                                className="order-2 sm:order-1 w-full sm:flex-1 py-4 sm:py-5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all uppercase tracking-wider active:scale-[0.98]"
                             >
                                 {t('admin.locations.form.actions.cancel')}
                             </button>
@@ -1319,7 +1318,7 @@ const LocationFormSlideOver = ({
                                     onDelete(selectedLocation?.id)
                                     onClose()
                                 }}
-                                className="w-full py-4.5 rounded-card border-2 border-destructive/20 text-destructive text-micro font-black hover:bg-destructive/5 hover:border-destructive/40 transition-all uppercase tracking-[0.3em] active:scale-[0.98] flex items-center justify-center gap-2.5"
+                                className="w-full py-3.5 rounded-xl border border-red-200 dark:border-red-500/20 text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/5 transition-all uppercase tracking-wider active:scale-[0.98] flex items-center justify-center gap-2"
                             >
                                 <Trash2 size={18} strokeWidth={2.5} />
                                 <span>{t('admin.locations.form.actions.delete_location')}</span>

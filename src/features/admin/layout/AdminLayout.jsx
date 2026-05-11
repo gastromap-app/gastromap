@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useAdminNotifications } from '../hooks/useAdminNotifications'
 import { useTheme } from '@/hooks/useTheme'
 import { ErrorBoundary, RouteErrorFallback } from '@/app/ErrorBoundary'
 
@@ -123,7 +124,7 @@ export default function AdminLayout() {
         setIsSidebarOpen(false)
     }, [location.pathname])
 
-    const notifications = []  // TODO: Connect to real notification API
+    const { notifications, unreadCount, markAllRead } = useAdminNotifications()
 
     // Breadcrumbs
     const segments = location.pathname.split('/').filter(Boolean)
@@ -260,7 +261,7 @@ export default function AdminLayout() {
                                 className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all relative"
                             >
                                 <Bell size={20} />
-                                {notifications.filter(n => n.unread).length > 0 && (
+                                {unreadCount > 0 && (
                                     <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-white/[0.06]" />
                                 )}
                             </button>
@@ -288,7 +289,7 @@ export default function AdminLayout() {
                                             <div className="divide-y divide-slate-50 dark:divide-slate-800">
                                                 {notifications.length === 0 ? (
                                                     <div className="px-4 py-6 text-center">
-                                                        <p className="text-sm text-slate-400">Нет новых уведомлений</p>
+                                                        <p className="text-sm text-slate-400">No new notifications</p>
                                                     </div>
                                                 ) : (
                                                     notifications.map(n => (
@@ -304,7 +305,7 @@ export default function AdminLayout() {
                                                 )}
                                             </div>
                                             <div className="p-3 border-t border-slate-100 dark:border-white/[0.06]">
-                                                <button className="w-full text-center text-xs font-bold text-indigo-500 hover:text-indigo-600 uppercase tracking-widest py-1">
+                                                <button onClick={markAllRead} className="w-full text-center text-xs font-bold text-indigo-500 hover:text-indigo-600 uppercase tracking-widest py-1">
                                                     Mark all as read
                                                 </button>
                                             </div>

@@ -414,43 +414,19 @@ function Footer() {
     return (
         <footer className="py-16 md:py-20 bg-[#050505] border-t border-white/5">
             <div className="max-w-7xl mx-auto px-6 md:px-10">
-                <div className="grid md:grid-cols-4 gap-10 md:gap-8 mb-12">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                         <span className="text-white text-lg font-medium tracking-tight">GastroMap</span>
-                        <p className="mt-3 text-sm text-white/30 font-light leading-relaxed">
+                        <p className="mt-2 text-sm text-white/30 font-light leading-relaxed max-w-sm">
                             Your personal AI-powered guide to the best dining experiences worldwide.
                         </p>
                     </div>
-                    <div>
-                        <p className="text-xs tracking-[0.2em] uppercase text-white/50 mb-4">Explore</p>
-                        <div className="space-y-2.5">
-                            <Link to="/explore" className="block text-sm text-white/40 hover:text-white transition-colors">Map</Link>
-                            <Link to="/features" className="block text-sm text-white/40 hover:text-white transition-colors">Features</Link>
-                            <Link to="/pricing" className="block text-sm text-white/40 hover:text-white transition-colors">Pricing</Link>
-                        </div>
-                    </div>
-                    <div>
-                        <p className="text-xs tracking-[0.2em] uppercase text-white/50 mb-4">Company</p>
-                        <div className="space-y-2.5">
-                            <Link to="/about" className="block text-sm text-white/40 hover:text-white transition-colors">About</Link>
-                            <Link to="/contact" className="block text-sm text-white/40 hover:text-white transition-colors">Contact</Link>
-                            <Link to="/blog" className="block text-sm text-white/40 hover:text-white transition-colors">Blog</Link>
-                        </div>
-                    </div>
-                    <div>
-                        <p className="text-xs tracking-[0.2em] uppercase text-white/50 mb-4">Legal</p>
-                        <div className="space-y-2.5">
-                            <Link to="/privacy" className="block text-sm text-white/40 hover:text-white transition-colors">Privacy</Link>
-                            <Link to="/terms" className="block text-sm text-white/40 hover:text-white transition-colors">Terms</Link>
-                            <Link to="/cookies" className="block text-sm text-white/40 hover:text-white transition-colors">Cookies</Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-xs text-white/20">© 2026 GastroMap. All rights reserved.</p>
                     <a href="https://instagram.com/Alikovit" target="_blank" rel="noopener noreferrer" className="text-xs text-white/20 hover:text-white/50 transition-colors flex items-center gap-1.5">
                         @Alikovit <ArrowUpRight size={10} />
                     </a>
+                </div>
+                <div className="mt-8 pt-8 border-t border-white/5 text-center">
+                    <p className="text-xs text-white/20">© 2026 GastroMap. All rights reserved.</p>
                 </div>
             </div>
         </footer>

@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { MapPin, Star, MoreHorizontal, Edit, Trash2, CheckCircle, X } from 'lucide-react'
+import { MapPin, Star, MoreHorizontal, Edit, Trash2, CheckCircle, X, Building2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
 import { Menu, Transition } from '@headlessui/react'

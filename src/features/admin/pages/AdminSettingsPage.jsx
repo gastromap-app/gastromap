@@ -12,12 +12,12 @@ import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import LazyImage from '@/components/ui/LazyImage'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
-    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-2xl border border-slate-100 dark:border-white/[0.03] p-6 lg:p-8 shadow-sm">
+    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.04] p-6 lg:p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                <Icon size={18} />
+                <Icon size={18} strokeWidth={1.5} />
             </div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
+            <h2 className="text-base font-medium text-slate-900 dark:text-white">{title}</h2>
         </div>
         {children}
     </div>
@@ -52,7 +52,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
     const inputRef = useRef(null)
     return (
         <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+            <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider ml-1">{label}</label>
             <div
                 role="button"
                 tabIndex={0}
@@ -66,7 +66,7 @@ const LogoUpload = ({ label, value, onUpload }) => {
                 ) : (
                     <>
                         <ImageIcon size={24} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('admin.settings.click_upload')}</span>
+                        <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">{t('admin.settings.click_upload')}</span>
                     </>
                 )}
                 <input
@@ -167,12 +167,12 @@ const AdminSettingsPage = () => {
                     <SettingSection title={t('admin.settings.general')} icon={Settings}>
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.app_name')}</label>
+                                <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider ml-1">{t('admin.settings.app_name')}</label>
                                 <input
                                     type="text"
                                     value={formData.appName}
                                     onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
-                                    className="w-full h-14 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    className="w-full h-12 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all "
                                     placeholder="GastroMap"
                                 />
                             </div>
@@ -194,21 +194,21 @@ const AdminSettingsPage = () => {
                     <SettingSection title={t('admin.settings.seo_title')} icon={Globe}>
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.seo_desc')}</label>
+                                <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider ml-1">{t('admin.settings.seo_desc')}</label>
                                 <textarea
                                     value={formData.appDescription}
                                     onChange={(e) => setFormData({ ...formData, appDescription: e.target.value })}
                                     rows={4}
-                                    className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
+                                    className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl p-6 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all  resize-none"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('admin.settings.keywords')}</label>
+                                <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider ml-1">{t('admin.settings.keywords')}</label>
                                 <input
                                     type="text"
                                     value={formData.seoKeywords}
                                     onChange={(e) => setFormData({ ...formData, seoKeywords: e.target.value })}
-                                    className="w-full h-14 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
+                                    className="w-full h-12 bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all "
                                 />
                             </div>
                         </div>
@@ -257,12 +257,12 @@ const AdminSettingsPage = () => {
                                     className="mt-8 pt-8 border-t border-slate-50 dark:border-white/[0.03] space-y-4 overflow-hidden"
                                 >
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">{t('admin.settings.maintenance_message')}</label>
+                                        <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider ml-1 italic">{t('admin.settings.maintenance_message')}</label>
                                         <textarea
                                             value={formData.maintenanceMessage}
                                             onChange={(e) => setFormData({ ...formData, maintenanceMessage: e.target.value })}
                                             rows={3}
-                                            className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all shadow-inner resize-none"
+                                            className="w-full bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-all  resize-none"
                                         />
                                     </div>
                                     <div className="bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl p-6 flex gap-4">
@@ -278,13 +278,13 @@ const AdminSettingsPage = () => {
 
                     <SettingSection title={t('admin.settings.security')} icon={Shield}>
                         <div className="bg-rose-50 dark:bg-rose-500/10 rounded-3xl p-8 border border-rose-100 dark:border-rose-500/20">
-                            <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-4">{t('admin.settings.danger_zone')}</h3>
+                            <h3 className="text-sm font-medium text-rose-500 uppercase tracking-wider mb-4">{t('admin.settings.danger_zone')}</h3>
                             <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-6 leading-relaxed">
                                 {t('admin.settings.clear_cache_desc')}
                             </p>
                             <button
                                 onClick={handleClearCache}
-                                className="w-full h-12 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl border border-rose-500/20 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                                className="w-full h-12 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl border border-rose-500/20 font-medium text-xs uppercase tracking-wider transition-all active:scale-95"
                             >
                                 {t('admin.settings.clear_cache_btn')}
                             </button>

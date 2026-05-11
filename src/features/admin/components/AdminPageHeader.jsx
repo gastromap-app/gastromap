@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 /**
@@ -23,10 +22,7 @@ export default function AdminPageHeader({
     icon: Icon,
 }) {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+        <div
             className={cn(
                 'flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 lg:pb-8',
                 className
@@ -66,7 +62,7 @@ export default function AdminPageHeader({
                     {actions}
                 </div>
             )}
-        </motion.div>
+        </div>
     )
 }
 

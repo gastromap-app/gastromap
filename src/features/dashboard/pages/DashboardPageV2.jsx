@@ -1,16 +1,13 @@
 /**
- * DashboardPageV2 — Redesigned mobile-first dashboard.
+ * DashboardPageV2 — Premium mobile-first dashboard with animated components.
  * 
- * Changes from V1:
- * - Compact greeting with geo context
- * - Mood Selector pills (replaces CategoryFilters)
- * - Hero card for top recommendation
- * - Trending as compact list (not cards)
- * - Countries as pills (not large cards)
- * - Cleaner visual hierarchy
+ * Design language:
+ * - Dark mode: Deep black, subtle borders, glow accents
+ * - Light mode: Clean white, soft shadows, Apple-style rounded cards
+ * - Animations: Spring cards, scramble text, parallax scroll, micro-interactions
  */
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { motion, useInView, useScroll, useTransform, useMotionValue, useAnimationFrame } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
@@ -18,10 +15,8 @@ import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
 import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Star, ChevronRight, TrendingUp } from 'lucide-react'
+import { MapPin, Star, ChevronRight, ArrowUpRight } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-import { PageTransition } from '@/components/ui/PageTransition'
-import { DashboardCardSkeleton } from '@/components/ui/Skeleton'
 import { useTranslation } from 'react-i18next'
 import LazyImage from '@/components/ui/LazyImage'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
@@ -29,19 +24,73 @@ import { PullRefreshIndicator } from '@/components/ui/PullRefreshIndicator'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
 import { calculateDistance } from '@/lib/geo.js'
-import { LocationCardDefault, LocationCardNearby } from '@/shared/components/cards'
 import ManifestoSection from '../components/ManifestoSection'
 import FilterModal from '../components/FilterModal'
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANIMATED COMPONENTS (inspired by fancy-components)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const COUNTRY_IMAGES = {
-    poland: 'https://images.unsplash.com/photo-1519197924294-4ba991a11128?q=80&w=2069&auto=format&fit=crop',
-    france: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop',
-    spain: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=2070&auto=format&fit=crop',
-    italy: 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?q=80&w=2048&auto=format&fit=crop',
-    germany: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?q=80&w=2070&auto=format&fit=crop',
+// Scramble-in text effect for greeting
+function ScrambleText({ text, className = '' }) {
+    const [display, setDisplay] = useState('')
+    const ref = useRef(null)
+    const isInView = useInView(ref, { once: true })
+    const chars = 'abcdefghijklmnopqrstuvwxyz'
+
+    useEffect(() => {
+        if (!isInView) return
+        let frame = 0
+        const totalFrames = text.length * 3
+        const interval = setInterval(() => {
+            frame++
+            const progress = Math.min(frame / totalFrames, 1)
+            const revealed = Math.floor(progress * text.length)
+            const scrambled = Array(Math.min(2, text.length - revealed))
+                .fill(0).map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
+            setDisplay(text.slice(0, revealed) + scrambled)
+            if (frame >= totalFrames) { setDisplay(text); clearInterval(interval) }
+        }, 30)
+        return () => clearInterval(interval)
+    }, [isInView, text])
+
+    return <span ref={ref} className={className}>{display || '\u00A0'}</span>
 }
+
+// Spring-animated card wrapper
+function SpringCard({ children, className = '', delay = 0 }) {
+    const ref = useRef(null)
+    const isInView = useInView(ref, { once: true, margin: '-40px' })
+
+    return (
+        <motion.div
+            ref={ref}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+            transition={{ type: 'spring', stiffness: 300, damping: 25, delay }}
+            className={className}
+        >
+            {children}
+        </motion.div>
+    )
+}
+
+// Floating subtle animation for decorative elements
+function Float({ children, className = '', speed = 0.5, amplitude = 8 }) {
+    const y = useMotionValue(0)
+    const time = useRef(0)
+
+    useAnimationFrame(() => {
+        time.current += speed * 0.02
+        y.set(Math.sin(time.current) * amplitude)
+    })
+
+    return <motion.div style={{ y }} className={className}>{children}</motion.div>
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOOD SELECTOR
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const MOODS = [
     { id: 'all', emoji: '✨', label: 'All' },
@@ -52,87 +101,136 @@ const MOODS = [
     { id: 'healthy', emoji: '🌿', label: 'Healthy' },
 ]
 
-// ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARD COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const SectionHeader = ({ title, onSeeAll, isDark }) => {
-    const { t } = useTranslation()
-    return (
-        <div className="flex justify-between items-center mb-3">
-            <h2 className={`text-[16px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</h2>
-            {onSeeAll && (
-                <button onClick={onSeeAll} className="text-[12px] font-semibold text-blue-500 flex items-center gap-0.5">
-                    {t('dashboard.see_all')} <ChevronRight size={14} />
-                </button>
-            )}
-        </div>
-    )
-}
-
-// Hero recommendation card
-const HeroCard = ({ location, isDark, navigate }) => {
+function HeroRecommendation({ location, isDark, navigate }) {
     if (!location) return null
     const rating = location.google_rating || location.rating || 0
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            onClick={() => navigate(`/location/${location.id}`)}
-            className={`relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform ${isDark ? 'bg-white/[0.03]' : 'bg-white shadow-sm'}`}
-        >
-            <div className="relative h-44 w-full">
-                <LazyImage
-                    src={location.photos?.[0] || location.image || location.image_url}
-                    alt={location.title}
-                    className="w-full h-full object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                {rating > 0 && (
-                    <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-lg flex items-center gap-1">
-                        <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-[11px] font-bold text-white">{Number(rating).toFixed(1)}</span>
+        <SpringCard className="mb-4">
+            <motion.div
+                onClick={() => navigate(`/location/${location.id}`)}
+                whileTap={{ scale: 0.97 }}
+                className={`relative rounded-[20px] overflow-hidden cursor-pointer ${
+                    isDark ? 'ring-1 ring-white/5' : 'shadow-lg shadow-black/5'
+                }`}
+            >
+                <div className="relative h-52 w-full">
+                    <LazyImage
+                        src={location.photos?.[0] || location.image || location.image_url}
+                        alt={location.title}
+                        className="w-full h-full object-cover"
+                        sizes="100vw"
+                        transform={{ width: 600, quality: 80, format: 'webp' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Floating rating */}
+                    {rating > 0 && (
+                        <Float amplitude={3} speed={0.3} className="absolute top-4 right-4">
+                            <div className="bg-white/15 backdrop-blur-xl px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/20">
+                                <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                                <span className="text-[12px] font-semibold text-white">{Number(rating).toFixed(1)}</span>
+                            </div>
+                        </Float>
+                    )}
+
+                    {/* Content overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                        <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-white/50 mb-1">
+                            Recommended for you
+                        </p>
+                        <h3 className="text-[20px] font-semibold text-white leading-tight tracking-tight">{location.title}</h3>
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[11px] text-white/60 font-medium">{location.category}</span>
+                            {location.cuisine && <span className="text-[11px] text-white/40">·</span>}
+                            {location.cuisine && <span className="text-[11px] text-white/60 font-medium">{location.cuisine}</span>}
+                            {location.price_range && <span className="text-[11px] text-white/40">·</span>}
+                            {location.price_range && <span className="text-[11px] text-emerald-400 font-semibold">{location.price_range}</span>}
+                        </div>
                     </div>
-                )}
-                <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-[18px] font-bold text-white leading-tight">{location.title}</h3>
-                    <p className="text-[12px] text-white/70 mt-1">
-                        {location.category}{location.cuisine ? ` · ${location.cuisine}` : ''}{location.price_range ? ` · ${location.price_range}` : ''}
+                </div>
+            </motion.div>
+        </SpringCard>
+    )
+}
+
+function CompactCard({ location, isDark, navigate, index = 0 }) {
+    const rating = location.google_rating || location.rating || 0
+
+    return (
+        <SpringCard delay={index * 0.05}>
+            <motion.div
+                onClick={() => navigate(`/location/${location.id}`)}
+                whileTap={{ scale: 0.96 }}
+                className={`flex-shrink-0 w-[160px] rounded-2xl overflow-hidden cursor-pointer ${
+                    isDark ? 'bg-white/[0.04] ring-1 ring-white/5' : 'bg-white shadow-sm border border-slate-100'
+                }`}
+            >
+                <div className="relative h-[100px] w-full">
+                    <LazyImage
+                        src={location.photos?.[0] || location.image || location.image_url}
+                        alt={location.title}
+                        className="w-full h-full object-cover"
+                        sizes="160px"
+                        transform={{ width: 320, quality: 75, format: 'webp' }}
+                    />
+                    {rating > 0 && (
+                        <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                            <Star size={8} className="text-yellow-400 fill-yellow-400" />
+                            <span className="text-[9px] font-semibold text-white">{Number(rating).toFixed(1)}</span>
+                        </div>
+                    )}
+                </div>
+                <div className="p-2.5">
+                    <p className={`text-[12px] font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{location.title}</p>
+                    <p className={`text-[10px] mt-0.5 truncate ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                        {location.category}{location.price_range ? ` · ${location.price_range}` : ''}
                     </p>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </SpringCard>
     )
 }
 
-// Compact trending list item
-const TrendingItem = ({ location, index, isDark, navigate }) => {
+function TrendingRow({ location, index, isDark, navigate }) {
     const rating = location.google_rating || location.rating || 0
+
     return (
-        <button
-            onClick={() => navigate(`/location/${location.id}`)}
-            className={`w-full flex items-center gap-3 py-2.5 px-1 rounded-xl transition-colors active:scale-[0.98] ${isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-slate-50'}`}
-        >
-            <span className={`text-[12px] font-bold w-5 text-center ${isDark ? 'text-white/30' : 'text-slate-300'}`}>{index + 1}</span>
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                <LazyImage src={location.photos?.[0] || location.image || location.image_url} alt="" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0 text-left">
-                <p className={`text-[13px] font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{location.title}</p>
-                <p className={`text-[11px] ${isDark ? 'text-white/40' : 'text-slate-500'}`}>{location.category}{location.price_range ? ` · ${location.price_range}` : ''}</p>
-            </div>
-            {rating > 0 && (
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <Star size={10} className="text-amber-400 fill-amber-400" />
-                    <span className={`text-[11px] font-semibold ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{Number(rating).toFixed(1)}</span>
+        <SpringCard delay={index * 0.06}>
+            <motion.button
+                onClick={() => navigate(`/location/${location.id}`)}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full flex items-center gap-3 py-3 px-3 rounded-xl transition-colors ${
+                    isDark ? 'hover:bg-white/[0.03] active:bg-white/[0.05]' : 'hover:bg-slate-50 active:bg-slate-100'
+                }`}
+            >
+                <span className={`text-[14px] font-light w-5 text-center tabular-nums ${isDark ? 'text-white/20' : 'text-slate-300'}`}>{index + 1}</span>
+                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+                    <LazyImage src={location.photos?.[0] || location.image || location.image_url} alt="" className="w-full h-full object-cover" />
                 </div>
-            )}
-        </button>
+                <div className="flex-1 min-w-0 text-left">
+                    <p className={`text-[13px] font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{location.title}</p>
+                    <p className={`text-[11px] ${isDark ? 'text-white/35' : 'text-slate-400'}`}>{location.category}{location.price_range ? ` · ${location.price_range}` : ''}</p>
+                </div>
+                {rating > 0 && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                        <Star size={10} className="text-amber-400 fill-amber-400" />
+                        <span className={`text-[11px] font-medium tabular-nums ${isDark ? 'text-white/50' : 'text-slate-500'}`}>{Number(rating).toFixed(1)}</span>
+                    </div>
+                )}
+                <ChevronRight size={14} className={isDark ? 'text-white/15' : 'text-slate-200'} />
+            </motion.button>
+        </SpringCard>
     )
 }
 
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const DashboardPageV2 = () => {
     const { t } = useTranslation()
@@ -140,7 +238,6 @@ const DashboardPageV2 = () => {
     const locations = useLocationsStore(state => state.locations)
     const filteredLocations = useLocationsStore(state => state.filteredLocations)
     const isLoading = useLocationsStore(state => state.isLoading)
-    const initialize = useLocationsStore(state => state.initialize)
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -153,7 +250,7 @@ const DashboardPageV2 = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
 
-    // Geo covers for country images
+    // Geo covers
     const { data: geoCoversData = [] } = useGeoCovers('country')
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
@@ -172,12 +269,10 @@ const DashboardPageV2 = () => {
         return `Good night, ${firstName}`
     }, [hourNow, firstName])
 
-    // Mood-filtered locations
+    // Mood filter
     const moodFiltered = useMemo(() => {
         if (activeMood === 'all') return filteredLocations
-        if (activeMood === 'healthy') {
-            return filteredLocations.filter(l => (l.dietary || []).some(d => ['vegan', 'vegetarian', 'healthy'].includes(d.toLowerCase())))
-        }
+        if (activeMood === 'healthy') return filteredLocations.filter(l => (l.dietary || []).some(d => ['vegan', 'vegetarian', 'healthy'].includes(d.toLowerCase())))
         return filteredLocations.filter(l => (l.category || '').toLowerCase().replace(/\s+/g, '_').includes(activeMood))
     }, [filteredLocations, activeMood])
 
@@ -186,193 +281,170 @@ const DashboardPageV2 = () => {
         if (!geoLat || !geoLng) return []
         return moodFiltered
             .map(loc => ({ ...loc, _dist: calculateDistance(geoLat, geoLng, loc.lat, loc.lng) }))
-            .filter(l => l._dist < 1)
-            .sort((a, b) => a._dist - b._dist)
-            .slice(0, 10)
+            .filter(l => l._dist < 1).sort((a, b) => a._dist - b._dist).slice(0, 8)
     }, [moodFiltered, geoLat, geoLng])
 
-    // Recommended (DNA-based)
+    // Recommended
     const recommended = useMemo(() => {
         const dna = userPrefs?.longTerm || {}
         const cuisines = (dna.favoriteCuisines || []).map(c => c.toLowerCase())
-        if (!cuisines.length) {
-            return [...moodFiltered].sort((a, b) => (b.google_rating || 0) - (a.google_rating || 0)).slice(0, 8)
-        }
-        return moodFiltered
-            .map(loc => {
-                let score = 0
-                const locCuisine = (loc.cuisine || '').toLowerCase()
-                if (cuisines.some(c => locCuisine.includes(c))) score += 3
-                score += (loc.google_rating || 0) / 2
-                return { ...loc, _score: score }
-            })
-            .sort((a, b) => b._score - a._score)
-            .slice(0, 8)
+        if (!cuisines.length) return [...moodFiltered].sort((a, b) => (b.google_rating || 0) - (a.google_rating || 0)).slice(0, 8)
+        return moodFiltered.map(loc => {
+            let score = (loc.google_rating || 0) / 2
+            if (cuisines.some(c => (loc.cuisine || '').toLowerCase().includes(c))) score += 3
+            return { ...loc, _score: score }
+        }).sort((a, b) => b._score - a._score).slice(0, 8)
     }, [moodFiltered, userPrefs])
 
     // Trending
-    const trending = useMemo(() => {
-        return [...moodFiltered]
-            .sort((a, b) => (b.google_rating || 0) - (a.google_rating || 0))
-            .slice(0, 5)
-    }, [moodFiltered])
+    const trending = useMemo(() => [...moodFiltered].sort((a, b) => (b.google_rating || 0) - (a.google_rating || 0)).slice(0, 5), [moodFiltered])
 
     // Countries
     const countries = useMemo(() => {
         const map = {}
-        locations.forEach(loc => {
-            const raw = loc.country ?? ''
-            if (!raw) return
-            const slug = raw.toLowerCase().replace(/\s+/g, '-')
-            const name = raw.charAt(0).toUpperCase() + raw.slice(1)
-            if (!map[slug]) map[slug] = { name, slug, count: 0 }
-            map[slug].count++
-        })
+        locations.forEach(loc => { const raw = loc.country ?? ''; if (!raw) return; const slug = raw.toLowerCase().replace(/\s+/g, '-'); if (!map[slug]) map[slug] = { name: raw.charAt(0).toUpperCase() + raw.slice(1), slug, count: 0 }; map[slug].count++ })
         return Object.values(map).sort((a, b) => b.count - a.count)
     }, [locations])
 
     // Open now
-    const openNow = useMemo(() => {
-        return moodFiltered.filter(loc => {
-            const { isOpen } = isCurrentlyOpen(loc.opening_hours || loc.openingHours)
-            return isOpen === true
-        }).slice(0, 8)
-    }, [moodFiltered])
+    const openNow = useMemo(() => moodFiltered.filter(loc => { const { isOpen } = isCurrentlyOpen(loc.opening_hours || loc.openingHours); return isOpen === true }).slice(0, 8), [moodFiltered])
 
     const buildExploreUrl = useCallback((sort) => {
-        const rawCity = currentCity && currentCity !== 'Unknown' ? currentCity : null
-        const rawCountry = currentCountry || null
+        const rawCity = currentCity !== 'Unknown' ? currentCity : null
         const city = rawCity ? normalizeCityName(rawCity).toLowerCase().replace(/\s+/g, '-') : null
-        const country = rawCountry ? normalizeCountryName(rawCountry).toLowerCase().replace(/\s+/g, '-') : null
+        const country = currentCountry ? normalizeCountryName(currentCountry).toLowerCase().replace(/\s+/g, '-') : null
         if (city && country) return sort ? `/explore/${country}/${city}?sort=${sort}` : `/explore/${country}/${city}`
         return sort ? `/explore?sort=${sort}` : '/explore'
     }, [currentCity, currentCountry])
 
     return (
-        <PageTransition className="w-full max-w-7xl mx-auto flex flex-col relative z-0">
+        <div className="w-full max-w-7xl mx-auto relative z-0">
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
-            {/* ── Mobile Layout ─────────────────────────────────────────── */}
-            <div className="md:hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6.5rem)' }}>
+            {/* ── Mobile ─────────────────────────────────────────────────── */}
+            <div className="md:hidden min-h-screen" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5.5rem)' }}>
 
-                {/* Greeting */}
-                <div className="px-5 mb-4">
-                    <h1 className={`text-[22px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {greeting}
-                    </h1>
-                    <p className={`text-[13px] font-medium mt-1 flex items-center gap-1.5 ${isDark ? 'text-white/50' : 'text-slate-500'}`}>
-                        <MapPin size={12} className="text-blue-500" />
-                        {currentCity !== 'Unknown' ? currentCity : 'Locating...'} · {nearbyLocations.length > 0 ? `${nearbyLocations.length} spots nearby` : 'Explore the city'}
-                    </p>
+                {/* Greeting with scramble effect */}
+                <div className="px-5 mb-5">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+                        <h1 className={`text-[22px] font-semibold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            <ScrambleText text={greeting} />
+                        </h1>
+                        <p className={`text-[12px] font-medium mt-1.5 flex items-center gap-1.5 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                            <MapPin size={11} className="text-blue-500" />
+                            {currentCity !== 'Unknown' ? currentCity : 'Locating...'}
+                            {nearbyLocations.length > 0 && <span>· {nearbyLocations.length} nearby</span>}
+                        </p>
+                    </motion.div>
                 </div>
 
                 {/* Search */}
-                <div className="px-5 mb-4">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="px-5 mb-4">
                     <SmartSearchBar
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFilter={() => setIsFilterOpen(true)}
-                        placeholder={t('dashboard.search_placeholder')}
+                        placeholder="Search places..."
                     />
-                </div>
+                </motion.div>
 
                 {/* Mood Selector */}
-                <div className="px-5 mb-5">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="px-5 mb-6">
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                         {MOODS.map((mood) => (
-                            <button
+                            <motion.button
                                 key={mood.id}
+                                whileTap={{ scale: 0.92 }}
                                 onClick={() => setActiveMood(mood.id)}
-                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all active:scale-95 ${
+                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-medium whitespace-nowrap transition-all ${
                                     activeMood === mood.id
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                                        ? isDark
+                                            ? 'bg-white text-black shadow-lg shadow-white/10'
+                                            : 'bg-gray-900 text-white shadow-lg shadow-black/10'
                                         : isDark
-                                            ? 'bg-white/[0.06] text-white/60 border border-white/10'
-                                            : 'bg-slate-100 text-slate-600 border border-slate-200/50'
+                                            ? 'bg-white/[0.05] text-white/50 border border-white/[0.08]'
+                                            : 'bg-slate-50 text-slate-500 border border-slate-200/60'
                                 }`}
                             >
-                                <span>{mood.emoji}</span>
+                                <span className="text-[13px]">{mood.emoji}</span>
                                 <span>{mood.label}</span>
-                            </button>
+                            </motion.button>
                         ))}
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Pull-to-refresh */}
                 <PullRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} />
 
                 {/* Feed */}
-                <div className="space-y-6 pb-10 px-5" {...pullHandlers}>
+                <div className="px-5 space-y-8 pb-32" {...pullHandlers}>
+
+                    {/* Hero Recommendation */}
+                    {recommended.length > 0 && (
+                        <div>
+                            <HeroRecommendation location={recommended[0]} isDark={isDark} navigate={navigate} />
+                            {recommended.length > 1 && (
+                                <div className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
+                                    {recommended.slice(1, 5).map((loc, i) => (
+                                        <CompactCard key={loc.id} location={loc} isDark={isDark} navigate={navigate} index={i} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Nearby */}
-                    {(geoStatus === 'granted' || nearbyLocations.length > 0) && (
+                    {nearbyLocations.length > 0 && (
                         <div>
-                            <SectionHeader title="Nearby" onSeeAll={() => navigate(buildExploreUrl())} isDark={isDark} />
-                            {nearbyLocations.length > 0 ? (
-                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                    {nearbyLocations.map((loc) => (
-                                        <div key={loc.id} className="snap-center">
-                                            <LocationCardNearby location={loc} />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : isLoading ? (
-                                <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-                                    {[0,1,2].map(i => <div key={i} className="flex-shrink-0"><DashboardCardSkeleton isDark={isDark} /></div>)}
-                                </div>
-                            ) : null}
-                        </div>
-                    )}
-
-                    {/* For You — Hero + mini cards */}
-                    <div>
-                        <SectionHeader
-                            title={currentCity !== 'Unknown' ? `For You in ${currentCity}` : 'For You'}
-                            onSeeAll={() => navigate(buildExploreUrl('recommended'))}
-                            isDark={isDark}
-                        />
-                        <HeroCard location={recommended[0]} isDark={isDark} navigate={navigate} />
-                        {recommended.length > 1 && (
-                            <div className="flex gap-3 overflow-x-auto pb-2 mt-3 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {recommended.slice(1).map((loc) => (
-                                    <div key={loc.id} className="snap-center">
-                                        <LocationCardDefault location={loc} className="flex-shrink-0 w-[200px]" imageHeight="h-[100px]" />
-                                    </div>
+                            <div className="flex justify-between items-center mb-3">
+                                <h2 className={`text-[15px] font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Nearby</h2>
+                                <button onClick={() => navigate(buildExploreUrl())} className="text-[11px] font-medium text-blue-500 flex items-center gap-0.5">
+                                    See all <ChevronRight size={12} />
+                                </button>
+                            </div>
+                            <div className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
+                                {nearbyLocations.slice(0, 6).map((loc, i) => (
+                                    <CompactCard key={loc.id} location={loc} isDark={isDark} navigate={navigate} index={i} />
                                 ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    {/* Trending — compact list */}
+                    {/* Trending */}
                     {trending.length > 0 && (
                         <div>
-                            <SectionHeader title="Trending 🔥" onSeeAll={() => navigate(buildExploreUrl('trending'))} isDark={isDark} />
-                            <div className={`rounded-2xl overflow-hidden ${isDark ? 'bg-white/[0.03] border border-white/5' : 'bg-white border border-slate-100 shadow-sm'}`}>
-                                <div className="divide-y divide-slate-100 dark:divide-white/5 px-3">
-                                    {trending.map((loc, i) => (
-                                        <TrendingItem key={loc.id} location={loc} index={i} isDark={isDark} navigate={navigate} />
-                                    ))}
-                                </div>
+                            <div className="flex justify-between items-center mb-2">
+                                <h2 className={`text-[15px] font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Trending 🔥</h2>
+                                <button onClick={() => navigate(buildExploreUrl('trending'))} className="text-[11px] font-medium text-blue-500 flex items-center gap-0.5">
+                                    See all <ChevronRight size={12} />
+                                </button>
+                            </div>
+                            <div className={`rounded-2xl overflow-hidden ${isDark ? 'bg-white/[0.02] ring-1 ring-white/5' : 'bg-white border border-slate-100 shadow-sm'}`}>
+                                {trending.map((loc, i) => (
+                                    <TrendingRow key={loc.id} location={loc} index={i} isDark={isDark} navigate={navigate} />
+                                ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Explore Countries — pills */}
+                    {/* Countries */}
                     {countries.length > 0 && (
                         <div>
-                            <SectionHeader title="Explore Countries" onSeeAll={() => navigate('/explore')} isDark={isDark} />
+                            <h2 className={`text-[15px] font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Explore</h2>
                             <div className="flex gap-2 flex-wrap">
-                                {countries.map((c) => (
-                                    <button
-                                        key={c.slug}
-                                        onClick={() => navigate(`/explore/${c.slug}`)}
-                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
-                                            isDark ? 'bg-white/[0.06] text-white/70 border border-white/10' : 'bg-slate-50 text-slate-700 border border-slate-200/50'
-                                        }`}
-                                    >
-                                        <span className="capitalize">{c.name}</span>
-                                        <span className={`text-[10px] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>{c.count}</span>
-                                    </button>
+                                {countries.map((c, i) => (
+                                    <SpringCard key={c.slug} delay={i * 0.04}>
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => navigate(`/explore/${c.slug}`)}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-medium transition-all ${
+                                                isDark ? 'bg-white/[0.04] text-white/60 ring-1 ring-white/[0.06]' : 'bg-slate-50 text-slate-600 border border-slate-200/60'
+                                            }`}
+                                        >
+                                            <span className="capitalize">{c.name}</span>
+                                            <span className={`text-[10px] ${isDark ? 'text-white/25' : 'text-slate-400'}`}>{c.count}</span>
+                                        </motion.button>
+                                    </SpringCard>
                                 ))}
                             </div>
                         </div>
@@ -381,12 +453,10 @@ const DashboardPageV2 = () => {
                     {/* Open Now */}
                     {openNow.length > 0 && (
                         <div>
-                            <SectionHeader title="Open Now 🟢" isDark={isDark} />
-                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {openNow.slice(0, 5).map((loc) => (
-                                    <div key={loc.id} className="snap-center">
-                                        <LocationCardDefault location={loc} className="flex-shrink-0 w-[200px]" imageHeight="h-[100px]" />
-                                    </div>
+                            <h2 className={`text-[15px] font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Open Now 🟢</h2>
+                            <div className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
+                                {openNow.slice(0, 5).map((loc, i) => (
+                                    <CompactCard key={loc.id} location={loc} isDark={isDark} navigate={navigate} index={i} />
                                 ))}
                             </div>
                         </div>
@@ -397,13 +467,11 @@ const DashboardPageV2 = () => {
                 </div>
             </div>
 
-            {/* ── Desktop — redirect to original for now ────────────────── */}
-            <div className="hidden md:block" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6.5rem)' }}>
-                <div className="text-center py-20">
-                    <p className={`text-lg ${isDark ? 'text-white/50' : 'text-slate-500'}`}>Desktop version — use original Dashboard</p>
-                </div>
+            {/* ── Desktop placeholder ────────────────────────────────────── */}
+            <div className="hidden md:flex items-center justify-center min-h-[60vh]" style={{ paddingTop: '6rem' }}>
+                <p className={`text-lg font-light ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Desktop — use /dashboard</p>
             </div>
-        </PageTransition>
+        </div>
     )
 }
 

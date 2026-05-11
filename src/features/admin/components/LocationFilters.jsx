@@ -15,7 +15,7 @@ const LocationFilters = ({
     onViewModeChange,
     searchQuery,
     onSearchChange,
-    filteredCount,
+    filteredCount: _filteredCount,
     totalCount,
     
     // Advanced Filters
@@ -85,12 +85,6 @@ const LocationFilters = ({
                                 <X size={14} />
                             </button>
                         )}
-                    </div>
-
-                    <div className="hidden md:block">
-                        <p className="text-micro font-bold uppercase tracking-[0.15em] text-t-tertiary leading-none">
-                            {searchQuery ? t('admin.found_count', { count: filteredCount }) : t('admin.total_count', { count: totalCount })}
-                        </p>
                     </div>
                 </div>
 

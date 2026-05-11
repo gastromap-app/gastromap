@@ -269,12 +269,18 @@
      Medium weight (500) + tighter 0.08em tracking — editorial/Apple feel.
      Aligned with the `eyebrow` token in tailwind.config.js. */
   .text-eyebrow-muted {
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     line-height: 1.2;
     letter-spacing: 0.08em;
     font-weight: 600;
     text-transform: uppercase;
     color: hsl(var(--text-tertiary));
+  }
+
+  @media (min-width: 768px) {
+    .text-eyebrow-muted {
+      font-size: 0.75rem;
+    }
   }
 }
 

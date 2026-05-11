@@ -167,6 +167,12 @@ export default defineConfig({
           if (id.includes('node_modules/@tanstack/')) {
             return 'tanstack'
           }
+          if (id.includes('node_modules/gsap/')) {
+            return 'gsap'
+          }
+          if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3-')) {
+            return 'recharts'
+          }
           // admin pages are lazy-loaded — let Vite split them automatically
         }
       }

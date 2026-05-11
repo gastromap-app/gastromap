@@ -17,44 +17,57 @@ const itemVariants = {
 
 function CityCard({ city, country, navigate, desktop = false }) {
     const slug = city.name.toLowerCase().replace(/\s+/g, '-')
+    const isComingSoon = city.is_coming_soon
+
     return (
         <motion.button
             variants={itemVariants}
-            onClick={() => navigate(`/explore/${country}/${slug}`)}
-            whileHover={desktop ? { y: -8, scale: 1.02 } : undefined}
-            className={`relative w-full overflow-hidden group shadow-lg active:scale-[0.98] transition-transform text-left ${
-                desktop ? 'h-64 rounded-[32px] cursor-pointer' : 'h-48 rounded-[28px]'
-            }`}
-            aria-label={`Explore ${city.name}`}
+            onClick={() => !isComingSoon && navigate(`/explore/${country}/${slug}`)}
+            whileHover={desktop && !isComingSoon ? { y: -8, scale: 1.02 } : undefined}
+            className={`relative w-full overflow-hidden group shadow-lg transition-transform text-left ${
+                desktop ? 'h-64 rounded-[32px]' : 'h-48 rounded-[28px]'
+            } ${isComingSoon ? 'cursor-default' : 'active:scale-[0.98] cursor-pointer'}`}
+            aria-label={isComingSoon ? `${city.name} — Coming Soon` : `Explore ${city.name}`}
+            disabled={isComingSoon}
         >
             <LazyImage
                 src={city.image}
                 alt={city.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className={`w-full h-full object-cover transition-transform duration-700 ${isComingSoon ? 'grayscale' : 'group-hover:scale-110'}`}
                 width={400}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             <div className={`absolute left-6 text-white ${desktop ? 'bottom-6' : 'bottom-5'}`}>
                 <h4 className={`font-bold text-white leading-none ${desktop ? 'text-3xl mb-1' : 'text-2xl'}`}>{city.name}</h4>
-                <div className="flex items-center gap-1.5 mt-2 text-white/90">
-                    <MapPin size={desktop ? 16 : 14} className="text-blue-400" />
-                    <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
-                        Explore venues
-                    </span>
-                    {city.count !== undefined && city.count > 0 && (
-                        <span className={`ml-2 px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-semibold ${desktop ? 'text-xs' : 'text-[11px]'}`}>
-                            {city.count}
+                {!isComingSoon && (
+                    <div className="flex items-center gap-1.5 mt-2 text-white/90">
+                        <MapPin size={desktop ? 16 : 14} className="text-blue-400" />
+                        <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
+                            Explore venues
                         </span>
-                    )}
+                        {city.count !== undefined && city.count > 0 && (
+                            <span className={`ml-2 px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-semibold ${desktop ? 'text-xs' : 'text-[11px]'}`}>
+                                {city.count}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+            {/* Coming Soon badge */}
+            {isComingSoon && (
+                <div className="absolute top-4 left-4 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                    Coming Soon
                 </div>
-            </div>
-            <div className={`absolute right-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 ${
-                desktop
-                    ? 'bottom-6 w-12 h-12 opacity-0 group-hover:opacity-100 transition-all'
-                    : 'bottom-5 w-10 h-10'
-            }`}>
-                <ChevronRight className="text-white" size={desktop ? 24 : 20} />
-            </div>
+            )}
+            {!isComingSoon && (
+                <div className={`absolute right-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 ${
+                    desktop
+                        ? 'bottom-6 w-12 h-12 opacity-0 group-hover:opacity-100 transition-all'
+                        : 'bottom-5 w-10 h-10'
+                }`}>
+                    <ChevronRight className="text-white" size={desktop ? 24 : 20} />
+                </div>
+            )}
         </motion.button>
     )
 }

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { 
     Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown, Clock, Zap,
-    Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal, MessageSquare
+    Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal, MessageSquare, Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
@@ -149,6 +149,18 @@ const LocationFilters = ({
                     </button>
 
                     <div className="flex gap-1 p-1 bg-secondary rounded-card border border-border shrink-0 shadow-inner">
+                        <button
+                            onClick={() => onViewModeChange('geo')}
+                            className={cn(
+                                "px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                viewMode === 'geo' 
+                                    ? 'bg-card text-primary shadow-sm' 
+                                    : 'text-t-tertiary hover:text-t-secondary'
+                            )}
+                        >
+                            <Globe size={14} strokeWidth={2.5} />
+                            <span className="hidden xs:inline">Geo</span>
+                        </button>
                         <button
                             onClick={() => onViewModeChange('list')}
                             className={cn(

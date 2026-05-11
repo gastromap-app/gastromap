@@ -17,6 +17,7 @@ import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
+import GeoHierarchyList from '../components/GeoHierarchyList'
 import ImportWizard from '../components/ImportWizard'
 import MapTab from '@/features/dashboard/components/MapTab'
 import { useAdminLocations } from '../hooks/useAdminLocations'
@@ -371,6 +372,16 @@ const AdminLocationsPage = () => {
                                 </MapContainer>
                             )}
                         </div>
+                    ) : viewMode === 'geo' ? (
+                        <GeoHierarchyList
+                            locations={locationsList}
+                            onSelectCity={(city, country) => {
+                                setActiveCity(city)
+                                setActiveCountry(country)
+                                setViewMode('list')
+                            }}
+                            className="min-h-[400px]"
+                        />
                     ) : null}
                 </div>
             </div>

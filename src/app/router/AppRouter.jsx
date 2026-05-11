@@ -121,9 +121,27 @@ const PageLoader = () => (
 )
 
 // ─── ScrollToTop: сбрасываем скролл при каждом переходе ────────────────────
+// Also triggers View Transitions API for smooth page crossfades (Chrome 111+, Safari 18+)
 function ScrollToTop() {
     const { pathname } = useLocation()
-    useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }) }, [pathname])
+    const prevPathRef = React.useRef(pathname)
+
+    useEffect(() => {
+        if (prevPathRef.current === pathname) return
+        prevPathRef.current = pathname
+
+        const scrollReset = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
+        // Use View Transitions API if available for smooth crossfade
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                scrollReset()
+                return Promise.resolve()
+            })
+        } else {
+            scrollReset()
+        }
+    }, [pathname])
     return null
 }
 

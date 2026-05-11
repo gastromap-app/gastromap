@@ -12,7 +12,7 @@ import { supabase } from '@/shared/api/client'
 export async function getGeoCovers(geoType = 'country') {
     const { data, error } = await supabase
         .from('geo_covers')
-        .select('id, slug, geo_type, name, image_url')
+        .select('id, slug, geo_type, name, image_url, is_visible, is_coming_soon')
         .eq('geo_type', geoType)
         .order('slug')
     if (error) throw error
@@ -72,5 +72,23 @@ export async function deleteGeoCover(slug, geoType = 'country') {
         .delete()
         .eq('slug', slug)
         .eq('geo_type', geoType)
+    if (error) throw error
+}
+
+/**
+ * Update visibility flags for a country or city.
+ * Creates the record if it doesn't exist (upsert).
+ */
+export async function updateGeoVisibility({ slug, geo_type = 'country', name, is_visible, is_coming_soon }) {
+    const updates = {}
+    if (is_visible !== undefined) updates.is_visible = is_visible
+    if (is_coming_soon !== undefined) updates.is_coming_soon = is_coming_soon
+
+    const { error } = await supabase
+        .from('geo_covers')
+        .upsert(
+            { slug, geo_type, name, ...updates },
+            { onConflict: 'slug,geo_type' }
+        )
     if (error) throw error
 }

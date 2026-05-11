@@ -26,7 +26,12 @@ export async function fetchPlacesSuggestions(query, sessionToken, location) {
             url.searchParams.set('lng', String(location.lng))
         }
 
-        const res = await fetch(url.toString())
+        const res = await fetch(url.toString(), {
+            headers: {
+                'apikey': config.supabase.anonKey,
+                'Authorization': `Bearer ${config.supabase.anonKey}`,
+            },
+        })
         if (!res.ok) throw new Error(`Status: ${res.status}`)
 
         const data = await res.json()
@@ -58,7 +63,12 @@ export async function fetchPlaceDetails(placeId, sessionToken) {
         url.searchParams.set('place_id', placeId)
         if (sessionToken) url.searchParams.set('sessiontoken', sessionToken)
 
-        const res = await fetch(url.toString())
+        const res = await fetch(url.toString(), {
+            headers: {
+                'apikey': config.supabase.anonKey,
+                'Authorization': `Bearer ${config.supabase.anonKey}`,
+            },
+        })
         if (!res.ok) throw new Error(`Status: ${res.status}`)
 
         const data = await res.json()

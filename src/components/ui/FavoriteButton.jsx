@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -25,25 +25,41 @@ export default function FavoriteButton({
     className,
 }) {
     const chip = variant === 'chip'
+    const [burst, setBurst] = useState(false)
+
+    const handleClick = (e) => {
+        e.stopPropagation()
+        if (!isFavorite) {
+            setBurst(true)
+            setTimeout(() => setBurst(false), 500)
+        }
+        onToggle()
+    }
+
     return (
         <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onToggle() }}
+            onClick={handleClick}
             aria-label={isFavorite ? 'Remove from saved' : 'Save place'}
             aria-pressed={isFavorite}
             className={cn(
-                'w-11 h-11 flex items-center justify-center active:scale-90 transition-transform shrink-0',
+                'relative w-11 h-11 flex items-center justify-center active:scale-90 transition-transform shrink-0',
                 chip && 'rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90',
                 !chip && '-m-2',
                 className,
             )}
         >
+            {/* Burst ring animation on save */}
+            {burst && (
+                <span className="absolute inset-0 rounded-full animate-[ping_0.5s_ease-out_forwards] bg-red-400/30" />
+            )}
             <Heart
                 size={size}
                 className={cn(
+                    'transition-all duration-200',
                     isFavorite
-                        ? 'text-red-500 fill-red-500'
-                        : 'text-gray-300 stroke-[2.2]',
+                        ? 'text-red-500 fill-red-500 scale-110'
+                        : 'text-gray-300 stroke-[2.2] scale-100',
                 )}
             />
         </button>

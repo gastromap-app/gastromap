@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
-import { OnboardingFlow } from './OnboardingFlow'
+
+const OnboardingFlow = lazy(() => import('./OnboardingFlow').then(m => ({ default: m.OnboardingFlow })))
 
 /**
  * OnboardingGate — shows OnboardingFlow once after first login,
@@ -75,7 +76,11 @@ export function OnboardingGate({ children }) {
     return (
         <>
             {children}
-            {showOnboarding && <OnboardingFlow onComplete={handleComplete} />}
+            {showOnboarding && (
+                <Suspense fallback={null}>
+                    <OnboardingFlow onComplete={handleComplete} />
+                </Suspense>
+            )}
         </>
     )
 }

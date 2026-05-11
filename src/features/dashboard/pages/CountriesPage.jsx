@@ -32,20 +32,23 @@ const itemVariants = {
 // ─── Country Card ─────────────────────────────────────────────────────────────
 
 function CountryCard({ country, navigate, desktop = false }) {
+    const isComingSoon = country.is_coming_soon
+
     return (
         <motion.button
             variants={itemVariants}
-            onClick={() => navigate(`/explore/${country.slug}`)}
-            whileHover={desktop ? { y: -8, scale: 1.02 } : undefined}
-            className={`relative w-full overflow-hidden group shadow-lg active:scale-[0.98] transition-transform text-left ${
-                desktop ? 'h-64 rounded-[32px] cursor-pointer' : 'h-48 rounded-[28px]'
-            }`}
-            aria-label={`Explore ${country.name}`}
+            onClick={() => !isComingSoon && navigate(`/explore/${country.slug}`)}
+            whileHover={desktop && !isComingSoon ? { y: -8, scale: 1.02 } : undefined}
+            className={`relative w-full overflow-hidden group shadow-lg transition-transform text-left ${
+                desktop ? 'h-64 rounded-[32px]' : 'h-48 rounded-[28px]'
+            } ${isComingSoon ? 'cursor-default' : 'active:scale-[0.98] cursor-pointer'}`}
+            aria-label={isComingSoon ? `${country.name} — Coming Soon` : `Explore ${country.name}`}
+            disabled={isComingSoon}
         >
             <LazyImage
                 src={country.image}
                 alt={country.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className={`w-full h-full object-cover transition-transform duration-700 ${isComingSoon ? 'grayscale' : 'group-hover:scale-110'}`}
                 width={400}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -53,24 +56,36 @@ function CountryCard({ country, navigate, desktop = false }) {
                 <h4 className={`font-bold text-white leading-none capitalize ${desktop ? 'text-3xl mb-1' : 'text-2xl'}`}>
                     {country.name}
                 </h4>
-                <div className="flex items-center gap-1.5 mt-2 text-white/90">
-                    <MapPin size={desktop ? 16 : 14} className="text-blue-400" />
-                    <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
-                        {country.count} {country.count === 1 ? 'location' : 'locations'}
-                    </span>
+                {!isComingSoon && (
+                    <div className="flex items-center gap-1.5 mt-2 text-white/90">
+                        <MapPin size={desktop ? 16 : 14} className="text-blue-400" />
+                        <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
+                            {country.count} {country.count === 1 ? 'location' : 'locations'}
+                        </span>
+                    </div>
+                )}
+            </div>
+            {/* Coming Soon badge */}
+            {isComingSoon && (
+                <div className="absolute top-4 left-4 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                    Coming Soon
                 </div>
-            </div>
-            <div className={`absolute right-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 ${
-                desktop
-                    ? 'bottom-6 w-12 h-12 opacity-0 group-hover:opacity-100 transition-all'
-                    : 'bottom-5 w-10 h-10'
-            }`}>
-                <ChevronRight className="text-white" size={desktop ? 24 : 20} />
-            </div>
+            )}
+            {!isComingSoon && (
+                <div className={`absolute right-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 ${
+                    desktop
+                        ? 'bottom-6 w-12 h-12 opacity-0 group-hover:opacity-100 transition-all'
+                        : 'bottom-5 w-10 h-10'
+                }`}>
+                    <ChevronRight className="text-white" size={desktop ? 24 : 20} />
+                </div>
+            )}
             {/* Badge with location count */}
-            <div className={`absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ${desktop ? 'hidden' : ''}`}>
-                {country.count}
-            </div>
+            {!isComingSoon && (
+                <div className={`absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ${desktop ? 'hidden' : ''}`}>
+                    {country.count}
+                </div>
+            )}
         </motion.button>
     )
 }
@@ -108,6 +123,15 @@ const CountriesPage = () => {
     const { data: geoCoversData = [] } = useGeoCovers('country')
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
+    // Visibility map from geo_covers
+    const visibilityMap = Object.fromEntries(geoCoversData.map(c => [c.slug, { is_visible: c.is_visible !== false, is_coming_soon: c.is_coming_soon === true }]))
+
+    // City visibility — fetch city covers to exclude hidden cities from country counts
+    const { data: cityCoversData = [] } = useGeoCovers('city')
+    const hiddenCitySlugs = new Set(
+        cityCoversData.filter(c => c.is_visible === false).map(c => c.slug)
+    )
+
     const [searchQuery, setSearchQuery] = useState('')
 
     // Build countries list from locations (same logic as DashboardPage)
@@ -118,6 +142,11 @@ const CountriesPage = () => {
             if (!raw) return
             const slug = raw.toLowerCase().replace(/\s+/g, '-')
             const name = raw.charAt(0).toUpperCase() + raw.slice(1)
+
+            // Skip locations in hidden cities for the count
+            const citySlug = (loc.city || '').toLowerCase().replace(/\s+/g, '-')
+            if (hiddenCitySlugs.has(citySlug)) return
+
             if (!countryMap[slug]) {
                 countryMap[slug] = { name, slug, count: 0 }
             }
@@ -131,10 +160,16 @@ const CountriesPage = () => {
                 ?? COUNTRY_IMAGES[c.slug]
                 ?? locations.find(l => l.country?.toLowerCase() === c.name.toLowerCase())?.photos?.[0]
                 ?? COUNTRY_IMAGES.poland,
+            is_coming_soon: visibilityMap[c.slug]?.is_coming_soon || false,
         }))
-    }, [locations, dbCoverMap])
+    }, [locations, dbCoverMap, visibilityMap, hiddenCitySlugs])
 
-    const filtered = countries.filter(c =>
+    // Filter out hidden countries, keep coming_soon (they show with badge)
+    const visibleCountries = useMemo(() => {
+        return countries.filter(c => visibilityMap[c.slug]?.is_visible !== false)
+    }, [countries, visibilityMap])
+
+    const filtered = visibleCountries.filter(c =>
         !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 

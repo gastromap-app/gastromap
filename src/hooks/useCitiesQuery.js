@@ -33,14 +33,14 @@ export function useCitiesQuery(country) {
                 return []
             }
 
-            // Fetch geo covers for cities
+            // Fetch geo covers for cities (includes visibility flags)
             const { data: coversData } = await supabase
                 .from('geo_covers')
-                .select('slug, image_url')
+                .select('slug, image_url, is_visible, is_coming_soon')
                 .eq('geo_type', 'city')
 
             const coverMap = Object.fromEntries(
-                (coversData || []).map(c => [c.slug, c.image_url])
+                (coversData || []).map(c => [c.slug, c])
             )
 
             // Aggregate unique cities and count locations in each
@@ -51,23 +51,29 @@ export function useCitiesQuery(country) {
                 cityMap[name] = (cityMap[name] || 0) + 1
             })
 
-            // Convert to array format with count and image
+            // Convert to array format with count, image, and visibility
             const cities = Object.entries(cityMap).map(([name, count]) => {
                 const slug = name.toLowerCase().replace(/\s+/g, '-')
+                const cover = coverMap[slug]
                 return {
                     name,
                     count,
-                    image: coverMap[slug] || getCityImage(name),
+                    image: cover?.image_url || getCityImage(name),
+                    is_visible: cover?.is_visible !== false,
+                    is_coming_soon: cover?.is_coming_soon === true,
                 }
             })
 
+            // Filter out hidden cities, keep coming_soon ones (they show with badge)
+            const visibleCities = cities.filter(c => c.is_visible)
+
             // Sort by count (descending) then by name
-            cities.sort((a, b) => {
+            visibleCities.sort((a, b) => {
                 if (b.count !== a.count) return b.count - a.count
                 return a.name.localeCompare(b.name)
             })
 
-            return cities
+            return visibleCities
         },
         staleTime: 24 * 60 * 60 * 1000,
         gcTime:    48 * 60 * 60 * 1000,

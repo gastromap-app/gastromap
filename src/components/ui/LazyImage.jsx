@@ -40,6 +40,7 @@ export function LazyImage({
     rootMargin = '200px',
     transform = { width: 800, quality: 80, format: 'webp' }, // Default: WebP ~25-35% smaller than JPEG
     priority = false,
+    sizes = null, // Responsive sizes hint, e.g. "(max-width: 768px) 50vw, 25vw"
     ...rest
 }) {
     const wrapperRef = useRef(null)
@@ -90,6 +91,35 @@ export function LazyImage({
     // If optimized === raw (no transformation was applied), skip the fallback attempt
     const canFallbackToOriginal = !useOriginal && optimizedSrc !== rawSrc
 
+    // Generate responsive srcSet for supported CDNs
+    const srcSet = (() => {
+        if (useOriginal || !rawSrc || !sizes) return undefined
+        const cleanSrc = rawSrc.trim()
+
+        // Supabase Storage — generate multiple widths
+        if (cleanSrc.includes('.supabase.co/storage/v1/object/public/')) {
+            const baseUrl = cleanSrc.split('?')[0]
+            const widths = [400, 600, 800, 1200]
+            return widths.map(w => {
+                const params = new URLSearchParams()
+                params.set('width', String(w))
+                if (transform.quality) params.set('quality', String(transform.quality))
+                if (transform.format) params.set('format', transform.format)
+                params.set('resize', 'cover')
+                return `${baseUrl}?${params.toString()} ${w}w`
+            }).join(', ')
+        }
+
+        // Google Photos CDN — generate multiple widths
+        if (cleanSrc.includes('lh3.googleusercontent.com')) {
+            const base = cleanSrc.replace(/=w\d+.*$/, '')
+            const widths = [400, 600, 800, 1200]
+            return widths.map(w => `${base}=w${w}-k-no ${w}w`).join(', ')
+        }
+
+        return undefined
+    })()
+
     useEffect(() => {
         if (!src) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -135,9 +165,12 @@ export function LazyImage({
 
     return (
         <div ref={wrapperRef} className={cn('relative w-full h-full overflow-hidden', wrapperClassName)}>
-            {/* Skeleton shown while image hasn't loaded */}
+            {/* Shimmer skeleton with gradient base (blur-up feel) */}
             {!isLoaded && !hasError && (
-                <div className="absolute inset-0 bg-slate-200 dark:bg-[hsl(220,20%,9%)] animate-pulse" />
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-[hsl(220,20%,8%)] dark:via-[hsl(220,20%,11%)] dark:to-[hsl(220,20%,8%)]" />
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 dark:via-white/[0.06] to-transparent" />
+                </div>
             )}
 
             {/* Error fallback */}
@@ -151,6 +184,8 @@ export function LazyImage({
             {isVisible && !hasError && typeof optimizedSrc === 'string' && optimizedSrc.length > 0 && (
                 <img
                     src={optimizedSrc}
+                    srcSet={srcSet}
+                    sizes={sizes || undefined}
                     alt={alt}
                     onLoad={() => setIsLoaded(true)}
                     onError={handleError}

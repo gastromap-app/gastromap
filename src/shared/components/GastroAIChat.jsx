@@ -10,6 +10,27 @@ import { useTheme } from '@/hooks/useTheme'
 import LazyImage from '@/components/ui/LazyImage'
 
 /**
+ * Format chat message text with basic markdown support:
+ * - **bold** → <strong>
+ * - *italic* → <em>
+ * - Newlines preserved via whitespace-pre-wrap on container
+ * - HTML entities escaped for safety
+ */
+function formatChatMessage(text) {
+    if (!text) return ''
+    // Escape HTML to prevent XSS
+    let safe = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+    // Bold: **text**
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic: *text* (but not inside bold)
+    safe = safe.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
+    return safe
+}
+
+/**
  * useGastroAI - backward-compatible wrapper around useAIChat.
  * Returns REAL persisted chat history. Empty state handled by UI.
  */
@@ -278,7 +299,7 @@ export function ChatInterface({
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed flex items-center min-h-[42px] ${
+                                className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed min-h-[42px] ${
                                     isUser
                                         ? transparent
                                             ? 'bg-indigo-600 text-white rounded-br-sm border border-white/20 ml-auto'
@@ -290,13 +311,14 @@ export function ChatInterface({
                                             : 'bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm mr-auto shadow-sm'
                                 }`}
                                 style={{ 
-                                    maxWidth: '88%'
+                                    maxWidth: '88%',
+                                    whiteSpace: isUser ? 'normal' : 'pre-wrap',
                                 }}
                             >
                                 {msg.content === '…' ? (
                                     <TypingDots colorClass={isUser ? 'bg-white' : (isDark ? 'bg-white' : 'bg-indigo-500')} />
                                 ) : (
-                                    msg.content ?? ''
+                                    <span dangerouslySetInnerHTML={{ __html: formatChatMessage(msg.content ?? '') }} />
                                 )}
                             </motion.div>
 

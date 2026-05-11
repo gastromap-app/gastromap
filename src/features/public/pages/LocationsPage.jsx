@@ -6,7 +6,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 // import { useInfiniteLocations } from '@/hooks/useLocationsQuery' (Removed duplicate)
 import {
     MapPin, SlidersHorizontal, Star, Clock,
-    Heart, Share2, ChevronRight, Home, Utensils,
+    Heart, ChevronRight, Home, Utensils,
     Coffee, Wine, Store, List,
     ArrowUpDown, X, SearchX, AlertCircle
 } from 'lucide-react'
@@ -65,54 +65,73 @@ const MobileCard = memo(function MobileCard({ item, style }) {
     const { isFavorite, toggleFavorite } = useFavorites()
     const saved = isFavorite(item.id)
 
+    const rating = item.google_rating ?? item.rating
+    const cuisine = item.cuisine || (item.cuisine_types?.[0]) || ''
+    const category = item.category || ''
+    const displayMeta = [category, cuisine].filter(Boolean).join(' · ')
+
     return (
         <div style={style} className="p-1.5">
-            <motion.div
-                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                initial="hidden"
-                animate="visible"
+            <div
                 onClick={() => navigate(`/location/${item.id}`)}
-                className={`relative flex flex-col h-full rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
+                className={`relative flex flex-col h-full rounded-2xl overflow-hidden shadow-sm border transition-all active:scale-[0.98] cursor-pointer animate-[fadeInUp_0.3s_ease-out_both] ${isDark ? 'bg-white/[0.03] border-white/5' : 'bg-white border-gray-100'}`}
             >
                 {/* Image */}
-                <div className="relative h-28 w-full overflow-hidden">
+                <div className="relative h-32 w-full overflow-hidden">
                     <LazyImage
                         src={item.photos?.[0] || item.image}
                         alt={item.title}
                         wrapperClassName="w-full h-full"
                         className="w-full h-full object-cover"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        transform={{ width: 400, quality: 75, format: 'webp' }}
                     />
+                    {/* Gradient for readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
                     {/* Rating badge */}
-                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
-                        <Star size={9} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-[10px] font-bold text-white">{item.google_rating ?? item.rating ?? '—'}</span>
-                    </div>
+                    {rating > 0 && (
+                        <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                            <Star size={9} className="text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-bold text-white">{Number(rating).toFixed(1)}</span>
+                        </div>
+                    )}
+
                     {/* Favorite button */}
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
-                        className={`absolute top-2 left-2 w-7 h-7 rounded-lg backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
+                        className={`absolute top-2 left-2 w-7 h-7 rounded-full backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 ${
                             saved
-                                ? 'bg-red-500/80 text-white'
-                                : 'bg-black/40 text-white/80 hover:bg-black/60'
+                                ? 'bg-red-500 text-white'
+                                : 'bg-black/40 text-white/80'
                         }`}
                     >
-                        <Heart size={12} fill={saved ? 'currentColor' : 'none'} />
+                        <Heart size={11} fill={saved ? 'currentColor' : 'none'} />
                     </button>
+
+                    {/* Price badge bottom-right on image */}
+                    {item.price_range && (
+                        <div className="absolute bottom-2 right-2 bg-white/90 dark:bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
+                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">{item.price_range}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Info section */}
-                <div className="p-2.5 flex flex-col flex-1">
-                    <h4 className={`text-[13px] font-bold leading-tight line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <div className="p-2.5 flex flex-col gap-0.5">
+                    <h4 className={`text-[13px] font-bold leading-tight line-clamp-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {item.title}
                     </h4>
-                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        {item.cuisine || item.category}
-                    </p>
-                    <div className="mt-auto pt-1.5">
+                    {displayMeta && (
+                        <p className={`text-[10px] font-medium truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {displayMeta}
+                        </p>
+                    )}
+                    <div className="pt-0.5">
                         <OpenBadge openingHours={item.openingHours} />
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     )
 })
@@ -135,7 +154,7 @@ const VirtualizedMobileGrid = memo(function VirtualizedMobileGrid({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentElement,
-        estimateSize: () => 180, // Approximate height of a mobile row
+        estimateSize: () => 200, // Approximate height of a mobile row
         overscan: 5,
     })
 
@@ -175,61 +194,87 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
     const { isFavorite, toggleFavorite } = useFavorites()
     const saved = isFavorite(item.id)
 
+    const rating = item.google_rating ?? item.rating
+    const cuisine = item.cuisine || (item.cuisine_types?.[0]) || ''
+    const category = item.category || ''
+    const displayMeta = [category, cuisine].filter(Boolean).join(' · ')
+    const description = item.description || item.insider_tip || ''
+
     return (
-        <motion.div
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+        <div
             onClick={() => navigate(`/location/${item.id}`)}
-            whileHover={{ y: -8 }}
-            className={`relative flex flex-col p-4 rounded-[40px] overflow-hidden group cursor-pointer transition-all duration-300 border ${
-                isDark ? 'bg-white/[0.03] border-white/5 shadow-2xl' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/50'
+            className={`relative flex flex-col rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 border [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-xl animate-[fadeInUp_0.3s_ease-out_both] scroll-reveal ${
+                isDark ? 'bg-white/[0.03] border-white/5 shadow-sm' : 'bg-white border-gray-100 shadow-sm'
             }`}
         >
-            <div className="relative h-56 mb-5 rounded-[28px] overflow-hidden">
+            {/* Image */}
+            <div className="relative h-40 overflow-hidden">
                 <LazyImage
                     src={item.photos?.[0] || item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 [@media(hover:hover)]:group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                    transform={{ width: 600, quality: 80, format: 'webp' }}
                 />
-                {/* Rating */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-black text-gray-900 flex items-center gap-1 shadow-md">
-                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {item.google_rating ?? item.rating}
-                </div>
-                {/* Save */}
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+                {/* Rating badge */}
+                {rating > 0 && (
+                    <div className="absolute top-2.5 right-2.5 bg-white/90 dark:bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
+                        <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                        <span className="text-[11px] font-black text-gray-900 dark:text-white">{Number(rating).toFixed(1)}</span>
+                    </div>
+                )}
+
+                {/* Favorite button */}
                 <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
-                    className={`absolute top-4 left-4 w-9 h-9 rounded-xl backdrop-blur-md flex items-center justify-center border active:scale-90 transition-all ${
-                        saved ? 'bg-red-500 border-red-400 text-white shadow-md' : 'bg-white/20 border-white/30 text-white'
+                    className={`absolute top-2.5 left-2.5 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center border active:scale-90 transition-all ${
+                        saved ? 'bg-red-500 border-red-400 text-white shadow-md' : 'bg-black/30 border-white/20 text-white hover:bg-black/50'
                     }`}
                 >
-                    <Heart size={15} fill={saved ? 'currentColor' : 'none'} />
+                    <Heart size={13} fill={saved ? 'currentColor' : 'none'} />
                 </button>
+
+                {/* Category pill on image bottom */}
+                {category && (
+                    <div className="absolute bottom-2.5 left-2.5 bg-white/90 dark:bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md">
+                        <span className="text-[9px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">{category}</span>
+                    </div>
+                )}
             </div>
 
-            <div className="space-y-3 px-2 flex-1">
+            {/* Content */}
+            <div className="p-3.5 flex flex-col gap-1">
+                {/* Title + Price */}
                 <div className="flex justify-between items-start gap-2">
-                    <h4 className={`text-xl font-black leading-tight group-hover:text-blue-600 transition-colors ${textStyle}`}>
+                    <h4 className={`text-sm font-bold leading-tight line-clamp-1 [@media(hover:hover)]:group-hover:text-blue-600 transition-colors ${textStyle}`}>
                         {item.title}
                     </h4>
-                    <span className="text-blue-500 font-black text-sm flex-shrink-0">{item.price_range}</span>
+                    {item.price_range && (
+                        <span className="text-emerald-500 font-black text-xs flex-shrink-0">{item.price_range}</span>
+                    )}
                 </div>
-                <p className={`text-[13px] font-bold ${subTextStyle}`}>{item.cuisine} · {item.category}</p>
 
-                <div className={`pt-4 flex justify-between items-center border-t ${isDark ? 'border-white/5' : 'border-gray-50'}`}>
-                    <div className="space-y-0.5">
-                        <OpenBadge openingHours={item.openingHours} />
-                        {item.vibe && (
-                            <span className={`text-[10px] font-bold ${subTextStyle}`}>{item.vibe}</span>
-                        )}
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={(e) => e.stopPropagation()}
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/50' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:text-gray-400'}`}>
-                            <Share2 size={16} />
-                        </button>
-                    </div>
+                {/* Cuisine meta */}
+                {displayMeta && (
+                    <p className={`text-[11px] font-medium truncate ${subTextStyle}`}>{displayMeta}</p>
+                )}
+
+                {/* Description snippet */}
+                {description && (
+                    <p className={`text-[11px] line-clamp-2 leading-snug ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {description}
+                    </p>
+                )}
+
+                {/* Open status */}
+                <div className="pt-1">
+                    <OpenBadge openingHours={item.openingHours} />
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 })
 
@@ -254,7 +299,7 @@ const VirtualizedDesktopGrid = memo(function VirtualizedDesktopGrid({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentElement,
-        estimateSize: () => 440, // height of a card + gap-6 (24px) vertical spacing
+        estimateSize: () => 340, // height of a card + gap-6 (24px) vertical spacing
         overscan: 3,
     })
 
@@ -477,11 +522,11 @@ const LocationsPage = () => {
             <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} theme={theme} />
 
             {/* ── MOBILE: Location Cards + Search + Filters ─────────────── */}
-            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto" ref={setMobileScrollEl} onScroll={handleMobileScroll}>
+            <div className="md:hidden fixed inset-0 z-0 overflow-y-auto overscroll-contain" ref={setMobileScrollEl} onScroll={handleMobileScroll}>
                 {/* Header with search */}
                 <motion.div
-                    className="sticky top-0 z-40 px-5 pt-20 pb-4"
-                    style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}
+                    className="sticky top-0 z-30 px-4 pb-3 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl"
+                    style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
                     initial={false}
                     animate={{
                         y: showFloatingSearch ? 0 : -120,
@@ -500,7 +545,7 @@ const LocationsPage = () => {
                 </motion.div>
 
                 {/* Mobile location cards */}
-                <div className="px-4 pb-24">
+                <div className="px-3 pb-28">
                     {isLoading ? (
                         <div className="grid grid-cols-2 gap-3">
                             {Array.from({ length: 4 }).map((_, i) => (

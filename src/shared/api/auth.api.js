@@ -414,6 +414,16 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
                 // RACE CONDITION FIX: async in onAuthStateChange needs try/catch
                 // to prevent unhandled promise rejection on network errors
                 const profile = await _fetchProfile(session.user.id)
+
+                // If profile is null and this is INITIAL_SESSION or SIGNED_IN,
+                // the user was deleted from the database — force sign out
+                if (!profile && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
+                    console.warn('[auth] User profile not found — account may have been deleted. Signing out.')
+                    try { await supabase.auth.signOut() } catch {}
+                    onSignOut()
+                    return
+                }
+
                 onSession({ user: _mapUser(session.user, profile), token: session.access_token })
             } catch (err) {
                 console.warn('[auth] Failed to fetch profile on auth state change:', err.message)

@@ -16,7 +16,6 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useTheme } from '@/hooks/useTheme'
 import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../components/AdminPageHeader'
-import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import GeoHierarchyList from '../components/GeoHierarchyList'
 import ImportWizard from '../components/ImportWizard'
 // eslint-disable-next-line no-restricted-imports
@@ -206,7 +205,7 @@ const AdminLocationsPage = () => {
 
             <LocationStats locationsList={locationsList} pendingLocations={pendingLocations} />
 
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)] rounded-[24px] border border-slate-100 dark:border-white/[0.04] shadow-sm overflow-hidden flex flex-col flex-1 min-h-[600px]">
                 <LocationFilters
                     view={statusFilter}
                     onViewChange={setStatusFilter}
@@ -238,19 +237,19 @@ const AdminLocationsPage = () => {
 
                 {/* Pagination */}
                 {statusFilter !== 'reviews' && totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 py-4 border-b border-slate-50 dark:border-white/[0.04]">
+                    <div className="flex items-center justify-center gap-3 py-4 border-b border-slate-50 dark:border-white/[0.04]">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => p - 1)}
-                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
+                            className="px-4 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
                         > {t('admin.actions.prev')} </button>
-                        <span className="text-micro font-bold text-t-tertiary">
+                        <span className="text-xs font-medium text-slate-400">
                             {currentPage} / {totalPages}
                         </span>
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(p => p + 1)}
-                            className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
+                            className="px-4 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
                         > {t('admin.actions.next')} </button>
                     </div>
                 )}
@@ -329,7 +328,7 @@ const AdminLocationsPage = () => {
                             {mapLocations.length === 0 ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-t-tertiary">
                                     <MapPin size={48} className="mb-3 opacity-30" />
-                                    <p className="text-sm font-bold">{t('admin.no_locations_with_coords')}</p>
+                                    <p className="text-sm font-medium">{t('admin.no_locations_with_coords')}</p>
                                 </div>
                             ) : (
                                 <MapContainer
@@ -373,16 +372,6 @@ const AdminLocationsPage = () => {
                                 </MapContainer>
                             )}
                         </div>
-                    ) : viewMode === 'geo' ? (
-                        <GeoHierarchyList
-                            locations={locationsList}
-                            onSelectCity={(city, country) => {
-                                setActiveCity(city)
-                                setActiveCountry(country)
-                                setViewMode('list')
-                            }}
-                            className="min-h-[400px]"
-                        />
                     ) : null}
                 </div>
             </div>

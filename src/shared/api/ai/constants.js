@@ -22,16 +22,16 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    // Updated 2026-04-23: prioritized Nemotron 120B as per user request
-    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
-    'meta-llama/llama-3.3-70b-instruct:free', // ✅ Most reliable, tool calling ✅
-    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, best JSON quality
-    'openai/gpt-oss-20b:free',                // ✅ Faster, reliable fallback
-    'z-ai/glm-4.5-air:free',                  // ✅ Multilingual, fast
-    'google/gemma-4-31b-it:free',             // ✅ Vision + multilingual
-    'google/gemma-3-27b-it:free',             // ✅ Stable fallback
-    'nousresearch/hermes-3-llama-3.1-405b:free', // deeper fallback
-    'stepfun/step-3.5-flash:free',             // ✅ Lightweight last resort
+    // Updated 2026-05-11 — verified working on OpenRouter free tier
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG, most reliable
+    'openrouter/owl-alpha',                    // ✅ 1M ctx, agentic, tool use
+    'z-ai/glm-4.5-air:free',                  // ✅ 131K ctx, fast, multilingual
+    'openai/gpt-oss-120b:free',               // ✅ 131K ctx, good JSON quality
+    'google/gemma-4-31b-it:free',             // ✅ 262K ctx, 140+ languages
+    'openai/gpt-oss-20b:free',                // ✅ 131K ctx, fast fallback
+    'google/gemma-4-26b-a4b-it:free',         // ✅ 262K ctx, efficient MoE
+    'minimax/minimax-m2.5:free',              // ✅ 197K ctx, good for coding
+    'nvidia/nemotron-3-nano-30b-a3b:free',    // ✅ 256K ctx, lightweight
 ]
 
 /**

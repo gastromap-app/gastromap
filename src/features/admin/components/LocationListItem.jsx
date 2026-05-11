@@ -302,12 +302,12 @@ const LocationListItem = ({
             </td>
             <td className="px-4 py-2">
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
-                    {loc.created_at ? new Date(loc.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
+                    {loc.createdAt ? new Date(loc.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
                 </span>
             </td>
             <td className="px-4 py-2">
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
-                    {loc.updated_at ? new Date(loc.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
+                    {loc.updatedAt ? new Date(loc.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
                 </span>
             </td>
             <td className="px-4 py-2 text-right">

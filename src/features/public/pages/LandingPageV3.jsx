@@ -116,8 +116,8 @@ function Navbar() {
     }, [])
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''}`}>
-            <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 md:h-20 flex items-center justify-between">
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+            <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 md:h-20 flex items-center justify-between">
                 <span className="text-white text-lg font-medium tracking-tight">GastroMap</span>
                 <Link to="/auth/signup" className="h-9 px-5 rounded-full bg-white text-black text-sm font-medium flex items-center gap-1.5 hover:bg-white/90 transition-colors">
                     Get Started <ArrowUpRight size={14} />
@@ -218,9 +218,16 @@ function AboutSection() {
                     href="https://send.monobank.ua/jar/5tZhMJXSMQ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors"
+                    className="mt-6 group relative inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-medium overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 >
-                    Support the Project <Heart size={14} className="text-red-500" />
+                    {/* Animated gradient border */}
+                    <span className="absolute inset-0 rounded-full p-[1.5px] overflow-hidden">
+                        <span className="absolute inset-[-200%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0_340deg,white_360deg)]" />
+                    </span>
+                    <span className="absolute inset-[1.5px] rounded-full bg-white" />
+                    <span className="relative flex items-center gap-2">
+                        Support the Project <Heart size={14} className="text-red-500" />
+                    </span>
                 </a>
             </div>
         </section>
@@ -430,8 +437,8 @@ function Footer() {
                             Your personal AI-powered guide to the best dining experiences worldwide.
                         </p>
                     </div>
-                    <a href="https://instagram.com/Alikovit" target="_blank" rel="noopener noreferrer" className="text-xs text-white/20 hover:text-white/50 transition-colors flex items-center gap-1.5">
-                        @Alikovit <ArrowUpRight size={10} />
+                    <a href="https://instagram.com/gastromap.app" target="_blank" rel="noopener noreferrer" className="text-xs text-white/20 hover:text-white/50 transition-colors flex items-center gap-1.5">
+                        @gastromap.app <ArrowUpRight size={10} />
                     </a>
                 </div>
                 <div className="mt-8 pt-8 border-t border-white/5 text-center">

@@ -525,7 +525,7 @@ const LocationsPage = () => {
             <div className="md:hidden fixed inset-0 z-0 overflow-y-auto overscroll-contain" ref={setMobileScrollEl} onScroll={handleMobileScroll}>
                 {/* Header with search */}
                 <motion.div
-                    className="sticky top-0 z-30 px-4 pb-3 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl"
+                    className="sticky top-0 z-30 px-4 pb-3"
                     style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
                     initial={false}
                     animate={{

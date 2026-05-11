@@ -377,6 +377,18 @@ export const useLocationsStore = create((set, get) => ({
             // Only set error if we're still the active generation
             if (get()._initGen === currentGen) {
                 set({ isLoading: false, initError: err.message });
+                
+                // Auto-retry once after 3 seconds on network errors
+                if (!_customFilters._isRetry && (
+                    err.message?.includes('fetch') || 
+                    err.message?.includes('network') ||
+                    err.message?.includes('Failed') ||
+                    err.name === 'TypeError'
+                )) {
+                    setTimeout(() => {
+                        get().initialize({ ..._customFilters, _isRetry: true, force: true })
+                    }, 3000)
+                }
             }
         }
     },

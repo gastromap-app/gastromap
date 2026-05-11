@@ -413,7 +413,7 @@ const LocationFormSlideOver = ({
                 }
 
                 const compressed = await compressImage(file)
-                const publicUrl = await uploadFile(compressed, 'locations', 'admin-uploads')
+                const publicUrl = await uploadFile(compressed, 'locations', 'admin-uploads', { skipCompression: true })
                 
                 // Uploaded files are prioritized (added to start)
                 addPhoto(publicUrl, true)

@@ -173,6 +173,30 @@ export default defineConfig({
           if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3-')) {
             return 'recharts'
           }
+          // Zustand + shared state management
+          if (id.includes('node_modules/zustand/')) {
+            return 'zustand'
+          }
+          // Supabase client — used everywhere but heavy
+          if (id.includes('node_modules/@supabase/')) {
+            return 'supabase'
+          }
+          // Headless UI + Radix — UI primitives
+          if (id.includes('node_modules/@headlessui/') || id.includes('node_modules/@radix-ui/')) {
+            return 'ui-primitives'
+          }
+          // Stripe — only needed on pricing/payment pages
+          if (id.includes('node_modules/@stripe/')) {
+            return 'stripe'
+          }
+          // OGL (3D) — only used on landing
+          if (id.includes('node_modules/ogl/')) {
+            return 'ogl'
+          }
+          // Lenis smooth scroll — only landing pages
+          if (id.includes('node_modules/lenis/')) {
+            return 'lenis'
+          }
           // admin pages are lazy-loaded — let Vite split them automatically
         }
       }

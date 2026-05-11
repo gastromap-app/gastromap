@@ -143,18 +143,23 @@ const DashboardPage = () => {
 
     const countries = useMemo(() => {
         const countryMap = {}
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
         locations.forEach(loc => {
             const raw = loc.country ?? ''
             if (!raw) return
             const slug = raw.toLowerCase().replace(/\s+/g, '-')
             const name = raw.charAt(0).toUpperCase() + raw.slice(1)
-            if (!countryMap[slug]) countryMap[slug] = { name, slug, count: 0 }
+            if (!countryMap[slug]) countryMap[slug] = { name, slug, count: 0, newCount: 0 }
             countryMap[slug].count++
+            // Count locations added in the last 30 days as "new"
+            if (loc.created_at && new Date(loc.created_at) > thirtyDaysAgo) {
+                countryMap[slug].newCount++
+            }
         })
         return Object.values(countryMap).map(c => ({
             ...c,
             image: dbCoverMap[c.slug] ?? COUNTRY_IMAGES[c.slug] ?? COUNTRY_IMAGES.poland,
-            newCount: c.count,
         }))
     }, [locations, dbCoverMap])
 
@@ -375,11 +380,14 @@ const DashboardPage = () => {
                                         className="w-full h-full object-cover"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                                    <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                        {t('dashboard.new_badge', { count: country.newCount })}
-                                    </div>
+                                    {country.newCount > 0 && (
+                                        <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                            +{country.newCount} {t('dashboard.new_label', 'new')}
+                                        </div>
+                                    )}
                                     <div className="absolute bottom-3.5 left-4">
                                         <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
+                                        <span className="text-[11px] text-white/70 font-medium">{country.count} locations</span>
                                     </div>
                                 </button>
                             ))}
@@ -669,16 +677,18 @@ const DesktopDashboard = ({
                                         width={400}
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent group-hover:from-black transition-colors" />
-                                    <div className="absolute top-5 right-5 bg-blue-600 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-lg transform group-hover:scale-110 transition-transform">
-                                        {t('dashboard.new_badge', { count: country.newCount })}
-                                    </div>
+                                    {country.newCount > 0 && (
+                                        <div className="absolute top-5 right-5 bg-blue-600 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-lg transform group-hover:scale-110 transition-transform">
+                                            +{country.newCount} new
+                                        </div>
+                                    )}
                                     <div className="absolute bottom-8 left-8 right-8">
                                         <h4 className="text-[1.75rem] font-black text-white mb-2 leading-none group-hover:text-blue-400 transition-colors tracking-tighter">
                                             {country.name}
                                         </h4>
                                         <div className="flex items-center gap-2 text-white/70 text-[0.6875rem] font-bold uppercase tracking-[0.14em]">
                                             <MapPin size={12} className="text-blue-500" />
-                                            <span>{t('dashboard.explore_cities')}</span>
+                                            <span>{country.count} locations</span>
                                         </div>
                                     </div>
                                 </button>

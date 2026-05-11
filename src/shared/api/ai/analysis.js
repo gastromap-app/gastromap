@@ -120,9 +120,6 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().apiKey || config.ai.useProxy) {
         try {
-            // Emit initial feedback immediately to avoid "hanging" impression
-            if (onChunk) onChunk('Thinking...')
-
             const historyMessages = (context.history ?? [])
                 .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -156,8 +153,11 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 userId: context.userId || null,
             }
 
-            // This is the heavy lifting part
-            const agentResult = await runAgentPass(messages, agentCtx)
+            // Global timeout: abort if runAgentPass takes longer than 30s
+            const agentResult = await Promise.race([
+                runAgentPass(messages, agentCtx),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (30s)')), 30000))
+            ])
 
             // Bubble up needs_geo / ask_clarification signals
             if (agentResult.needsGeo) {
@@ -172,11 +172,8 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 }
             }
 
-            // Simulate streaming: emit word by word
+            // Simulate streaming: emit word by word (reset accumulated in caller)
             if (onChunk && agentResult.text) {
-                // Clear the "Thinking..." message first
-                onChunk('') 
-                
                 const words = agentResult.text.split(' ')
                 for (let i = 0; i < words.length; i++) {
                     const chunk = (i === 0 ? '' : ' ') + words[i]
@@ -194,6 +191,8 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
             }
         } catch (err) {
             console.warn('[GastroAI] OpenRouter streaming error, falling back to local engine:', err.message)
+            // Notify caller that we're switching to fallback
+            if (onChunk) onChunk('')
         }
     }
 

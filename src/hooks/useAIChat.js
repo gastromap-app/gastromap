@@ -207,6 +207,11 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 })
 
                 const result = await analyzeQueryStream(cleanedText, context, (chunk) => {
+                    // Empty chunk = reset signal (switching from "Thinking..." to real content)
+                    if (chunk === '') {
+                        accumulated = ''
+                        return
+                    }
                     accumulated += chunk
                     // Strip all tool-call artifacts from live display
                     const display = accumulated
@@ -229,6 +234,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                             const retryCtx = { ...context, geo: retryGeo }
                             accumulated = ''
                             const retryResult = await analyzeQueryStream(cleanedText, retryCtx, (chunk) => {
+                                if (chunk === '') { accumulated = ''; return }
                                 accumulated += chunk
                                 const display = accumulated
                                     .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')

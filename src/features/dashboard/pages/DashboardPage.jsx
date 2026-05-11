@@ -483,12 +483,42 @@ const DashboardPage = () => {
                                 }}
                                 isDark={isDark}
                             />
-                            <div className="flex gap-4 overflow-x-auto pb-6 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
-                                {openNowLocations.slice(0, 5).map((loc) => (
-                                    <div key={loc.id} className="snap-center">
-                                        <LocationCardDefault location={loc} className="flex-shrink-0 w-[240px]" imageHeight="h-[120px]" />
-                                    </div>
-                                ))}
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
+                                {openNowLocations.slice(0, 5).map((loc) => {
+                                    const rating = loc.google_rating || loc.rating || 0
+                                    return (
+                                        <motion.div
+                                            key={loc.id}
+                                            whileTap={{ scale: 0.96 }}
+                                            onClick={() => navigate(`/location/${loc.id}`)}
+                                            className={`flex-shrink-0 w-[160px] rounded-2xl overflow-hidden cursor-pointer snap-center ${
+                                                isDark ? 'bg-white/[0.04] ring-1 ring-white/5' : 'bg-white shadow-sm border border-slate-100'
+                                            }`}
+                                        >
+                                            <div className="relative h-[100px] w-full">
+                                                <LazyImage
+                                                    src={loc.photos?.[0] || loc.image || loc.image_url}
+                                                    alt={loc.title}
+                                                    className="w-full h-full object-cover"
+                                                    sizes="160px"
+                                                    transform={{ width: 320, quality: 75, format: 'webp' }}
+                                                />
+                                                {rating > 0 && (
+                                                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                                                        <Star size={8} className="text-yellow-400 fill-yellow-400" />
+                                                        <span className="text-[9px] font-semibold text-white">{Number(rating).toFixed(1)}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="p-2.5">
+                                                <p className={`text-[12px] font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{loc.title}</p>
+                                                <p className={`text-[10px] mt-0.5 truncate ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                                                    {loc.category}{loc.price_range ? ` · ${loc.price_range}` : ''}
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )
+                                })}
                             </div>
                         </div>
                     )}

@@ -146,6 +146,14 @@ serve(async (req) => {
     if (sessiontoken) autoUrl.searchParams.set('sessiontoken', sessiontoken)
     autoUrl.searchParams.set('key', GOOGLE_API_KEY)
 
+    // Location bias: if lat/lng provided, bias results to that area
+    const lat = url.searchParams.get('lat')
+    const lng = url.searchParams.get('lng')
+    if (lat && lng) {
+      autoUrl.searchParams.set('location', `${lat},${lng}`)
+      autoUrl.searchParams.set('radius', '50000') // 50km radius
+    }
+
     const r = await fetch(autoUrl.toString())
     const d = await r.json()
 
@@ -157,12 +165,10 @@ serve(async (req) => {
       )
     }
 
+    // Return all establishment results without additional filtering —
+    // Google's 'types=establishment' already excludes addresses/cities/etc.
     const predictions = (d.predictions || [])
-      .filter((p: any) => {
-        const types: string[] = p.types || []
-        return types.some(t => FOOD_TYPES.has(t)) || types.includes('establishment')
-      })
-      .slice(0, 6)
+      .slice(0, 8)
       .map((p: any) => ({
         place_id:       p.place_id,
         description:    p.description,

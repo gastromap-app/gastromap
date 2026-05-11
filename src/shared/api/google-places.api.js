@@ -11,15 +11,20 @@ const EDGE_BASE = config.supabase.functionsUrl
  * Used in AddPlacePage "Place name" field.
  * @param {string} query
  * @param {string} [sessionToken] - billing optimisation token
+ * @param {{lat: number, lng: number}} [location] - optional location bias
  * @returns {Promise<Array<{id, name, description, secondaryText, source}>>}
  */
-export async function fetchPlacesSuggestions(query, sessionToken) {
+export async function fetchPlacesSuggestions(query, sessionToken, location) {
     if (!query || query.length < 2) return []
 
     try {
         const url = new URL(`${EDGE_BASE}/places-autocomplete`)
         url.searchParams.set('q', query)
         if (sessionToken) url.searchParams.set('sessiontoken', sessionToken)
+        if (location?.lat && location?.lng) {
+            url.searchParams.set('lat', String(location.lat))
+            url.searchParams.set('lng', String(location.lng))
+        }
 
         const res = await fetch(url.toString())
         if (!res.ok) throw new Error(`Status: ${res.status}`)

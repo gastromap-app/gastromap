@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { Building2, MapPin, Star, MoreHorizontal, Edit, Trash2, CheckCircle, X } from 'lucide-react'
+import { MapPin, Star, MoreHorizontal, Edit, Trash2, CheckCircle, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
 import { Menu, Transition } from '@headlessui/react'
@@ -267,54 +267,40 @@ const LocationListItem = ({
     return (
         <tr
             onClick={() => onEdit(loc)}
-            className="hover:bg-secondary/50 transition-all group cursor-pointer border-none leading-none"
+            className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group cursor-pointer h-[44px]"
         >
-            <td className="px-6 py-5 pl-10 lg:pl-12">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-image bg-secondary flex items-center justify-center text-t-quaternary group-hover:text-primary group-hover:scale-110 transition-all shadow-inner shrink-0">
-                        <Building2 size={18} className="stroke-[2.5]" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                             <p className="text-body-sm font-bold text-t-primary truncate leading-tight">{loc.title}</p>
-                            {loc.special_labels?.includes('Hidden Gem') && (
-                                <span title={t('labels.hidden_gem')} className="text-[14px] leading-none mb-0.5">💎</span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                             <p className="text-micro text-t-tertiary uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
-                            {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
-                                 <Badge variant="secondary" className="bg-primary/10 text-primary text-micro h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
-                                    {loc.kg_cuisines?.length > 0
-                                        ? loc.kg_cuisines.slice(0, 1).join(', ')
-                                        : loc.cuisine}
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
+            <td className="px-4 py-2">
+                <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 uppercase tracking-wide">
+                        {getCategoryLabel(loc.category, i18n.language)}
+                        {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
+                            <span className="text-blue-500 ml-1.5">{loc.kg_cuisines?.[0] || loc.cuisine}</span>
+                        )}
+                    </p>
                 </div>
             </td>
-            <td className="px-6 py-5">
-                 <div className="text-micro font-bold flex items-center gap-2 text-t-tertiary">
-                    <MapPin size={10} className="text-t-quaternary stroke-[2.5]" />
-                    <span className="truncate">{loc.city}</span>
-                     <span className="text-micro opacity-30 font-black">/</span>
-                    <span className="opacity-60 truncate">{loc.country}</span>
+            <td className="px-4 py-2">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate block">
+                    {loc.city}{loc.country ? ` / ${loc.country}` : ''}
+                </span>
+            </td>
+            <td className="px-4 py-2">
+                <div className="flex items-center gap-1">
+                    <Star size={11} className={cn("fill-current", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-slate-300 dark:text-slate-600")} />
+                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                 </div>
             </td>
-            <td className="px-6 py-5">
-                <div className="flex items-center gap-1.5">
-                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-t-quaternary opacity-20")} />
-                     <span className="text-micro font-black text-t-tertiary">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
-                </div>
+            <td className="px-4 py-2">
+                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{loc.price_range || '—'}</span>
             </td>
-            <td className="px-6 py-5">
-                <div className="flex items-center gap-3">
+            <td className="px-4 py-2">
+                <div className="flex items-center gap-2">
                     <VisibilityToggle locId={loc.id} locStatus={loc.status} onToggleVisibility={onToggleVisibility} />
                     <StatusBadge status={loc.status} />
                 </div>
             </td>
-            <td className="px-6 py-5 text-right pr-10 lg:pr-12">
+            <td className="px-4 py-2 text-right">
                 <ActionMenu
                     loc={loc}
                     onEdit={onEdit}

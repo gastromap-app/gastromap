@@ -16,7 +16,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
     const renderTableView = (filtered) => (
         <div className="flex-1 flex flex-col">
             {/* Mobile Card List */}
-            <div className="grid grid-cols-1 gap-4 lg:hidden p-5 pb-32">
+            <div className="grid grid-cols-1 gap-3 lg:hidden p-4 pb-32">
                 {filtered && filtered.length > 0 ? (
                     filtered.map((loc) => (
                         <LocationListItem
@@ -39,19 +39,20 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                 )}
             </div>
 
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto custom-scrollbar font-black leading-none">
-                <table className="w-full text-left border-collapse min-w-[1000px]">
+            {/* Desktop Table View — compact Excel-style */}
+            <div className="hidden lg:block overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[900px]">
                     <thead>
-                        <tr className="bg-slate-50/50 dark:bg-[hsl(220,20%,6%)]/50 border-b border-slate-50 dark:border-white/[0.03]">
-                            <th className="px-6 py-5 text-micro font-black uppercase text-t-tertiary tracking-[0.2em] pl-10 lg:pl-12">{t('admin.table.object')}</th>
-                            <th className="px-6 py-5 text-micro font-black uppercase text-t-tertiary tracking-[0.2em]">{t('admin.table.location')}</th>
-                            <th className="px-6 py-5 text-micro font-black uppercase text-t-tertiary tracking-[0.2em]">{t('admin.table.rating')}</th>
-                            <th className="px-6 py-5 text-micro font-black uppercase text-t-tertiary tracking-[0.2em]">{t('admin.table.status')}</th>
-                            <th className="px-6 py-5 text-right pr-10 lg:pr-12"></th>
+                        <tr className="bg-slate-50 dark:bg-[hsl(220,20%,6%)] border-b border-slate-200 dark:border-white/[0.06] sticky top-0 z-10">
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[30%]">{t('admin.table.object')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[15%]">{t('admin.table.location')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[10%]">{t('admin.table.rating')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[10%]">Price</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[15%]">{t('admin.table.status')}</th>
+                            <th className="px-4 py-3 text-right w-[5%]"></th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {filtered && filtered.length > 0 ? (
                             filtered.map((loc) => (
                                 <LocationListItem
@@ -69,7 +70,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="5" className="text-center py-32">
+                                <td colSpan="6" className="text-center py-20">
                                     <p className="text-micro font-black text-t-quaternary uppercase tracking-[0.3em]">
                                         {t('admin.table.no_objects_to_display')}
                                     </p>

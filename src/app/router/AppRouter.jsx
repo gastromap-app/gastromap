@@ -53,7 +53,10 @@ const AuthRedirect = () => {
 }
 
 // ─── CRITICAL PUBLIC PAGES (no lazy loading) ───────────────────────────────
-import LandingPageV2 from '@/features/public/pages/LandingPageV2'
+import LandingPageV3 from '@/features/public/pages/LandingPageV3'
+
+// ─── LAZY: Old landing page (kept as fallback) ─────────────────────────────
+const LandingPageV2 = lazy(() => import('@/features/public/pages/LandingPageV2'))
 
 // ─── LAZY: Public pages (rarely visited from cold start) ───────────────────
 const LandingPage = lazy(() => import('@/features/public/pages/LandingPage'))
@@ -157,7 +160,8 @@ export const AppRouter = () => {
                 <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/" element={<LandingPageV2 />} />
+                <Route path="/" element={<LandingPageV3 />} />
+                <Route path="/classic" element={<LandingPageV2 />} />
 
                 {/* Public Routes (Wrapped in PublicLayout) */}
                 <Route element={<PublicLayout />}>

@@ -109,6 +109,13 @@ export const CUISINE_EMOJI_MAP = {
     'bbq':              '🔥',
     'bakery & pastry':  '🥐',
     'international':    '🌐',
+    'desserts':         '🍰',
+    'steakhouse':       '🥩',
+    'farm to table':    '🌾',
+    'wine bar':         '🍷',
+    'cocktail bar':     '🍸',
+    'craft beer':       '🍺',
+    'local cuisine':    '🏠',
 }
 
 export const LABEL_EMOJI_MAP = {

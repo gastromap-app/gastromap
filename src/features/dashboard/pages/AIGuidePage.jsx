@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect } from 'react'
+import React, { useRef, useEffect, useLayoutEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
@@ -7,13 +7,45 @@ import { useUIStore } from '@/shared/store/useUIStore'
 
 // BottomNav: height=64px, bottom=calc(12px + env(safe-area-inset-bottom))
 // Input bar sits just above it with extra breathing room
-const INPUT_BOTTOM = 'calc(68px + env(safe-area-inset-bottom, 12px))'
+const INPUT_BOTTOM_DEFAULT = 'calc(68px + env(safe-area-inset-bottom, 12px))'
 // Physical padding for manual scrolling — ensures last message sits 15px above input
 const SCROLL_PADDING_BOTTOM = 'calc(150px + env(safe-area-inset-bottom, 12px))'
 // Logical offset for scrollIntoView — must be slightly larger than padding
-// to account for the 13px spacing between last message and bottomRef anchor
 const SCROLL_SNAP_BOTTOM = 'calc(158px + env(safe-area-inset-bottom, 12px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
+
+/**
+ * Hook to detect mobile keyboard and compute input position.
+ * Uses visualViewport API (supported iOS 13+, Android Chrome 62+).
+ * When keyboard is open, returns the offset from viewport bottom.
+ */
+function useKeyboardOffset() {
+    const [keyboardOpen, setKeyboardOpen] = useState(false)
+    const [bottomOffset, setBottomOffset] = useState(0)
+
+    useEffect(() => {
+        const vv = window.visualViewport
+        if (!vv) return // Desktop or unsupported browser
+
+        const update = () => {
+            // window.innerHeight = full viewport (doesn't shrink with keyboard)
+            // vv.height = visible viewport (shrinks when keyboard opens)
+            const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
+            const isOpen = keyboardHeight > 100 // Threshold to avoid false positives
+            setKeyboardOpen(isOpen)
+            setBottomOffset(isOpen ? keyboardHeight : 0)
+        }
+
+        vv.addEventListener('resize', update)
+        vv.addEventListener('scroll', update)
+        return () => {
+            vv.removeEventListener('resize', update)
+            vv.removeEventListener('scroll', update)
+        }
+    }, [])
+
+    return { keyboardOpen, bottomOffset }
+}
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
@@ -23,6 +55,19 @@ const AIGuidePage = () => {
     const navigate = useNavigate()
     const scrollRef = useRef(null)
     const hasDoneInitialScroll = useRef(false)
+    const { keyboardOpen, bottomOffset } = useKeyboardOffset()
+
+    // Compute input bar bottom position:
+    // - Keyboard closed: above BottomNav (68px + safe area)
+    // - Keyboard open: 10px above keyboard (nav is hidden behind keyboard)
+    const inputBottom = keyboardOpen
+        ? `${bottomOffset + 10}px`
+        : INPUT_BOTTOM_DEFAULT
+
+    // Adjust scroll padding when keyboard is open
+    const scrollPadding = keyboardOpen
+        ? `${bottomOffset + 80}px`
+        : SCROLL_PADDING_BOTTOM
 
     // INSTANT scroll to bottom when messages first appear — runs BEFORE first paint
     // so user never sees the un-scrolled state. Resets when history is cleared.
@@ -50,6 +95,17 @@ const AIGuidePage = () => {
             container.scrollTop = container.scrollHeight
         }
     }, [messages.length, isTyping])
+
+    // Scroll to bottom when keyboard opens (so user sees latest messages)
+    useEffect(() => {
+        if (keyboardOpen && scrollRef.current) {
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+                }
+            }, 100)
+        }
+    }, [keyboardOpen])
 
     // Reset header state on mount
     useEffect(() => {
@@ -98,7 +154,7 @@ const AIGuidePage = () => {
                 data-lenis-prevent
                 className="relative z-10 flex-1 overflow-y-auto scroll-smooth overscroll-contain"
                 style={{
-                    paddingBottom: SCROLL_PADDING_BOTTOM,
+                    paddingBottom: scrollPadding,
                     scrollPaddingBottom: SCROLL_SNAP_BOTTOM
                 }}
             >
@@ -121,10 +177,10 @@ const AIGuidePage = () => {
                 </div>
             </div>
 
-            {/* Input fixed just above BottomNav */}
+            {/* Input fixed just above BottomNav (or above keyboard when open) */}
             <div
-                className="fixed left-0 right-0 md:left-[72px] z-30 px-3 pointer-events-none"
-                style={{ bottom: INPUT_BOTTOM }}
+                className="fixed left-0 right-0 md:left-[72px] z-30 px-3 pointer-events-none transition-[bottom] duration-200 ease-out"
+                style={{ bottom: inputBottom }}
             >
                 <div className="max-w-4xl mx-auto w-full pointer-events-auto">
                     <ChatInputBar

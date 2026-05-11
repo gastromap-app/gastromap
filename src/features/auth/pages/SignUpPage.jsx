@@ -20,16 +20,16 @@ const SignUpPage = () => {
 
     // Form variants
     const formContainerVariants = {
-        hidden: { opacity: 0, x: 20 },
+        hidden: { opacity: 0, y: 20 },
         visible: {
-            opacity: 1, x: 0,
+            opacity: 1, y: 0,
             transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 }
         }
     }
 
     const itemVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 }
+        hidden: { opacity: 0, y: 15 },
+        visible: { opacity: 1, y: 0 }
     }
 
     const handleSignUp = async (e) => {

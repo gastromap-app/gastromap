@@ -82,6 +82,7 @@ const AuthCallbackPage = lazy(() => import('@/features/auth/pages/AuthCallbackPa
 
 // ─── LAZY: Dashboard pages ─────────────────────────────────────────────────
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
+const DashboardPageV2 = lazy(() => import('@/features/dashboard/pages/DashboardPageV2'))
 const AddPlacePage = lazy(() => import('@/features/dashboard/pages/AddPlacePage'))
 const MySubmissionsPage = lazy(() => import('@/features/dashboard/pages/MySubmissionsPage'))
 const LeaderboardPage = lazy(() => import('@/features/dashboard/pages/LeaderboardPage'))
@@ -197,6 +198,7 @@ export const AppRouter = () => {
                         <Route path="/explore/:country" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
                         <Route path="/explore/:country/:city" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><ExploreWrapper /></ErrorBoundary>} />
                         <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/dashboard-new" element={<DashboardPageV2 />} />
                         <Route path="/dashboard/add-place" element={<AddPlacePage />} />
                         <Route path="/dashboard/my-submissions" element={<MySubmissionsPage />} />
                         <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />

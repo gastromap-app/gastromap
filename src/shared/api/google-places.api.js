@@ -1,11 +1,13 @@
 import { supabase } from './client'
 import { config } from '@/shared/config/env'
 
-// ─── Vercel proxy base (Google Places Autocomplete + Details) ─────────────
-const PROXY_BASE = '/api/places/autocomplete'
+// ─── Supabase Edge Function base URL ─────────────────────────────────────
+// Uses the same infrastructure as get-google-photo — always available,
+// GOOGLE_PLACES_API_KEY is set in Supabase secrets.
+const EDGE_BASE = config.supabase.functionsUrl
 
 /**
- * Fetch autocomplete suggestions from Google Places via Vercel proxy.
+ * Fetch autocomplete suggestions from Google Places via Supabase Edge Function.
  * Used in AddPlacePage "Place name" field.
  * @param {string} query
  * @param {string} [sessionToken] - billing optimisation token
@@ -15,7 +17,7 @@ export async function fetchPlacesSuggestions(query, sessionToken) {
     if (!query || query.length < 2) return []
 
     try {
-        const url = new URL(PROXY_BASE, window.location.origin)
+        const url = new URL(`${EDGE_BASE}/places-autocomplete`)
         url.searchParams.set('q', query)
         if (sessionToken) url.searchParams.set('sessiontoken', sessionToken)
 
@@ -23,7 +25,7 @@ export async function fetchPlacesSuggestions(query, sessionToken) {
         if (!res.ok) throw new Error(`Status: ${res.status}`)
 
         const data = await res.json()
-        return (data.predictions || []).map(p => ({
+        return (data.predictions || []).map((p) => ({
             id:            p.place_id,
             name:          p.main_text,
             description:   p.description,
@@ -37,7 +39,7 @@ export async function fetchPlacesSuggestions(query, sessionToken) {
 }
 
 /**
- * Fetch full place details from Google Places via Vercel proxy.
+ * Fetch full place details from Google Places via Supabase Edge Function.
  * Called after user selects a suggestion — fills all form fields.
  * @param {string} placeId - Google Place ID
  * @param {string} [sessionToken]
@@ -47,7 +49,7 @@ export async function fetchPlaceDetails(placeId, sessionToken) {
     if (!placeId) return null
 
     try {
-        const url = new URL(PROXY_BASE, window.location.origin)
+        const url = new URL(`${EDGE_BASE}/places-autocomplete`)
         url.searchParams.set('place_id', placeId)
         if (sessionToken) url.searchParams.set('sessiontoken', sessionToken)
 

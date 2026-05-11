@@ -218,14 +218,9 @@ function AboutSection() {
                     href="https://send.monobank.ua/jar/5tZhMJXSMQ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-6 group relative inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-medium overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    className="shiny-cta-light mt-6"
                 >
-                    {/* Animated gradient border */}
-                    <span className="absolute inset-0 rounded-full p-[1.5px] overflow-hidden">
-                        <span className="absolute inset-[-200%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0_340deg,white_360deg)]" />
-                    </span>
-                    <span className="absolute inset-[1.5px] rounded-full bg-white" />
-                    <span className="relative flex items-center gap-2">
+                    <span className="relative z-10 flex items-center gap-2">
                         Support the Project <Heart size={14} className="text-red-500" />
                     </span>
                 </a>

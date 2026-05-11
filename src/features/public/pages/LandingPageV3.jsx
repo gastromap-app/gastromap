@@ -214,6 +214,14 @@ function AboutSection() {
                     "Every great meal starts with a recommendation from someone who cares."
                 </p>
                 <p className="mt-3 text-sm text-white/30 font-light">— Alikovit</p>
+                <a
+                    href="https://send.monobank.ua/jar/5tZhMJXSMQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors"
+                >
+                    Support the Project <Heart size={14} className="text-red-500" />
+                </a>
             </div>
         </section>
     )

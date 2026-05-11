@@ -1,11 +1,9 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import {
-    Heart, Check, ArrowUpRight, TrendingUp,
+    Heart, ArrowUpRight, TrendingUp,
     Users, Calendar, Download, Filter, Search,
     Coffee, Star, Gift
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePaymentStats } from '@/shared/api/queries'
@@ -13,12 +11,6 @@ import { usePaymentStats } from '@/shared/api/queries'
 const AdminSubscriptionsPage = () => {
     const [searchQuery, setSearchQuery] = React.useState('')
     const { data: payments = {}, isLoading: loadingPayments } = usePaymentStats()
-
-    const plans = payments?.plans || [
-        { name: 'Coffee', price: '$3', period: 'one-time', users: '345', color: 'bg-amber-500', icon: Coffee },
-        { name: 'Supporter', price: '$5', period: 'monthly', users: '854', color: 'bg-indigo-600', icon: Heart, popular: true },
-        { name: 'Champion', price: '$25', period: 'one-time', users: '92', color: 'bg-indigo-600', icon: Star },
-    ]
 
     const allTransactions = payments?.recent_transactions || [
         { user: 'Alex Johnson', plan: 'Supporter Monthly', date: 'Today, 14:20', amount: '$5.00', status: 'Success' },
@@ -67,39 +59,6 @@ const AdminSubscriptionsPage = () => {
                     </button>
                 }
             />
-
-            {/* Plans Grid */}
-            <div className="grid grid-cols-3 gap-3 lg:gap-8">
-                {plans.map((plan, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className={cn(
-                            "bg-white dark:bg-[hsl(220,20%,6%)]/50 p-3 lg:p-10 rounded-[20px] lg:rounded-[44px] border relative overflow-hidden group hover:shadow-2xl transition-all h-full flex flex-col",
-                            plan.popular ? 'border-indigo-500/20 ring-1 ring-indigo-500/10' : 'border-slate-100 dark:border-white/[0.03]'
-                        )}
-                    >
-                        {plan.popular && (
-                            <div className="absolute top-2 right-2 lg:top-6 lg:right-6 px-2 py-0.5 lg:px-3 lg:py-1 bg-indigo-600 text-[7px] lg:text-[8px] font-bold text-white uppercase tracking-widest rounded-lg shadow-lg">Popular</div>
-                        )}
-                        <div className={cn("w-8 h-8 lg:w-16 lg:h-16 rounded-[12px] lg:rounded-[24px] flex items-center justify-center text-white mb-8 shadow-xl", plan.color)}>
-                            <plan.icon size={22} className="lg:w-8 lg:h-8" />
-                        </div>
-                        <h3 className="text-[11px] lg:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-none truncate">{plan.name}</h3>
-                        <div className="flex items-baseline gap-1 mb-3">
-                            <span className="text-base lg:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">{plan.price}</span>
-                            <span className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">/ {plan.period}</span>
-                        </div>
-
-                        <div className="mt-auto pt-2 lg:pt-8 border-t border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Users</span>
-                            <span className="text-sm lg:text-lg font-bold text-slate-900 dark:text-white">{plan.users}</span>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
 
             {/* Donation History */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col flex-1">

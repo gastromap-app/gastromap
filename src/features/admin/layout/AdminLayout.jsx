@@ -48,8 +48,8 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
                 </div>
                 {!collapsed && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-                        <h1 className="text-lg font-black text-slate-900 dark:text-white leading-none tracking-tighter">GastroOS</h1>
-                        <p className="text-[10px] font-black text-indigo-500 mt-1.5 uppercase tracking-[0.2em] leading-none">Admin Panel</p>
+                        <h1 className="text-lg font-light text-slate-900 dark:text-white leading-none tracking-tight">GastroOS</h1>
+                        <p className="text-[10px] font-medium text-indigo-500 mt-1.5 uppercase tracking-[0.15em] leading-none">Admin Panel</p>
                     </motion.div>
                 )}
             </div>
@@ -66,8 +66,8 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
                                     ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30"
                                     : "text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]/50 hover:text-slate-900 dark:hover:text-white"
                             )}>
-                                <item.icon size={18} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-white" : "text-slate-400 group-hover:text-indigo-500")} />
-                                {!collapsed && <span className="text-sm font-black tracking-tight">{item.label}</span>}
+                                <item.icon size={18} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-white" : "text-slate-400 group-hover:text-indigo-500")} strokeWidth={1.5} />
+                                {!collapsed && <span className="text-sm font-medium tracking-tight">{item.label}</span>}
                                 {isActive && !collapsed && (
                                     <motion.div layoutId="activeNavTab" className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
                                 )}
@@ -79,15 +79,15 @@ function SidebarContent({ collapsed = false, location, handleLogout, toggleTheme
 
             {/* Footer Actions */}
             <div className="p-6 bg-slate-50/30 dark:bg-[hsl(220,20%,6%)]/30 border-t border-slate-100 dark:border-white/[0.03] space-y-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
-                <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <Link to="/dashboard" className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all border border-transparent hover:border-indigo-100/30 font-medium text-xs uppercase tracking-wider", collapsed && "justify-center px-0")}>
                     <ArrowLeft size={18} />
                     {!collapsed && <span>Back to App</span>}
                 </Link>
-                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-white dark:hover:bg-[hsl(220,20%,12%)] transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <button onClick={toggleTheme} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-500 dark:text-[hsl(220,10%,55%)] hover:bg-white dark:hover:bg-[hsl(220,20%,12%)] transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-medium text-xs uppercase tracking-wider", collapsed && "justify-center px-0")}>
                     {theme === 'dark' ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-indigo-600" />}
                     {!collapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
                 </button>
-                <button onClick={handleLogout} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-rose-500/80 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all font-black text-xs uppercase tracking-widest", collapsed && "justify-center px-0")}>
+                <button onClick={handleLogout} className={cn("w-full flex items-center gap-4 px-4 py-3 rounded-xl text-rose-500/80 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all font-medium text-xs uppercase tracking-wider", collapsed && "justify-center px-0")}>
                     <LogOut size={18} />
                     {!collapsed && <span>Sign Out</span>}
                 </button>
@@ -120,7 +120,6 @@ export default function AdminLayout() {
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSidebarOpen(false)
     }, [location.pathname])
 

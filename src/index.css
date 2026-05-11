@@ -561,8 +561,8 @@
 
 /* ─── Shiny CTA Button (dark/transparent variant for hero sections) ────────── */
 .shiny-cta-dark {
-  --highlight: #3b82f6;
-  --highlight-subtle: #93c5fd;
+  --highlight: blue;
+  --highlight-subtle: #8484ff;
   isolation: isolate;
   position: relative;
   overflow: hidden;
@@ -577,32 +577,22 @@
   border-radius: 9999px;
   color: #ffffff;
   background:
-    linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02)) padding-box,
+    linear-gradient(#000000, #000000) padding-box,
     conic-gradient(
       from var(--shiny-angle),
-      transparent 25%,
-      var(--highlight) 30%,
-      var(--highlight-subtle) 35%,
-      var(--highlight) 40%,
-      transparent 45%
+      transparent,
+      var(--highlight) 5%,
+      var(--highlight-subtle) 10%,
+      var(--highlight) 15%,
+      transparent 20%
     ) border-box;
-  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px #1a1a1a;
   animation: shiny-spin 3s linear infinite;
-  transition: box-shadow 0.4s ease, transform 0.15s ease, background 0.4s ease;
+  transition: box-shadow 0.4s ease, transform 0.15s ease;
 }
 
 .shiny-cta-dark:hover {
-  box-shadow: 0 0 28px rgba(59, 130, 246, 0.3);
-  background:
-    linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.05)) padding-box,
-    conic-gradient(
-      from var(--shiny-angle),
-      transparent 20%,
-      var(--highlight) 28%,
-      var(--highlight-subtle) 35%,
-      var(--highlight) 42%,
-      transparent 50%
-    ) border-box;
+  box-shadow: inset 0 0 0 1px #1a1a1a, 0 0 28px rgba(59, 130, 246, 0.25);
 }
 
 .shiny-cta-dark:active {

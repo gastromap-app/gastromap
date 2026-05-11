@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { render } from '@testing-library/react'
@@ -71,9 +71,9 @@ vi.mock('@/shared/store/useUserPrefsStore', () => ({
     }),
 }))
 
-// Auth store
+// Auth store — simulate authenticated user so preview mode doesn't hide sections
 vi.mock('@/shared/store/useAuthStore', () => ({
-    useAuthStore: () => ({ user: null }),
+    useAuthStore: () => ({ user: { id: 'user-1', role: 'user' }, isAuthenticated: true }),
 }))
 
 // Theme hook
@@ -94,6 +94,8 @@ vi.mock('@/shared/api/queries', () => ({
     useRemoveFavoriteMutation: () => ({ mutateAsync: vi.fn() }),
     useUserFavorites: () => ({ data: [] }),
     useAddVisitMutation: () => ({ mutateAsync: vi.fn() }),
+    useDeleteVisitMutation: () => ({ mutateAsync: vi.fn() }),
+    useUserVisits: () => ({ data: [] }),
     useLocation: () => ({ data: null, isLoading: false }),
 }))
 
@@ -153,7 +155,7 @@ vi.mock('@/shared/constants/statuses', () => ({
 vi.mock('framer-motion', () => ({
     motion: new Proxy({}, {
         get: (_, tag) => {
-            const Component = React.forwardRef(({ children, initial, animate, exit, variants, transition, layoutId, whileHover, whileTap, ...props }, ref) => {
+            const Component = React.forwardRef(({ children, initial: _initial, animate: _animate, exit: _exit, variants: _variants, transition: _transition, layoutId: _layoutId, whileHover: _whileHover, whileTap: _whileTap, ...props }, ref) => {
                 const Tag = typeof tag === 'string' ? tag : 'div'
                 return React.createElement(Tag, { ref, ...props }, children)
             })
@@ -235,7 +237,7 @@ describe('LocationDetailsPage', () => {
     describe('Loading state', () => {
         it('shows skeleton/loading UI when data is loading', async () => {
             // Override the store mock to simulate loading
-            const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
+            const { useLocationsStore: _useLocationsStore } = await import('@/shared/store/useLocationsStore')
             // We need to re-mock for this specific test
             vi.doMock('@/shared/store/useLocationsStore', () => ({
                 useLocationsStore: Object.assign(
@@ -269,9 +271,8 @@ describe('LocationDetailsPage', () => {
             }))
 
             // Since hoisted mocks, let's test via non-matching ID
-            const queryClient = new QueryClient({
-                defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-            })
+            // const queryClient would be used for rendering with non-matching ID
+            // but our mock always returns the same store, so we verify structurally
 
             // The store returns [MOCK_LOCATION] with id 'loc-1', 
             // requesting 'nonexistent' won't find it in our mock.

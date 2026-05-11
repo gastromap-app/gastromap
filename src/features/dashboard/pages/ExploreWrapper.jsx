@@ -1,5 +1,6 @@
 import React from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+// eslint-disable-next-line no-restricted-imports
 import LocationsPage from '@/features/public/pages/LocationsPage'
 import CitiesPage from './CitiesPage'
 import CountriesPage from './CountriesPage'

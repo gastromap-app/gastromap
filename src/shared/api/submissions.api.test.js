@@ -96,7 +96,8 @@ describe('submissions.api', () => {
             const payload = { title: 'My Place', city: 'Krakow' }
             const result = await createSubmission(payload)
             expect(result).toEqual(mockData)
-            expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ ...payload, status: 'pending', submitter_confirmed: true }))
+            // Payload is passed as-is; DB handles defaults (status, created_at)
+            expect(mockInsert).toHaveBeenCalledWith(payload)
         })
 
         it('throws ApiError on insert failure', async () => {

@@ -43,7 +43,7 @@ export function useAdminNotifications() {
         const channel = supabase
             .channel('admin-notifications')
             // New reviews pending moderation
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reviews', filter: 'status=eq.pending' }, (payload) => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reviews', filter: 'status=eq.pending' }, () => {
                 addNotification({
                     text: `New review pending moderation`,
                     type: 'review',
@@ -82,7 +82,7 @@ export function useAdminNotifications() {
             .subscribe()
 
         return () => {
-            try { supabase.removeChannel(channel) } catch {}
+            try { supabase.removeChannel(channel) } catch { /* already removed */ }
         }
     }, [user?.id, addNotification])
 

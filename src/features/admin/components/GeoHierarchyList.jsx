@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query'
  * - Toggle "Coming Soon" (card visible but not clickable)
  * - Compact row design (48px desktop, 56px mobile)
  */
-export default function GeoHierarchyList({ locations = [], onSelectCity, onBack, className }) {
+export default function GeoHierarchyList({ locations = [], onSelectCity, onBack: _onBack, className }) {
     const [level, setLevel] = useState('countries') // 'countries' | 'cities'
     const [selectedCountry, setSelectedCountry] = useState(null)
     const queryClient = useQueryClient()

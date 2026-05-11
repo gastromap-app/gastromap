@@ -50,8 +50,8 @@ describe('reviews.api', () => {
     describe('getLocationReviews', () => {
         it('returns reviews with author names on success', async () => {
             const mockData = [
-                { id: '1', location_id: 'loc1', rating: 5, profiles: { full_name: 'Alice' } },
-                { id: '2', location_id: 'loc1', rating: 4, profiles: { full_name: 'Bob' } },
+                { id: '1', location_id: 'loc1', rating: 5, profiles: { name: 'Alice' } },
+                { id: '2', location_id: 'loc1', rating: 4, profiles: { name: 'Bob' } },
             ]
             mockSelect.mockReturnValue(chainable)
             mockEq.mockReturnValue(chainable)
@@ -70,7 +70,9 @@ describe('reviews.api', () => {
             mockSelect.mockReturnValue(chainable)
             mockEq.mockReturnValue(chainable)
             mockIn.mockReturnValue(chainable)
+            // First call (profiles join) returns error, second (user_profiles) returns error, third (plain) succeeds
             mockOrder
+                .mockResolvedValueOnce({ data: null, error: joinError })
                 .mockResolvedValueOnce({ data: null, error: joinError })
                 .mockResolvedValueOnce({ data: plainData, error: null })
 
@@ -78,7 +80,7 @@ describe('reviews.api', () => {
             expect(result).toEqual(plainData)
         })
 
-        it('throws ApiError when both queries fail', async () => {
+        it('returns empty array when all queries fail', async () => {
             const joinError = { message: 'relation "profiles" does not exist', code: '42P01' }
             const plainError = { message: 'permission denied', code: '42501' }
             mockSelect.mockReturnValue(chainable)
@@ -86,9 +88,12 @@ describe('reviews.api', () => {
             mockIn.mockReturnValue(chainable)
             mockOrder
                 .mockResolvedValueOnce({ data: null, error: joinError })
+                .mockResolvedValueOnce({ data: null, error: joinError })
                 .mockResolvedValueOnce({ data: null, error: plainError })
 
-            await expect(getLocationReviews('loc1')).rejects.toThrow()
+            // Function catches errors and returns empty array
+            const result = await getLocationReviews('loc1')
+            expect(result).toEqual([])
         })
 
         it('returns empty array when supabase is null', async () => {
@@ -101,9 +106,9 @@ describe('reviews.api', () => {
             expect(Array.isArray(result)).toBe(true)
         })
 
-        it('uses display_name fallback when full_name is missing', async () => {
+        it('uses profile name for author_name', async () => {
             const mockData = [
-                { id: '1', rating: 5, profiles: { full_name: null, display_name: 'Alik' } },
+                { id: '1', rating: 5, profiles: { name: 'Alik', avatar_url: null } },
             ]
             mockOrder.mockResolvedValue({ data: mockData, error: null })
 

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from '@/lib/date'
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import { useAdminStats, useRecentActivity } from '@/shared/api/queries'
-import AdminPageHeader, { adminBtnSecondary } from '../components/AdminPageHeader'
+import AdminPageHeader from '../components/AdminPageHeader'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,6 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
 // ─── Activity row ─────────────────────────────────────────────────────────────
 
 const ActivityRow = ({ item }) => {
-    const { t } = useTranslation()
     return (
         <div className="flex items-center justify-between p-3 lg:p-4 bg-slate-50/60 dark:bg-[hsl(220,20%,9%)]/30 rounded-[18px] hover:bg-slate-100/60 dark:hover:bg-[hsl(220,20%,12%)]/50 transition-all">
             <div className="flex items-center gap-4 min-w-0">

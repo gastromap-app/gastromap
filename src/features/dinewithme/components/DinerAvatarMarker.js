@@ -26,7 +26,7 @@ const STATUS_COLORS = {
  * @param {number} diner.pingOffset - 0..1 offset for desynchronized pulse animation
  * @returns {L.DivIcon}
  */
-export function createDinerMarkerIcon({ avatarUrl, displayName, venueName, status = 'looking', pingOffset = 0, isOwn = false }) {
+export function createDinerMarkerIcon({ avatarUrl, displayName, venueName: _venueName, status = 'looking', pingOffset = 0, isOwn = false }) {
     const color = STATUS_COLORS[status] || STATUS_COLORS.looking
 
     // Desynchronized ping animation (0.7s stagger per diner)

@@ -96,3 +96,7 @@ Gastromap_StandAlone/
 # Supabase CLI
 supabase/.temp/
 
+
+# Batch scripts with secrets
+_batch_*.cjs
+_fix_*.cjs

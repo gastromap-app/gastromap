@@ -45,16 +45,18 @@ describe('useI18n', () => {
         expect(adminResult.current.isAdminMode).toBe(true)
     })
 
-    it('switches to Russian when isAdmin=true and current language is English', () => {
+    it('does NOT auto-switch language based on isAdmin (feature disabled)', () => {
         mockI18nInstance.language = 'en'
         renderHook(() => useI18n('admin', true))
-        expect(mockChangeLanguage).toHaveBeenCalledWith('ru')
+        // Auto-switching is disabled — changeLanguage should NOT be called
+        expect(mockChangeLanguage).not.toHaveBeenCalled()
     })
 
-    it('switches to English when isAdmin=false and current language is Russian', () => {
+    it('does NOT auto-switch language when isAdmin=false', () => {
         mockI18nInstance.language = 'ru'
         renderHook(() => useI18n('common', false))
-        expect(mockChangeLanguage).toHaveBeenCalledWith('en')
+        // Auto-switching is disabled — changeLanguage should NOT be called
+        expect(mockChangeLanguage).not.toHaveBeenCalled()
     })
 
     it('does not switch language when already on the target language', () => {

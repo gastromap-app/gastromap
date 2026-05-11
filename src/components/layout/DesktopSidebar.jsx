@@ -99,7 +99,6 @@ export function DesktopSidebar() {
     const location = useLocation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { t } = useTranslation()
     const [hoveredLabel, setHoveredLabel] = useState(null)
 
     const isActive = (path) => {

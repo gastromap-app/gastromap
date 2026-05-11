@@ -19,6 +19,7 @@ import AdminPageHeader, { adminBtnPrimary, adminBtnSecondary } from '../componen
 import LocationHierarchyExplorer from '../components/LocationHierarchyExplorer'
 import GeoHierarchyList from '../components/GeoHierarchyList'
 import ImportWizard from '../components/ImportWizard'
+// eslint-disable-next-line no-restricted-imports
 import MapTab from '@/features/dashboard/components/MapTab'
 import { useAdminLocations } from '../hooks/useAdminLocations'
 import LocationListItem from '../components/LocationListItem'

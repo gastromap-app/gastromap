@@ -419,7 +419,7 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
                 // the user was deleted from the database — force sign out
                 if (!profile && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
                     console.warn('[auth] User profile not found — account may have been deleted. Signing out.')
-                    try { await supabase.auth.signOut() } catch {}
+                    try { await supabase.auth.signOut() } catch { /* already signed out */ }
                     onSignOut()
                     return
                 }

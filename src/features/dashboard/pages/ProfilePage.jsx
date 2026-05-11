@@ -98,7 +98,7 @@ const FeedbackModal = ({ isOpen, onClose, theme, userId, onSuccess }) => {
 }
 
 const ProfilePage = () => {
-    const { t, i18n } = useTranslation()
+    const { t } = useTranslation()
     const { user: authUser, logout } = useAuthStore()
     const navigate = useNavigate()
 

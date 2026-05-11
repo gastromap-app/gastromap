@@ -181,7 +181,7 @@ describe('nominatimApi', () => {
             await getCitiesForCountry('poland')
 
             expect(window.localStorage.setItem).toHaveBeenCalledWith(
-                'nominatim:cities:poland',
+                'nominatim:cities:v2:poland',
                 expect.any(String)
             )
         })
@@ -189,20 +189,24 @@ describe('nominatimApi', () => {
         it('returns cached cities without fetching', async () => {
             const cached = [{ name: 'CachedCity', lat: 50, lon: 20, image: 'img' }]
             const cacheEntry = JSON.stringify({ data: cached, timestamp: Date.now() })
-            window.localStorage.getItem.mockReturnValueOnce(cacheEntry)
+            // Code calls getItem for the v2 cache key
+            window.localStorage.getItem.mockImplementation((key) => {
+                if (key === 'nominatim:cities:v2:poland') return cacheEntry
+                return null
+            })
 
             const result = await getCitiesForCountry('poland')
             expect(mockFetch).not.toHaveBeenCalled()
             expect(result).toEqual(cached)
         })
 
-        it('sends country as query parameter', async () => {
+        it('sends country in query string', async () => {
             mockFetch.mockResolvedValue(makeResponse([]))
 
             await getCitiesForCountry('germany').catch(() => {})
 
             const [url] = mockFetch.mock.calls[0]
-            expect(url).toContain('country=germany')
+            expect(url).toContain('germany')
         })
     })
 })

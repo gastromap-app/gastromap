@@ -99,6 +99,7 @@ export function useAIChat() {
             clearHistory();
         }
         return () => { mounted = false };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, loadHistory, clearHistory]);
 
 const MAX_CHAT_INPUT_LENGTH = 3000

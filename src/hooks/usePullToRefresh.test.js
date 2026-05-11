@@ -38,17 +38,20 @@ describe('usePullToRefresh', () => {
 
     it('does NOT start tracking when scrollTop > 0', () => {
         const { result } = renderHook(() => usePullToRefresh(onRefresh))
-        const scrolledElement = { scrollTop: 10 }
-        const event = createTouchEvent('touchstart', [{ clientY: 200 }], scrolledElement)
+        // Hook checks window.scrollY, not element.scrollTop
+        Object.defineProperty(window, 'scrollY', { value: 10, writable: true })
+        const event = createTouchEvent('touchstart', [{ clientY: 200 }], mockElement)
         act(() => {
             result.current.handlers.onTouchStart(event)
         })
-        // Touch move should be ignored
-        const moveEvent = createTouchEvent('touchmove', [{ clientY: 260 }], scrolledElement)
+        // Touch move should be ignored since dragging was never started
+        const moveEvent = createTouchEvent('touchmove', [{ clientY: 260 }], mockElement)
         act(() => {
             result.current.handlers.onTouchMove(moveEvent)
         })
         expect(result.current.pullDistance).toBe(0)
+        // Reset
+        Object.defineProperty(window, 'scrollY', { value: 0, writable: true })
     })
 
     it('increases pullDistance on touchMove when pulling down', () => {

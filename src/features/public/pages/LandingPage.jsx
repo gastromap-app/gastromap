@@ -399,50 +399,7 @@ const CollectionPreview = () => (
 )
 
 // --- Component: Pricing ---
-const Pricing = () => {
-    const navigate = useNavigate()
-    const { isAuthenticated, user } = useAuthStore()
-    const [isLoadingPayment, setIsLoadingPayment] = React.useState(false)
-
-    const [isDonationModalOpen, setIsDonationModalOpen] = React.useState(false)
-
-    const handleDonationClick = () => {
-        if (!isAuthenticated) {
-            navigate('/auth/login')
-            return
-        }
-        setIsDonationModalOpen(true)
-    }
-
-    const processDonation = async (amount) => {
-        try {
-            setIsLoadingPayment(true)
-
-            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: {
-                    amount: amount * 100,
-                    currency: 'usd',
-                    name: 'Support GastroMap',
-                    mode: 'payment',
-                    userId: user?.id
-                }
-            })
-
-            if (error) throw error
-
-            if (data?.url) {
-                window.location.href = data.url
-            } else {
-                throw new Error('No checkout URL returned')
-            }
-        } catch (error) {
-            console.error('Error starting checkout:', error)
-            alert('An error occurred while initiating payment.')
-        } finally {
-            setIsLoadingPayment(false)
-        }
-    }
-
+const Pricing = ({ onDonationClick, isLoadingPayment }) => {
     return (
         <section id="pricing" className="py-12 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
             <div className="mx-4 lg:mx-8 rounded-[40px] py-16 md:py-24 bg-white dark:bg-[#1C1C1E] shadow-sm relative overflow-hidden">
@@ -506,7 +463,7 @@ const Pricing = () => {
                                 <li className="flex items-center gap-3"><Heart className="w-5 h-5 text-rose-400" /> Developer gratitude</li>
                             </ul>
                             <Button 
-                                onClick={handleDonationClick}
+                                onClick={onDonationClick}
                                 disabled={isLoadingPayment}
                                 className="w-full bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 rounded-full h-14 font-medium transition-all relative z-10"
                             >
@@ -619,6 +576,48 @@ const FinalCTA = () => (
 )
 
 export default function LandingPage() {
+    const navigate = useNavigate()
+    const { isAuthenticated, user } = useAuthStore()
+    const [isLoadingPayment, setIsLoadingPayment] = React.useState(false)
+    const [isDonationModalOpen, setIsDonationModalOpen] = React.useState(false)
+
+    const handleDonationClick = () => {
+        if (!isAuthenticated) {
+            navigate('/auth/login')
+            return
+        }
+        setIsDonationModalOpen(true)
+    }
+
+    const processDonation = async (amount) => {
+        try {
+            setIsLoadingPayment(true)
+
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: {
+                    amount: amount * 100,
+                    currency: 'usd',
+                    name: 'Support GastroMap',
+                    mode: 'payment',
+                    userId: user?.id
+                }
+            })
+
+            if (error) throw error
+
+            if (data?.url) {
+                window.location.href = data.url
+            } else {
+                throw new Error('No checkout URL returned')
+            }
+        } catch (error) {
+            console.error('Error starting checkout:', error)
+            alert('An error occurred while initiating payment.')
+        } finally {
+            setIsLoadingPayment(false)
+        }
+    }
+
     return (
         <div className="bg-[#F5F5F7] dark:bg-black min-h-screen relative overflow-hidden">
             {/* Subtle CSS Gradient Background */}
@@ -630,7 +629,7 @@ export default function LandingPage() {
             <div className="relative z-10">
                 <BentoHero />
                 <CollectionPreview />
-                <Pricing />
+                <Pricing onDonationClick={handleDonationClick} isLoadingPayment={isLoadingPayment} />
                 <FAQ />
                 <FinalCTA />
             </div>

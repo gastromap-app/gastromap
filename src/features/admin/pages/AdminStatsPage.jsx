@@ -160,7 +160,7 @@ const AdminStatsPage = () => {
         value: c.total,
     }))
 
-    const topLocationsData = (topLocs || []).slice(0, 8).map((l, i) => ({
+    const topLocationsData = (topLocs || []).slice(0, 8).map((l, _i) => ({
         name: l.title.length > 18 ? l.title.slice(0, 18) + '…' : l.title,
         score: l.score || l.review_count + l.visit_count || 0,
         visits: l.visit_count || 0,

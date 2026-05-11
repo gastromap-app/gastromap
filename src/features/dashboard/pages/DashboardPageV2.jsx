@@ -7,7 +7,7 @@
  * - Animations: Spring cards, scramble text, parallax scroll, micro-interactions
  */
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { motion, useInView, useScroll, useTransform, useMotionValue, useAnimationFrame } from 'framer-motion'
+import { motion, useInView, useMotionValue, useAnimationFrame } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
@@ -233,18 +233,18 @@ function TrendingRow({ location, index, isDark, navigate }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const DashboardPageV2 = () => {
-    const { t } = useTranslation()
+    const { t: _t } = useTranslation()
     const { user } = useAuthStore()
     const locations = useLocationsStore(state => state.locations)
     const filteredLocations = useLocationsStore(state => state.filteredLocations)
-    const isLoading = useLocationsStore(state => state.isLoading)
+    const _isLoading = useLocationsStore(state => state.isLoading)
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const currentCity = useGeoStore(state => state.city) || 'Unknown'
     const currentCountry = useGeoStore(state => state.country)
-    const { lat: geoLat, lng: geoLng, status: geoStatus, requestGeo } = useUserGeo({ autoRequest: true })
+    const { lat: geoLat, lng: geoLng } = useUserGeo({ autoRequest: true })
 
     const [activeMood, setActiveMood] = useState('all')
     const [searchQuery, setSearchQuery] = useState('')
@@ -252,7 +252,7 @@ const DashboardPageV2 = () => {
 
     // Geo covers
     const { data: geoCoversData = [] } = useGeoCovers('country')
-    const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
+    const _dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
     // Pull to refresh
     const handleRefresh = async () => { await useLocationsStore.getState().reinitialize() }

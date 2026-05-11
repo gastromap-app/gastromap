@@ -131,7 +131,7 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
 
             // On 429: try rotating to another API key before moving to next model
             if (res.status === 429 && apiKeys.length > 1 && keyRotations < maxKeyRotations) {
-                const newKey = rotateKey(apiKeys)
+                rotateKey(apiKeys)
                 keyRotations++
                 console.warn(`[GastroAI] Rate-limited, rotating to key #${_currentKeyIndex + 1}`)
                 // Retry same model with new key (decrement i to retry)

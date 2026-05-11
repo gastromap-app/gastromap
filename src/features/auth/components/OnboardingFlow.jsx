@@ -4,7 +4,6 @@ import { ArrowRight, Check, Sparkles, X, Plus } from 'lucide-react'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useTranslation } from 'react-i18next'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
-import { updateUserPreferences } from '@/shared/api/preferences.api'
 
 // ─── Static data ──────────────────────────────────────────────────────────
 

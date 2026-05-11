@@ -57,6 +57,9 @@ const chainable = {
 vi.mock('./client', () => ({
     supabase: {
         from: vi.fn(() => chainable),
+        auth: {
+            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+        },
     },
     ApiError: class ApiError extends Error {
         constructor(message, status, code) {

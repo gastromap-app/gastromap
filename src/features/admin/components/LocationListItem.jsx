@@ -216,7 +216,7 @@ const LocationListItem = ({
     _onToggleActionMenu,
     viewMode = 'table',
 }) => {
-    const { t, i18n } = useTranslation()
+    const { i18n } = useTranslation()
     if (viewMode === 'card') {
         return (
             <motion.div

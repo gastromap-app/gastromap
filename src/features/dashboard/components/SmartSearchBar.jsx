@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import LocationImage from '@/components/ui/LocationImage'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,7 +6,6 @@ import { Search, MapPin, Star, X, Loader2 } from 'lucide-react'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
-import { normalizeSearchTerm } from '@/utils/searchNormalization'
 
 /**
  * SmartSearchBar

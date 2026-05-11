@@ -37,11 +37,6 @@ const stagger = {
     visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
 }
 
-const scaleIn = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: CUBIC } },
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // 1. HERO — Full viewport, letter-by-letter animation
 // ════════════════════════════════════════════════════════════════════════════
@@ -585,7 +580,7 @@ const WorldwideMapDemo = () => {
             setStep(prev => (prev + 1) % searchSteps.length)
         }, 1200)
         return () => clearInterval(interval)
-    }, [isInView])
+    }, [isInView, searchSteps.length])
 
     const currentStep = searchSteps[step]
     const showMatch = step === searchSteps.length - 1
@@ -831,7 +826,7 @@ const StatsSection = () => {
                     variants={stagger}
                     className="grid grid-cols-2 md:grid-cols-4 border-t border-l border-[#E5E5E5] dark:border-white/10"
                 >
-                    {stats.map((s, i) => (
+                    {stats.map((s, _i) => (
                         <motion.div
                             key={s.label}
                             variants={fadeUp}

@@ -34,6 +34,9 @@ export default defineConfig([
     rules: {
       'react/jsx-uses-vars': 'error',
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      // setState in effects is flagged by React 19 hooks plugin but is a common
+      // pattern for resetting state when props change (e.g., modal open/close).
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
   // Architecture boundary: features may NOT import from other features.

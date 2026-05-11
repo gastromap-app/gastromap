@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/api/client'
 import { queryKeys } from '@/shared/api/queries/queryKeys'
@@ -19,7 +19,11 @@ import { _fetchProfile } from '@/shared/api/auth.api'
 export function useRealtimeSubscription(userId) {
     const qc = useQueryClient()
     const userIdRef = useRef(userId)
-    userIdRef.current = userId
+
+    // Update ref in an effect to avoid writing during render
+    useEffect(() => {
+        userIdRef.current = userId
+    }, [userId])
 
     // ── Fallback: poll profile every 60 s to sync role ──────────────
     useEffect(() => {

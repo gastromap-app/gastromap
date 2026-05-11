@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react'
-import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring, useAnimationFrame } from 'framer-motion'
+import { motion, useScroll, useTransform, useInView, useMotionValue, useAnimationFrame } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { getLocationsCount } from '@/shared/api/locations.api'
 import { ArrowUpRight, Heart, MapPin, Sparkles, Search, Globe, Star, ChevronDown } from 'lucide-react'

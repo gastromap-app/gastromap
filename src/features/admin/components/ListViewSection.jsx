@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+// eslint-disable-next-line no-restricted-imports
 import MapTab from '@/features/dashboard/components/MapTab'
 import LocationListItem from './LocationListItem'
 

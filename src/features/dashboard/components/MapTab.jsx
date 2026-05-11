@@ -251,13 +251,6 @@ const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
         onDineModeChange?.(dineModeActive)
     }, [dineModeActive, onDineModeChange])
 
-    // Auto-activate dine mode via URL param ?dine=true (only for allowed roles)
-    useEffect(() => {
-        if (dineAllowed && searchParams.get('dine') === 'true' && !dineModeActive) {
-            handleDineToggle()
-        }
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
     const handleDineToggle = useCallback(() => {
         if (dineModeActive) {
             // Exit dine mode
@@ -273,6 +266,13 @@ const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
             setDineModeActive(true)
         }
     }, [dineModeActive, goInvisible, hasAcceptedGuidelines])
+
+    // Auto-activate dine mode via URL param ?dine=true (only for allowed roles)
+    useEffect(() => {
+        if (dineAllowed && searchParams.get('dine') === 'true' && !dineModeActive) {
+            handleDineToggle()
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleGuidelinesAccept = useCallback(() => {
         localStorage.setItem(GUIDELINES_KEY, 'true')

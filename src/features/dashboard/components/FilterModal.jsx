@@ -27,7 +27,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const isDark = theme === 'dark'
 
     // Cuisine list from KG (falls back to static filterOptions while loading)
-    const { options: cuisineOptions } = useCuisineOptions()
+    const { options: cuisineOptions } = useCuisineOptions() // eslint-disable-line no-unused-vars
 
 
     // ── Local filter state ──────────────────────────────────────────────────

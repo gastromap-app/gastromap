@@ -1,10 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { motion, useScroll, useTransform, useMotionValue } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Heart, Instagram, ArrowUpRight, Loader2 } from 'lucide-react'
-import { supabase } from '@/shared/api/client'
-import { useAuthStore } from '@/shared/store/useAuthStore'
 // import { loadStripe } from '@stripe/stripe-js'
 // import DonationModal from '@/components/ui/DonationModal'
 

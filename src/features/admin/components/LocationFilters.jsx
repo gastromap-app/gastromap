@@ -67,7 +67,7 @@ const LocationFilters = ({
     // Flatten all vibes for the filter list
     const allVibes = React.useMemo(() => {
         const groups = getLabelGroups(i18n.language)
-        return Object.entries(groups).flatMap(([group, items]) => items)
+        return Object.entries(groups).flatMap(([_group, items]) => items)
     }, [i18n.language])
 
     return (

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { isCurrentlyOpen, formatOpeningHours } from '@/utils/formatOpeningHours'
+import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 
 /**
  * useOpenStatus — determines if a venue is currently open.

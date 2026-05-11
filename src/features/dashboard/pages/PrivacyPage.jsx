@@ -2,10 +2,12 @@ import React from 'react'
 import PageHeader from '@/components/layout/public/PageHeader'
 import { Shield } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useNavigate } from 'react-router-dom'
 
 const PrivacyPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const navigate = useNavigate()
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"

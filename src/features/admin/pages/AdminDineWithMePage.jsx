@@ -221,6 +221,7 @@ function WaitlistTab() {
     const updateStatus = useUpdateWaitlistStatusMutation()
     const deleteEntry = useDeleteWaitlistEntryMutation()
 
+    // eslint-disable-next-line no-unused-vars
     const statusCounts = {
         pending: waitlist.filter(w => w.status === 'pending').length,
         approved: waitlist.filter(w => w.status === 'approved').length,

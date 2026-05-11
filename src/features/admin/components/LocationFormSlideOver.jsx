@@ -20,7 +20,6 @@ import {
     getLabelEmoji,
     VISIT_TIMES,
     getLabelGroups,
-    getCategoryLabel
 } from '@/shared/config/filterOptions'
 import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
@@ -179,7 +178,7 @@ const LocationFormSlideOver = ({
     const [newImageUrl, setNewImageUrl]  = useState('')
     const [isUploading, setIsUploading] = useState(false)
     const [googlePhotosMetadata, setGooglePhotosMetadata] = useState([])
-    const [isFetchingPhotos, setIsFetchingPhotos] = useState(false)
+    const [, setIsFetchingPhotos] = useState(false)
     const fileInputRef = React.useRef(null)
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
@@ -267,6 +266,7 @@ const LocationFormSlideOver = ({
         }
     }, [setFormData])
 
+    // eslint-disable-next-line no-unused-vars
     const handleLoadGooglePhotos = async () => {
         if (!formData.google_place_id) return
         try {

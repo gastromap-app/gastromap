@@ -56,7 +56,7 @@ const MAP_CATEGORIES = [
     { name: 'Fine Dining', icon: Star, emoji: '🎩' },
 ]
 
-const SectionHeader = ({ title, subtitle, onSeeAll, isDark }) => {
+const SectionHeader = ({ title, subtitle, onSeeAll, isDark: _isDark }) => {
     const { t } = useTranslation()
     return (
         <div className="flex justify-between items-end mb-6">
@@ -143,6 +143,7 @@ const DashboardPage = () => {
 
     const countries = useMemo(() => {
         const countryMap = {}
+        // eslint-disable-next-line react-hooks/purity
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
         locations.forEach(loc => {
@@ -565,12 +566,12 @@ const DashboardPage = () => {
 // ─── DESKTOP DASHBOARD ─────────────────────────────────────────────────────────
 
 const DesktopDashboard = ({
-    isDark, text, sub, greeting, cityTagline, firstName,
+    isDark, text: _text, sub: _sub, greeting, cityTagline, firstName: _firstName,
     searchQuery, setSearchQuery, setIsFilterOpen,
-    activeTab, setActiveTab, geoStatus, isLoading,
+    activeTab: _activeTab, setActiveTab: _setActiveTab, geoStatus, isLoading,
     requestGeo, nearbyLocations, countries, handleSelectCountry,
     recommended, trending, openNowLocations, navigate, t,
-    visitCount = 0, currentCity = 'Unknown',
+    visitCount: _visitCount = 0, currentCity = 'Unknown',
     buildExploreUrl
 }) => {
     const itemVariants = {

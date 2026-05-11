@@ -28,7 +28,7 @@ try {
     if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem('i18nextLng')
     }
-} catch (_) { /* ignore storage errors */ }
+} catch { /* ignore storage errors */ }
 
 i18n
     .use(initReactI18next)

@@ -55,24 +55,26 @@ vi.mock('../mocks/userPersona', () => ({
 describe('gastroIntelligence', () => {
     // ─────────────────────────────────────────────────────────────────────────
     describe('analyzeQuery – intent detection', () => {
+        const MOCK_LOCATIONS = [
+            { id: '1', title: 'Israeli Bistro', description: 'Modern Israeli food', category: 'Restaurant', cuisine: 'Israeli', rating: 4.7, tags: ['Israeli'], vibe: ['Modern', 'Cozy'], features: ['Pet-friendly'] },
+            { id: '2', title: 'Generic Diner', description: 'A plain diner', category: 'Restaurant', cuisine: 'American', rating: 3.8, tags: ['American'], vibe: ['Casual'], features: [] },
+        ]
+
         it('returns a recommendation when query matches recommendation keywords (EN)', async () => {
-            const result = await gastroIntelligence.analyzeQuery('where to eat tonight')
+            const result = await gastroIntelligence.analyzeQuery('where to eat tonight', MOCK_LOCATIONS)
             expect(result).toHaveProperty('content')
             expect(result).toHaveProperty('matches')
             expect(result.matches.length).toBeGreaterThan(0)
         })
 
         it('returns content for Russian recommendation keywords', async () => {
-            // Note: JS \b word boundaries do not work with Cyrillic characters,
-            // so pure-Cyrillic queries fall through to the default GastroGuide response.
-            // Mixed or Latin-containing queries still trigger intent detection.
-            const result = await gastroIntelligence.analyzeQuery('хочу поесть')
+            const result = await gastroIntelligence.analyzeQuery('хочу поесть', MOCK_LOCATIONS)
             expect(result).toHaveProperty('content')
             expect(Array.isArray(result.matches)).toBe(true)
         })
 
         it('returns default response for non-recommendation query', async () => {
-            const result = await gastroIntelligence.analyzeQuery('show me your soul')
+            const result = await gastroIntelligence.analyzeQuery('show me your soul', MOCK_LOCATIONS)
             expect(result.content).toContain('GastroGuide')
             expect(result.matches).toEqual([])
         })
@@ -86,30 +88,37 @@ describe('gastroIntelligence', () => {
 
     // ─────────────────────────────────────────────────────────────────────────
     describe('analyzeQuery – scoring and ranking', () => {
+        // Use MOCK_LOCATIONS explicitly since the service no longer auto-imports them
+        const MOCK_LOCATIONS = [
+            { id: '1', title: 'Israeli Bistro', description: 'Modern Israeli food', category: 'Restaurant', cuisine: 'Israeli', rating: 4.7, tags: ['Israeli'], vibe: ['Modern', 'Cozy'], features: ['Pet-friendly'] },
+            { id: '2', title: 'Generic Diner', description: 'A plain diner', category: 'Restaurant', cuisine: 'American', rating: 3.8, tags: ['American'], vibe: ['Casual'], features: [] },
+            { id: '3', title: 'Fancy French', description: 'Elegant French dining', category: 'Restaurant', cuisine: 'French', rating: 4.9, tags: ['French'], vibe: ['Romantic'], features: ['Good for work'] },
+        ]
+
         it('scores locations matching user cuisine preferences higher', async () => {
             // "Israeli Bistro" matches cuisine "Israeli" from user prefs → higher score
-            const result = await gastroIntelligence.analyzeQuery('recommend a restaurant')
+            const result = await gastroIntelligence.analyzeQuery('recommend a restaurant', MOCK_LOCATIONS)
             const titles = result.matches.map(m => m.title)
             expect(titles[0]).toBe('Israeli Bistro')
         })
 
         it('content mentions the top match title', async () => {
-            const result = await gastroIntelligence.analyzeQuery('where to eat')
+            const result = await gastroIntelligence.analyzeQuery('where to eat', MOCK_LOCATIONS)
             expect(result.content).toContain('Israeli Bistro')
         })
 
         it('content includes rating for top match', async () => {
-            const result = await gastroIntelligence.analyzeQuery('cafe for dinner')
+            const result = await gastroIntelligence.analyzeQuery('cafe for dinner', MOCK_LOCATIONS)
             expect(result.content).toMatch(/4\.\d★/)
         })
 
         it('returns at most 3 matches', async () => {
-            const result = await gastroIntelligence.analyzeQuery('recommend something')
+            const result = await gastroIntelligence.analyzeQuery('recommend something', MOCK_LOCATIONS)
             expect(result.matches.length).toBeLessThanOrEqual(3)
         })
 
         it('adds extra mention of secondary recommendations when more than 1 match', async () => {
-            const result = await gastroIntelligence.analyzeQuery('best restaurant')
+            const result = await gastroIntelligence.analyzeQuery('best restaurant', MOCK_LOCATIONS)
             // Should mention "Also check out..." or similar secondary options
             if (result.matches.length > 1) {
                 expect(result.content).toContain('Also check out')
@@ -117,7 +126,7 @@ describe('gastroIntelligence', () => {
         })
 
         it('adds matchScore property to each result location', async () => {
-            const result = await gastroIntelligence.analyzeQuery('find a cafe')
+            const result = await gastroIntelligence.analyzeQuery('find a cafe', MOCK_LOCATIONS)
             result.matches.forEach(m => {
                 expect(m).toHaveProperty('matchScore')
             })
@@ -145,16 +154,18 @@ describe('gastroIntelligence', () => {
             expect(result.matches[0].title).toBe('Custom Place')
         })
 
-        it('falls back to MOCK_LOCATIONS when provided array is empty', async () => {
+        it('returns empty matches when provided array is empty', async () => {
             const result = await gastroIntelligence.analyzeQuery('restaurant dinner', [])
-            // Falls back to mock → first match is Israeli Bistro per scoring
-            const titles = result.matches.map(m => m.title)
-            expect(titles).toContain('Israeli Bistro')
+            // Empty pool → returns default GastroGuide response with no matches
+            expect(result.matches).toEqual([])
+            expect(result.content).toContain('GastroGuide')
         })
 
-        it('falls back to MOCK_LOCATIONS when no locations arg given', async () => {
+        it('returns empty matches when no locations arg given', async () => {
             const result = await gastroIntelligence.analyzeQuery('lunch recommendations')
-            expect(result.matches.length).toBeGreaterThan(0)
+            // No locations arg → pool is empty → default response
+            expect(result.matches).toEqual([])
+            expect(result.content).toContain('GastroGuide')
         })
     })
 

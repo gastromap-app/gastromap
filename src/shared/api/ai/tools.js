@@ -340,8 +340,8 @@ export async function executeTool(name, args, ctx = {}) {
         const effectivePrices = (price_range?.length) ? price_range : (userPrefs?.priceRange || [])
         
         // Atmosphere and features as additional context (if applicable)
-        const preferredAtmosphere = userPrefs?.atmospherePreference || null
-        const preferredFeatures = userPrefs?.features || []
+        const _preferredAtmosphere = userPrefs?.atmospherePreference || null
+        const _preferredFeatures = userPrefs?.features || []
 
 
         if (keyword) {

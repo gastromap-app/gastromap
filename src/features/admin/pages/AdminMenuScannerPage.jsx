@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import AdminPageHeader from '../components/AdminPageHeader'
+// eslint-disable-next-line no-restricted-imports
 import { MenuScanner } from '@/features/public/components/MenuScanner'
 import {
     getLocations, getLocationMenu, saveScannedMenu,

@@ -15,6 +15,18 @@ vi.mock('@/shared/store/useFavoritesStore', () => ({
     },
 }))
 
+// Mock auth store — guest mode (no user)
+vi.mock('@/shared/store/useAuthStore', () => ({
+    useAuthStore: () => ({ user: null }),
+}))
+
+// Mock query hooks — not used in guest mode but must be importable
+vi.mock('@/shared/api/queries', () => ({
+    useAddFavoriteMutation: () => ({ mutateAsync: vi.fn() }),
+    useRemoveFavoriteMutation: () => ({ mutateAsync: vi.fn() }),
+    useUserFavorites: () => ({ data: [] }),
+}))
+
 // Mock navigator.vibrate
 const mockVibrate = vi.fn()
 

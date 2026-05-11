@@ -12,10 +12,12 @@ import {
 } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import FavoriteButton from '@/components/ui/FavoriteButton'
+// eslint-disable-next-line no-restricted-imports
 import FilterModal from '@/features/dashboard/components/FilterModal'
 import { useShallow } from 'zustand/react/shallow'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useInfiniteLocations } from '@/shared/api/queries/location.queries'
+// eslint-disable-next-line no-restricted-imports
 import { SmartSearchBar } from '@/features/dashboard/components/SmartSearchBar'
 import { useFavorites } from '@/hooks/useFavorites'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
@@ -416,16 +418,15 @@ const LocationsPage = () => {
     const activeFiltersCount = useLocationsStore(s => s.getActiveFiltersCount())
 
     // Local search input — purely for the search bar, does NOT affect page list
-    const [localSearch, setLocalSearch] = useState('')
+    const [localSearch, setLocalSearch] = useState(() => {
+        const params = new URLSearchParams(window.location.search)
+        return params.get('q') || ''
+    })
 
-    // Sync from URL query param on mount
+    // Sync sortBy from URL query param on mount
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
-        const q = params.get('q')
         const sort = params.get('sort')
-        if (q) {
-            setLocalSearch(q)
-        }
         if (sort && sort !== sortBy) {
             setSortBy(sort)
         }

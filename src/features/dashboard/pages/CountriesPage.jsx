@@ -128,9 +128,9 @@ const CountriesPage = () => {
 
     // City visibility — fetch city covers to exclude hidden/coming-soon cities from country counts
     const { data: cityCoversData = [] } = useGeoCovers('city')
-    const excludedCitySlugs = new Set(
+    const excludedCitySlugs = useMemo(() => new Set(
         cityCoversData.filter(c => c.is_visible === false || c.is_coming_soon === true).map(c => c.slug)
-    )
+    ), [cityCoversData])
 
     const [searchQuery, setSearchQuery] = useState('')
 

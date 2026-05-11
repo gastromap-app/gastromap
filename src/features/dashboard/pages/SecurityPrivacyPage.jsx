@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX, Trash2, HardDrive, Monitor, Globe, Clock, MapPin } from 'lucide-react'
@@ -28,7 +28,7 @@ const SecurityPrivacyPage = () => {
     const toggleVisibility = useCallback(() => {
         const next = profileVisibility === 'Public' ? 'Private' : 'Public'
         setProfileVisibility(next)
-        try { localStorage.setItem('gastromap_profile_visibility', next) } catch {}
+        try { localStorage.setItem('gastromap_profile_visibility', next) } catch { /* storage unavailable */ }
         showToast(`Profile is now ${next.toLowerCase()}`)
     }, [profileVisibility])
 

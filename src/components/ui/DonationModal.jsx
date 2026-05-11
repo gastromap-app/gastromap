@@ -9,6 +9,7 @@ const DonationModal = ({ isOpen, onClose, onSubmit, isLoading, initialAmount = '
     const [error, setError] = useState('');
     const [customMode, setCustomMode] = useState(false);
 
+    // Reset state when modal closes — intentional synchronous reset
     useEffect(() => {
         if (!isOpen) {
             setAmount(initialAmount);

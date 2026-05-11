@@ -21,7 +21,7 @@ const STATUS_CONFIG = {
     heading_to: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 dark:bg-amber-500/20', dot: 'bg-amber-500' },
 }
 
-export function DinerCard({ diner, userLat, userLng, onWaveSent, isOwn, onDelete }) {
+export function DinerCard({ diner, userLat: _userLat, userLng: _userLng, onWaveSent, isOwn, onDelete }) {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'

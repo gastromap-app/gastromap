@@ -21,7 +21,6 @@
 // Values are the canonical English name stored in the DB.
 const CITY_OVERRIDES = {
     // Poland
-    'krakow':       'Krakow',
     'krakow':       'Krakow',      // Kraków → stripped
     'warszawa':     'Warsaw',
     'wroclaw':      'Wroclaw',     // Wrocław
@@ -169,7 +168,6 @@ const COUNTRY_OVERRIDES = {
     'magyarorszag': 'Hungary',
     'magyarország': 'Hungary',
     'deutschland':  'Germany',
-    'deutschland':  'Germany',     // common misspelling
     'france':       'France',
     'espana':       'Spain',
     'españa':       'Spain',

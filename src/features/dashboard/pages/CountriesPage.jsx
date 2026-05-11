@@ -126,10 +126,10 @@ const CountriesPage = () => {
     // Visibility map from geo_covers
     const visibilityMap = Object.fromEntries(geoCoversData.map(c => [c.slug, { is_visible: c.is_visible !== false, is_coming_soon: c.is_coming_soon === true }]))
 
-    // City visibility — fetch city covers to exclude hidden cities from country counts
+    // City visibility — fetch city covers to exclude hidden/coming-soon cities from country counts
     const { data: cityCoversData = [] } = useGeoCovers('city')
-    const hiddenCitySlugs = new Set(
-        cityCoversData.filter(c => c.is_visible === false).map(c => c.slug)
+    const excludedCitySlugs = new Set(
+        cityCoversData.filter(c => c.is_visible === false || c.is_coming_soon === true).map(c => c.slug)
     )
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -143,9 +143,9 @@ const CountriesPage = () => {
             const slug = raw.toLowerCase().replace(/\s+/g, '-')
             const name = raw.charAt(0).toUpperCase() + raw.slice(1)
 
-            // Skip locations in hidden cities for the count
+            // Skip locations in hidden or coming-soon cities for the count
             const citySlug = (loc.city || '').toLowerCase().replace(/\s+/g, '-')
-            if (hiddenCitySlugs.has(citySlug)) return
+            if (excludedCitySlugs.has(citySlug)) return
 
             if (!countryMap[slug]) {
                 countryMap[slug] = { name, slug, count: 0 }
@@ -162,7 +162,7 @@ const CountriesPage = () => {
                 ?? COUNTRY_IMAGES.poland,
             is_coming_soon: visibilityMap[c.slug]?.is_coming_soon || false,
         }))
-    }, [locations, dbCoverMap, visibilityMap, hiddenCitySlugs])
+    }, [locations, dbCoverMap, visibilityMap, excludedCitySlugs])
 
     // Filter out hidden countries, keep coming_soon (they show with badge)
     const visibleCountries = useMemo(() => {

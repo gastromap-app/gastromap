@@ -497,8 +497,8 @@ const LocationFormSlideOver = ({
                                     {isNew ? t('admin.locations.form.status_draft') : (formData.status || 'Active')}
                                 </span>
                             </div>
-                            <p className="text-micro text-t-tertiary mt-4 uppercase tracking-[0.35em] font-bold opacity-80 flex items-center gap-3">
-                                <span className="w-2 h-2 rounded-full bg-primary/40 animate-pulse" />
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-light flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/50 animate-pulse" />
                                 {isNew ? t('admin.locations.form.creation_subtitle') : t('admin.locations.form.id_label', { id: selectedLocation.id.substring(0, 12) })}
                             </p>
                         </div>

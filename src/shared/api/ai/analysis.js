@@ -153,10 +153,10 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 userId: context.userId || null,
             }
 
-            // Global timeout: abort if runAgentPass takes longer than 30s
+            // Global timeout: abort if runAgentPass takes longer than 20s
             const agentResult = await Promise.race([
                 runAgentPass(messages, agentCtx),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (30s)')), 30000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (20s)')), 20000))
             ])
 
             // Bubble up needs_geo / ask_clarification signals

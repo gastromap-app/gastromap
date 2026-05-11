@@ -3,6 +3,9 @@
  *
  * Sends chat completion requests to OpenRouter with automatic model cascade
  * (fallback chain) on rate-limit errors and multi-key rotation.
+ * 
+ * Strategy: "Racing" — when 2 API keys are available, sends parallel requests
+ * with different model orders. First successful response wins.
  */
 
 import { getActiveAIConfig } from '../ai-config.api'
@@ -10,11 +13,8 @@ import { config } from '@/shared/config/env'
 import { OPENROUTER_URL, MODEL_CASCADE, TOOLS } from './constants'
 
 /**
- * Multi-key rotation: when primary key hits rate-limit, switch to secondary.
- * Keys are read from env (VITE_OPENROUTER_API_KEY) and secondary (VITE_OPENROUTER_API_KEY_2).
+ * Multi-key support: reads primary + secondary keys from env.
  */
-let _currentKeyIndex = 0
-
 function getApiKeys(primaryKey) {
     const keys = [primaryKey].filter(Boolean)
     const secondary = import.meta.env.VITE_OPENROUTER_API_KEY_2
@@ -22,143 +22,120 @@ function getApiKeys(primaryKey) {
     return keys
 }
 
-function rotateKey(keys) {
-    _currentKeyIndex = (_currentKeyIndex + 1) % keys.length
-    return keys[_currentKeyIndex]
+/**
+ * Try a single model with a specific API key. Returns response or throws.
+ */
+async function tryModel(model, messages, { apiKey, useProxy, stream, withTools, temperature, maxTokens, timeout = 8000 }) {
+    const body = {
+        model,
+        messages,
+        max_tokens: maxTokens ?? config.ai.maxResponseTokens,
+        stream,
+    }
+    if (temperature != null) body.temperature = temperature
+    if (withTools) {
+        body.tools = TOOLS
+        body.tool_choice = 'auto'
+    }
+
+    const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
+    const headers = { 'Content-Type': 'application/json' }
+    if (!useProxy) {
+        headers['Authorization'] = `Bearer ${apiKey}`
+        headers['HTTP-Referer'] = 'https://gastromap.app'
+        headers['X-Title'] = 'GastroMap'
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (res.ok) return { response: res, modelUsed: model }
+
+    // Parse error for diagnostics
+    const errBody = await res.json().catch(() => ({}))
+    const msg = errBody?.error?.message || `OpenRouter error ${res.status}`
+    throw Object.assign(new Error(msg), { status: res.status, model, errorData: errBody })
+}
+
+/**
+ * Run a cascade of models sequentially with a single API key.
+ * Skips 404 (deprecated) and retries on 429/5xx.
+ */
+async function runCascade(cascade, messages, opts) {
+    let lastError = null
+    for (const model of cascade) {
+        try {
+            return await tryModel(model, messages, opts)
+        } catch (err) {
+            lastError = err
+            const isTimeout = err.name === 'AbortError'
+            const isRetryable = isTimeout || [429, 404, 500, 502, 503, 504].includes(err.status)
+            
+            if (!isRetryable) throw err
+            
+            const reason = isTimeout ? 'timeout' : err.status === 404 ? 'deprecated' : `${err.status}`
+            console.warn(`[GastroAI] ${model} → ${reason}, next...`)
+        }
+    }
+    throw lastError || new Error('All models exhausted')
 }
 
 /**
  * Send a chat completion request to OpenRouter.
- * Automatically tries multiple models in cascade on rate-limit errors.
+ * 
+ * Strategy:
+ * - If 2 API keys available: race two cascades in parallel (different model order).
+ *   First successful response wins, other is aborted.
+ * - If 1 key: sequential cascade with 8s per-model timeout.
+ * - Per-model timeout: 8s (was 15s) — free models that don't respond in 8s are likely overloaded.
  *
  * @param {Array}   messages - Chat messages array
  * @param {Object}  options - Request options
- * @param {boolean} [options.stream=false] - Enable streaming
- * @param {boolean} [options.withTools=true] - Include tool definitions for function calling
- * @param {string}  [options.modelOverride] - Override the default model selection
- * @returns {Promise<{response: Response, modelUsed: string}>} - Response object and model used
+ * @returns {Promise<{response: Response, modelUsed: string}>}
  */
 export async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride, temperature, maxTokens, cascade: adminCascade } = {}) {
     const { apiKey, model: activeModel, fallbackModel, useProxy } = getActiveAIConfig()
     const apiKeys = getApiKeys(apiKey)
 
-    // Build cascade: start with preferred model, then try all others
+    // Build primary cascade
     const preferredModel = modelOverride ?? activeModel
-    const cascade = [preferredModel]
-
-    // Add fallback model if different
-    if (fallbackModel && fallbackModel !== preferredModel && !cascade.includes(fallbackModel)) {
-        cascade.push(fallbackModel)
-    }
-
-    // Use admin cascade if provided, otherwise fall back to MODEL_CASCADE
-    const fallbackList = (adminCascade && adminCascade.length > 0) ? adminCascade : MODEL_CASCADE
-
-    // Always add all cascade models (even in proxy mode - proxy might not handle cascade)
+    const primaryCascade = [preferredModel]
+    if (fallbackModel && fallbackModel !== preferredModel) primaryCascade.push(fallbackModel)
+    
+    const fallbackList = (adminCascade?.length > 0) ? adminCascade : MODEL_CASCADE
     for (const m of fallbackList) {
-        if (!cascade.includes(m)) {
-            cascade.push(m)
-        }
+        if (!primaryCascade.includes(m)) primaryCascade.push(m)
     }
 
-    let lastError = null
-    let lastStatus = 0
-    let keyRotations = 0
-    const maxKeyRotations = apiKeys.length // max 1 rotation per key
+    const baseOpts = { useProxy, stream, withTools, temperature, maxTokens, timeout: 8000 }
 
-    for (let i = 0; i < cascade.length; i++) {
-        const currentModel = cascade[i]
-
-        const body = {
-            model: currentModel,
-            messages,
-            max_tokens: maxTokens ?? config.ai.maxResponseTokens,
-            stream,
-        }
-        if (temperature != null) {
-            body.temperature = temperature
-        }
-        if (withTools) {
-            body.tools = TOOLS
-            body.tool_choice = 'auto'
-        }
-
-        const url = useProxy ? config.ai.proxyUrl : OPENROUTER_URL
-        const headers = { 'Content-Type': 'application/json' }
-        if (!useProxy) {
-            const currentKey = apiKeys[_currentKeyIndex] || apiKey
-            headers['Authorization'] = `Bearer ${currentKey}`
-            headers['HTTP-Referer'] = 'https://gastromap.app'
-            headers['X-Title'] = 'GastroMap'
-        }
-
-        try {
-            // Per-model timeout: 15s is enough for a fast response, prevents total hang on slow server
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 15000)
-
-            const res = await fetch(url, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body),
-                signal: controller.signal
-            })
-
-            clearTimeout(timeoutId)
-
-            if (res.ok) {
-                return { response: res, modelUsed: currentModel }
-            }
-
-            lastStatus = res.status
-
-            // Parse error to get details
-            const errBody = await res.json().catch(() => ({}))
-            lastError = errBody
-
-            // Skip 404 (deprecated/removed models) — try next in cascade
-            if (res.status === 404) {
-                console.warn(`[GastroAI] Model ${currentModel} is deprecated (404), skipping...`)
-                continue
-            }
-
-            // Retry on rate-limit (429) or server errors (500, 502, 503, 504)
-            const retryableErrors = [429, 500, 502, 503, 504]
-            if (!retryableErrors.includes(res.status)) {
-                const msg = errBody?.error?.message || `OpenRouter error ${res.status}`
-                throw Object.assign(new Error(msg), { status: res.status, errorData: errBody })
-            }
-
-            // On 429: try rotating to another API key before moving to next model
-            if (res.status === 429 && apiKeys.length > 1 && keyRotations < maxKeyRotations) {
-                rotateKey(apiKeys)
-                keyRotations++
-                console.warn(`[GastroAI] Rate-limited, rotating to key #${_currentKeyIndex + 1}`)
-                // Retry same model with new key (decrement i to retry)
-                i--
-                continue
-            }
-
-            console.warn(`[GastroAI] Model ${currentModel} returned ${res.status}, trying next model...`)
-        } catch (err) {
-            // Handle timeout or other network errors
-            const isTimeout = err.name === 'AbortError'
-            const isRetryableStatus = err.status && [429, 500, 502, 503, 504].includes(err.status)
-
-            if (!isTimeout && !isRetryableStatus) {
-                throw err
-            }
-
-            const reason = isTimeout ? 'timeout' : `status ${err.status}`
-            console.warn(`[GastroAI] Model ${currentModel} failed (${reason}), trying next model...`)
-        }
+    // ── Single key: sequential cascade ──────────────────────────────────────
+    if (apiKeys.length < 2) {
+        return runCascade(primaryCascade, messages, { ...baseOpts, apiKey: apiKeys[0] })
     }
 
-    // All models exhausted - provide helpful error message
-    const errorMsg = lastError?.error?.message || 'All AI models are currently rate-limited. Please try again in a few minutes or add your own OpenRouter API key in Admin Settings.'
-    throw Object.assign(new Error(errorMsg), {
-        status: lastStatus || 503,
-        errorData: lastError,
-        allModelsTried: cascade
-    })
+    // ── Two keys: race parallel cascades ────────────────────────────────────
+    // Key 1 uses primary order, Key 2 uses reversed priority (different models first)
+    const secondaryCascade = [...primaryCascade].reverse()
+
+    const race1 = runCascade(primaryCascade.slice(0, 4), messages, { ...baseOpts, apiKey: apiKeys[0] })
+    const race2 = runCascade(secondaryCascade.slice(0, 4), messages, { ...baseOpts, apiKey: apiKeys[1] })
+
+    try {
+        // Promise.any: first to succeed wins. If both fail, AggregateError is thrown.
+        return await Promise.any([race1, race2])
+    } catch {
+        // Both races failed with their top-4 models. Try remaining models with key 1.
+        console.warn('[GastroAI] Both racing cascades failed, trying remaining models...')
+        return runCascade(primaryCascade.slice(4), messages, { ...baseOpts, apiKey: apiKeys[0] })
+    }
 }

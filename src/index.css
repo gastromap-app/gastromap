@@ -591,10 +591,46 @@
   transition: box-shadow 0.4s ease, transform 0.15s ease;
 }
 
+/* Dot pattern overlay (liquid/shimmer texture) */
+.shiny-cta-dark::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.12) 0.5px, transparent 0) 0 0 / 6px 6px;
+  mask-image: conic-gradient(from var(--shiny-angle), black, transparent 10% 90%, black);
+  opacity: 0.5;
+  animation: shiny-spin 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Inner shimmer glow (liquid light sweep) */
+.shiny-cta-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(-50deg, transparent 40%, var(--highlight) 50%, transparent 60%);
+  mask-image: radial-gradient(circle at bottom, transparent 40%, black);
+  opacity: 0;
+  animation: shiny-shimmer 3s linear infinite;
+  pointer-events: none;
+}
+
+.shiny-cta-dark:hover::after {
+  opacity: 0.5;
+}
+
 .shiny-cta-dark:hover {
   box-shadow: inset 0 0 0 1px #1a1a1a, 0 0 28px rgba(59, 130, 246, 0.25);
 }
 
 .shiny-cta-dark:active {
   transform: translateY(1px);
+}
+
+@keyframes shiny-shimmer {
+  0% { rotate: 0deg; opacity: 0; }
+  50% { opacity: 0.4; }
+  100% { rotate: 360deg; opacity: 0; }
 }

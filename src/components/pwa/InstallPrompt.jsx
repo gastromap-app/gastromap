@@ -65,23 +65,23 @@ export function InstallPrompt() {
                     transition={{ type: 'spring', damping: 22, stiffness: 280 }}
                     className="fixed bottom-24 left-4 right-4 z-[9998] md:left-auto md:right-6 md:w-[360px]"
                 >
-                    <div className="bg-[#0f172a]/95 backdrop-blur-2xl border border-white/15 rounded-[28px] shadow-[0_20px_60px_rgba(37,99,235,0.25)] overflow-hidden">
+                    <div className="bg-[#0A0A0A]/95 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden">
                         {/* Gradient top accent */}
-                        <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-indigo-500" />
+                        <div className="h-[2px] bg-gradient-to-r from-blue-500 via-indigo-400 to-blue-600" />
 
                         <div className="p-5">
                             <div className="flex items-start gap-4">
                                 {/* App icon */}
-                                <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/30">
-                                    <Sparkles size={26} className="text-white" />
+                                <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
+                                    <Sparkles size={24} className="text-white" />
                                 </div>
 
                                 {/* Text */}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-black text-white text-base leading-tight">
+                                    <h3 className="font-semibold text-white text-[15px] leading-tight tracking-tight">
                                         {t('pwa.install_title')}
                                     </h3>
-                                    <p className="text-white/50 text-xs font-medium mt-1 leading-relaxed">
+                                    <p className="text-white/40 text-[12px] font-light mt-1.5 leading-relaxed">
                                         {isIOS
                                             ? t('pwa.install_ios')
                                             : t('pwa.install_desc')}
@@ -91,20 +91,20 @@ export function InstallPrompt() {
                                 {/* Dismiss */}
                                 <button
                                     onClick={handleDismiss}
-                                    className="flex-shrink-0 w-7 h-7 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors"
+                                    className="flex-shrink-0 w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                                     aria-label="Dismiss"
                                 >
-                                    <X size={14} className="text-white/60" />
+                                    <X size={14} className="text-white/40" />
                                 </button>
                             </div>
 
                             {/* iOS instruction */}
                             {isIOS && (
-                                <div className="mt-4 flex items-center gap-2 bg-white/5 rounded-2xl p-3 border border-white/10">
+                                <div className="mt-4 flex items-center gap-3 bg-white/[0.04] rounded-xl p-3.5 border border-white/[0.08]">
                                     <Share size={16} className="text-blue-400 flex-shrink-0" />
-                                    <p className="text-xs text-white/60 font-medium">
-                                        Tap <span className="text-white font-black">Share</span> in the menu bar below, then{' '}
-                                        <span className="text-white font-black">Add to Home Screen</span>
+                                    <p className="text-[12px] text-white/50 font-light leading-relaxed">
+                                        Tap <span className="text-white font-medium">Share</span> in the menu bar below, then{' '}
+                                        <span className="text-white font-medium">Add to Home Screen</span>
                                     </p>
                                 </div>
                             )}
@@ -114,14 +114,14 @@ export function InstallPrompt() {
                                 <div className="mt-4 flex gap-2">
                                     <button
                                         onClick={handleInstall}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest py-3 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-500/30"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium text-[12px] py-3 rounded-xl transition-all active:scale-95 hover:bg-white/90"
                                     >
                                         <Download size={14} />
                                         {t('pwa.install_btn')}
                                     </button>
                                     <button
                                         onClick={handleDismiss}
-                                        className="px-4 py-3 rounded-2xl bg-white/8 hover:bg-white/15 text-white/60 text-xs font-bold transition-colors"
+                                        className="px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white/40 text-[12px] font-medium transition-colors border border-white/[0.08]"
                                     >
                                         {t('pwa.later')}
                                     </button>

@@ -26,8 +26,8 @@ const StatCard = ({ title, value, icon: Icon, color, delay }) => (
     >
         <div className="flex justify-between items-start">
             <div className="flex-1 min-w-0">
-                <h3 className="text-[9px] lg:text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest mb-1.5 leading-none">{title}</h3>
-                <p className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-none tracking-tight truncate">{value}</p>
+                <h3 className="text-micro font-bold uppercase text-t-tertiary tracking-widest mb-1.5 leading-none">{title}</h3>
+                <p className="text-lg lg:text-2xl font-bold text-t-primary leading-none tracking-tight truncate">{value}</p>
             </div>
             <div className={cn(
                 'w-9 h-9 lg:w-11 lg:h-11 rounded-2xl flex items-center justify-center bg-white dark:bg-white/5 shadow-sm shrink-0',
@@ -50,11 +50,11 @@ const ActivityRow = ({ item }) => {
                     {item.user_name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1 truncate">{item.user_name || 'User'}</p>
-                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide truncate leading-none">{item.action_text || item.activity_type}</p>
+                    <p className="text-sm font-semibold text-t-primary leading-none mb-1 truncate">{item.user_name || 'User'}</p>
+                    <p className="text-micro text-t-tertiary font-medium uppercase tracking-wide truncate leading-none">{item.action_text || item.activity_type}</p>
                 </div>
             </div>
-            <span className="text-[10px] font-medium text-slate-300 dark:text-[hsl(220,10%,55%)] whitespace-nowrap ml-3 shrink-0">
+            <span className="text-micro font-medium text-t-quaternary whitespace-nowrap ml-3 shrink-0">
                 {formatDistanceToNow(item.created_at)}
             </span>
         </div>
@@ -71,8 +71,8 @@ const EmptyRow = () => {
                 <Activity size={16} />
             </div>
             <div>
-                <p className="text-sm font-semibold text-slate-400 dark:text-[hsl(220,10%,55%)] leading-none mb-1">{t('admin.dashboard.no_activity')}</p>
-                <p className="text-[10px] text-slate-300 dark:text-[hsl(220,10%,55%)] font-medium uppercase tracking-wide leading-none">{t('admin.dashboard.activity_will_appear')}</p>
+                <p className="text-sm font-semibold text-t-tertiary leading-none mb-1">{t('admin.dashboard.no_activity')}</p>
+                <p className="text-micro text-t-quaternary font-medium uppercase tracking-wide leading-none">{t('admin.dashboard.activity_will_appear')}</p>
             </div>
         </div>
     )
@@ -159,9 +159,9 @@ const AdminDashboardPage = () => {
                                 <div className="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
                                     <Sparkles size={13} className="text-indigo-500" />
                                 </div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">GastroAI Insight</span>
+                                <span className="text-micro font-bold uppercase tracking-widest text-indigo-500">GastroAI Insight</span>
                             </div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-[hsl(220,20%,90%)] leading-snug mb-4">
+                            <p className="text-sm font-semibold text-t-secondary leading-snug mb-4">
                                 {t('admin.dashboard.ai_insight')}
                             </p>
                             <button

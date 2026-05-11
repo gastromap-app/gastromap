@@ -11,7 +11,6 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { createSubmission, compressImage, uploadSubmissionPhoto } from '@/shared/api/submissions.api'
 import { enrichLocation } from '@/shared/api/ai'
 import { searchPlaces, searchCities, searchAddresses } from '../hooks/useNominatim'
-import { fetchPlacesSuggestions, fetchPlaceDetails } from '@/shared/api/google-places.api'
 import { CATEGORIES_PUBLIC as CATEGORIES } from '@/shared/config/filterOptions'
 
 // ─── Constants ─────────────────────────────────────────────────────────────

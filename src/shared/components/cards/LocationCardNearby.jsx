@@ -21,14 +21,14 @@ export function LocationCardNearby({
     return (
         <button
             onClick={() => navigate(`/location/${location.id}`)}
-            className={`flex-shrink-0 ${width} group text-left surface transition-all duration-300 active:scale-[0.98] hover:surface-elevated hover:-translate-y-1 ${className}`}
+            className={`flex-shrink-0 ${width} group text-left surface transition-all duration-300 active:scale-[0.98] [@media(hover:hover)]:hover:surface-elevated [@media(hover:hover)]:hover:-translate-y-1 ${className}`}
         >
             {/* Image */}
             <div className="relative h-[120px] w-full overflow-hidden rounded-t-[20px]">
                 <LazyImage
                     src={image}
                     alt={location.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 [@media(hover:hover)]:group-hover:scale-110"
                     wrapperClassName="w-full h-full"
                 />
 

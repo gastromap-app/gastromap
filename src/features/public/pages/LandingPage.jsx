@@ -1,10 +1,13 @@
 import React from 'react'
 import { LazyImage } from '@/components/ui/LazyImage'
-import { Link } from 'react-router-dom'
-import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Sparkles, Map, List, Globe, ArrowUpRight, Search, Check, ChevronDown, Coffee, Wine, Utensils, Award, Zap, Shield, Heart, User, Instagram, Twitter, Linkedin, CheckCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getLocationsCount } from '@/shared/api/locations.api'
+import { supabase } from '@/shared/api/client'
+import { useAuthStore } from '@/shared/store/useAuthStore'
+import DonationModal from '@/components/ui/DonationModal'
 
 
 // --- Animations (Apple-like Springs) ---
@@ -396,77 +399,127 @@ const CollectionPreview = () => (
 )
 
 // --- Component: Pricing ---
-const Pricing = () => (
-    <section id="pricing" className="py-12 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
-        <div className="mx-4 lg:mx-8 rounded-[40px] py-16 md:py-24 bg-white dark:bg-[#1C1C1E] shadow-sm relative overflow-hidden">
-            <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    variants={fadeInUp}
-                    className="text-center mb-16 md:mb-24"
-                >
-                    <div className="bg-blue-500/10 dark:bg-blue-500/20 w-fit mx-auto px-4 py-2 rounded-full text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 flex items-center gap-2">
-                        <Heart size={16} /> Community First
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white">
-                        100% Free. <br className="hidden sm:block" />
-                        <span className="text-blue-600 dark:text-blue-500">Support the community.</span>
-                    </h2>
-                    <p className="text-lg md:text-xl font-medium text-black/60 dark:text-white/60 max-w-2xl mx-auto">
-                        GastroMap is built by locals for travelers. Enjoy full access forever, or become a supporter.
-                    </p>
-                </motion.div>
-                <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-50px" }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch"
-                >
-                    {/* Explorer (Free) */}
-                    <motion.div variants={fadeInUp} className={`p-8 md:p-10 rounded-[40px] flex flex-col ${surfaceApple}`}>
-                        <div className="text-xs font-semibold text-black/40 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
-                        <div className="text-5xl font-semibold tracking-tight mb-2 text-black/90 dark:text-white">Free</div>
-                        <p className="text-sm font-medium text-black/60 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
-                        <ul className="space-y-5 mb-12 text-sm font-medium text-black/70 dark:text-white/70 flex-1">
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Add & Review Places</li>
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Full AI Guidance</li>
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Earn Points & Badges</li>
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> "Dine With Me" Radar</li>
-                        </ul>
-                        <Link to="/auth/signup">
-                            <Button className="w-full bg-[#F5F5F7] hover:bg-blue-50 text-blue-600 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-blue-900/20 rounded-full h-14 font-medium transition-colors">
-                                Join for Free
+const Pricing = () => {
+    const navigate = useNavigate()
+    const { isAuthenticated, user } = useAuthStore()
+    const [isLoadingPayment, setIsLoadingPayment] = React.useState(false)
+
+    const [isDonationModalOpen, setIsDonationModalOpen] = React.useState(false)
+
+    const handleDonationClick = () => {
+        if (!isAuthenticated) {
+            navigate('/auth/login')
+            return
+        }
+        setIsDonationModalOpen(true)
+    }
+
+    const processDonation = async (amount) => {
+        try {
+            setIsLoadingPayment(true)
+
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: {
+                    amount: amount * 100,
+                    currency: 'usd',
+                    name: 'Support GastroMap',
+                    mode: 'payment',
+                    userId: user?.id
+                }
+            })
+
+            if (error) throw error
+
+            if (data?.url) {
+                window.location.href = data.url
+            } else {
+                throw new Error('No checkout URL returned')
+            }
+        } catch (error) {
+            console.error('Error starting checkout:', error)
+            alert('An error occurred while initiating payment.')
+        } finally {
+            setIsLoadingPayment(false)
+        }
+    }
+
+    return (
+        <section id="pricing" className="py-12 md:py-24 relative z-10 border-t border-black/5 dark:border-white/5">
+            <div className="mx-4 lg:mx-8 rounded-[40px] py-16 md:py-24 bg-white dark:bg-[#1C1C1E] shadow-sm relative overflow-hidden">
+                <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={fadeInUp}
+                        className="text-center mb-16 md:mb-24"
+                    >
+                        <div className="bg-blue-500/10 dark:bg-blue-500/20 w-fit mx-auto px-4 py-2 rounded-full text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 flex items-center gap-2">
+                            <Heart size={16} /> Community First
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-semibold mb-6 tracking-[-0.03em] text-black/90 dark:text-white">
+                            100% Free. <br className="hidden sm:block" />
+                            <span className="text-blue-600 dark:text-blue-500">Support the community.</span>
+                        </h2>
+                        <p className="text-lg md:text-xl font-medium text-black/60 dark:text-white/60 max-w-2xl mx-auto">
+                            GastroMap is built by locals for travelers. Enjoy full access forever, or become a supporter.
+                        </p>
+                    </motion.div>
+                    <motion.div
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-50px" }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch"
+                    >
+                        {/* Explorer (Free) */}
+                        <motion.div variants={fadeInUp} className={`p-8 md:p-10 rounded-[40px] flex flex-col ${surfaceApple}`}>
+                            <div className="text-xs font-semibold text-black/40 dark:text-white/40 uppercase tracking-widest mb-6">Explorer</div>
+                            <div className="text-5xl font-semibold tracking-tight mb-2 text-black/90 dark:text-white">Free</div>
+                            <p className="text-sm font-medium text-black/60 dark:text-white/50 mb-10">Everything you need to discover and share.</p>
+                            <ul className="space-y-5 mb-12 text-sm font-medium text-black/70 dark:text-white/70 flex-1">
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Add & Review Places</li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Full AI Guidance</li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> Earn Points & Badges</li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-600/50" /> "Dine With Me" Radar</li>
+                            </ul>
+                            <Link to="/auth/signup">
+                                <Button className="w-full bg-[#F5F5F7] hover:bg-blue-50 text-blue-600 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-blue-900/20 rounded-full h-14 font-medium transition-colors">
+                                    Join for Free
+                                </Button>
+                            </Link>
+                        </motion.div>
+
+                        {/* Supporter (Highlighted) */}
+                        <motion.div variants={fadeInUp} className="bg-gradient-to-br from-blue-900 to-black text-white p-8 md:p-10 rounded-[40px] shadow-2xl flex flex-col relative overflow-hidden">
+                            {/* Background glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
+
+                            <div className="absolute top-8 right-8 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white backdrop-blur-md">Optional</div>
+                            <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-6">Supporter</div>
+                            <div className="text-5xl font-semibold tracking-tight mb-2">$5<span className="text-lg text-white/40 font-medium">/mo</span></div>
+                            <p className="text-sm font-medium text-white/60 mb-10">Help keep the servers running.</p>
+                            <ul className="space-y-5 mb-12 text-sm font-medium text-white/90 flex-1 relative z-10">
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Exclusive "Supporter" Badge</li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Early access to new features</li>
+                                <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Skip the moderation queue</li>
+                                <li className="flex items-center gap-3"><Heart className="w-5 h-5 text-rose-400" /> Developer gratitude</li>
+                            </ul>
+                            <Button 
+                                onClick={handleDonationClick}
+                                disabled={isLoadingPayment}
+                                className="w-full bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 rounded-full h-14 font-medium transition-all relative z-10"
+                            >
+                                {isLoadingPayment ? <Loader2 size={16} className="animate-spin mr-2 inline-block" /> : null}
+                                Become a Supporter
                             </Button>
-                        </Link>
+                        </motion.div>
                     </motion.div>
-
-                    {/* Supporter (Highlighted) */}
-                    <motion.div variants={fadeInUp} className="bg-gradient-to-br from-blue-900 to-black text-white p-8 md:p-10 rounded-[40px] shadow-2xl flex flex-col relative overflow-hidden">
-                        {/* Background glow */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-
-                        <div className="absolute top-8 right-8 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white backdrop-blur-md">Optional</div>
-                        <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-6">Supporter</div>
-                        <div className="text-5xl font-semibold tracking-tight mb-2">$5<span className="text-lg text-white/40 font-medium">/mo</span></div>
-                        <p className="text-sm font-medium text-white/60 mb-10">Help keep the servers running.</p>
-                        <ul className="space-y-5 mb-12 text-sm font-medium text-white/90 flex-1 relative z-10">
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Exclusive "Supporter" Badge</li>
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Early access to new features</li>
-                            <li className="flex items-center gap-3"><Check className="w-5 h-5 text-blue-400" /> Skip the moderation queue</li>
-                            <li className="flex items-center gap-3"><Heart className="w-5 h-5 text-rose-400" /> Developer gratitude</li>
-                        </ul>
-                        <Button className="w-full bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20 rounded-full h-14 font-medium transition-all relative z-10">
-                            Become a Supporter
-                        </Button>
-                    </motion.div>
-                </motion.div>
+                </div>
             </div>
-        </div>
-    </section>
-)
+        </section>
+    )
+}
 
 // --- Component: FAQ ---
 const FAQ = () => {
@@ -581,6 +634,12 @@ export default function LandingPage() {
                 <FAQ />
                 <FinalCTA />
             </div>
+            <DonationModal 
+                isOpen={isDonationModalOpen}
+                onClose={() => setIsDonationModalOpen(false)}
+                onSubmit={processDonation}
+                isLoading={isLoadingPayment}
+            />
         </div>
     )
 }

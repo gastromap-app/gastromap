@@ -47,8 +47,8 @@
        instead of ad-hoc `text-gray-500` / `text-slate-600` for consistency. */
     --text-primary:     222 47% 11%;  /* slate-900 */
     --text-secondary:   215 25% 27%;  /* slate-700 */
-    --text-tertiary:    215 16% 47%;  /* slate-500 */
-    --text-quaternary:  215 20% 65%;  /* slate-400 */
+    --text-tertiary:    215 25% 40%;  /* darker slate-500 */
+    --text-quaternary:  215 20% 52%;  /* darker slate-400 */
 
     --radius: 1rem;
   }
@@ -92,10 +92,10 @@
     --ring: 217 91% 60%;
 
     /* Dark-mode text hierarchy — soft whites tuned for OLED blacks */
-    --text-primary:     220 20% 96%;
-    --text-secondary:   220 10% 72%;
-    --text-tertiary:    220 10% 55%;
-    --text-quaternary:  220 10% 40%;
+    --text-primary:     220 20% 98%;
+    --text-secondary:   220 15% 80%;
+    --text-tertiary:    220 15% 68%;
+    --text-quaternary:  220 10% 58%;
   }
 }
 
@@ -269,10 +269,10 @@
      Medium weight (500) + tighter 0.08em tracking — editorial/Apple feel.
      Aligned with the `eyebrow` token in tailwind.config.js. */
   .text-eyebrow-muted {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     line-height: 1.2;
     letter-spacing: 0.08em;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     color: hsl(var(--text-tertiary));
   }

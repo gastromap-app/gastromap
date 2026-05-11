@@ -30,44 +30,59 @@ import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
-const SectionHeader = ({ title, subtitle, icon: Icon, iconColor = 'text-indigo-500', count }) => (
-    <div className="flex items-center gap-3 pb-1">
+const SectionHeader = ({ title, icon: Icon, iconColor, count, subtitle }) => (
+    <div className="flex items-center gap-5 pb-6 border-b border-border/20 mb-10 group/section">
         {Icon && (
-            <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-[hsl(220,20%,9%)]", iconColor.replace('text-', 'text-'))}>
-                <Icon size={14} className={iconColor} />
+            <div className={cn(
+                "w-14 h-14 rounded-input flex items-center justify-center transition-all duration-500",
+                "bg-secondary/40 backdrop-blur-xl border border-white/[0.08] shadow-sm",
+                "group-hover/section:bg-primary/10 group-hover/section:border-primary/20 group-hover/section:scale-105 group-hover/section:shadow-lg group-hover/section:shadow-primary/5",
+                iconColor
+            )}>
+                <Icon size={24} className="shrink-0 transition-transform duration-500 group-hover/section:rotate-3" strokeWidth={1.5} />
             </div>
         )}
         <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-none flex items-center gap-2">
-                {title}
+            <div className="flex items-center gap-3">
+                <h3 className="text-h3 text-t-primary font-bold tracking-tight">
+                    {title}
+                </h3>
                 {count !== undefined && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-black">
+                    <span className="text-[10px] px-2.5 py-1 rounded-pill bg-primary/10 text-primary border border-primary/20 font-black tabular-nums tracking-wider shadow-sm">
                         {count}
                     </span>
                 )}
-            </h3>
-            {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+            </div>
+            {subtitle && (
+                <p className="text-micro text-t-tertiary mt-2 font-medium leading-relaxed tracking-wide opacity-90">
+                    {subtitle}
+                </p>
+            )}
         </div>
     </div>
 )
 
 const Field = ({ label, required, hint, children, className }) => (
-    <div className={cn("space-y-2.5", className)}>
-        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-[hsl(220,10%,55%)]">
-            {label}
-            {required && <span className="text-rose-400">*</span>}
+    <div className={cn("space-y-3", className)}>
+        <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 text-eyebrow font-bold uppercase tracking-[0.14em] text-t-secondary">
+                {label}
+                {required && <span className="text-primary font-black ml-0.5">*</span>}
+            </label>
             {hint && (
-                <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-slate-400 capitalize">
+                <span className="text-[9px] font-bold text-t-tertiary uppercase tracking-widest opacity-80">
                     {hint}
                 </span>
             )}
-        </label>
-        {children}
+        </div>
+        <div className="relative group/field">
+            {children}
+        </div>
     </div>
 )
 
-const input = "w-full px-4 py-4 sm:py-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/60 rounded-xl border border-slate-200/80 dark:border-white/[0.04] text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition-all"
-const textarea = cn(input, "resize-none min-h-[120px]")
+const input = "w-full px-5 py-4 bg-secondary/40 hover:bg-secondary/60 focus:bg-background/50 rounded-input border border-border/15 text-body-sm font-semibold text-t-primary placeholder:text-t-tertiary/60 outline-none focus:border-primary/40 focus:ring-4 focus:ring-primary/5 transition-all duration-300 shadow-sm backdrop-blur-xl"
+const textarea = cn(input, "resize-none min-h-[140px] rounded-card pt-5 leading-relaxed")
 
 // ─── Draggable Map Marker for coordinate editing ─────────────────────────────
 // Admin-only: shows the location on a mini-map with a draggable marker.
@@ -157,11 +172,14 @@ const LocationFormSlideOver = ({
     handleAIMagic,
     isImproving,
     setIsImproving,
+    setToast,
 }) => {
     const { t, i18n } = useTranslation()
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [newImageUrl, setNewImageUrl]  = useState('')
     const [isUploading, setIsUploading] = useState(false)
+    const [googlePhotosMetadata, setGooglePhotosMetadata] = useState([])
+    const [isFetchingPhotos, setIsFetchingPhotos] = useState(false)
     const fileInputRef = React.useRef(null)
 
     const isNew = !selectedLocation?.id || selectedLocation.id === 'NEW'
@@ -183,8 +201,10 @@ const LocationFormSlideOver = ({
         set(field, value)
     }, [set])
 
-    const handlePlaceSelected = useCallback((place) => {
+    const handlePlaceSelected = useCallback(async (place) => {
         if (!place) return
+        
+        // Start updating basic info
         setFormData(prev => ({
             ...prev,
             title:         place.title         || prev?.title         || '',
@@ -205,7 +225,88 @@ const LocationFormSlideOver = ({
             google_maps_url: place.google_maps_url || prev?.google_maps_url || null,
             _source:       'google_places',
         }))
+
+        // Fetch metadata for all available photos so user can pick
+        if (place.google_place_id) {
+            try {
+                setIsFetchingPhotos(true)
+                const { fetchGooglePhotos } = await import('@/shared/api/google-places.api')
+                const metadata = await fetchGooglePhotos(place.google_place_id)
+                setGooglePhotosMetadata(metadata || [])
+                
+                // Automatically ingest ONLY the first photo to use as cover/default
+                // This gives the admin immediate visual feedback but leaves slots 2 and 3 open
+                if (metadata && metadata.length > 0) {
+                    setIsUploading(true)
+                    const { ingestGooglePhoto } = await import('@/shared/api/google-places.api')
+                    const firstPhoto = metadata[0]
+                    
+                    if (firstPhoto.photo_reference) {
+                        const stableUrl = await ingestGooglePhoto(place.google_place_id, firstPhoto.photo_reference)
+                        if (stableUrl) {
+                            setFormData(prev => {
+                                // Only add if not already present
+                                const existing = Array.isArray(prev.photos) ? prev.photos : []
+                                if (existing.includes(stableUrl)) return prev
+                                
+                                return {
+                                    ...prev,
+                                    photos: [stableUrl, ...existing].slice(0, 3),
+                                    image: prev.image || stableUrl
+                                }
+                            })
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('[AdminForm] Failed to handle Google photos:', err)
+            } finally {
+                setIsFetchingPhotos(false)
+                setIsUploading(false)
+            }
+        }
     }, [setFormData])
+
+    const handleLoadGooglePhotos = async () => {
+        if (!formData.google_place_id) return
+        try {
+            setIsFetchingPhotos(true)
+            const { fetchGooglePhotos } = await import('@/shared/api/google-places.api')
+            const metadata = await fetchGooglePhotos(formData.google_place_id)
+            setGooglePhotosMetadata(metadata || [])
+        } catch (err) {
+            console.error('[AdminForm] Failed to fetch Google photos:', err)
+        } finally {
+            setIsFetchingPhotos(false)
+        }
+    }
+
+    const handleIngestSpecificPhoto = async (photoMetadata) => {
+        if (!formData.google_place_id || !photoMetadata.photo_reference) return
+        
+        // Check limit
+        const currentCount = Array.isArray(formData.photos) ? formData.photos.length : 0
+        if (currentCount >= 3) {
+            setToast?.({ message: t('admin.locations.form.errors.max_photos', { count: 3 }), type: 'error' })
+            return
+        }
+
+        try {
+            setIsUploading(true)
+            const { ingestGooglePhoto } = await import('@/shared/api/google-places.api')
+            const stableUrl = await ingestGooglePhoto(formData.google_place_id, photoMetadata.photo_reference)
+            
+            if (stableUrl) {
+                addPhoto(stableUrl)
+                setToast?.({ message: t('admin.locations.form.actions.photo_ingested_success'), type: 'success' })
+            }
+        } catch (err) {
+            console.error('[AdminForm] Specific ingestion failed:', err)
+            setToast?.({ message: t('admin.locations.form.actions.upload_error', { message: err.message }), type: 'error' })
+        } finally {
+            setIsUploading(false)
+        }
+    }
 
     if (!isOpen || !formData) return null
 
@@ -259,14 +360,27 @@ const LocationFormSlideOver = ({
         })
     }
 
-    const addPhoto = (url) => {
+    const addPhoto = (url, atStart = false) => {
         const finalUrl = typeof url === 'string' ? url.trim() : newImageUrl.trim()
         if (!finalUrl) return
-        setFormData(prev => ({
-            ...prev,
-            photos: [...(Array.isArray(prev.photos) ? prev.photos : []), finalUrl],
-            image: prev.image || finalUrl,
-        }))
+        
+        setFormData(prev => {
+            const currentPhotos = Array.isArray(prev.photos) ? prev.photos : []
+            if (currentPhotos.length >= 3) {
+                setToast?.({ message: t('admin.locations.form.errors.max_photos', { count: 3 }), type: 'error' })
+                return prev
+            }
+            
+            // Priority logic: uploaded photos (atStart=true) go to index 0
+            const newPhotos = atStart ? [finalUrl, ...currentPhotos] : [...currentPhotos, finalUrl]
+            
+            return {
+                ...prev,
+                photos: newPhotos,
+                // If it's a priority upload, automatically set as cover if no cover exists or if explicitly requested
+                image: atStart ? finalUrl : (prev.image || finalUrl),
+            }
+        })
         if (typeof url !== 'string') setNewImageUrl('')
     }
 
@@ -277,16 +391,21 @@ const LocationFormSlideOver = ({
         setIsUploading(true)
         try {
             for (const file of files) {
-                // 1. Compress
+                const currentCount = Array.isArray(formData.photos) ? formData.photos.length : 0
+                if (currentCount >= 3) {
+                    setToast?.({ message: t('admin.locations.form.errors.max_photos', { count: 3 }), type: 'error' })
+                    break
+                }
+
                 const compressed = await compressImage(file)
-                // 2. Upload to 'locations' bucket
                 const publicUrl = await uploadFile(compressed, 'locations', 'admin-uploads')
-                // 3. Add to photos
-                addPhoto(publicUrl)
+                
+                // Uploaded files are prioritized (added to start)
+                addPhoto(publicUrl, true)
             }
         } catch (err) {
             console.error('[Upload] Error:', err)
-            alert(t('admin.locations.form.actions.upload_error', { message: err.message }))
+            setToast?.({ message: t('admin.locations.form.actions.upload_error', { message: err.message }), type: 'error' })
         } finally {
             setIsUploading(false)
             if (e.target) e.target.value = '' // Reset input
@@ -329,7 +448,7 @@ const LocationFormSlideOver = ({
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
-                className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm"
+                className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md"
             />
 
             {/* Panel container — fullscreen on desktop */}
@@ -338,41 +457,42 @@ const LocationFormSlideOver = ({
                     initial={{ y: '100%', opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: '100%', opacity: 0 }}
-                    transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-                    className="w-full md:w-full md:h-full h-[100dvh] md:h-screen bg-white dark:bg-[hsl(220,20%,3%)] pointer-events-auto flex flex-col shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] rounded-t-[32px] md:rounded-none overflow-hidden border-t md:border-0 border-white/40 dark:border-white/[0.03]"
+                    transition={{ type: 'spring', damping: 35, stiffness: 250 }}
+                    className="w-full md:w-full md:h-full h-[100dvh] md:h-screen bg-background/95 backdrop-blur-2xl pointer-events-auto flex flex-col shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] rounded-t-sheet md:rounded-none overflow-hidden border-t md:border-0 border-white/5"
                 >
                     {/* ── Drag Handle (Mobile Only) ── */}
-                    <div className="sm:hidden w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mt-4 mb-2 shrink-0" />
+                    <div className="sm:hidden w-12 h-1 bg-secondary/80 rounded-pill mx-auto mt-4 mb-2 shrink-0" />
 
                     {/* ── Header ── */}
-                    <div className="px-4 sm:px-12 py-4 sm:py-8 border-b border-slate-100/50 dark:border-white/[0.03] flex items-center gap-3 sm:gap-8 shrink-0 bg-white/90 dark:bg-[hsl(220,20%,6%)]/90 backdrop-blur-2xl z-20 sticky top-0 sm:relative">
+                    <div className="px-6 sm:px-16 py-8 sm:py-16 border-b border-white/[0.03] flex items-center gap-8 sm:gap-16 shrink-0 bg-background/40 backdrop-blur-xl z-20 sticky top-0 sm:relative">
                         {/* Safe area padding for mobile notches */}
-                        <div className="absolute top-0 left-0 right-0 h-[env(safe-area-inset-top)] bg-white/90 dark:bg-[hsl(220,20%,6%)]/90 pointer-events-none" />
+                        <div className="absolute top-0 left-0 right-0 h-[env(safe-area-inset-top)] bg-background/10 pointer-events-none" />
                         
-                        <div className="w-11 h-11 sm:w-20 sm:h-20 rounded-xl sm:rounded-[28px] bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-500/30 shrink-0 mt-[env(safe-area-inset-top)] sm:mt-0">
-                            <Building2 size={18} className="sm:w-8 sm:h-8" />
+                        <div className="w-16 h-16 sm:w-32 sm:h-32 rounded-card sm:rounded-sheet bg-primary flex items-center justify-center text-primary-foreground shadow-[0_20px_50px_-10px_rgba(var(--primary),0.4)] shrink-0 mt-[env(safe-area-inset-top)] sm:mt-0 transition-all hover:scale-105 active:scale-95 duration-500 group/icon">
+                            <Building2 size={32} className="sm:w-16 sm:h-16 opacity-90 transition-transform group-hover/icon:rotate-3" strokeWidth={1.5} />
                         </div>
                         <div className="flex-1 min-w-0 mt-[env(safe-area-inset-top)] sm:mt-0">
-                            <div className="flex items-center flex-wrap gap-1.5 sm:gap-3">
-                                <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none truncate max-w-[150px] sm:max-w-none">
+                            <div className="flex items-center flex-wrap gap-4 sm:gap-6">
+                                <h2 className="text-h1 text-t-primary font-black tracking-tighter truncate max-w-[220px] sm:max-w-none">
                                     {formData.title || (isNew ? t('admin.locations.form.title_new') : t('admin.locations.form.title_edit'))}
                                 </h2>
                                 <span className={cn(
-                                    "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider",
-                                    "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20"
+                                    "px-4 py-1.5 rounded-pill text-[9px] font-black uppercase tracking-[0.25em]",
+                                    "bg-primary/10 text-primary border border-primary/20 backdrop-blur-md shadow-sm shadow-primary/5"
                                 )}>
                                     {isNew ? t('admin.locations.form.status_draft') : (formData.status || 'Active')}
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2 uppercase tracking-[0.2em] font-black opacity-60">
+                            <p className="text-micro text-t-tertiary mt-4 uppercase tracking-[0.35em] font-bold opacity-80 flex items-center gap-3">
+                                <span className="w-2 h-2 rounded-full bg-primary/40 animate-pulse" />
                                 {isNew ? t('admin.locations.form.creation_subtitle') : t('admin.locations.form.id_label', { id: selectedLocation.id.substring(0, 12) })}
                             </p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] transition-all border border-slate-100 dark:border-white/[0.08] active:scale-90 mt-[env(safe-area-inset-top)] sm:mt-0"
+                            className="w-11 h-11 sm:w-16 sm:h-16 flex items-center justify-center rounded-pill bg-secondary/20 text-t-secondary hover:text-t-primary hover:bg-secondary/40 transition-all border border-white/[0.05] shadow-lg active:scale-90 mt-[env(safe-area-inset-top)] sm:mt-0 group"
                         >
-                            <X size={20} className="sm:w-6 sm:h-6" />
+                            <X size={22} className="sm:w-8 sm:h-8 transition-transform duration-500 group-hover:rotate-180" />
                         </button>
                     </div>
 
@@ -383,17 +503,22 @@ const LocationFormSlideOver = ({
                                 {/* ── Left Column: Core Info & Location ── */}
                                     <div className="space-y-6 sm:space-y-10">
                                         {/* Google Places Autocomplete */}
-                                        <div className="bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/30 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] border border-slate-100 dark:border-white/[0.03] space-y-4">
-                                            <label className="flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] text-indigo-600 dark:text-indigo-400">
-                                                <Wand2 size={14} className="sm:w-3.5 sm:h-3.5" />
+                                        <div className="bg-primary/[0.03] dark:bg-primary/[0.05] p-8 sm:p-12 rounded-sheet border border-primary/10 space-y-8 shadow-sm relative overflow-hidden group/magic transition-all hover:bg-primary/[0.05] dark:hover:bg-primary/[0.08]">
+                                            <div className="absolute -top-12 -right-12 p-8 opacity-[0.03] pointer-events-none transition-all duration-1000 group-hover/magic:opacity-[0.08] group-hover/magic:scale-125 group-hover/magic:-rotate-12">
+                                                <Zap size={240} fill="currentColor" className="text-primary" />
+                                            </div>
+                                            <label className="flex items-center gap-3 text-eyebrow font-bold uppercase tracking-[0.25em] text-primary relative z-10">
+                                                <div className="p-2 rounded-input bg-primary/10 border border-primary/20 shadow-sm">
+                                                    <Wand2 size={16} className="sm:w-5 sm:h-5" />
+                                                </div>
                                                 {t('admin.locations.form.fields.google_autocomplete')}
                                                 {formData._source === 'google_places' && (
-                                                    <span className="ml-auto flex items-center gap-1 text-[8px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold">
-                                                        <Zap size={8} fill="currentColor" /> {t('admin.locations.form.fields.linked')}
+                                                    <span className="ml-auto flex items-center gap-2 text-[9px] px-3.5 py-1.5 rounded-pill bg-primary text-primary-foreground font-black tracking-[0.15em] shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-500">
+                                                        {t('admin.locations.form.fields.linked')}
                                                     </span>
                                                 )}
                                             </label>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-4 relative z-10">
                                                 <div className="flex-1">
                                                     <PlacesAutocomplete
                                                         onPlaceSelected={handlePlaceSelected}
@@ -407,10 +532,10 @@ const LocationFormSlideOver = ({
                                                             if (query) handleAIMagic(query)
                                                         }}
                                                         disabled={extractMutation?.isPending}
-                                                        className="w-11 h-11 sm:w-auto sm:px-4 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center shrink-0"
+                                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-input bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-40 transition-all shadow-xl shadow-primary/20 flex items-center justify-center shrink-0 active:scale-95"
                                                         title={t('admin.locations.form.fields.ai_magic_extraction')}
                                                     >
-                                                        {extractMutation?.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                                        {extractMutation?.isPending ? <RefreshCw size={22} className="animate-spin" /> : <Sparkles size={22} />}
                                                     </button>
                                                 )}
                                             </div>
@@ -418,7 +543,7 @@ const LocationFormSlideOver = ({
 
                                         {/* Основная информация */}
                                         <div className="space-y-6">
-                                            <SectionHeader title={t('admin.locations.form.sections.main')} icon={Building2} iconColor="text-indigo-500" />
+                                            <SectionHeader title={t('admin.locations.form.sections.main')} icon={Building2} iconColor="text-primary" />
                                             <div className="grid grid-cols-1 gap-5 sm:gap-6">
                                                 <Field label={t('admin.locations.form.fields.title')} required hint={t('admin.locations.form.fields.title_hint')}>
                                                     <input
@@ -432,18 +557,18 @@ const LocationFormSlideOver = ({
                                                 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                                                     <Field label={t('admin.locations.form.fields.category')}>
-                                                        <div className="relative group">
+                                                        <div className="relative group/select">
                                                             <select
                                                                 value={CATEGORIES.find(c => c.toLowerCase() === (formData.category || '').toLowerCase()) || formData.category || 'Restaurant'}
                                                                 onChange={e => set('category', e.target.value)}
-                                                                className={cn(input, "appearance-none pr-10 cursor-pointer")}
+                                                                className={cn(input, "appearance-none pr-12 cursor-pointer transition-colors focus:border-primary")}
                                                             >
                                                                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                                                 {!CATEGORIES.find(c => c.toLowerCase() === (formData.category || '').toLowerCase()) && formData.category && (
                                                                     <option value={formData.category}>{formData.category}</option>
                                                                 )}
                                                             </select>
-                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
+                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-t-tertiary group-hover/select:text-primary pointer-events-none transition-all duration-300 group-hover/select:translate-y-[-40%]" />
                                                         </div>
                                                     </Field>
                                                     <Field label={t('admin.locations.form.fields.price')}>
@@ -455,7 +580,7 @@ const LocationFormSlideOver = ({
                                                             >
                                                                 {PRICE_LEVELS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                                             </select>
-                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
+                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-t-quaternary group-hover:text-primary pointer-events-none transition-colors" />
                                                         </div>
                                                     </Field>
                                                 </div>
@@ -483,29 +608,29 @@ const LocationFormSlideOver = ({
                                                                     </option>
                                                                 ))}
                                                             </select>
-                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 pointer-events-none transition-colors" />
+                                                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-t-quaternary group-hover:text-primary pointer-events-none transition-colors" />
                                                         </div>
                                                     </Field>
                                                     <Field label={t('admin.locations.form.fields.rating_internal')} hint={t('admin.locations.form.fields.rating_internal_hint')}>
                                                         <div className="relative group">
-                                                            <Star size={14} className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", formData.rating ? "text-indigo-500" : "text-slate-400")} />
+                                                            <Star size={14} className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors", formData.rating ? "text-primary" : "text-t-tertiary")} />
                                                             <input
                                                                 type="number" min="0" max="5" step="0.1"
                                                                 value={formData.rating || ''}
                                                                 onChange={e => set('rating', parseFloat(e.target.value) || null)}
-                                                                className={cn(input, "pl-11 border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/10")}
+                                                                className={cn(input, "pl-11 border-primary/40 bg-primary/10 shadow-inner")}
                                                                 placeholder="4.5"
                                                             />
                                                         </div>
                                                     </Field>
                                                     <Field label={t('admin.locations.form.fields.rating_google')} hint={t('admin.locations.form.fields.rating_google_hint')}>
-                                                        <div className="relative opacity-80">
-                                                            <Star size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400" />
+                                                        <div className="relative group opacity-90">
+                                                            <Star size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
                                                             <input
                                                                 type="number" min="0" max="5" step="0.1"
                                                                 value={formData.google_rating || ''}
                                                                 onChange={e => set('google_rating', parseFloat(e.target.value) || null)}
-                                                                className={cn(input, "pl-11 bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/20")}
+                                                                className={cn(input, "pl-11 bg-secondary")}
                                                                 placeholder="4.8"
                                                             />
                                                         </div>
@@ -514,7 +639,7 @@ const LocationFormSlideOver = ({
 
                                             <Field label={t('admin.locations.form.fields.working_hours')}>
                                                 <div className="relative">
-                                                    <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary" />
                                                     <input
                                                         type="text"
                                                         value={formData.opening_hours || ''}
@@ -529,7 +654,7 @@ const LocationFormSlideOver = ({
 
                                     {/* Локация и Контакты */}
                                     <div className="space-y-6">
-                                        <SectionHeader title={t('admin.locations.form.sections.geo')} icon={MapPin} iconColor="text-rose-500" />
+                                        <SectionHeader title={t('admin.locations.form.sections.geo')} icon={MapPin} iconColor="text-primary" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                                             <Field label={t('admin.locations.form.fields.city')} required>
                                                 <input
@@ -565,27 +690,33 @@ const LocationFormSlideOver = ({
                                             {/* Coordinate inputs */}
                                             <div className="grid grid-cols-2 gap-3">
                                                 <Field label={t('admin.locations.form.fields.lat')}>
-                                                    <input
-                                                        type="number" step="any"
-                                                        value={formData.lat || ''}
-                                                        onChange={e => set('lat', parseFloat(e.target.value) || null)}
-                                                        className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50 font-mono text-xs")}
-                                                        placeholder="50.0647"
-                                                    />
+                                                    <div className="relative group">
+                                                        <Crosshair size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
+                                                        <input
+                                                            type="number" step="any"
+                                                            value={formData.lat || ''}
+                                                            onChange={e => set('lat', parseFloat(e.target.value) || null)}
+                                                            className={cn(input, "pl-9 bg-secondary/30 font-mono text-[11px] h-10")}
+                                                            placeholder="50.0647"
+                                                        />
+                                                    </div>
                                                 </Field>
                                                 <Field label={t('admin.locations.form.fields.lng')}>
-                                                    <input
-                                                        type="number" step="any"
-                                                        value={formData.lng || ''}
-                                                        onChange={e => set('lng', parseFloat(e.target.value) || null)}
-                                                        className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)]/50 font-mono text-xs")}
-                                                        placeholder="19.9450"
-                                                    />
+                                                    <div className="relative group">
+                                                        <Crosshair size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
+                                                        <input
+                                                            type="number" step="any"
+                                                            value={formData.lng || ''}
+                                                            onChange={e => set('lng', parseFloat(e.target.value) || null)}
+                                                            className={cn(input, "pl-9 bg-secondary/30 font-mono text-[11px] h-10")}
+                                                            placeholder="19.9450"
+                                                        />
+                                                    </div>
                                                 </Field>
                                             </div>
 
                                             {/* Draggable mini-map */}
-                                            <div className="relative rounded-2xl overflow-hidden border border-slate-200/60 dark:border-white/[0.06] shadow-sm">
+                                            <div className="relative rounded-card overflow-hidden border border-border shadow-sm">
                                                 {formData.lat && formData.lng ? (
                                                     <MapContainer
                                                         center={[formData.lat, formData.lng]}
@@ -611,15 +742,16 @@ const LocationFormSlideOver = ({
                                                         <RecenterMap lat={formData.lat} lng={formData.lng} />
                                                     </MapContainer>
                                                 ) : (
-                                                    <div className="h-[220px] flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 text-slate-400">
+                                                    <div className="h-[220px] flex flex-col items-center justify-center gap-2 bg-secondary/30 text-t-tertiary">
                                                         <MapPin size={28} strokeWidth={1.5} />
                                                         <p className="text-xs font-medium">{t('admin.locations.form.fields.no_coords_hint', 'Enter coordinates or use Google Places to set the pin')}</p>
                                                     </div>
                                                 )}
                                                 {/* Drag/click hint overlay */}
                                                 {formData.lat && formData.lng && (
-                                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-[10px] font-bold text-white pointer-events-none whitespace-nowrap">
-                                                        Drag pin or tap to place
+                                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 bg-background/95 backdrop-blur-md border border-border/80 rounded-pill text-[10px] font-bold uppercase tracking-widest text-t-primary pointer-events-none shadow-2xl flex items-center gap-2.5">
+                                                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                        {t('admin.locations.form.fields.map_hint', 'Drag or tap to place')}
                                                     </div>
                                                 )}
                                             </div>
@@ -628,7 +760,7 @@ const LocationFormSlideOver = ({
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                                             <Field label={t('admin.locations.form.fields.website')}>
                                                 <div className="relative group">
-                                                    <Globe size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <Globe size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
                                                     <input
                                                         type="url"
                                                         value={formData.website || ''}
@@ -640,7 +772,7 @@ const LocationFormSlideOver = ({
                                             </Field>
                                             <Field label={t('admin.locations.form.fields.phone')}>
                                                 <div className="relative group">
-                                                    <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
                                                     <input
                                                         type="tel"
                                                         value={formData.phone || ''}
@@ -655,7 +787,7 @@ const LocationFormSlideOver = ({
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-2">
                                             <Field label={t('admin.locations.form.fields.social_instagram')}>
                                                 <div className="relative group">
-                                                    <Instagram size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <Instagram size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
                                                     <input
                                                         type="text"
                                                         value={formData.social_instagram || ''}
@@ -667,7 +799,7 @@ const LocationFormSlideOver = ({
                                             </Field>
                                             <Field label={t('admin.locations.form.fields.social_facebook')}>
                                                 <div className="relative group">
-                                                    <Facebook size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <Facebook size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
                                                     <input
                                                         type="text"
                                                         value={formData.social_facebook || ''}
@@ -682,7 +814,7 @@ const LocationFormSlideOver = ({
                                         <div className="pt-2">
                                             <Field label={t('admin.locations.form.fields.booking_url')}>
                                                 <div className="relative group">
-                                                    <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                    <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-tertiary group-focus-within:text-primary transition-colors" />
                                                     <input
                                                         type="text"
                                                         value={formData.booking_url || ''}
@@ -708,22 +840,25 @@ const LocationFormSlideOver = ({
                                                 <textarea
                                                     value={formData.description || ''}
                                                     onChange={e => safeSet('description', e.target.value)}
-                                                    rows={5}
-                                                    className={cn(textarea, "pt-4")}
+                                                    rows={6}
+                                                    className={cn(textarea, "pt-5 pb-16")}
                                                     placeholder={t('admin.locations.form.fields.description_placeholder')}
                                                 />
-                                                <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed italic">
-                                                    {t('admin.locations.form.fields.description_tip')}
-                                                </p>
+                                                <div className="flex items-center gap-2 mt-2.5 px-1.5">
+                                                    <div className="w-1 h-1 rounded-full bg-primary/40" />
+                                                    <p className="text-micro text-t-tertiary leading-relaxed font-medium">
+                                                        {t('admin.locations.form.fields.description_tip')}
+                                                    </p>
+                                                </div>
                                                 {aiQueryMutation && (
                                                     <button
                                                         onClick={handleImproveDesc}
                                                         disabled={isImproving === 'description' || !formData.description}
-                                                        className="absolute bottom-4 right-4 px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2 text-[11px] font-bold"
+                                                        className="absolute bottom-4 right-4 px-6 py-3.5 rounded-card bg-primary text-primary-foreground hover:shadow-xl hover:shadow-primary/30 disabled:opacity-40 transition-all shadow-2xl shadow-primary/40 flex items-center gap-2.5 text-micro font-black uppercase tracking-widest active:scale-95"
                                                     >
                                                         {isImproving === 'description'
-                                                            ? <><RefreshCw size={12} className="animate-spin" /> {t('admin.locations.form.actions.improving')}</>
-                                                            : <><Sparkles size={12} /> {t('admin.locations.form.actions.improve_ai')}</>
+                                                            ? <><RefreshCw size={16} className="animate-spin" /> {t('admin.locations.form.actions.improving')}</>
+                                                            : <><Sparkles size={16} /> {t('admin.locations.form.actions.improve_ai')}</>
                                                         }
                                                     </button>
                                                 )}
@@ -741,19 +876,19 @@ const LocationFormSlideOver = ({
                                         </Field>
 
                                         <Field label={t('admin.locations.form.fields.menu_hits')} hint={t('admin.locations.form.fields.menu_hits_hint')}>
-                                            <div className="space-y-3">
-                                                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
-                                                    {whatToTry.length === 0 && <span className="text-[11px] text-slate-400 italic">{t('admin.locations.form.fields.empty_list')}</span>}
+                                            <div className="space-y-4">
+                                                <div className="flex flex-wrap gap-2.5 min-h-[50px] p-4 bg-secondary/30 rounded-card border border-border/60">
+                                                    {whatToTry.length === 0 && <span className="text-micro text-t-tertiary font-medium px-1 opacity-60">{t('admin.locations.form.fields.empty_list')}</span>}
                                                     {whatToTry.map((dish, i) => (
                                                         <motion.span
-                                                            initial={{ scale: 0.8, opacity: 0 }}
+                                                            initial={{ scale: 0.9, opacity: 0 }}
                                                             animate={{ scale: 1, opacity: 1 }}
                                                             key={i}
-                                                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[hsl(220,20%,9%)] shadow-sm text-[11px] font-bold text-slate-700 dark:text-[hsl(220,20%,90%)] border border-slate-100 dark:border-white/[0.08] group"
+                                                            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-pill bg-background shadow-sm text-micro font-bold text-t-secondary border border-border/80 group hover:border-primary/50 transition-all hover:shadow-md"
                                                         >
                                                             {dish}
-                                                            <button onClick={() => removeDish(i)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                                                                <X size={12} />
+                                                            <button onClick={() => removeDish(i)} className="text-t-tertiary hover:text-destructive transition-colors p-0.5">
+                                                                <X size={14} />
                                                             </button>
                                                         </motion.span>
                                                     ))}
@@ -775,53 +910,136 @@ const LocationFormSlideOver = ({
                                     </div>
 
                                     {/* Фотографии */}
-                                        <div className="p-4 sm:p-6 bg-slate-50 dark:bg-[hsl(220,20%,9%)]/30 rounded-[24px] sm:rounded-[32px] border border-slate-100 dark:border-white/[0.03] space-y-6">
+                                        <div className="p-4 sm:p-6 bg-secondary rounded-sheet border border-border space-y-6">
                                             {photos.length > 0 ? (
-                                                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-3">
-                                                    {photos.map((url, idx) => (
-                                                        <div key={idx} className="relative group aspect-square rounded-xl sm:rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.08]">
-                                                            <LazyImage src={url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                                            <div className="absolute inset-0 bg-black/60 opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                                                                <button
-                                                                    onClick={() => set('image', url)}
-                                                                    className={cn(
-                                                                        "p-2 rounded-xl text-white transition-all",
-                                                                        formData.image === url ? "bg-amber-500 shadow-lg shadow-amber-500/40" : "bg-white/20 hover:bg-white/40"
+                                                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-4">
+                                                    {photos.map((url, idx) => {
+                                                        const isGoogle = url.includes('googleusercontent.com') || url.includes('google')
+                                                        const isUploaded = url.includes('supabase.co') || url.includes('admin-uploads')
+                                                        
+                                                        return (
+                                                            <div key={idx} className="relative group aspect-square rounded-card overflow-hidden shadow-sm bg-background border border-border/80 transition-all hover:shadow-md hover:border-primary/30">
+                                                                <LazyImage src={url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                                                
+                                                                {/* Source Badges */}
+                                                                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-10">
+                                                                    {isGoogle && (
+                                                                        <div className="px-1.5 py-0.5 bg-blue-500/90 backdrop-blur-md text-white text-[7px] font-black uppercase tracking-tighter rounded-sm shadow-sm">
+                                                                            Google
+                                                                        </div>
                                                                     )}
-                                                                >
-                                                                    <Star size={14} fill={formData.image === url ? "currentColor" : "none"} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => removePhoto(idx)}
-                                                                    className="p-2 rounded-xl bg-rose-500/80 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/20"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                            {formData.image === url && (
-                                                                <div className="absolute top-2 left-2 px-2 py-1 bg-amber-400 text-[8px] font-black text-amber-900 rounded-lg uppercase tracking-wider shadow-sm">
-                                                                    {t('admin.locations.form.cover_badge')}
+                                                                    {isUploaded && (
+                                                                        <div className="px-1.5 py-0.5 bg-emerald-500/90 backdrop-blur-md text-white text-[7px] font-black uppercase tracking-tighter rounded-sm shadow-sm">
+                                                                            Upload
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
+
+                                                                <div className="absolute inset-0 bg-black/60 opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
+                                                                    <button
+                                                                        onClick={() => set('image', url)}
+                                                                        className={cn(
+                                                                            "p-2.5 rounded-card text-white transition-all transform group-hover:scale-100 scale-90",
+                                                                            formData.image === url ? "bg-primary shadow-xl shadow-primary/40" : "bg-white/20 hover:bg-white/40"
+                                                                        )}
+                                                                        title={t('admin.locations.form.cover_badge')}
+                                                                    >
+                                                                        <Star size={16} fill={formData.image === url ? "currentColor" : "none"} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => removePhoto(idx)}
+                                                                        className="p-2.5 rounded-card bg-destructive/80 hover:bg-destructive text-white shadow-xl shadow-destructive/20 transform group-hover:scale-100 scale-90 transition-all"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                                {formData.image === url && (
+                                                                    <div className="absolute top-2 left-2 px-2.5 py-1 bg-primary text-[9px] font-bold text-white rounded-pill uppercase tracking-widest shadow-md z-10">
+                                                                        {t('admin.locations.form.cover_badge')}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col items-center justify-center py-6 text-slate-400 space-y-2">
-                                                    <Image size={24} strokeWidth={1} />
-                                                    <p className="text-[10px] font-medium">{t('admin.locations.form.fields.no_photos')}</p>
+                                                <div className="flex flex-col items-center justify-center py-12 text-t-tertiary space-y-4 bg-background/40 rounded-card border border-dashed border-border/60">
+                                                    <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
+                                                        <Image size={32} strokeWidth={1} className="opacity-40" />
+                                                    </div>
+                                                    <p className="text-micro font-bold uppercase tracking-[0.2em]">{t('admin.locations.form.fields.no_photos')}</p>
+                                                </div>
+                                            )}
+                                            {/* Google Photos Selection Gallery */}
+                                            {googlePhotosMetadata.length > 0 && (
+                                                <div className="space-y-4 pt-4 border-t border-border/40 pb-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="text-micro font-black uppercase tracking-[0.2em] text-t-secondary flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                                            {t('admin.locations.form.fields.available_google_photos')}
+                                                        </h4>
+                                                        <span className="text-[9px] font-bold text-t-tertiary bg-secondary px-2 py-0.5 rounded-sm">
+                                                            {googlePhotosMetadata.length} {t('admin.locations.form.fields.total')}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 scrollbar-hide -mx-1 px-1">
+                                                        {googlePhotosMetadata.map((photo, idx) => {
+                                                            const safeRef = (photo.photo_reference || '').substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')
+                                                            const isAlreadyAdded = photos.some(p => p.includes(safeRef))
+                                                            
+                                                            return (
+                                                                <div 
+                                                                    key={idx} 
+                                                                    onClick={() => !isAlreadyAdded && !isUploading && handleIngestSpecificPhoto(photo)}
+                                                                    className={cn(
+                                                                        "relative min-w-[120px] max-w-[120px] aspect-square rounded-card overflow-hidden border-2 transition-all cursor-pointer group/gp",
+                                                                        isAlreadyAdded 
+                                                                            ? "border-emerald-500/50 opacity-60 grayscale-[0.5]" 
+                                                                            : "border-transparent hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+                                                                    )}
+                                                                >
+                                                                    <LazyImage 
+                                                                        src={photo.url} 
+                                                                        alt="" 
+                                                                        className="w-full h-full object-cover" 
+                                                                    />
+                                                                    
+                                                                    {isUploading && (
+                                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                                            <RefreshCw size={16} className="text-white animate-spin" />
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {isAlreadyAdded && (
+                                                                        <div className="absolute inset-0 bg-emerald-500/10 flex items-center justify-center">
+                                                                            <div className="bg-emerald-500 text-white p-1 rounded-full shadow-lg">
+                                                                                <Star size={12} fill="currentColor" />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/gp:opacity-100 transition-opacity flex items-end p-2">
+                                                                        <span className="text-[8px] font-bold text-white uppercase tracking-tighter">
+                                                                            {isAlreadyAdded ? t('admin.locations.form.fields.already_added') : t('admin.locations.form.fields.add_to_gallery')}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
                                                 </div>
                                             )}
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border/20">
                                                 {/* File Upload Card */}
                                                 <div 
                                                     onClick={() => !isUploading && fileInputRef.current?.click()}
                                                     className={cn(
-                                                        "group relative flex flex-col items-center justify-center py-5 px-4 border-2 border-dashed rounded-2xl sm:rounded-[32px] transition-all cursor-pointer",
+                                                        "group relative flex flex-col items-center justify-center py-5 px-4 border-2 border-dashed rounded-sheet transition-all cursor-pointer",
                                                         isUploading 
-                                                            ? "bg-slate-50 dark:bg-[hsl(220,20%,6%)]/50 border-slate-200 dark:border-white/[0.06] cursor-wait"
-                                                            : "bg-white dark:bg-[hsl(220,20%,6%)]/40 border-slate-200 dark:border-white/[0.08] hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5"
+                                                            ? "bg-secondary border-border cursor-wait"
+                                                            : "bg-background border-border hover:border-primary hover:bg-primary/5"
                                                     )}
                                                 >
                                                     <input
@@ -833,22 +1051,22 @@ const LocationFormSlideOver = ({
                                                         className="hidden"
                                                     />
                                                     <div className={cn(
-                                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",
+                                                        "w-14 h-14 rounded-card flex items-center justify-center transition-all duration-500",
                                                         isUploading 
-                                                            ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
-                                                            : "bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 group-hover:bg-indigo-500 group-hover:text-white group-hover:scale-110 group-hover:rotate-6 shadow-sm"
+                                                            ? "bg-primary/20 text-primary"
+                                                            : "bg-secondary/80 text-t-tertiary group-hover:bg-primary group-hover:text-white group-hover:scale-110 group-hover:rotate-6 shadow-sm border border-border/40"
                                                     )}>
                                                         {isUploading ? (
-                                                            <RefreshCw size={24} className="animate-spin" />
+                                                            <RefreshCw size={28} className="animate-spin" />
                                                         ) : (
-                                                            <Upload size={24} />
+                                                            <Upload size={28} strokeWidth={1.5} />
                                                         )}
                                                     </div>
-                                                    <div className="mt-4 text-center">
-                                                        <span className="block text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-[hsl(220,20%,90%)]">
+                                                    <div className="mt-5 text-center">
+                                                        <span className="block text-micro font-bold uppercase tracking-[0.2em] text-t-primary">
                                                             {isUploading ? t('admin.locations.form.fields.uploading') : t('admin.locations.form.fields.upload_photo')}
                                                         </span>
-                                                        <p className="mt-1 text-[9px] text-slate-400 font-medium">
+                                                        <p className="mt-1.5 text-micro text-t-tertiary font-medium opacity-80">
                                                             {t('admin.locations.form.fields.upload_hint')}
                                                         </p>
                                                     </div>
@@ -857,7 +1075,7 @@ const LocationFormSlideOver = ({
                                                         <motion.div 
                                                             initial={{ width: 0 }}
                                                             animate={{ width: '100%' }}
-                                                            className="absolute bottom-0 left-0 h-1 bg-indigo-500 rounded-b-full"
+                                                            className="absolute bottom-0 left-0 h-1 bg-primary rounded-b-full"
                                                         />
                                                     )}
                                                 </div>
@@ -870,20 +1088,20 @@ const LocationFormSlideOver = ({
                                                             value={newImageUrl}
                                                             onChange={e => setNewImageUrl(e.target.value)}
                                                             onKeyDown={e => e.key === 'Enter' && addPhoto()}
-                                                            className={cn(input, "bg-white dark:bg-[hsl(220,20%,6%)] shadow-sm pr-14")}
+                                                            className={cn(input, "bg-background shadow-sm pr-14")}
                                                             placeholder={t('admin.locations.form.fields.photo_url_placeholder')}
                                                         />
                                                         <button
                                                             onClick={addPhoto}
                                                             disabled={!newImageUrl.trim() || isUploading}
-                                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 disabled:opacity-40 transition-all"
+                                                            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-card bg-primary text-white shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-40 transition-all"
                                                         >
                                                             <Plus size={20} />
                                                         </button>
                                                     </div>
                                                     <div className="px-1 flex items-start gap-2">
-                                                        <Info size={12} className="text-slate-400 mt-0.5 shrink-0" />
-                                                        <p className="text-[9px] text-slate-400 leading-tight">
+                                                        <Info size={12} className="text-t-tertiary mt-0.5 shrink-0" />
+                                                        <p className="text-micro text-t-tertiary leading-tight">
                                                             {t('admin.locations.form.fields.photo_url_hint')}
                                                         </p>
                                                     </div>
@@ -903,14 +1121,14 @@ const LocationFormSlideOver = ({
                                                             key={t.id}
                                                             onClick={() => toggleTime(t.id)}
                                                             className={cn(
-                                                                "flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all active:scale-95",
+                                                                "flex flex-col items-center gap-3 py-5 rounded-card border-2 transition-all active:scale-95",
                                                                 active
-                                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                                                                    : "bg-white dark:bg-[hsl(220,20%,9%)]/50 border-slate-100 dark:border-white/[0.06] text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-500/30"
+                                                                    ? "bg-primary border-primary text-primary-foreground shadow-2xl shadow-primary/30 scale-[1.02]"
+                                                                    : "bg-secondary/40 border-transparent text-t-secondary hover:border-border/60 hover:bg-secondary/60 shadow-sm"
                                                             )}
                                                         >
-                                                            <span className="text-xl sm:text-2xl">{t.emoji}</span>
-                                                            <span className="text-[10px] font-black uppercase tracking-tighter text-center px-1">{t.label}</span>
+                                                            <span className="text-3xl filter drop-shadow-sm">{t.emoji}</span>
+                                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-center px-1 opacity-90">{t.label}</span>
                                                         </button>
                                                     )
                                                 })}
@@ -928,7 +1146,7 @@ const LocationFormSlideOver = ({
                                                     if (items.length === 0) return null
                                                     return (
                                                         <div key={group} className="space-y-3">
-                                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">{group}</p>
+                                                            <p className="text-micro font-black uppercase tracking-[0.2em] text-t-quaternary ml-1">{group}</p>
                                                             <div className="flex flex-wrap gap-2">
                                                                 {items.map(item => {
                                                                     const active = (formData.special_labels || []).includes(item.value)
@@ -941,14 +1159,16 @@ const LocationFormSlideOver = ({
                                                                             onClick={() => toggleLabel(item.value)}
                                                                             title={isHiddenGem ? t('labels.hidden_gem_desc') : undefined}
                                                                             className={cn(
-                                                                                "px-4 py-2 rounded-xl text-[11px] font-bold border-2 transition-all flex items-center gap-2",
+                                                                                "px-4 py-2.5 rounded-pill text-micro font-bold border-2 transition-all flex items-center gap-2 active:scale-95 shadow-sm",
                                                                                 active
-                                                                                    ? "bg-indigo-500 text-white border-indigo-500 shadow-md shadow-indigo-500/20"
-                                                                                    : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/40 text-slate-500 dark:text-[hsl(220,10%,55%)] border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                                                                                    ? isHiddenGem 
+                                                                                        ? "bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20"
+                                                                                        : "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                                                                                    : "bg-secondary/60 text-t-secondary border-transparent hover:border-border hover:bg-muted"
                                                                             )}
                                                                         >
-                                                                            {emoji && <span>{emoji}</span>}
-                                                                            {item.label}
+                                                                            {emoji && <span className={cn(isHiddenGem && active && "animate-bounce")}>{emoji}</span>}
+                                                                            {isHiddenGem ? t('labels.hidden_gem') : item.label}
                                                                         </button>
                                                                     )
                                                                 })}
@@ -961,25 +1181,35 @@ const LocationFormSlideOver = ({
                                     </div>
 
                                     {/* AI & Semantics */}
-                                    <div className="bg-slate-50 dark:bg-[hsl(220,20%,6%)]/40 rounded-[32px] border border-slate-100 dark:border-white/[0.03] overflow-hidden transition-all shadow-sm">
+                                    <div className="bg-background rounded-sheet border border-border/80 overflow-hidden transition-all shadow-sm group">
                                         <button
                                             onClick={() => setShowAdvanced(v => !v)}
-                                            className="w-full flex items-center justify-between px-6 py-5 text-slate-900 dark:text-white group"
+                                            className="w-full flex items-center justify-between px-6 py-8 text-t-primary hover:bg-secondary/30 transition-all"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center transition-colors group-hover:bg-indigo-200 dark:group-hover:bg-indigo-500/30">
-                                                    <Zap size={16} className="text-indigo-600 dark:text-indigo-400" />
+                                            <div className="flex items-center gap-5">
+                                                <div className={cn(
+                                                    "w-14 h-14 rounded-card flex items-center justify-center transition-all duration-500 shadow-lg",
+                                                    showAdvanced ? "bg-primary text-primary-foreground shadow-primary/40 rotate-12 scale-110" : "bg-secondary text-primary shadow-black/5"
+                                                )}>
+                                                    <Zap size={24} fill={showAdvanced ? "currentColor" : "none"} strokeWidth={2} />
                                                 </div>
                                                 <div className="text-left">
-                                                    <span className="text-[12px] font-black uppercase tracking-widest block">{t('admin.locations.form.ai.intelligence_title')}</span>
-                                                    <p className="text-[9px] text-slate-400 font-medium italic">{t('admin.locations.form.ai.intelligence_subtitle')}</p>
+                                                    <span className="text-micro font-bold uppercase tracking-[0.25em] text-primary">{t('admin.locations.form.ai.intelligence_title')}</span>
+                                                    <p className="text-micro text-t-tertiary font-medium mt-1 opacity-80">{t('admin.locations.form.ai.intelligence_subtitle')}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-5">
                                                 {!isNew && !showAdvanced && (
-                                                    <span className="text-[9px] font-bold text-indigo-500 animate-pulse hidden sm:inline">{t('admin.locations.form.actions.update_available')}</span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary animate-pulse hidden sm:inline bg-primary/10 px-3 py-1 rounded-pill">
+                                                        {t('admin.locations.form.actions.update_available')}
+                                                    </span>
                                                 )}
-                                                <ChevronDown size={18} className={cn("text-slate-400 transition-transform duration-300", showAdvanced && "rotate-180")} />
+                                                <div className={cn(
+                                                    "w-10 h-10 rounded-pill border border-border flex items-center justify-center transition-all duration-500",
+                                                    showAdvanced ? "bg-primary text-primary-foreground border-primary rotate-180" : "bg-background text-t-tertiary"
+                                                )}>
+                                                    <ChevronDown size={20} />
+                                                </div>
                                             </div>
                                         </button>
 
@@ -991,48 +1221,50 @@ const LocationFormSlideOver = ({
                                                     exit={{ height: 0, opacity: 0 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="px-6 pb-6 space-y-6">
-                                                        <div className="h-px bg-slate-200/50 dark:bg-white/5" />
-                                                        
+                                                    <div className="px-6 pb-8 space-y-8 border-t border-border/40 pt-8">
                                                         {formData.ai_context ? (
-                                                            <div className="space-y-3">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                                                    <p className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">{t('admin.locations.form.ai.context_title')}</p>
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center gap-2.5 px-1">
+                                                                    <Sparkles size={14} className="text-primary" />
+                                                                    <p className="text-micro font-bold uppercase text-t-secondary tracking-widest">{t('admin.locations.form.ai.context_title')}</p>
                                                                 </div>
-                                                                <div className="bg-white dark:bg-[hsl(220,20%,3%)]/40 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
-                                                                    <p className="text-[12px] text-slate-600 dark:text-[hsl(220,10%,55%)] leading-relaxed italic">
-                                                                        "{formData.ai_context}"
+                                                                <div className="bg-secondary/40 p-6 rounded-card border border-border/80 relative overflow-hidden group/context">
+                                                                    <div className="absolute top-0 left-0 w-1 h-full bg-primary/30" />
+                                                                    <p className="text-body-sm text-t-secondary leading-relaxed font-medium">
+                                                                        {formData.ai_context}
                                                                     </p>
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="py-4 text-center space-y-2">
-                                                                <Info size={16} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)]" />
-                                                                <p className="text-[11px] text-slate-400 italic">{t('admin.locations.form.ai.no_context')}</p>
+                                                            <div className="py-8 text-center space-y-3 bg-secondary/20 rounded-card border border-dashed border-border/60">
+                                                                <Info size={20} className="mx-auto text-t-tertiary opacity-40" />
+                                                                <p className="text-micro text-t-tertiary font-medium uppercase tracking-widest">{t('admin.locations.form.ai.no_context')}</p>
                                                             </div>
                                                         )}
-
-                                                        <div className="grid grid-cols-1 gap-4">
+                                                        
+                                                        <div className="grid grid-cols-1 gap-4 pt-2">
                                                             {!isNew ? (
-                                                                <div className="space-y-3">
+                                                                <div className="space-y-4">
                                                                     <button
                                                                         onClick={handleFullEnrich}
                                                                         disabled={fullEnrichMutation?.isPending}
-                                                                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-[12px] font-black shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-60"
+                                                                        className="w-full py-5 rounded-card bg-primary hover:brightness-110 text-primary-foreground text-micro font-bold shadow-2xl shadow-primary/40 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-60 uppercase tracking-[0.2em]"
                                                                     >
-                                                                        <Sparkles size={16} className={fullEnrichMutation?.isPending ? 'animate-spin' : ''} />
+                                                                        <Sparkles size={20} className={fullEnrichMutation?.isPending ? 'animate-spin' : ''} />
                                                                         {fullEnrichMutation?.isPending
                                                                             ? t('admin.locations.form.actions.enriching')
                                                                             : t('admin.locations.form.actions.full_enrich')}
                                                                     </button>
-                                                                    <p className="text-[9px] text-slate-400 text-center px-4">
-                                                                        {t('admin.locations.form.actions.full_enrich_hint')}
-                                                                    </p>
+                                                                    <div className="px-6 flex items-start gap-3">
+                                                                        <Info size={14} className="text-primary mt-0.5 shrink-0" />
+                                                                        <p className="text-micro text-t-tertiary leading-relaxed font-medium">
+                                                                            {t('admin.locations.form.actions.full_enrich_hint')}
+                                                                        </p>
+                                                                    </div>
                                                                 </div>
                                                             ) : (
-                                                                <div className="py-2 text-center bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10">
-                                                                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold px-4 py-2">
+                                                                <div className="py-5 text-center bg-primary/5 rounded-card border border-primary/20 border-dashed">
+                                                                    <p className="text-micro text-primary font-black uppercase tracking-widest px-4 py-1">
                                                                         {t('admin.locations.form.actions.enrich_available')}
                                                                     </p>
                                                                 </div>
@@ -1049,37 +1281,37 @@ const LocationFormSlideOver = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="px-4 sm:px-12 py-5 sm:py-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-slate-100 dark:border-white/[0.06] bg-white/95 dark:bg-[hsl(220,20%,3%)]/95 backdrop-blur-2xl shrink-0 sticky bottom-0 z-30">
-                        <div className="flex flex-col gap-3 max-w-5xl mx-auto">
-                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                                <button
-                                    onClick={onSave}
-                                    className="order-1 sm:order-2 w-full sm:flex-[2] py-4 sm:py-5 rounded-2xl sm:rounded-[24px] bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white text-xs sm:text-[13px] font-black shadow-2xl shadow-indigo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest"
-                                >
-                                    <Save size={20} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
-                                    <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="order-2 sm:order-1 w-full sm:flex-1 py-4 sm:py-5 rounded-2xl sm:rounded-[24px] border-2 border-slate-100 dark:border-white/[0.06] text-slate-500 dark:text-[hsl(220,10%,55%)] text-xs sm:text-[13px] font-black hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] transition-all uppercase tracking-widest active:scale-[0.98]"
-                                >
-                                    {t('admin.locations.form.actions.cancel')}
-                                </button>
-                            </div>
-                            {!isNew && onDelete && (
-                                <button
-                                    onClick={() => {
-                                        onDelete(selectedLocation?.id)
-                                        onClose()
-                                    }}
-                                    className="w-full py-4 rounded-2xl sm:rounded-[24px] border-2 border-rose-200 dark:border-rose-900/50 text-rose-500 dark:text-rose-400 text-xs sm:text-[13px] font-black hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
-                                >
-                                    <Trash2 size={16} strokeWidth={2.5} />
-                                    <span>{t('admin.locations.form.actions.delete_location')}</span>
-                                </button>
-                            )}
+                <div className="px-4 sm:px-12 py-8 sm:py-12 pb-[calc(2.5rem+env(safe-area-inset-bottom))] border-t border-border/80 bg-background/80 backdrop-blur-2xl shrink-0 sticky bottom-0 z-30 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.3)]">
+                    <div className="flex flex-col gap-5 max-w-5xl mx-auto">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                            <button
+                                onClick={onSave}
+                                className="order-1 sm:order-2 w-full sm:flex-[2.5] py-5 sm:py-6 rounded-card bg-primary hover:brightness-110 text-primary-foreground text-body-sm font-black shadow-2xl shadow-primary/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-[0.25em]"
+                            >
+                                <Save size={22} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
+                                <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="order-2 sm:order-1 w-full sm:flex-1 py-5 sm:py-6 rounded-card border-2 border-border text-t-secondary text-body-sm font-black hover:bg-secondary hover:border-t-quaternary transition-all uppercase tracking-[0.25em] active:scale-[0.98]"
+                            >
+                                {t('admin.locations.form.actions.cancel')}
+                            </button>
                         </div>
+                        {!isNew && onDelete && (
+                            <button
+                                onClick={() => {
+                                    onDelete(selectedLocation?.id)
+                                    onClose()
+                                }}
+                                className="w-full py-4.5 rounded-card border-2 border-destructive/20 text-destructive text-micro font-black hover:bg-destructive/5 hover:border-destructive/40 transition-all uppercase tracking-[0.3em] active:scale-[0.98] flex items-center justify-center gap-2.5"
+                            >
+                                <Trash2 size={18} strokeWidth={2.5} />
+                                <span>{t('admin.locations.form.actions.delete_location')}</span>
+                            </button>
+                        )}
                     </div>
+                </div>
                 </motion.div>
             </div>
         </>

@@ -405,7 +405,12 @@
   },
   "labels": {
     "hidden_gem": "Ukryty skarb",
-    "hidden_gem_desc": "Unikalne miejsce według autora aplikacji"
+    "hidden_gem_desc": "Unikalne miejsce według autora aplikacji",
+    "romantic": "Romantyczny",
+    "quiet": "Cichy",
+    "lively": "Żywy",
+    "work_friendly": "Przyjazny dla pracy",
+    "family": "Rodzinny"
   },
   "common": {
     "loading": "Ładowanie…",

@@ -50,8 +50,8 @@ const StatsWidget = ({ isDark, locationsCount, countriesCount, favoritesCount })
                     <span className="text-[16px] font-black leading-none block">
                         {stat.value}
                     </span>
-                    <span className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${
-                        isDark ? 'text-white/40' : 'text-slate-400'
+                    <span className={`text-eyebrow font-black uppercase tracking-wider mt-1 ${
+                        isDark ? 'text-t-tertiary' : 'text-t-secondary'
                     }`}>
                         {stat.label}
                     </span>

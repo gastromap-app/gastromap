@@ -132,7 +132,7 @@ const AdminLocationsPage = () => {
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-red-900 dark:text-red-200 uppercase tracking-widest leading-none mt-1">{t('admin.errors.data_load_failure')}</h3>
-                            <p className="text-[11px] text-red-600 dark:text-red-400 font-medium mt-2 leading-relaxed">
+                            <p className="text-micro text-red-600 dark:text-red-400 font-medium mt-2 leading-relaxed">
                                 {loadError.message || t('admin.data_load_error_desc')}
                             </p>
                         </div>
@@ -242,7 +242,7 @@ const AdminLocationsPage = () => {
                             onClick={() => setCurrentPage(p => p - 1)}
                             className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-[hsl(220,20%,9%)] disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] transition-colors"
                         > {t('admin.actions.prev')} </button>
-                        <span className="text-sm font-bold text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                        <span className="text-micro font-bold text-t-tertiary">
                             {currentPage} / {totalPages}
                         </span>
                         <button
@@ -258,9 +258,9 @@ const AdminLocationsPage = () => {
                         <div className="p-4 lg:p-10">
                             {pendingReviews.length === 0 ? (
                                 <div className="text-center py-20">
-                                    <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-[hsl(220,10%,35%)] mb-4" />
-                                    <p className="text-lg font-bold text-slate-400">{t('admin.no_reviews_pending')}</p>
-                                    <p className="text-sm text-slate-400 mt-1">{t('admin.all_reviews_checked')}</p>
+                                    <MessageSquare size={48} className="mx-auto text-t-quaternary mb-4" />
+                                    <p className="text-lg font-bold text-t-tertiary">{t('admin.no_reviews_pending')}</p>
+                                    <p className="text-micro text-t-tertiary mt-1">{t('admin.all_reviews_checked')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -275,8 +275,8 @@ const AdminLocationsPage = () => {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-[hsl(220,20%,96%)]">{rev.profiles?.name || t('admin.anonymous')}</p>
-                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                        <p className="text-sm font-bold text-t-primary">{rev.profiles?.name || t('admin.anonymous')}</p>
+                                                        <span className="text-micro text-t-tertiary font-bold uppercase tracking-wider flex items-center gap-1">
                                                             <MapPin size={10} /> {rev.locations?.title || rev.location_id}
                                                         </span>
                                                     </div>
@@ -285,22 +285,22 @@ const AdminLocationsPage = () => {
                                                             <Star key={s} size={12} className={s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 dark:text-[hsl(220,6%,30%)] fill-slate-200 dark:fill-[hsl(220,6%,30%)]'} />
                                                         ))}
                                                     </div>
-                                                    <p className="text-sm text-slate-600 dark:text-[hsl(220,10%,55%)] mt-2 line-clamp-2">{rev.review_text}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                                                    <p className="text-sm text-t-secondary mt-2 line-clamp-2">{rev.review_text}</p>
+                                                    <p className="text-micro text-t-tertiary font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
                                                         <Calendar size={10} /> {new Date(rev.created_at).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : i18n.language)}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2 w-full sm:w-auto">
-                                                <button
+                                                 <button
                                                     onClick={() => handleRejectReview(rev.id)}
-                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(220,20%,9%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-[10px] uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-white dark:bg-[hsl(220,20%,9%)] text-rose-600 dark:text-rose-400 rounded-[20px] font-bold text-micro uppercase tracking-widest border border-slate-100 dark:border-white/[0.06] active:scale-95 transition-all"
                                                 >
                                                     {t('admin.reject')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleApproveReview(rev.id)}
-                                                    className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
+                                                    className="flex-1 sm:flex-none px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[20px] font-bold text-micro uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
                                                 >
                                                     {t('admin.approve')}
                                                 </button>
@@ -325,7 +325,7 @@ const AdminLocationsPage = () => {
                     ) : viewMode === 'map' ? (
                         <div className="flex-1 relative min-h-[500px]">
                             {mapLocations.length === 0 ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-t-tertiary">
                                     <MapPin size={48} className="mb-3 opacity-30" />
                                     <p className="text-sm font-bold">{t('admin.no_locations_with_coords')}</p>
                                 </div>
@@ -348,14 +348,14 @@ const AdminLocationsPage = () => {
                                             position={[loc.coordinates.lat, loc.coordinates.lng]}
                                         >
                                             <Popup>
-                                                <div className="font-sans p-1 min-w-[160px]">
-                                                    <p className="font-bold text-sm text-slate-900">{loc.title}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{loc.city}{loc.country ? `, ${loc.country}` : ''}</p>
+                                                 <div className="font-sans p-1 min-w-[160px]">
+                                                    <p className="font-bold text-sm text-t-primary">{loc.title}</p>
+                                                    <p className="text-micro text-t-tertiary mt-0.5">{loc.city}{loc.country ? `, ${loc.country}` : ''}</p>
                                                     {(loc.google_rating ?? loc.rating) && (
-                                                        <p className="text-xs text-amber-600 font-bold mt-1">★ {loc.google_rating ?? loc.rating}</p>
+                                                        <p className="text-micro text-amber-600 font-bold mt-1">★ {loc.google_rating ?? loc.rating}</p>
                                                     )}
                                                     <span className={cn(
-                                                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-2",
+                                                        "inline-flex items-center px-2 py-0.5 rounded-full text-micro font-bold uppercase tracking-wider mt-2",
                                                         loc.status === 'active' || loc.status === 'approved'
                                                             ? "bg-emerald-50 text-emerald-600"
                                                             : loc.status === 'pending'
@@ -399,6 +399,7 @@ const AdminLocationsPage = () => {
                         culinaryResults={culinaryResults}
                         handleCulinarySearch={handleCulinarySearch}
                         addCulinaryItem={addCulinaryItem}
+                        setToast={setToast}
                     />
                 )}
             </AnimatePresence>

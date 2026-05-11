@@ -27,14 +27,14 @@ export function LocationCardDefault({
     return (
         <div
             onClick={() => navigate(`/location/${location.id}`)}
-            className={`group cursor-pointer surface transition-all duration-300 active:scale-[0.98] hover:surface-elevated hover:-translate-y-1 ${className}`}
+            className={`group cursor-pointer surface transition-all duration-300 active:scale-[0.98] [@media(hover:hover)]:hover:surface-elevated [@media(hover:hover)]:hover:-translate-y-1 ${className}`}
         >
             {/* Image */}
             <div className={`relative ${imageHeight} overflow-hidden rounded-t-[28px]`}>
                 <LazyImage
                     src={image}
                     alt={location.title}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-1000 [@media(hover:hover)]:group-hover:scale-110"
                     wrapperClassName="w-full h-full"
                 />
 

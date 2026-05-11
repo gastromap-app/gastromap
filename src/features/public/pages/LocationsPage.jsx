@@ -77,7 +77,7 @@ const MobileCard = memo(function MobileCard({ item, style }) {
                 {/* Image */}
                 <div className="relative h-28 w-full overflow-hidden">
                     <LazyImage
-                        src={item.image}
+                        src={item.photos?.[0] || item.image}
                         alt={item.title}
                         wrapperClassName="w-full h-full"
                         className="w-full h-full object-cover"
@@ -186,7 +186,7 @@ const DesktopCard = memo(function DesktopCard({ item, isDark, textStyle, subText
         >
             <div className="relative h-56 mb-5 rounded-[28px] overflow-hidden">
                 <LazyImage
-                    src={item.image}
+                    src={item.photos?.[0] || item.image}
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />

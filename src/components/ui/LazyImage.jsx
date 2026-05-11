@@ -47,6 +47,8 @@ export function LazyImage({
     const [isVisible, setIsVisible] = useState(priority)
     const [isLoaded, setIsLoaded] = useState(false)
     const [hasError, setHasError] = useState(false)
+    // useOriginal: true = second chance with the raw src (no transform params)
+    const [useOriginal, setUseOriginal] = useState(false)
 
     // Helper to apply transformations
     const getOptimizedSrc = (originalSrc) => {
@@ -69,9 +71,9 @@ export function LazyImage({
         if (cleanSrc.includes('.supabase.co/storage/v1/object/public/')) {
             const baseUrl = cleanSrc.split('?')[0]
             const params = new URLSearchParams()
-            if (transform.width) params.set('width', transform.width)
-            if (transform.height) params.set('height', transform.height)
-            if (transform.quality) params.set('quality', transform.quality)
+            if (transform.width) params.set('width', String(transform.width))
+            if (transform.height) params.set('height', String(transform.height))
+            if (transform.quality) params.set('quality', String(transform.quality))
             if (transform.format) params.set('format', transform.format)
             if (transform.resize) params.set('resize', transform.resize)
             else params.set('resize', 'cover')
@@ -82,7 +84,11 @@ export function LazyImage({
         return cleanSrc
     }
 
-    const optimizedSrc = getOptimizedSrc(src)
+    const rawSrc = src?.trim() || null
+    const optimizedSrc = useOriginal ? rawSrc : getOptimizedSrc(src)
+
+    // If optimized === raw (no transformation was applied), skip the fallback attempt
+    const canFallbackToOriginal = !useOriginal && optimizedSrc !== rawSrc
 
     useEffect(() => {
         if (!src) {
@@ -91,6 +97,7 @@ export function LazyImage({
             return
         }
 
+        if (priority) return
         const el = wrapperRef.current
         if (!el) return
 
@@ -107,6 +114,24 @@ export function LazyImage({
         observer.observe(el)
         return () => observer.disconnect()
     }, [rootMargin, src, priority])
+
+    // Reset state when src changes
+    useEffect(() => {
+        setIsLoaded(false)
+        setHasError(false)
+        setUseOriginal(false)
+    }, [src])
+
+    function handleError() {
+        if (canFallbackToOriginal) {
+            // First failure: retry with the original URL (no transform params)
+            setUseOriginal(true)
+            setIsLoaded(false)
+        } else {
+            // Second failure or no fallback available — show error icon
+            setHasError(true)
+        }
+    }
 
     return (
         <div ref={wrapperRef} className={cn('relative w-full h-full overflow-hidden', wrapperClassName)}>
@@ -125,10 +150,10 @@ export function LazyImage({
             {/* Image — only rendered once in viewport and if src is valid */}
             {isVisible && !hasError && typeof optimizedSrc === 'string' && optimizedSrc.length > 0 && (
                 <img
-                    src={optimizedSrc || null}
+                    src={optimizedSrc}
                     alt={alt}
                     onLoad={() => setIsLoaded(true)}
-                    onError={() => setHasError(true)}
+                    onError={handleError}
                     className={cn(
                         'transition-all duration-500 ease-out',
                         isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105',

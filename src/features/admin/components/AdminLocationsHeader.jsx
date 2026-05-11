@@ -31,8 +31,8 @@ const AdminLocationsHeader = ({
         }
     }, [isSearchExpanded])
 
-    const btnBase = "flex items-center gap-2 h-11 px-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shrink-0"
-    const btnSecondary = `${btnBase} bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-200 dark:border-white/[0.04] text-slate-700 dark:text-[hsl(220,10%,55%)] hover:border-slate-300 dark:hover:border-slate-600 shadow-sm backdrop-blur-md`
+    const btnBase = "flex items-center gap-2 h-11 px-5 rounded-pill font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shrink-0"
+    const btnSecondary = `${btnBase} bg-secondary/50 border border-border text-t-secondary hover:border-primary/30 shadow-sm backdrop-blur-md`
 
     const actions = [
         { label: t('admin.actions.import_data'), icon: Upload, onClick: onImport },
@@ -41,7 +41,7 @@ const AdminLocationsHeader = ({
     ]
 
     return (
-        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-slate-100 dark:border-white/[0.03] gap-3 relative min-h-[80px] lg:min-h-[auto]">
+        <div className="flex justify-between items-center p-4 lg:p-8 border-b border-border gap-3 relative min-h-[80px] lg:min-h-[auto]">
             <AnimatePresence>
                 {isSearchExpanded ? (
                     <motion.div 
@@ -49,22 +49,22 @@ const AdminLocationsHeader = ({
                         animate={{ width: '100%', opacity: 1 }}
                         exit={{ width: 40, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="absolute inset-y-0 left-0 right-0 z-50 bg-white dark:bg-[hsl(220,20%,3%)] flex items-center px-4 lg:px-8 gap-3"
+                        className="absolute inset-y-0 left-0 right-0 z-50 bg-background flex items-center px-4 lg:px-8 gap-3"
                     >
                         <div className="flex-1 relative">
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-t-quaternary" />
                             <input 
                                 ref={searchInputRef}
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange?.(e.target.value)}
                                 placeholder={t('admin.search_placeholder', { count: '' }).replace('  ', ' ')}
-                                className="w-full h-11 pl-12 pr-10 bg-slate-100 dark:bg-[hsl(220,20%,6%)] border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
+                                className="w-full h-11 pl-12 pr-10 bg-secondary border border-border rounded-card text-body font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-t-primary"
                             />
                             {searchQuery && (
                                 <button 
                                     onClick={() => onSearchChange?.('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-t-quaternary hover:text-t-secondary"
                                 >
                                     <X size={16} />
                                 </button>
@@ -72,7 +72,7 @@ const AdminLocationsHeader = ({
                         </div>
                         <button 
                             onClick={() => setIsSearchExpanded(false)}
-                            className="h-11 px-4 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
+                            className="h-11 px-4 micro uppercase text-t-tertiary hover:text-primary transition-colors"
                         >
                             {t('admin.actions.cancel')}
                         </button>
@@ -85,8 +85,8 @@ const AdminLocationsHeader = ({
                             animate={{ opacity: 1, x: 0 }}
                             className="flex flex-col"
                         >
-                            <p className="text-[11px] font-black uppercase text-indigo-500/80 dark:text-indigo-400/80 tracking-[0.25em] mb-1 leading-none">{t('admin.admin_panel_label')}</p>
-                            <h1 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
+                            <p className="micro uppercase text-primary/80 tracking-[0.25em] mb-1 leading-none">{t('admin.admin_panel_label')}</p>
+                            <h1 className="h1 text-t-primary leading-none tracking-tighter">
                                 {t('admin.locations_title')}
                             </h1>
                         </motion.div>
@@ -105,7 +105,7 @@ const AdminLocationsHeader = ({
                             {/* Primary CTA — always visible */}
                             <button
                                 onClick={onCreateNew}
-                                className={`${btnBase} bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-500/20 border border-indigo-500/50`}
+                                className={`${btnBase} bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 border border-primary/50`}
                             >
                                 <Plus size={18} />
                                 <span className="hidden sm:inline ml-1">{t('admin.actions.new')}</span>
@@ -120,7 +120,7 @@ const AdminLocationsHeader = ({
                                         disabled={action.disabled}
                                         className={`${btnSecondary} disabled:opacity-40`}
                                     >
-                                        <action.icon size={16} className={cn(action.icon === Sparkles && "text-indigo-500")} />
+                                        <action.icon size={16} className={cn(action.icon === Sparkles && "text-primary")} />
                                         <span className="hidden lg:inline ml-1">
                                             {action.icon === Sparkles && action.disabled ? t('admin.ai_reindexing') : action.label.split(' ')[0]}
                                         </span>
@@ -143,8 +143,8 @@ const AdminLocationsHeader = ({
                                     leaveFrom="transform opacity-100 scale-100"
                                     leaveTo="transform opacity-0 scale-95"
                                 >
-                                    <Menu.Items className="absolute right-0 top-full mt-3 z-50 bg-white/95 dark:bg-[hsl(220,20%,6%)]/95 backdrop-blur-2xl border border-slate-100 dark:border-white/[0.06] rounded-[32px] shadow-2xl overflow-hidden min-w-[240px] p-2.5 focus:outline-none">
-                                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-5 py-4 border-b border-slate-50 dark:border-white/[0.03] mb-1.5">{t('admin.actions.title')}</div>
+                                    <Menu.Items className="absolute right-0 top-full mt-3 z-50 bg-card/95 backdrop-blur-2xl border border-border rounded-sheet shadow-2xl overflow-hidden min-w-[240px] p-2.5 focus:outline-none">
+                                        <div className="micro uppercase tracking-[0.2em] text-t-quaternary px-5 py-4 border-b border-border/50 mb-1.5">{t('admin.actions.title')}</div>
                                         {actions.map((action, idx) => (
                                             <Menu.Item key={idx}>
                                                 {({ active }) => (
@@ -152,15 +152,15 @@ const AdminLocationsHeader = ({
                                                         onClick={action.onClick}
                                                         disabled={action.disabled}
                                                         className={cn(
-                                                            "w-full flex items-center gap-3.5 px-4 py-3.5 text-xs font-bold rounded-2xl transition-all active:scale-[0.98] disabled:opacity-40",
-                                                            active ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-700 dark:text-[hsl(220,10%,55%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]"
+                                                            "w-full flex items-center gap-3.5 px-4 py-3.5 text-xs font-bold rounded-image transition-all active:scale-[0.98] disabled:opacity-40",
+                                                            active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-t-secondary hover:bg-secondary"
                                                         )}
                                                     >
                                                         <div className={cn(
                                                             "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                                                            active ? "bg-white/20" : "bg-slate-100 dark:bg-[hsl(220,20%,9%)]"
+                                                            active ? "bg-white/20" : "bg-secondary"
                                                         )}>
-                                                            <action.icon size={16} className={cn(active ? "text-white" : "text-slate-500")} />
+                                                            <action.icon size={16} className={cn(active ? "text-white" : "text-t-tertiary")} />
                                                         </div>
                                                         <span className="flex-1 text-left tracking-tight">{action.label}</span>
                                                     </button>

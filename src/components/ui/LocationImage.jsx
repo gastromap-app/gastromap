@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { ImageOff } from 'lucide-react'
+import { config } from '@/shared/config/env'
 
 /**
  * LocationImage — адаптивный компонент изображений для GastroMap.
@@ -17,6 +18,7 @@ import { ImageOff } from 'lucide-react'
  * - decoding="async" по умолчанию
  *
  * @param {string}  src              – image_url из normalise() (canonical, RAW без ресайза)
+ * @param {string}  googlePlaceId    – ID места в Google Places для проксирования фото
  * @param {string}  alt
  * @param {string}  className        – классы для <img>
  * @param {string}  wrapperClassName – классы для wrapper div
@@ -31,6 +33,18 @@ const UNSPLASH_RE   = /images\.unsplash\.com/
 function resizeUrl(src, width) {
     if (!src || typeof src !== 'string' || src.trim() === '') return null
     const cleanSrc = src.trim()
+
+    // Если это уже наш прокси, параметр width уже может быть там, либо добавляем
+    if (cleanSrc.includes('/get-google-photo')) {
+        try {
+            const u = new URL(cleanSrc)
+            u.searchParams.set('width', String(width))
+            return u.toString()
+        } catch {
+            return cleanSrc
+        }
+    }
+
     if (GOOGLE_CDN_RE.test(cleanSrc)) {
         return cleanSrc.replace(/=w\d+.*$/, '') + `=w${width}-h-k-no`
     }
@@ -54,6 +68,7 @@ const DEFAULT_FALLBACK =
 
 export function LocationImage({
     src,
+    googlePlaceId,
     alt = '',
     className,
     wrapperClassName,
@@ -68,7 +83,13 @@ export function LocationImage({
     // useOriginal: true = второй шанс с оригинальным URL без ресайза
     const [useOriginal, setUseOriginal] = useState(false)
 
-    const rawSrc  = src || fallback
+    // Приоритет: src (если есть) -> googlePlaceId proxy -> fallback
+    let initialSrc = src
+    if (!initialSrc && googlePlaceId) {
+        initialSrc = `${config.supabase.functionsUrl}/get-google-photo?place_id=${googlePlaceId}`
+    }
+    const rawSrc = initialSrc || fallback
+
     const resized = useOriginal ? rawSrc : resizeUrl(rawSrc, width)
 
     // Если resized === rawSrc (URL не поддерживает ресайз), пропускаем второй шанс
@@ -98,13 +119,13 @@ export function LocationImage({
         return () => observer.disconnect()
     }, [priority, rawSrc])
 
-    // Сброс состояния при смене src
+    // Сброс состояния при смене src или googlePlaceId
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoaded(false)
         setError(false)
         setUseOriginal(false)
-    }, [src])
+    }, [src, googlePlaceId])
 
     function handleError() {
         if (canFallbackToOriginal) {

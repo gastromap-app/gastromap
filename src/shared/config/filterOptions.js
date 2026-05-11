@@ -343,7 +343,7 @@ export const LABEL_GROUPS = [
         ],
         itemsPl: [
             'Wyjście w pojedynkę', 'Randka', 'Spotkanie biznesowe', 'Rodzinna niedziela', 'Duże grupy',
-            'Przyjazne pracy', 'Kącik czytelniczy', 'Szybka przekąska', 'Uroczystość', 'Ukryty klejnot',
+            'Przyjazne pracy', 'Kącik czytelniczy', 'Szybka przekąska', 'Uroczystość', 'Ukryty skarb',
             'Modne miejsce', 'Ulubione u lokalnych', 'Cicha atmosfera', 'Gwarna atmosfera', 'Romantyczna sceneria',
             'Lunch biznesowy', 'Późna kolacja',
         ],

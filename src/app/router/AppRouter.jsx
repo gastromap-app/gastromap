@@ -67,6 +67,8 @@ const StatusPage = lazy(() => import('@/features/public/pages/StatusPage'))
 const CommunityPage = lazy(() => import('@/features/public/pages/CommunityPage'))
 const SecurityPage = lazy(() => import('@/features/public/pages/SecurityPage'))
 const LocationDetailsPage = lazy(() => import('@/features/public/pages/LocationDetailsPage'))
+const PaymentSuccessPage = lazy(() => import('@/features/public/pages/PaymentSuccessPage'))
+const PaymentCancelPage = lazy(() => import('@/features/public/pages/PaymentCancelPage'))
 
 // ─── LAZY: Auth pages ──────────────────────────────────────────────────────
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
@@ -159,6 +161,8 @@ export const AppRouter = () => {
                     <Route path="/help" element={<HelpCenterPage />} />
                     <Route path="/status" element={<StatusPage />} />
                     <Route path="/community" element={<CommunityPage />} />
+                    <Route path="/success" element={<PaymentSuccessPage />} />
+                    <Route path="/cancel" element={<PaymentCancelPage />} />
                 </Route>
 
                 {/* Public App Routes — no auth needed (location details) */}

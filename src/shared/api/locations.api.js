@@ -178,7 +178,7 @@ export async function getLocations(filters = {}) {
     // fails with 401 for anon sessions — they can't read protected columns
     // (insider_tip, phone, booking_url, kg_*, etc.). Admin queries (all=true)
     // always come from authenticated users who have full SELECT.
-    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,created_at,updated_at'
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,google_place_id,created_at,updated_at'
 
     let q = supabase
         .from('locations')
@@ -280,7 +280,7 @@ export async function getLocation(id, { adminMode = false } = {}) {
 
     // Column selection: authenticated users get all columns (insider_tip, tags, kg_*, etc.)
     // Anon users get only public-safe columns to avoid 401/403 errors.
-    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,created_at,updated_at'
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,opening_hours,cuisine_types,status,google_place_id,created_at,updated_at'
 
     let q = supabase
         .from('locations')

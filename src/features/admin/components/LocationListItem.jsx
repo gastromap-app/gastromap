@@ -24,10 +24,10 @@ const getStatusLabel = (status) => getStatusDisplay(status).label
 function StatusBadge({ status }) {
     return (
         <div className={cn(
-            "inline-flex items-center p-1.5 px-2 rounded-lg text-[9px] font-bold uppercase tracking-wider",
+            "inline-flex items-center p-1.5 px-2 rounded-image text-micro font-bold uppercase tracking-wider",
             getStatusBadge(status)
         )}>
-            <div className={cn("w-1.5 h-1.5 rounded-full mr-2", getStatusDot(status))} />
+            <div className={cn("w-1.5 h-1.5 rounded-pill mr-2", getStatusDot(status))} />
             {getStatusLabel(status)}
         </div>
     )
@@ -40,15 +40,15 @@ function VisibilityToggle({ locId, locStatus, onToggleVisibility }) {
         <button
             onClick={(e) => { e.stopPropagation(); onToggleVisibility(locId, locStatus) }}
             className={cn(
-                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                isVisible ? "bg-indigo-500" : "bg-slate-200 dark:bg-[hsl(220,20%,12%)]"
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-pill border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                isVisible ? "bg-primary" : "bg-secondary"
             )}
             title={isVisible ? t('admin.hide_location') : t('admin.publish_location')}
         >
             <span className="sr-only">Toggle visibility</span>
             <span
                 className={cn(
-                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-pill bg-white shadow ring-0 transition duration-200 ease-in-out",
                     isVisible ? "translate-x-4" : "translate-x-0"
                 )}
             />
@@ -61,7 +61,7 @@ function HiddenGemBadge() {
     return (
         <div 
             title={t('labels.hidden_gem_desc')}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400"
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-image bg-primary/5 border border-primary/10 text-micro font-black uppercase tracking-widest text-primary"
         >
             <span>💎</span>
             <span>{t('labels.hidden_gem')}</span>
@@ -76,10 +76,10 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
             <Menu.Button
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                    "p-2 rounded-xl transition-all active:scale-95",
+                    "p-2 rounded-image transition-all active:scale-95",
                     isOpenActionMenu
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg shadow-slate-200 dark:shadow-none"
-                        : "text-slate-300 hover:text-slate-600 dark:text-[hsl(220,10%,55%)] dark:hover:text-[hsl(220,20%,90%)] hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)]"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                        : "text-t-quaternary hover:text-t-primary hover:bg-secondary"
                 )}
             >
                 <MoreHorizontal size={16} className="stroke-[2.5]" />
@@ -96,17 +96,17 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
             >
                 <Menu.Items
                     className={cn(
-                        "z-[101] bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-100 dark:border-white/[0.06] shadow-2xl overflow-hidden focus:outline-none",
+                        "z-[101] bg-card border border-border shadow-2xl overflow-hidden focus:outline-none",
                         viewMode === 'card'
-                            ? "fixed bottom-0 left-0 right-0 rounded-t-[32px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom duration-300"
-                            : "absolute right-0 mt-2 min-w-[220px] rounded-2xl p-2"
+                            ? "fixed bottom-0 left-0 right-0 rounded-t-sheet p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom duration-300"
+                            : "absolute right-0 mt-2 min-w-[220px] rounded-card p-2"
                     )}
                 >
                     {viewMode === 'card' && (
-                        <div className="w-12 h-1.5 bg-slate-200 dark:bg-[hsl(220,20%,9%)] rounded-full mx-auto mb-6" />
+                        <div className="w-12 h-1.5 bg-secondary rounded-pill mx-auto mb-6" />
                     )}
 
-                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 py-4 border-b border-slate-50 dark:border-white/[0.03] mb-2">
+                    <div className="text-micro font-black uppercase tracking-[0.15em] text-t-tertiary px-4 py-4 border-b border-border mb-2">
                         {t('admin.manage_object')}
                     </div>
 
@@ -116,11 +116,11 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                 <button
                                     onClick={() => onEdit(loc)}
                                     className={cn(
-                                        "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
-                                        active ? "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white" : "text-slate-600 dark:text-[hsl(220,10%,55%)]"
+                                        "w-full flex items-center gap-4 px-3 py-3 text-body-sm font-bold rounded-image transition-all",
+                                        active ? "bg-secondary text-t-primary" : "text-t-secondary"
                                     )}
                                 >
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-[hsl(220,20%,9%)] shadow-sm" : "bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50")}>
+                                    <div className={cn("w-10 h-10 rounded-input flex items-center justify-center shrink-0 transition-colors", active ? "bg-card shadow-sm" : "bg-secondary/50")}>
                                         <Edit size={16} className="stroke-[2.5]" />
                                     </div>
                                     <span>{t('admin.actions.edit')}</span>
@@ -134,11 +134,11 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     <button
                                         onClick={() => onApprove(loc.id)}
                                         className={cn(
-                                            "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
+                                            "w-full flex items-center gap-4 px-3 py-3 text-body-sm font-bold rounded-image transition-all",
                                             active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" : "text-emerald-600/80"
                                         )}
                                     >
-                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-emerald-500/20 shadow-sm" : "bg-emerald-50/50 dark:bg-emerald-500/5")}>
+                                        <div className={cn("w-10 h-10 rounded-input flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-emerald-500/20 shadow-sm" : "bg-emerald-50/50 dark:bg-emerald-500/5")}>
                                             <CheckCircle size={16} className="stroke-[2.5]" />
                                         </div>
                                         <span>{t('admin.actions.approve')}</span>
@@ -153,11 +153,11 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                                     <button
                                         onClick={() => onReject(loc.id)}
                                         className={cn(
-                                            "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
+                                            "w-full flex items-center gap-4 px-3 py-3 text-body-sm font-bold rounded-image transition-all",
                                             active ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600" : "text-amber-600/80"
                                         )}
                                     >
-                                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-amber-500/20 shadow-sm" : "bg-amber-50/50 dark:bg-amber-500/5")}>
+                                        <div className={cn("w-10 h-10 rounded-input flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-amber-500/20 shadow-sm" : "bg-amber-50/50 dark:bg-amber-500/5")}>
                                             <X size={16} className="stroke-[2.5]" />
                                         </div>
                                         <span>{t('admin.actions.reject')}</span>
@@ -166,18 +166,18 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             </Menu.Item>
                         )}
 
-                        <div className="h-px bg-slate-50 dark:bg-[hsl(220,20%,9%)]/50 my-2 mx-2" />
+                        <div className="h-px bg-border my-2 mx-2" />
 
                         <Menu.Item>
                             {({ active }) => (
                                 <button
                                     onClick={() => onDelete(loc.id)}
                                     className={cn(
-                                        "w-full flex items-center gap-4 px-3 py-3 text-[13px] font-bold rounded-2xl transition-all",
-                                        active ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600" : "text-rose-600/80"
+                                        "w-full flex items-center gap-4 px-3 py-3 text-body-sm font-bold rounded-image transition-all",
+                                        active ? "bg-destructive/10 text-destructive" : "text-destructive/80"
                                     )}
                                 >
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors", active ? "bg-white dark:bg-rose-500/20 shadow-sm" : "bg-rose-50/50 dark:bg-rose-500/5")}>
+                                    <div className={cn("w-10 h-10 rounded-input flex items-center justify-center shrink-0 transition-colors", active ? "bg-card shadow-sm" : "bg-destructive/5")}>
                                         <Trash2 size={16} className="stroke-[2.5]" />
                                     </div>
                                     <span>{t('admin.actions.delete')}</span>
@@ -189,7 +189,7 @@ function ActionMenu({ loc, onEdit, onApprove, onReject, onDelete, isOpenActionMe
                             <div className="pt-4">
                                 <Menu.Item>
                                     <button
-                                        className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-[hsl(220,20%,9%)] text-slate-500 font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform"
+                                        className="w-full py-4 rounded-card bg-secondary text-t-tertiary font-black text-micro uppercase tracking-[0.2em] active:scale-95 transition-transform"
                                     >
                                         {t('admin.actions.close')}
                                     </button>
@@ -216,31 +216,31 @@ const LocationListItem = ({
     _onToggleActionMenu,
     viewMode = 'table',
 }) => {
-    const { i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
     if (viewMode === 'card') {
         return (
             <motion.div
                 layout
                 onClick={() => onEdit(loc)}
-                className="w-full text-left bg-white dark:bg-[hsl(220,20%,6%)]/40 rounded-2xl p-4 active:scale-[0.99] transition-transform border border-slate-100 dark:border-white/[0.06] shadow-sm group"
+                className="w-full text-left bg-card rounded-card p-4 active:scale-[0.99] transition-transform border border-border shadow-sm group"
             >
                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-[18px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-all shadow-inner shrink-0">
+                    <div className="w-12 h-12 rounded-image bg-secondary flex items-center justify-center text-t-quaternary group-hover:text-primary group-hover:scale-110 transition-all shadow-inner shrink-0">
                         <Building2 size={22} className="stroke-[2]" />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                            <p className="text-[14px] font-bold text-slate-900 dark:text-white truncate">{loc.title}</p>
-                            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                             <p className="text-body-sm font-bold text-t-primary truncate">{loc.title}</p>
+                            <div className="flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded-image">
                                 <Star size={10} className="fill-amber-500 text-amber-500" />
-                                <span className="text-[10px] font-black text-amber-600">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
+                                 <span className="text-micro font-black text-amber-600">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                             </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-[hsl(220,10%,55%)] mt-1 truncate flex items-center gap-1.5 font-medium">
+                         <p className="text-micro text-t-tertiary mt-1 truncate flex items-center gap-1.5 font-medium">
                             <MapPin size={10} className="opacity-50" />{loc.city}, {loc.country}
                         </p>
                         <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            <Badge variant="outline" className="bg-transparent border border-slate-100 dark:border-white/[0.06] px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400">
+                             <Badge variant="outline" className="bg-transparent border border-border px-2 py-0.5 rounded-image text-micro font-black uppercase tracking-widest text-t-tertiary">
                                 {getCategoryLabel(loc.category, i18n.language)}
                             </Badge>
                             {loc.special_labels?.includes('Hidden Gem') && <HiddenGemBadge />}
@@ -267,24 +267,24 @@ const LocationListItem = ({
     return (
         <tr
             onClick={() => onEdit(loc)}
-            className="hover:bg-slate-50/80 dark:hover:bg-[hsl(220,20%,12%)]/40 transition-all group cursor-pointer border-none leading-none"
+            className="hover:bg-secondary/50 transition-all group cursor-pointer border-none leading-none"
         >
             <td className="px-6 py-5 pl-10 lg:pl-12">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-all shadow-inner shrink-0">
+                    <div className="w-10 h-10 rounded-image bg-secondary flex items-center justify-center text-t-quaternary group-hover:text-primary group-hover:scale-110 transition-all shadow-inner shrink-0">
                         <Building2 size={18} className="stroke-[2.5]" />
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{loc.title}</p>
+                             <p className="text-body-sm font-bold text-t-primary truncate leading-tight">{loc.title}</p>
                             {loc.special_labels?.includes('Hidden Gem') && (
-                                <span title="Hidden Gem" className="text-[14px] leading-none mb-0.5">💎</span>
+                                <span title={t('labels.hidden_gem')} className="text-[14px] leading-none mb-0.5">💎</span>
                             )}
                         </div>
                         <div className="flex items-center gap-2 mt-1.5">
-                            <p className="text-[10px] text-slate-400 dark:text-[hsl(220,10%,55%)] uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
+                             <p className="text-micro text-t-tertiary uppercase tracking-widest font-black shrink-0 leading-none">{getCategoryLabel(loc.category, i18n.language)}</p>
                             {(loc.kg_cuisines?.length > 0 || loc.cuisine) && (
-                                <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
+                                 <Badge variant="secondary" className="bg-primary/10 text-primary text-micro h-3.5 px-1.5 font-black border-none uppercase tracking-[0.1em] shrink-0">
                                     {loc.kg_cuisines?.length > 0
                                         ? loc.kg_cuisines.slice(0, 1).join(', ')
                                         : loc.cuisine}
@@ -295,17 +295,17 @@ const LocationListItem = ({
                 </div>
             </td>
             <td className="px-6 py-5">
-                <div className="text-[11px] font-bold flex items-center gap-2 text-slate-500 dark:text-[hsl(220,10%,55%)]">
-                    <MapPin size={10} className="text-slate-300 dark:text-[hsl(220,10%,55%)] stroke-[2.5]" />
+                 <div className="text-micro font-bold flex items-center gap-2 text-t-tertiary">
+                    <MapPin size={10} className="text-t-quaternary stroke-[2.5]" />
                     <span className="truncate">{loc.city}</span>
-                    <span className="text-[10px] opacity-30 font-black">/</span>
+                     <span className="text-micro opacity-30 font-black">/</span>
                     <span className="opacity-60 truncate">{loc.country}</span>
                 </div>
             </td>
             <td className="px-6 py-5">
                 <div className="flex items-center gap-1.5">
-                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-slate-100 dark:text-[hsl(220,20%,9%)]")} />
-                    <span className="text-[11px] font-black text-slate-500">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
+                    <Star size={12} className={cn("fill-current stroke-[2]", (loc.rating ?? loc.google_rating) > 0 ? "text-amber-500" : "text-t-quaternary opacity-20")} />
+                     <span className="text-micro font-black text-t-tertiary">{(loc.rating ?? loc.google_rating) > 0 ? (loc.rating ?? loc.google_rating) : '—'}</span>
                 </div>
             </td>
             <td className="px-6 py-5">

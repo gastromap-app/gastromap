@@ -31,8 +31,8 @@ export default {
                 body:       ['0.9375rem',                    { lineHeight: '1.5',  letterSpacing: '-0.006em', fontWeight: '400' }],
                 'body-sm':  ['0.8125rem',                    { lineHeight: '1.45', letterSpacing: '-0.003em', fontWeight: '400' }],
                 caption:    ['0.75rem',                      { lineHeight: '1.35', letterSpacing: '0',         fontWeight: '400' }],
-                eyebrow:    ['0.6875rem',                    { lineHeight: '1.2',  letterSpacing: '0.08em',    fontWeight: '500' }],
-                micro:      ['0.625rem',                     { lineHeight: '1.2',  letterSpacing: '0.06em',    fontWeight: '500' }],
+                eyebrow:    ['0.75rem',                      { lineHeight: '1.2',  letterSpacing: '0.08em',    fontWeight: '500' }],
+                micro:      ['0.6875rem',                    { lineHeight: '1.2',  letterSpacing: '0.06em',    fontWeight: '500' }],
             },
             borderRadius: {
                 lg: 'var(--radius)',

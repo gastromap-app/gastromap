@@ -67,7 +67,7 @@ const KpiCard = ({ title, value, icon: Icon, trend, accent = 'primary' }) => {
                 </div>
                 {trend !== undefined && trend !== null && (
                     <div className={cn(
-                        'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                        'flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-bold uppercase tracking-wider',
                         trend > 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
                     )}>
                         {trend > 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
@@ -75,8 +75,8 @@ const KpiCard = ({ title, value, icon: Icon, trend, accent = 'primary' }) => {
                     </div>
                 )}
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{title}</p>
-            <p className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{formatNumber(value)}</p>
+            <p className="text-micro font-bold text-t-tertiary uppercase tracking-widest mb-1.5">{title}</p>
+            <p className="text-2xl lg:text-3xl font-bold text-t-primary tracking-tight">{formatNumber(value)}</p>
         </div>
     )
 }
@@ -87,12 +87,12 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null
     return (
         <div className="bg-white dark:bg-[hsl(220,20%,8%)] border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 shadow-lg">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+            <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider mb-1">{label}</p>
             {payload.map((p, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-                    <span className="text-slate-600 dark:text-slate-300">{p.name}:</span>
-                    <span className="text-slate-900 dark:text-white">{p.value}</span>
+                    <span className="text-t-secondary">{p.name}:</span>
+                    <span className="text-t-primary">{p.value}</span>
                 </div>
             ))}
         </div>
@@ -246,8 +246,8 @@ const AdminStatsPage = () => {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
-                                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area type="monotone" dataKey="cumulative" name="Total Users" stroke={CHART_COLORS.primary} strokeWidth={2} fill="url(#cumulativeGrad)" dot={false} />
                                 <Bar dataKey="newUsers" name="New Users" fill={CHART_COLORS.primary} radius={[3, 3, 0, 0]} opacity={0.25} barSize={8} />
@@ -268,8 +268,8 @@ const AdminStatsPage = () => {
                         <ResponsiveContainer width="100%" height={220} className="lg:!h-64">
                             <BarChart data={reviewsData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
-                                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="reviews" name="Reviews" fill={CHART_COLORS.emerald} radius={[3, 3, 0, 0]} barSize={10} />
                             </BarChart>
@@ -314,9 +314,9 @@ const AdminStatsPage = () => {
                                     <div key={i} className="flex items-center justify-between text-xs">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                                            <span className="font-medium text-slate-700 dark:text-slate-300 truncate">{c.name}</span>
+                                            <span className="font-medium text-t-secondary truncate">{c.name}</span>
                                         </div>
-                                        <span className="font-bold text-slate-900 dark:text-white ml-2 shrink-0">{c.value}</span>
+                                        <span className="font-bold text-t-primary ml-2 shrink-0">{c.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -336,8 +336,8 @@ const AdminStatsPage = () => {
                         <ResponsiveContainer width="100%" height={220} className="lg:!h-64">
                             <BarChart data={cityData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} horizontal={false} />
-                                <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={90} />
+                                <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: 'hsl(var(--text-secondary))' }} axisLine={false} tickLine={false} width={90} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="value" name="Locations" fill={CHART_COLORS.secondary} radius={[0, 4, 4, 0]} barSize={16} />
                             </BarChart>
@@ -361,8 +361,8 @@ const AdminStatsPage = () => {
                             <ResponsiveContainer width="100%" height={220} className="lg:!h-64">
                                 <BarChart data={topLocationsData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} horizontal={false} />
-                                    <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={110} />
+                                    <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: 'hsl(var(--text-secondary))' }} axisLine={false} tickLine={false} width={110} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 11 }} />
                                     <Bar dataKey="visits" name="Visits" stackId="a" fill={CHART_COLORS.primary} radius={[0, 2, 2, 0]} barSize={14} />
@@ -387,35 +387,35 @@ const AdminStatsPage = () => {
                                 {/* Mini stats */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="bg-slate-50 dark:bg-white/[0.03] rounded-xl p-3">
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Locations</p>
-                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{engagement.active_locations}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">/ {engagement.total_locations} total</p>
+                                        <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider mb-1">Locations</p>
+                                        <p className="text-lg font-bold text-t-primary">{engagement.active_locations}</p>
+                                        <p className="text-micro text-t-quaternary mt-0.5">/ {engagement.total_locations} total</p>
                                     </div>
                                     <div className="bg-slate-50 dark:bg-white/[0.03] rounded-xl p-3">
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Reviews</p>
-                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{engagement.approved_reviews}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">/ {engagement.total_reviews} total</p>
+                                        <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider mb-1">Reviews</p>
+                                        <p className="text-lg font-bold text-t-primary">{engagement.approved_reviews}</p>
+                                        <p className="text-micro text-t-quaternary mt-0.5">/ {engagement.total_reviews} total</p>
                                     </div>
                                     <div className="bg-slate-50 dark:bg-white/[0.03] rounded-xl p-3">
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Visitors</p>
-                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{engagement.unique_visitors}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">{engagement.total_visits} visits</p>
+                                        <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider mb-1">Visitors</p>
+                                        <p className="text-lg font-bold text-t-primary">{engagement.unique_visitors}</p>
+                                        <p className="text-micro text-t-quaternary mt-0.5">{engagement.total_visits} visits</p>
                                     </div>
                                     <div className="bg-slate-50 dark:bg-white/[0.03] rounded-xl p-3">
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Rating</p>
-                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{engagement.avg_rating?.toFixed(1) ?? '—'}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">out of 5</p>
+                                        <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider mb-1">Avg Rating</p>
+                                        <p className="text-lg font-bold text-t-primary">{engagement.avg_rating?.toFixed(1) ?? '—'}</p>
+                                        <p className="text-micro text-t-quaternary mt-0.5">out of 5</p>
                                     </div>
                                 </div>
 
                                 {/* User role bars */}
                                 <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-white/[0.04]">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Roles</p>
+                                    <p className="text-micro font-bold text-t-tertiary uppercase tracking-wider">User Roles</p>
                                     {engagementBars.map((bar, i) => (
                                         <div key={i}>
                                             <div className="flex justify-between text-xs font-medium mb-1">
-                                                <span className="text-slate-500">{bar.label}</span>
-                                                <span className="text-slate-900 dark:text-white font-bold">{bar.value}</span>
+                                                <span className="text-t-secondary">{bar.label}</span>
+                                                <span className="text-t-primary font-bold">{bar.value}</span>
                                             </div>
                                             <div className="w-full h-1.5 bg-slate-100 dark:bg-white/[0.04] rounded-full overflow-hidden">
                                                 <motion.div

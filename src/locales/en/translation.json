@@ -405,7 +405,12 @@
   },
   "labels": {
     "hidden_gem": "Hidden Gem",
-    "hidden_gem_desc": "A unique place according to the app author"
+    "hidden_gem_desc": "A unique place according to the app author",
+    "romantic": "Romantic",
+    "quiet": "Quiet",
+    "lively": "Lively",
+    "work_friendly": "Work-friendly",
+    "family": "Family"
   },
   "common": {
     "loading": "Loading…",
@@ -628,7 +633,8 @@
           "content": "Content & Media",
           "timing": "Working Hours",
           "tags": "Tags & Features",
-          "ai": "AI Analytics"
+          "ai": "AI Analytics",
+          "photos": "Photos"
         },
         "fields": {
           "title": "Venue Name",
@@ -676,7 +682,12 @@
           "lng": "Longitude (Lng)",
           "social_instagram": "Instagram",
           "social_facebook": "Facebook",
-          "booking_url": "Booking URL"
+          "booking_url": "Booking URL",
+          "fetch_photos_hint": "Fetch up to 10 photos from Google Maps",
+          "available_google_photos": "Available Google Photos",
+          "total": "Total",
+          "already_added": "Already added",
+          "add_to_gallery": "Add to gallery"
         },
         "ai": {
           "intelligence_title": "GastroAI Intelligence",
@@ -696,10 +707,15 @@
           "update_available": "AI Update Available",
           "improve_ai": "Improve via AI",
           "improving": "Improving...",
+          "fetch_google_photos": "Fetch Google Photos",
+          "fetching_photos": "Fetching photos...",
+          "photo_ingested_success": "Photo successfully added to gallery",
+          "upload_error": "Upload failed: {{message}}",
           "ai_extract_prompt": "Paste text about the place to extract data"
         },
         "errors": {
-          "url_invalid": "Field {{field}} must be a link (e.g., https://...)"
+          "url_invalid": "Field {{field}} must be a link (e.g., https://...)",
+          "max_photos": "Maximum {{count}} photos allowed"
         }
       }
     },

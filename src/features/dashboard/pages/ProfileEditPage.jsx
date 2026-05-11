@@ -227,14 +227,21 @@ const ProfileEditPage = () => {
                             <p className={`text-[10px] font-medium ml-1 opacity-50 ${textStyle}`}>e.g. Romantic, Quiet, Lively</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {['Romantic', 'Quiet', 'Lively', 'Work-friendly', 'Family', 'Hidden Gem'].map(v => {
-                                const isSelected = formData.preferences?.longTerm?.vibePreference?.includes(v)
+                            {[
+                                { id: 'Romantic', label: t('labels.romantic') },
+                                { id: 'Quiet', label: t('labels.quiet') },
+                                { id: 'Lively', label: t('labels.lively') },
+                                { id: 'Work-friendly', label: t('labels.work_friendly') },
+                                { id: 'Family', label: t('labels.family') },
+                                { id: 'Hidden Gem', label: t('labels.hidden_gem') }
+                            ].map(v => {
+                                const isSelected = formData.preferences?.longTerm?.vibePreference?.includes(v.id)
                                 return (
                                     <button
-                                        key={v}
+                                        key={v.id}
                                         onClick={() => {
                                             const current = formData.preferences?.longTerm?.vibePreference || []
-                                            const next = isSelected ? current.filter(x => x !== v) : [...current, v]
+                                            const next = isSelected ? current.filter(x => x !== v.id) : [...current, v.id]
                                             setFormData({ 
                                                 ...formData, 
                                                 preferences: { 
@@ -245,7 +252,7 @@ const ProfileEditPage = () => {
                                         }}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
                                     >
-                                        {v}
+                                        {v.label}
                                     </button>
                                 )
                             })}

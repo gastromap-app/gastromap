@@ -134,10 +134,14 @@ export async function signUp(email, password, name) {
         console.warn('[auth] Pre-signup email check failed:', err?.message)
     }
 
+    const redirectUrl = `${window.location.origin}/auth/callback`
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { 
+            data: { full_name: name }, 
+            emailRedirectTo: redirectUrl 
+        },
     })
     if (error) throw new ApiError(error.message, 400, 'AUTH_ERROR')
 

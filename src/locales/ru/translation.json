@@ -396,7 +396,12 @@
   },
   "labels": {
     "hidden_gem": "Скрытая жемчужина",
-    "hidden_gem_desc": "Уникальное место по мнению автора приложения"
+    "hidden_gem_desc": "Уникальное место по мнению автора приложения",
+    "romantic": "Романтика",
+    "quiet": "Тихое место",
+    "lively": "Оживленное",
+    "work_friendly": "Для работы",
+    "family": "Семейное"
   },
   "common": {
     "loading": "Загрузка…",
@@ -619,7 +624,8 @@
           "content": "Контент и медиа",
           "timing": "График работы",
           "tags": "Теги и Особенности",
-          "ai": "AI Аналитика"
+          "ai": "AI Аналитика",
+          "photos": "Фотографии"
         },
         "fields": {
           "title": "Название",
@@ -640,6 +646,13 @@
           "photo_url_placeholder": "Вставьте прямую ссылку на фото...",
           "upload_photo": "Загрузить фото",
           "uploading": "Загрузка...",
+          "photos_count": "Фотографии ({{count}}/3)",
+          "photo_url_hint": "Прямая ссылка на изображение",
+          "fetch_photos_hint": "Загрузить до 10 фото из Google Maps",
+          "available_google_photos": "Доступные Google Фото",
+          "total": "Всего",
+          "already_added": "Уже добавлено",
+          "add_to_gallery": "Добавить в галерею",
           "tags_subtitle": "Выберите подходящие теги для фильтрации",
           "working_hours": "Часы работы",
           "working_hours_placeholder": "Пн-Пт 09:00-22:00...",
@@ -660,14 +673,11 @@
           "empty_list": "Список пуст",
           "no_photos": "Нет загруженных фотографий",
           "upload_hint": "PNG, JPG до 10МБ",
-          "photo_url_hint": "Прямая ссылка на изображение",
           "ai_magic_extraction": "AI Магия: извлечение данных",
           "select_cuisine": "Выберите кухню",
           "lat": "Широта (Lat)",
           "lng": "Долгота (Lng)",
           "title_hint": "Как оно отображается на карте",
-          "latitude": "Широта (Lat)",
-          "longitude": "Долгота (Lng)",
           "social_instagram": "Instagram",
           "social_facebook": "Facebook",
           "booking_url": "Ссылка на бронь"
@@ -690,10 +700,15 @@
           "update_available": "Доступно AI обновление",
           "improve_ai": "Улучшить через AI",
           "improving": "Улучшаем...",
+          "fetch_google_photos": "Загрузить из Google",
+          "fetching_photos": "Загрузка...",
+          "photo_ingested_success": "Фото добавлено в галерею",
+          "upload_error": "Ошибка загрузки: {{message}}",
           "ai_extract_prompt": "Вставьте текст о заведении для извлечения данных"
         },
         "errors": {
-          "url_invalid": "Поле {{field}} должно быть ссылкой (напр. https://...)"
+          "url_invalid": "Поле {{field}} должно быть ссылкой (напр. https://...)",
+          "max_photos": "Максимальное количество фотографий — {{count}}"
         }
       }
     },

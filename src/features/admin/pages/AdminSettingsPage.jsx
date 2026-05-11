@@ -12,7 +12,7 @@ import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import LazyImage from '@/components/ui/LazyImage'
 
 const SettingSection = ({ title, icon: Icon, children }) => (
-    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] p-6 lg:p-8 shadow-sm">
+    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-2xl border border-slate-100 dark:border-white/[0.03] p-6 lg:p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
                 <Icon size={18} />

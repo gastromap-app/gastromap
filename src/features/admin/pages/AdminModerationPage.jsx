@@ -260,7 +260,7 @@ export default function AdminModerationPage() {
                     </div>
 
                     {/* Queue List — desktop table */}
-                    <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                    <div className="hidden md:block bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -371,7 +371,7 @@ export default function AdminModerationPage() {
             ) : (
                 <div className="space-y-4">
                     {feedback.length === 0 ? (
-                        <div className="p-12 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] border border-slate-100 dark:border-white/[0.03]">
+                        <div className="p-12 text-center text-slate-500 bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.03]">
                             Сообщений обратной связи пока нет.
                         </div>
                     ) : (
@@ -446,7 +446,7 @@ export default function AdminModerationPage() {
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="bg-white dark:bg-[hsl(220,20%,6%)] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/[0.06] flex flex-col max-h-[90vh]"
+                                className="bg-white dark:bg-[hsl(220,20%,6%)] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/[0.06] flex flex-col max-h-[90vh]"
                             >
                                 {/* Modal Header */}
                                 <div className="p-6 border-b border-slate-100 dark:border-white/[0.06] flex justify-between items-start bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/20">

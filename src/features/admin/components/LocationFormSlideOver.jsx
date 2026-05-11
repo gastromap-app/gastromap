@@ -334,9 +334,15 @@ const LocationFormSlideOver = ({
                 const errors = [result?.semantic?.error, result?.kg?.error, result?.embedding?.error].filter(Boolean)
                 if (errors.length) {
                     console.warn('[LocationForm] Full enrich partial errors:', errors)
+                    setToast?.({ type: 'error', message: `Enrichment partial: ${errors[0]}` })
                 } else {
                     console.log('[LocationForm] Full enrich complete ✅', result)
+                    setToast?.({ type: 'success', message: 'Full AI Enrichment complete ✅' })
                 }
+            },
+            onError: (err) => {
+                console.error('[LocationForm] Full enrich failed:', err)
+                setToast?.({ type: 'error', message: `Enrichment failed: ${err.message}` })
             },
         })
     }

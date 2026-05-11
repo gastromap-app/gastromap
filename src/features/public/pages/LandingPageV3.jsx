@@ -213,6 +213,7 @@ function AboutSection() {
                 <p className="mt-8 text-lg text-white/40 font-light italic max-w-lg">
                     "Every great meal starts with a recommendation from someone who cares."
                 </p>
+                <p className="mt-3 text-sm text-white/30 font-light">— Alikovit</p>
             </div>
         </section>
     )

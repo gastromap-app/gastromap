@@ -1159,9 +1159,9 @@ const LocationFormSlideOver = ({
                                                 {getLabelGroups(i18n.language).map(({ group, items }) => {
                                                     if (items.length === 0) return null
                                                     return (
-                                                        <div key={group} className="space-y-3">
-                                                            <p className="text-micro font-black uppercase tracking-[0.2em] text-t-quaternary ml-1">{group}</p>
-                                                            <div className="flex flex-wrap gap-2">
+                                                        <div key={group} className="space-y-2">
+                                                            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 ml-1">{group}</p>
+                                                            <div className="flex flex-wrap gap-1.5">
                                                                 {items.map(item => {
                                                                     const active = (formData.special_labels || []).includes(item.value)
                                                                     const emoji = getLabelEmoji(item.value)
@@ -1173,15 +1173,15 @@ const LocationFormSlideOver = ({
                                                                             onClick={() => toggleLabel(item.value)}
                                                                             title={isHiddenGem ? t('labels.hidden_gem_desc') : undefined}
                                                                             className={cn(
-                                                                                "px-4 py-2.5 rounded-pill text-micro font-bold border-2 transition-all flex items-center gap-2 active:scale-95 shadow-sm",
+                                                                                "px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all flex items-center gap-1.5 active:scale-95",
                                                                                 active
                                                                                     ? isHiddenGem 
-                                                                                        ? "bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20"
-                                                                                        : "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                                                                                    : "bg-secondary/60 text-t-secondary border-transparent hover:border-border hover:bg-muted"
+                                                                                        ? "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20"
+                                                                                        : "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20"
+                                                                                    : "bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15]"
                                                                             )}
                                                                         >
-                                                                            {emoji && <span className={cn(isHiddenGem && active && "animate-bounce")}>{emoji}</span>}
+                                                                            {emoji && <span className={cn("text-xs", isHiddenGem && active && "animate-bounce")}>{emoji}</span>}
                                                                             {isHiddenGem ? t('labels.hidden_gem') : item.label}
                                                                         </button>
                                                                     )

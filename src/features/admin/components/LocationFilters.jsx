@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { 
     Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown,
-    Star, DollarSign, Tag, SortAsc, SlidersHorizontal, Globe, Clock, MessageSquare
+    Star, DollarSign, Tag, SortAsc, SlidersHorizontal, Globe, Clock, MessageSquare, LayoutGrid
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'

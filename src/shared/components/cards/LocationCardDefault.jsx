@@ -82,7 +82,7 @@ export function LocationCardDefault({
                 </div>
 
                 {location.description && (
-                    <p className="text-[0.9375rem] text-t-tertiary mt-3 line-clamp-2 leading-relaxed tracking-[-0.006em]">
+                    <p className="text-[13px] md:text-[0.9375rem] text-t-tertiary mt-2 md:mt-3 line-clamp-2 leading-snug md:leading-relaxed tracking-[-0.006em]">
                         {location.description}
                     </p>
                 )}

@@ -4,6 +4,7 @@ import {
     Users, Calendar, Download, Filter, Search,
     Coffee, Star, Gift
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnSecondary } from '../components/AdminPageHeader'
 import { usePaymentStats } from '@/shared/api/queries'
@@ -38,7 +39,7 @@ const AdminSubscriptionsPage = () => {
             {/* Header */}
             <AdminPageHeader
                 eyebrow="Admin"
-                title="Donations"
+                title="Payments"
                 subtitle="Monitor donations and community support."
                 actions={
                     <button

@@ -22,7 +22,7 @@ const NAV_ITEMS = [
     { icon: LayoutDashboard, label: 'Overview',       path: '/admin' },
     { icon: MapPin,          label: 'Locations',      path: '/admin/locations' },
     { icon: Users,           label: 'Users',          path: '/admin/users' },
-    { icon: Heart,           label: 'Donations',      path: '/admin/subscriptions' },
+    { icon: Heart,           label: 'Payments',        path: '/admin/subscriptions' },
     { icon: Bot,             label: 'AI Agents',      path: '/admin/ai' },
     { icon: Brain,           label: 'Knowledge',      path: '/admin/knowledge' },
     { icon: ScanLine,        label: 'Menu Scanner',   path: '/admin/menu-scanner' },

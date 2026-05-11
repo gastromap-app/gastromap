@@ -186,8 +186,8 @@ const AdminMenuScannerPage = () => {
             />
 
             {/* Location Selector */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.03] shadow-sm p-6 lg:p-8">
-                <h2 className={cn('text-sm font-black uppercase tracking-widest mb-4', subText)}>
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm p-6 lg:p-8">
+                <h2 className={cn('text-sm font-medium uppercase tracking-wider mb-4', subText)}>
                     Select Location
                 </h2>
                 <div className="relative">
@@ -280,8 +280,8 @@ const AdminMenuScannerPage = () => {
 
             {/* Menu Scanner (shown when location selected) */}
             {selectedLocation && (
-                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.03] shadow-sm p-6 lg:p-8">
-                    <h2 className={cn('text-sm font-black uppercase tracking-widest mb-4', subText)}>
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm p-6 lg:p-8">
+                    <h2 className={cn('text-sm font-medium uppercase tracking-wider mb-4', subText)}>
                         Scan Menu
                     </h2>
                     {isSavingScan && (
@@ -296,14 +296,14 @@ const AdminMenuScannerPage = () => {
 
             {/* Menu Table (shown when location selected) */}
             {selectedLocation && (
-                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[48px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                     {/* Stats line */}
                     <div className={cn(
                         'px-6 lg:px-8 py-4 border-b flex items-center justify-between flex-wrap gap-2',
                         isDark ? 'border-slate-800/50' : 'border-slate-100'
                     )}>
                         <div className="flex items-center gap-3">
-                            <span className={cn('text-sm font-black', textStyle)}>
+                            <span className={cn('text-sm font-medium', textStyle)}>
                                 Total: {menu.length} {menu.length === 1 ? 'dish' : 'dishes'}
                             </span>
                             {menu.filter(d => d.is_signature).length > 0 && (
@@ -326,7 +326,7 @@ const AdminMenuScannerPage = () => {
                     {!isLoadingMenu && menu.length === 0 && (
                         <div className="py-16 text-center">
                             <UtensilsCrossed size={40} className={cn('mx-auto mb-3', subText)} />
-                            <p className={cn('font-black', textStyle)}>No dishes yet</p>
+                            <p className={cn('font-medium', textStyle)}>No dishes yet</p>
                             <p className={cn('text-xs mt-1', subText)}>
                                 Scan a menu above to add dishes, or they may not have been saved yet.
                             </p>
@@ -339,7 +339,7 @@ const AdminMenuScannerPage = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr className={cn(
-                                        'text-[10px] font-black uppercase tracking-widest',
+                                        'text-[10px] font-medium uppercase tracking-wider',
                                         isDark ? 'text-slate-500 border-b border-slate-800/50' : 'text-slate-400 border-b border-slate-100'
                                     )}>
                                         <th className="text-left px-6 py-3">Name</th>

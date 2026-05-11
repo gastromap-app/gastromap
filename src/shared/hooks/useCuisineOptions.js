@@ -40,6 +40,7 @@ export function useCuisineOptions() {
                     name:  c.name,
                     label: c.name,
                     emoji: CUISINE_EMOJI_MAP[c.name.toLowerCase()] ?? '🍴',
+                    region: c.region || null,
                 }))
         }
 
@@ -49,6 +50,7 @@ export function useCuisineOptions() {
             name,
             label: name,
             emoji: CUISINE_EMOJI_MAP[name.toLowerCase()] ?? '🍴',
+            region: null,
         }))
     }, [kgCuisines])
 

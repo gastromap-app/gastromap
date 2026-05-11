@@ -101,8 +101,46 @@ function StepCuisines({ value, onChange }) {
     const toggle = (id) =>
         onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
 
+    // Group cuisines by category based on region
+    const grouped = React.useMemo(() => {
+        const groups = {
+            'European': [],
+            'Asian': [],
+            'Middle East & Africa': [],
+            'Americas': [],
+            'By Type': [],
+            'Drinks': [],
+            'Other': [],
+        }
+
+        const regionMap = {
+            'Southern Europe': 'European', 'Western Europe': 'European', 'Central Europe': 'European',
+            'Eastern Europe': 'European', 'Eastern European': 'European', 'Europe': 'European',
+            'East Asia': 'Asian', 'Southeast Asia': 'Asian', 'Asia': 'Asian',
+            'Middle East': 'Middle East & Africa', 'North Africa': 'Middle East & Africa', 'East Africa': 'Middle East & Africa',
+            'South America': 'Americas',
+        }
+
+        const drinkNames = new Set(['specialty coffee', 'wine bar', 'cocktail bar', 'craft beer'])
+        const typeNames = new Set(['seafood', 'steakhouse', 'vegetarian', 'vegan', 'raw food', 'farm to table', 'molecular', 'tapas', 'sushi', 'ramen', 'pizza', 'burger', 'bbq', 'bakery & pastry', 'desserts'])
+
+        cuisines.forEach(c => {
+            const lower = c.name.toLowerCase()
+            if (drinkNames.has(lower)) { groups['Drinks'].push(c); return }
+            if (typeNames.has(lower)) { groups['By Type'].push(c); return }
+            const category = regionMap[c.region] || null
+            if (category) { groups[category].push(c); return }
+            // Fallback: check known names
+            if (['american', 'mexican', 'brazilian', 'peruvian'].includes(lower)) { groups['Americas'].push(c); return }
+            if (['local cuisine', 'international', 'fusion'].includes(lower)) { groups['Other'].push(c); return }
+            groups['European'].push(c) // default
+        })
+
+        return Object.entries(groups).filter(([, items]) => items.length > 0)
+    }, [cuisines])
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">
                     {t('onboarding.cuisines_title')}
@@ -112,23 +150,29 @@ function StepCuisines({ value, onChange }) {
                 </p>
             </div>
 
-            <div className="flex flex-wrap gap-2.5">
-                {isLoading
-                    ? Array.from({ length: 8 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="h-10 rounded-2xl bg-white/10 animate-pulse"
-                            style={{ width: `${70 + (i % 3) * 20}px` }}
-                        />
-                    ))
-                    : cuisines.map((c) => (
-                        <Chip key={c.id} selected={value.includes(c.name)} onClick={() => toggle(c.name)}>
-                            <span className="text-base">{c.emoji}</span>
-                            {c.label}
-                        </Chip>
-                    ))
-                }
-            </div>
+            {isLoading ? (
+                <div className="flex flex-wrap gap-2.5">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="h-10 rounded-2xl bg-white/10 animate-pulse" style={{ width: `${70 + (i % 3) * 20}px` }} />
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1 scrollbar-hide">
+                    {grouped.map(([category, items]) => (
+                        <div key={category}>
+                            <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] mb-2">{category}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {items.map((c) => (
+                                    <Chip key={c.id} selected={value.includes(c.name)} onClick={() => toggle(c.name)}>
+                                        <span className="text-base">{c.emoji}</span>
+                                        {c.label}
+                                    </Chip>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }

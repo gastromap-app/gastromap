@@ -338,6 +338,15 @@ const LocationFormSlideOver = ({
                 } else {
                     console.log('[LocationForm] Full enrich complete ✅', result)
                     setToast?.({ type: 'success', message: 'Full AI Enrichment complete ✅' })
+                    // Auto-refresh form data with enriched fields
+                    const enriched = result?.semantic
+                    if (enriched && typeof enriched === 'object' && !enriched.error) {
+                        setFormData(prev => ({
+                            ...prev,
+                            ...(enriched.ai_context && { ai_context: enriched.ai_context }),
+                            ...(enriched.ai_keywords && { ai_keywords: enriched.ai_keywords }),
+                        }))
+                    }
                 }
             },
             onError: (err) => {

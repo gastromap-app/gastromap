@@ -32,7 +32,7 @@ import KGEnrichmentAgent from '../components/KGEnrichmentAgent'
 
 // ─── LIST ITEM ────────────────────────────────────────────────────────────────
 
-const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) => {
+const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx: _idx }, ref) => {
     const isCuisine = type === 'cuisines'
     const isDish    = type === 'dishes'
     const isVibe    = type === 'vibes'
@@ -53,13 +53,8 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
                            : (item.category || item.description)
 
     return (
-        <motion.div
+        <div
             ref={ref}
-            layout
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ delay: (idx % 15) * 0.03 }}
             className="group flex items-center gap-4 px-5 py-3.5 bg-white dark:bg-[hsl(220,20%,6%)]/50 border border-slate-100 dark:border-white/[0.04] rounded-2xl hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all"
         >
             {/* Icon */}
@@ -123,7 +118,7 @@ const ListItem = React.forwardRef(({ type, item, onEdit, onDelete, idx }, ref) =
                     <Trash2 size={14} />
                 </button>
             </div>
-        </motion.div>
+        </div>
     )
 })
 
@@ -142,7 +137,7 @@ const FormModalBase = ({ title, onSave, onClose, children, disabled = false }) =
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 12 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-xl rounded-[32px] shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-xl rounded-2xl shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[90vh] overflow-hidden flex flex-col"
         >
             {/* Header */}
             <div className="px-7 py-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
@@ -196,7 +191,7 @@ const InfoModal = ({ onClose }) => (
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-2xl rounded-[32px] shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-[hsl(220,20%,3%)] w-full max-w-2xl rounded-2xl shadow-xl border border-slate-100 dark:border-white/[0.06] max-h-[85vh] overflow-hidden flex flex-col"
         >
             <div className="px-8 py-6 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -508,7 +503,7 @@ function SpoonacularEnricher({ onImport, existingDishes = [], existingIngredient
     }
 
     return (
-        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
             {/* Header row */}
             <button
                 onClick={() => setOpen(v => !v)}
@@ -1019,23 +1014,20 @@ const AdminKnowledgeGraphPage = () => {
             />
 
             {/* ── Stats ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
-                {stats.map((s, i) => (
-                    <motion.div
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                {stats.map((s) => (
+                    <div
                         key={s.label}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        className="bg-white dark:bg-[hsl(220,20%,6%)]/50 p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm flex items-center gap-4"
+                        className="bg-white dark:bg-white/[0.03] p-3 lg:p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04] flex items-center gap-3 lg:gap-4 hover:border-slate-200 dark:hover:border-white/[0.08] transition-all"
                     >
-                        <div className={cn('w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center flex-shrink-0', s.bg)}>
-                            <s.Icon size={18} className={s.color} />
+                        <div className={cn('w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center flex-shrink-0', s.bg)}>
+                            <s.Icon size={18} className={s.color} strokeWidth={1.5} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-[hsl(220,10%,55%)] tracking-widest">{s.label}</p>
-                            <p className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white leading-none mt-0.5">{s.val}</p>
+                            <p className="text-[10px] font-medium uppercase text-slate-400 tracking-wider mb-1 leading-none">{s.label}</p>
+                            <p className="text-xl lg:text-2xl font-light text-slate-900 dark:text-white leading-none tracking-tight">{s.val}</p>
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
 
@@ -1044,7 +1036,7 @@ const AdminKnowledgeGraphPage = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 p-6 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-[32px] flex items-start gap-4"
+                    className="mb-8 p-6 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-2xl flex items-start gap-4"
                 >
                     <div className="w-12 h-12 rounded-2xl bg-red-100/50 dark:bg-red-900/20 flex items-center justify-center text-red-600 flex-shrink-0">
                         <AlertCircle size={24} />
@@ -1115,7 +1107,7 @@ const AdminKnowledgeGraphPage = () => {
             />
 
             {/* ── Main list card ── */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[32px] lg:rounded-[40px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col">
 
                 {/* Toolbar */}
                 <div className="p-4 lg:p-6 border-b border-slate-50 dark:border-white/[0.03] flex flex-col sm:flex-row sm:items-center gap-4">
@@ -1150,7 +1142,7 @@ const AdminKnowledgeGraphPage = () => {
                     {/* Duplicate Finder */}
                     <button
                         onClick={checkForDuplicates}
-                        className="h-9 px-3 flex items-center gap-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-[11px] font-bold uppercase tracking-wider transition-all border border-transparent hover:border-indigo-100"
+                        className="h-9 px-3 flex items-center gap-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-[11px] font-medium uppercase tracking-wider transition-all border border-transparent hover:border-indigo-100"
                         title="Scan current tab for duplicate names"
                     >
                         <Zap size={14} className="text-amber-500" />
@@ -1159,12 +1151,12 @@ const AdminKnowledgeGraphPage = () => {
 
                     {/* Search */}
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={15} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
                         <input
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             placeholder={`Search ${activeTab}…`}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[hsl(220,20%,3%)]/30 border-none rounded-2xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 transition-all shadow-inner"
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 focus:border-indigo-300 dark:focus:border-indigo-500/40 transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
                         />
                     </div>
 

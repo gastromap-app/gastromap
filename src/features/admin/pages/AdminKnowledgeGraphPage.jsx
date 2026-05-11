@@ -5,7 +5,7 @@ import {
     Brain, UtensilsCrossed, Plus, Search,
     Edit2, Trash2, X, Save, Leaf,
     Globe, Sparkles, RefreshCw, Zap, Download,
-    Info, Filter, Database, ChevronRight,
+    Info, Database, ChevronRight,
     CheckCircle2, AlertCircle, Carrot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -727,6 +727,8 @@ const AdminKnowledgeGraphPage = () => {
 
     const [activeTab, setActiveTab]   = useState('cuisines')
     const [searchTerm, setSearchTerm] = useState('')
+    const [listPage, setListPage]     = useState(1)
+    const LIST_PAGE_SIZE = 20
     const [showModal, setShowModal]   = useState(null)
     const [isInfoOpen, setIsInfoOpen] = useState(false)
     const [toast, setToast]           = useState(null)
@@ -1118,7 +1120,7 @@ const AdminKnowledgeGraphPage = () => {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => { setActiveTab(tab.id); setSearchTerm('') }}
+                                    onClick={() => { setActiveTab(tab.id); setSearchTerm(''); setListPage(1) }}
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all",
                                         active
@@ -1154,7 +1156,7 @@ const AdminKnowledgeGraphPage = () => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
                         <input
                             value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
+                            onChange={e => { setSearchTerm(e.target.value); setListPage(1) }}
                             placeholder={`Search ${activeTab}…`}
                             className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl text-[13px] font-medium outline-none focus:ring-2 ring-indigo-500/10 focus:border-indigo-300 dark:focus:border-indigo-500/40 transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
                         />
@@ -1177,10 +1179,6 @@ const AdminKnowledgeGraphPage = () => {
                     >
                         ↺
                     </button>
-                    <button className="h-10 px-3 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/[0.08] text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all flex-shrink-0">
-                        <Filter size={14} />
-                        <span className="text-xs font-medium hidden sm:inline">Filter</span>
-                    </button>
                 </div>
 
                 {/* List */}
@@ -1192,7 +1190,7 @@ const AdminKnowledgeGraphPage = () => {
                                 <div className="h-3 w-32 bg-slate-100 dark:bg-[hsl(220,20%,9%)] rounded-full animate-pulse" />
                             </div>
                         ) : filteredItems.length > 0 ? (
-                            filteredItems.map((item, idx) => (
+                            filteredItems.slice((listPage - 1) * LIST_PAGE_SIZE, listPage * LIST_PAGE_SIZE).map((item, idx) => (
                                 <ListItem
                                     key={item.id}
                                     type={activeTab}
@@ -1230,19 +1228,36 @@ const AdminKnowledgeGraphPage = () => {
                     </AnimatePresence>
                 </div>
 
-                {/* Footer count */}
+                {/* Footer with pagination */}
                 {filteredItems.length > 0 && (
                     <div className="px-6 py-3 border-t border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
                         <p className="text-xs text-slate-400 font-medium">
-                            Showing {filteredItems.length} of {counts[activeTab]} {activeTab}
+                            Showing {Math.min(listPage * LIST_PAGE_SIZE, filteredItems.length)} of {filteredItems.length} {activeTab}
                         </p>
-                        <button
-                            onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
-                        >
-                            <Plus size={13} />
-                            Add {activeTab.slice(0, -1)}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {Math.ceil(filteredItems.length / LIST_PAGE_SIZE) > 1 && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        disabled={listPage === 1}
+                                        onClick={() => setListPage(p => p - 1)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
+                                    >Prev</button>
+                                    <span className="text-[10px] font-medium text-slate-400">{listPage} / {Math.ceil(filteredItems.length / LIST_PAGE_SIZE)}</span>
+                                    <button
+                                        disabled={listPage >= Math.ceil(filteredItems.length / LIST_PAGE_SIZE)}
+                                        onClick={() => setListPage(p => p + 1)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
+                                    >Next</button>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setShowModal({ type: activeTab.slice(0, -1), data: null })}
+                                className="flex items-center gap-1.5 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
+                            >
+                                <Plus size={13} />
+                                Add {activeTab.slice(0, -1)}
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

@@ -500,23 +500,29 @@ export function OnboardingFlow({ onComplete }) {
             vibePreference: vibes,
             priceRange: budget,
             dietaryRestrictions: allergens,
-            atmospherePreference: atmosphere,
+            atmospherePreference: atmosphere || '',
             features: features,
         }
 
         // 1. Save to Zustand + localStorage (instant)
-        await updatePrefs(dna)
+        try {
+            await updatePrefs(dna)
+        } catch (err) {
+            console.warn('[Onboarding] Local save failed:', err)
+        }
 
-        // 2. Save to Supabase via API
+        // 2. Save to Supabase via API (with timeout to prevent freeze)
         try {
             const { supabase } = await import('@/shared/api/client')
-            const { data: { session } } = await supabase.auth.getSession()
+            const sessionPromise = supabase.auth.getSession()
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 5000))
+            const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
             if (session?.user?.id) {
                 await updateUserPreferences(session.user.id, { longTerm: dna })
                 console.log('[Onboarding] ✅ DNA saved to Supabase')
             }
         } catch (err) {
-            console.warn('[Onboarding] Supabase save failed:', err?.message || err)
+            console.warn('[Onboarding] Supabase save failed (non-blocking):', err?.message || err)
         }
 
         setSaving(false)

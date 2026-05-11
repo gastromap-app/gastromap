@@ -366,7 +366,6 @@ const LocationFilters = ({
                     {[
                         { id: 'all', label: t('admin.tabs.all'), icon: ListIcon },
                         { id: 'pending', label: t('admin.tabs.pending'), icon: Clock },
-                        { id: 'active', label: t('admin.tabs.active'), icon: Zap },
                         { id: 'reviews', label: t('admin.tabs.reviews'), icon: MessageSquare },
                     ].map(tab => (
                         <button

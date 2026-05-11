@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MapTab from '@/features/dashboard/components/MapTab'
 import LocationListItem from './LocationListItem'
@@ -84,17 +83,15 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
     )
 
     return (
-        <AnimatePresence mode="wait">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={viewMode}>
-                {viewMode === 'list' ? (
-                    renderTableView(filteredLocations)
-                ) : (
-                    <div className="h-[600px] w-full p-4 lg:p-10">
-                        <MapTab />
-                    </div>
-                )}
-            </motion.div>
-        </AnimatePresence>
+        <div key={viewMode}>
+            {viewMode === 'list' ? (
+                renderTableView(filteredLocations)
+            ) : (
+                <div className="h-[600px] w-full p-4 lg:p-10">
+                    <MapTab />
+                </div>
+            )}
+        </div>
     )
 }
 

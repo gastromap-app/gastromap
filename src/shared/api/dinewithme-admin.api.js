@@ -127,8 +127,8 @@ export async function getDinePresences(opts = {}) {
         .from('dining_presence')
         .select(`
             *,
-            profile:profiles(id, full_name, name, email, avatar_url, role),
-            location:locations(id, title, name, address)
+            profile:profiles(id, full_name, email, avatar_url, role),
+            location:locations(id, title, address)
         `)
         .order('created_at', { ascending: false })
         .limit(opts.limit || 100)

@@ -44,11 +44,13 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                 <table className="w-full text-left border-collapse min-w-[900px]">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-[hsl(220,20%,6%)] border-b border-slate-200 dark:border-white/[0.06] sticky top-0 z-10">
-                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[30%]">{t('admin.table.object')}</th>
-                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[15%]">{t('admin.table.location')}</th>
-                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[10%]">{t('admin.table.rating')}</th>
-                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[10%]">Price</th>
-                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[15%]">{t('admin.table.status')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[25%]">{t('admin.table.object')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[12%]">{t('admin.table.location')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[8%]">{t('admin.table.rating')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[8%]">Price</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[12%]">{t('admin.table.status')}</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[12%]">Created</th>
+                            <th className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider w-[12%]">Updated</th>
                             <th className="px-4 py-3 text-right w-[5%]"></th>
                         </tr>
                     </thead>
@@ -70,7 +72,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="text-center py-20">
+                                <td colSpan="8" className="text-center py-20">
                                     <p className="text-micro font-black text-t-quaternary uppercase tracking-[0.3em]">
                                         {t('admin.table.no_objects_to_display')}
                                     </p>

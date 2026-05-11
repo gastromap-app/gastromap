@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { 
-    Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown, Clock, Zap,
-    Star, DollarSign, Tag, SortAsc, LayoutGrid, SlidersHorizontal, MessageSquare, Globe
+    Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown,
+    Star, DollarSign, Tag, SortAsc, SlidersHorizontal, Globe, Clock, MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
@@ -37,16 +37,7 @@ const LocationFilters = ({
     countries = []
 }) => {
     const { t, i18n } = useTranslation()
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false)
-    const searchInputRef = useRef(null)
-
-    // Auto-focus search input when expanded
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus()
-        }
-    }, [isSearchExpanded])
 
     const togglePriceLevel = (level) => {
         if (activePriceLevels.includes(level)) {
@@ -77,52 +68,27 @@ const LocationFilters = ({
                 
                 {/* Search Bar Container */}
                 <div className="flex-1 min-w-[280px] flex items-center gap-3">
-                    <div className="relative flex items-center group">
-                        <AnimatePresence initial={false}>
-                            {!isSearchExpanded ? (
-                                <motion.button
-                                    key="search-btn"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    onClick={() => setIsSearchExpanded(true)}
-                                    className="p-3 bg-secondary rounded-card text-t-quaternary hover:text-primary transition-all border border-border"
-                                >
-                                    <Search size={20} strokeWidth={2.5} />
-                                </motion.button>
-                            ) : (
-                                <motion.div
-                                    key="search-input"
-                                    initial={{ width: 40, opacity: 0 }}
-                                    animate={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? 'calc(100vw - 120px)' : 320, opacity: 1 }}
-                                    exit={{ width: 40, opacity: 0 }}
-                                    className="relative flex items-center"
-                                >
-                                    <Search className="absolute left-4 text-slate-300 dark:text-[hsl(220,10%,55%)]" size={16} />
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        placeholder={t('admin.search_placeholder', { count: totalCount || 0 })}
-                                        value={searchQuery}
-                                        onChange={(e) => onSearchChange(e.target.value)}
-                                        onBlur={() => !searchQuery && setIsSearchExpanded(false)}
-                                        className="w-full pl-11 pr-10 py-3 bg-secondary border border-border rounded-card text-[13px] font-black uppercase tracking-widest outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all shadow-inner text-t-primary"
-                                    />
-                                    {searchQuery && (
-                                        <button 
-                                            onClick={() => { onSearchChange(''); setIsSearchExpanded(false); }}
-                                        className="absolute right-3 p-1.5 hover:bg-secondary rounded-image text-t-quaternary transition-colors"
-                                    >
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                    <div className="relative flex items-center flex-1 max-w-md">
+                        <Search className="absolute left-4 text-slate-400 dark:text-slate-500" size={16} />
+                        <input
+                            type="text"
+                            placeholder={t('admin.search_placeholder', { count: totalCount || 0 })}
+                            value={searchQuery}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            className="w-full pl-11 pr-10 py-3 bg-secondary border border-border rounded-card text-[13px] font-medium outline-none ring-2 ring-transparent focus:ring-primary/20 focus:border-primary/30 transition-all text-t-primary placeholder:text-t-quaternary"
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => onSearchChange('')}
+                                className="absolute right-3 p-1.5 hover:bg-secondary rounded-image text-t-quaternary transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="hidden md:block">
-                        <p className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary leading-none">
+                        <p className="text-micro font-bold uppercase tracking-[0.15em] text-t-tertiary leading-none">
                             {searchQuery ? t('admin.found_count', { count: filteredCount }) : t('admin.total_count', { count: totalCount })}
                         </p>
                     </div>

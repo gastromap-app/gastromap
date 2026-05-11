@@ -125,7 +125,6 @@ const PageLoader = () => (
 )
 
 // ─── ScrollToTop: сбрасываем скролл при каждом переходе ────────────────────
-// Also triggers View Transitions API for smooth page crossfades (Chrome 111+, Safari 18+)
 function ScrollToTop() {
     const { pathname } = useLocation()
     const prevPathRef = React.useRef(pathname)
@@ -136,8 +135,11 @@ function ScrollToTop() {
 
         const scrollReset = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 
-        // Use View Transitions API if available for smooth crossfade
-        if (document.startViewTransition) {
+        // Skip View Transitions for admin pages — they have their own layout
+        // and the crossfade causes an unwanted flash/blink effect
+        const isAdminRoute = pathname.startsWith('/admin')
+        
+        if (!isAdminRoute && document.startViewTransition) {
             document.startViewTransition(() => {
                 scrollReset()
                 return Promise.resolve()

@@ -250,7 +250,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {v.label}
                                     </button>
@@ -282,7 +282,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-rose-500 text-white border-rose-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {d}
                                     </button>
@@ -311,7 +311,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-black transition-all border ${isSelected ? 'bg-amber-500 text-white border-amber-400' : 'bg-white/5 text-white/40 border-white/10'}`}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-black transition-all border ${isSelected ? 'bg-amber-500 text-white border-amber-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {p}
                                     </button>
@@ -386,7 +386,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-emerald-500 text-white border-emerald-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {f}
                                     </button>

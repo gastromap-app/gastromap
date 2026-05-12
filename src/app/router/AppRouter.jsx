@@ -133,20 +133,7 @@ function ScrollToTop() {
         if (prevPathRef.current === pathname) return
         prevPathRef.current = pathname
 
-        const scrollReset = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-
-        // Skip View Transitions for admin pages — they have their own layout
-        // and the crossfade causes an unwanted flash/blink effect
-        const isAdminRoute = pathname.startsWith('/admin')
-        
-        if (!isAdminRoute && document.startViewTransition) {
-            document.startViewTransition(() => {
-                scrollReset()
-                return Promise.resolve()
-            })
-        } else {
-            scrollReset()
-        }
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
     }, [pathname])
     return null
 }

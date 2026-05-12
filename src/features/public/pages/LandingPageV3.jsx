@@ -5,6 +5,7 @@ import { getLocationsCount } from '@/shared/api/locations.api'
 import { ArrowUpRight, Heart, MapPin, Sparkles, Search, Globe, Star, ChevronDown } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useTheme } from '@/hooks/useTheme'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -106,7 +107,7 @@ function AnimatedCounter({ target, suffix = '', duration = 2 }) {
 // ════════════════════════════════════════════════════════════════════════════
 // NAVBAR
 // ════════════════════════════════════════════════════════════════════════════
-function Navbar() {
+function Navbar({ isDark }) {
     const [scrolled, setScrolled] = useState(false)
 
     useEffect(() => {
@@ -116,10 +117,10 @@ function Navbar() {
     }, [])
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? (isDark ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : 'bg-white/80 backdrop-blur-xl border-b border-gray-200/60 shadow-sm') : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 md:h-20 flex items-center justify-between">
-                <span className="text-white text-lg font-medium tracking-tight">GastroMap</span>
-                <Link to="/auth/signup" className="h-9 px-5 rounded-full bg-white text-black text-sm font-medium flex items-center gap-1.5 hover:bg-white/90 transition-colors">
+                <span className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg font-medium tracking-tight`}>GastroMap</span>
+                <Link to="/auth/signup" className={`h-9 px-5 rounded-full ${isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-gray-900 text-white hover:bg-gray-800'} text-sm font-medium flex items-center gap-1.5 transition-colors`}>
                     Get Started <ArrowUpRight size={14} />
                 </Link>
             </div>
@@ -130,7 +131,7 @@ function Navbar() {
 // ════════════════════════════════════════════════════════════════════════════
 // 1. HERO
 // ════════════════════════════════════════════════════════════════════════════
-function HeroSection() {
+function HeroSection({ isDark }) {
     const [locationCount, setLocationCount] = useState(null)
     const containerRef = useRef(null)
     const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end start'] })
@@ -207,23 +208,23 @@ function HeroSection() {
 // ════════════════════════════════════════════════════════════════════════════
 // 2. ABOUT — Scroll-reveal text
 // ════════════════════════════════════════════════════════════════════════════
-function AboutSection() {
+function AboutSection({ isDark }) {
     return (
-        <section className="py-32 md:py-48 bg-[#0A0A0A]">
+        <section className={`py-32 md:py-48 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
             <div className="max-w-5xl mx-auto px-6 md:px-10">
-                <p className="text-xs font-light tracking-[0.3em] uppercase text-white/30 mb-8">About</p>
+                <p className={`text-xs font-light tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'} mb-8`}>About</p>
                 <ScrollRevealText
                     text="A community-driven platform to discover the best local restaurants, cafes, and bars. Built by food lovers, for travelers who seek authenticity over algorithms."
-                    className="text-2xl md:text-4xl lg:text-[2.75rem] font-light tracking-tight leading-[1.2] text-white"
+                    className={`text-2xl md:text-4xl lg:text-[2.75rem] font-light tracking-tight leading-[1.2] ${isDark ? 'text-white' : 'text-gray-900'}`}
                 />
-                <div className="h-px w-16 bg-white/10 mt-12" />
-                <p className="mt-8 text-lg text-white/40 font-light italic max-w-lg">
+                <div className={`h-px w-16 ${isDark ? 'bg-white/10' : 'bg-gray-200'} mt-12`} />
+                <p className={`mt-8 text-lg ${isDark ? 'text-white/40' : 'text-gray-500'} font-light italic max-w-lg`}>
                     "Every great meal starts with a recommendation from someone who cares."
                 </p>
-                <p className="mt-3 text-sm text-white/30 font-light">— Alikovit</p>
+                <p className={`mt-3 text-sm ${isDark ? 'text-white/30' : 'text-gray-400'} font-light`}>— Alikovit</p>
                 <Link
                     to="/explore"
-                    className="mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full border border-white/20 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+                    className={`mt-6 inline-flex items-center gap-2 h-11 px-6 rounded-full border ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-gray-300 text-gray-900 hover:bg-gray-100'} text-sm font-medium transition-colors`}
                 >
                     Explore Map <ArrowUpRight size={14} />
                 </Link>
@@ -235,7 +236,7 @@ function AboutSection() {
 // ════════════════════════════════════════════════════════════════════════════
 // 3. FEATURES — Large cards with parallax images
 // ════════════════════════════════════════════════════════════════════════════
-function FeaturesSection() {
+function FeaturesSection({ isDark }) {
     const features = [
         {
             title: 'GastroGuide AI',
@@ -258,16 +259,16 @@ function FeaturesSection() {
     ]
 
     return (
-        <section className="py-24 md:py-40 bg-[#0A0A0A]">
+        <section className={`py-24 md:py-40 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
-                <p className="text-xs font-light tracking-[0.3em] uppercase text-white/30 mb-4">Features</p>
-                <h2 className="text-3xl md:text-5xl font-light tracking-tight text-white mb-16 md:mb-24">
+                <p className={`text-xs font-light tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'} mb-4`}>Features</p>
+                <h2 className={`text-3xl md:text-5xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'} mb-16 md:mb-24`}>
                     Everything you need.<br />Nothing you don't.
                 </h2>
 
                 <div className="space-y-20 md:space-y-32">
                     {features.map((feature, i) => (
-                        <FeatureCard key={i} feature={feature} index={i} />
+                        <FeatureCard key={i} feature={feature} index={i} isDark={isDark} />
                     ))}
                 </div>
             </div>
@@ -275,7 +276,7 @@ function FeaturesSection() {
     )
 }
 
-function FeatureCard({ feature, index }) {
+function FeatureCard({ feature, index, isDark }) {
     const ref = useRef(null)
     const isInView = useInView(ref, { once: true, margin: '-100px' })
     const isEven = index % 2 === 0
@@ -289,9 +290,9 @@ function FeatureCard({ feature, index }) {
             className={`grid md:grid-cols-2 gap-8 md:gap-16 items-center ${isEven ? '' : 'md:[direction:rtl]'}`}
         >
             <div className={`space-y-6 ${isEven ? '' : 'md:[direction:ltr]'}`}>
-                <span className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/30">{feature.tag}</span>
-                <h3 className="text-2xl md:text-4xl font-light tracking-tight text-white">{feature.title}</h3>
-                <p className="text-base md:text-lg text-white/50 font-light leading-relaxed max-w-md">{feature.description}</p>
+                <span className={`text-[10px] font-medium tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'}`}>{feature.tag}</span>
+                <h3 className={`text-2xl md:text-4xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
+                <p className={`text-base md:text-lg ${isDark ? 'text-white/50' : 'text-gray-500'} font-light leading-relaxed max-w-md`}>{feature.description}</p>
             </div>
             <div className={`${isEven ? '' : 'md:[direction:ltr]'}`}>
                 <ParallaxImage src={feature.image} alt={feature.title} className="aspect-[4/3] rounded-2xl" speed={0.15} />
@@ -303,7 +304,7 @@ function FeatureCard({ feature, index }) {
 // ════════════════════════════════════════════════════════════════════════════
 // 4. GALLERY — Horizontal scroll with parallax photos
 // ════════════════════════════════════════════════════════════════════════════
-function GallerySection() {
+function GallerySection({ isDark }) {
     const containerRef = useRef(null)
     const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start end', 'end start'] })
     const x = useTransform(scrollYProgress, [0, 1], ['10%', '-30%'])
@@ -319,10 +320,10 @@ function GallerySection() {
     ]
 
     return (
-        <section ref={containerRef} className="py-24 md:py-32 bg-[#0A0A0A] overflow-hidden">
+        <section ref={containerRef} className={`py-24 md:py-32 overflow-hidden ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`}>
             <div className="max-w-7xl mx-auto px-6 md:px-10 mb-12">
-                <p className="text-xs font-light tracking-[0.3em] uppercase text-white/30 mb-4">Gallery</p>
-                <h2 className="text-3xl md:text-5xl font-light tracking-tight text-white">Culinary Moments.</h2>
+                <p className={`text-xs font-light tracking-[0.3em] uppercase mb-4 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Gallery</p>
+                <h2 className={`text-3xl md:text-5xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Culinary Moments.</h2>
             </div>
             <motion.div style={{ x }} className="flex gap-4 md:gap-6 pl-6">
                 {images.map((img, i) => (
@@ -338,12 +339,12 @@ function GallerySection() {
 // ════════════════════════════════════════════════════════════════════════════
 // 5. CITIES MARQUEE
 // ════════════════════════════════════════════════════════════════════════════
-function CitiesMarquee() {
+function CitiesMarquee({ isDark }) {
     const cities = ['Kraków', 'Warsaw', 'Berlin', 'Paris', 'Rome', 'Barcelona', 'Lisbon', 'Prague', 'Amsterdam', 'Vienna']
 
     return (
-        <section className="py-16 md:py-24 bg-[#0A0A0A] border-y border-white/5">
-            <Marquee speed={15} className="text-white/10">
+        <section className={`py-16 md:py-24 ${isDark ? 'bg-[#0A0A0A] border-y border-white/5' : 'bg-gray-50 border-y border-gray-200'}`}>
+            <Marquee speed={15} className={isDark ? 'text-white/10' : 'text-gray-200'}>
                 <div className="flex items-center gap-8 md:gap-12 px-4 md:px-6">
                     {cities.map((city, i) => (
                         <span key={i} className="text-4xl md:text-6xl font-light tracking-tight whitespace-nowrap">{city}</span>
@@ -357,7 +358,7 @@ function CitiesMarquee() {
 // ════════════════════════════════════════════════════════════════════════════
 // 6. STATS
 // ════════════════════════════════════════════════════════════════════════════
-function StatsSection() {
+function StatsSection({ isDark }) {
     const stats = [
         { value: 200, suffix: '+', label: 'Curated Locations' },
         { value: 8, suffix: '', label: 'Countries' },
@@ -366,15 +367,15 @@ function StatsSection() {
     ]
 
     return (
-        <section className="py-24 md:py-32 bg-[#0A0A0A]">
+        <section className={`py-24 md:py-32 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
             <div className="max-w-5xl mx-auto px-6 md:px-10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                     {stats.map((stat, i) => (
                         <div key={i} className="text-center">
-                            <p className="text-4xl md:text-6xl font-light text-white tracking-tight">
+                            <p className={`text-4xl md:text-6xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                             </p>
-                            <p className="mt-2 text-xs tracking-[0.2em] uppercase text-white/30 font-light">{stat.label}</p>
+                            <p className={`mt-2 text-xs tracking-[0.2em] uppercase font-light ${isDark ? 'text-white/30' : 'text-gray-400'}`}>{stat.label}</p>
                         </div>
                     ))}
                 </div>
@@ -386,31 +387,31 @@ function StatsSection() {
 // ════════════════════════════════════════════════════════════════════════════
 // 7. MANIFESTO + SUPPORT
 // ════════════════════════════════════════════════════════════════════════════
-function ManifestoSection() {
+function ManifestoSection({ isDark }) {
     const ref = useRef(null)
     const isInView = useInView(ref, { once: true, margin: '-100px' })
 
     return (
-        <section ref={ref} className="py-24 md:py-40 bg-[#0A0A0A]">
+        <section ref={ref} className={`py-24 md:py-40 ${isDark ? 'bg-[#0A0A0A]' : 'bg-gray-50'}`}>
             <div className="max-w-4xl mx-auto px-6 md:px-10 text-center">
                 <motion.div initial={{ opacity: 0, y: 40 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, ease: CUBIC }}>
-                    <p className="text-xs font-light tracking-[0.3em] uppercase text-white/30 mb-6">Manifesto</p>
-                    <h2 className="text-3xl md:text-5xl font-light tracking-tight text-white leading-tight mb-8">
+                    <p className={`text-xs font-light tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'} mb-6`}>Manifesto</p>
+                    <h2 className={`text-3xl md:text-5xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'} leading-tight mb-8`}>
                         We believe every meal<br />is an adventure waiting<br />to happen.
                     </h2>
-                    <p className="text-base md:text-lg text-white/40 font-light max-w-2xl mx-auto leading-relaxed mb-12">
+                    <p className={`text-base md:text-lg ${isDark ? 'text-white/40' : 'text-gray-500'} font-light max-w-2xl mx-auto leading-relaxed mb-12`}>
                         GastroMap is more than an app — it's a movement. We connect food lovers with authentic local experiences, one recommendation at a time. No paid placements. No algorithms deciding your taste. Just real people sharing real discoveries.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link to="/auth/signup" className="h-12 px-8 rounded-full bg-white text-black text-sm font-medium flex items-center gap-2 hover:bg-white/90 transition-colors">
+                        <Link to="/auth/signup" className={`h-12 px-8 rounded-full ${isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-gray-900 text-white hover:bg-gray-800'} text-sm font-medium flex items-center gap-2 transition-colors`}>
                             Join the Community <ArrowUpRight size={14} />
                         </Link>
                         <a
                             href="https://send.monobank.ua/jar/5tZhMJXSMQ"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-12 px-8 rounded-full border border-white/20 text-white text-sm font-medium flex items-center gap-2 hover:bg-white/10 transition-colors"
+                            className={`h-12 px-8 rounded-full border ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-gray-300 text-gray-900 hover:bg-gray-100'} text-sm font-medium flex items-center gap-2 transition-colors`}
                         >
                             Support the Project <Heart size={14} className="text-red-400" />
                         </a>
@@ -424,23 +425,23 @@ function ManifestoSection() {
 // ════════════════════════════════════════════════════════════════════════════
 // 8. FOOTER
 // ════════════════════════════════════════════════════════════════════════════
-function Footer() {
+function Footer({ isDark }) {
     return (
-        <footer className="py-16 md:py-20 bg-[#050505] border-t border-white/5">
+        <footer className={`py-16 md:py-20 ${isDark ? 'bg-[#050505] border-t border-white/5' : 'bg-gray-100 border-t border-gray-200'}`}>
             <div className="max-w-7xl mx-auto px-6 md:px-10">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
-                        <span className="text-white text-lg font-medium tracking-tight">GastroMap</span>
-                        <p className="mt-2 text-sm text-white/30 font-light leading-relaxed max-w-sm">
+                        <span className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg font-medium tracking-tight`}>GastroMap</span>
+                        <p className={`mt-2 text-sm ${isDark ? 'text-white/30' : 'text-gray-500'} font-light leading-relaxed max-w-sm`}>
                             Your personal AI-powered guide to the best dining experiences worldwide.
                         </p>
                     </div>
-                    <a href="https://instagram.com/gastromap.app" target="_blank" rel="noopener noreferrer" className="text-xs text-white/20 hover:text-white/50 transition-colors flex items-center gap-1.5">
+                    <a href="https://instagram.com/gastromap.app" target="_blank" rel="noopener noreferrer" className={`text-xs ${isDark ? 'text-white/20 hover:text-white/50' : 'text-gray-400 hover:text-gray-600'} transition-colors flex items-center gap-1.5`}>
                         @gastromap.app <ArrowUpRight size={10} />
                     </a>
                 </div>
-                <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                    <p className="text-xs text-white/20">© 2026 GastroMap. All rights reserved.</p>
+                <div className={`mt-8 pt-8 border-t ${isDark ? 'border-white/5' : 'border-gray-200'} text-center`}>
+                    <p className={`text-xs ${isDark ? 'text-white/20' : 'text-gray-400'}`}>© 2026 GastroMap. All rights reserved.</p>
                 </div>
             </div>
         </footer>
@@ -451,17 +452,20 @@ function Footer() {
 // PAGE EXPORT
 // ════════════════════════════════════════════════════════════════════════════
 export default function LandingPageV3() {
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
+
     return (
-        <div className="bg-[#0A0A0A] text-white min-h-screen">
-            <Navbar />
-            <HeroSection />
-            <AboutSection />
-            <FeaturesSection />
-            <GallerySection />
-            <CitiesMarquee />
-            <StatsSection />
-            <ManifestoSection />
-            <Footer />
+        <div className={`${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-white text-gray-900'} min-h-screen`}>
+            <Navbar isDark={isDark} />
+            <HeroSection isDark={isDark} />
+            <AboutSection isDark={isDark} />
+            <FeaturesSection isDark={isDark} />
+            <GallerySection isDark={isDark} />
+            <CitiesMarquee isDark={isDark} />
+            <StatsSection isDark={isDark} />
+            <ManifestoSection isDark={isDark} />
+            <Footer isDark={isDark} />
         </div>
     )
 }

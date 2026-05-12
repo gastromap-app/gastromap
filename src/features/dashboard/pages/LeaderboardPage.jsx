@@ -14,8 +14,8 @@ export default function LeaderboardPage() {
     const { data: userRank } = useUserRank(user?.id)
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-slate-200/50"
+    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-slate-200"
 
     const getRankIcon = (rank) => {
         switch (rank) {
@@ -111,12 +111,12 @@ export default function LeaderboardPage() {
                     initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     className="flex flex-col items-center relative z-10"
                 >
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-[hsl(220,20%,12%)] flex items-center justify-center font-bold text-xl border-[3px] border-slate-300 dark:border-white/[0.08] z-10 mb-2">
+                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center font-bold text-xl border-[3px] z-10 mb-2 ${isDark ? 'bg-[hsl(220,20%,12%)] border-white/[0.08]' : 'bg-slate-200 border-slate-300'}`}>
                         {top3[1] ? getInitials(top3[1].full_name) : '?'}
                     </div>
-                    <div className="w-20 md:w-28 h-28 bg-gradient-to-t from-slate-200 dark:from-slate-800 to-slate-100 dark:to-slate-700 rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x border-slate-300/50">
+                    <div className={`w-20 md:w-28 h-28 bg-gradient-to-t rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x ${isDark ? 'from-slate-800 to-slate-700 border-slate-600/50' : 'from-slate-200 to-slate-100 border-slate-300/50'}`}>
                         <span className="font-bold text-slate-500">#2</span>
-                        <span className="text-[10px] font-black">{top3[1]?.total_points || 0} pts</span>
+                        <span className={`text-[10px] font-black ${textStyle}`}>{top3[1]?.total_points || 0} pts</span>
                     </div>
                 </motion.div>
 
@@ -128,12 +128,12 @@ export default function LeaderboardPage() {
                     <div className="absolute -top-8 text-yellow-500 animate-bounce">
                         <Crown size={28} />
                     </div>
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center font-bold text-2xl text-yellow-600 dark:text-yellow-500 border-[4px] border-yellow-400 z-10 mb-2 shadow-lg shadow-yellow-500/30">
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center font-bold text-2xl border-[4px] border-yellow-400 z-10 mb-2 shadow-lg shadow-yellow-500/30 ${isDark ? 'bg-yellow-500/20 text-yellow-500' : 'bg-yellow-100 text-yellow-600'}`}>
                         {top3[0] ? getInitials(top3[0].full_name) : '?'}
                     </div>
-                    <div className="w-24 md:w-32 h-36 bg-gradient-to-t from-yellow-100 dark:from-yellow-900/30 to-amber-50 dark:to-amber-500/10 rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x border-yellow-300/50 shadow-2xl">
-                        <span className="font-bold text-amber-600 dark:text-amber-500 text-lg">#1</span>
-                        <span className="text-xs font-black">{top3[0]?.total_points || 0} pts</span>
+                    <div className={`w-24 md:w-32 h-36 bg-gradient-to-t rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x shadow-2xl ${isDark ? 'from-yellow-900/30 to-amber-500/10 border-yellow-300/50' : 'from-yellow-100 to-amber-50 border-yellow-300/50'}`}>
+                        <span className={`font-bold text-lg ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>#1</span>
+                        <span className={`text-xs font-black ${textStyle}`}>{top3[0]?.total_points || 0} pts</span>
                     </div>
                 </motion.div>
 
@@ -142,12 +142,12 @@ export default function LeaderboardPage() {
                     initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                     className="flex flex-col items-center relative z-10"
                 >
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center font-bold text-xl text-amber-700 dark:text-amber-500 border-[3px] border-amber-600/50 z-10 mb-2">
+                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center font-bold text-xl border-[3px] z-10 mb-2 ${isDark ? 'bg-amber-900/30 text-amber-500 border-amber-600/50' : 'bg-amber-100 text-amber-700 border-amber-600/50'}`}>
                         {top3[2] ? getInitials(top3[2].full_name) : '?'}
                     </div>
-                    <div className="w-20 md:w-28 h-24 bg-gradient-to-t from-amber-50 dark:from-amber-900/10 to-transparent rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x border-amber-600/30">
-                        <span className="font-bold text-amber-700/70 dark:text-amber-500/70">#3</span>
-                        <span className="text-[10px] font-black">{top3[2]?.total_points || 0} pts</span>
+                    <div className={`w-20 md:w-28 h-24 bg-gradient-to-t to-transparent rounded-t-xl flex flex-col items-center justify-start pt-4 border-t border-x ${isDark ? 'from-amber-900/10 border-amber-600/30' : 'from-amber-50 border-amber-600/30'}`}>
+                        <span className={`font-bold ${isDark ? 'text-amber-500/70' : 'text-amber-700/70'}`}>#3</span>
+                        <span className={`text-[10px] font-black ${textStyle}`}>{top3[2]?.total_points || 0} pts</span>
                     </div>
                 </motion.div>
             </div>
@@ -160,19 +160,19 @@ export default function LeaderboardPage() {
                 className={`rounded-[32px] overflow-hidden border backdrop-blur-md shadow-xl ${cardBg}`}
             >
                 {/* List Header */}
-                <div className="flex items-center px-6 py-4 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
+                <div className={`flex items-center px-6 py-4 border-b ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-gray-200'}`}>
                     <div className="w-12 text-center text-xs font-bold uppercase tracking-widest opacity-50">Rank</div>
                     <div className="flex-1 text-xs font-bold uppercase tracking-widest opacity-50 px-4">Contributor</div>
                     <div className="w-24 text-right text-xs font-bold uppercase tracking-widest opacity-50">Points</div>
                 </div>
 
                 {/* List Items */}
-                <div className="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+                <div className={`flex flex-col divide-y ${isDark ? 'divide-white/5' : 'divide-gray-100'}`}>
                     {restOfList.map((entry, idx) => (
-                        <div key={entry.profile_id} className="flex items-center px-6 py-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <div key={entry.profile_id} className={`flex items-center px-6 py-4 transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}>
                             <div className="w-12 flex justify-center">{getRankIcon(idx + 4)}</div>
                             <div className="flex-1 px-4 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600'}`}>
                                     {getInitials(entry.full_name)}
                                 </div>
                                 <div>
@@ -188,11 +188,11 @@ export default function LeaderboardPage() {
                     {isLoggedIn && !userInTop && userRank && userRank.rank > 0 && (
                         <>
                             {/* Divider indicating gap to current user */}
-                            <div className="h-12 flex items-center justify-center bg-black/[0.02] dark:bg-white/[0.02]">
+                            <div className={`h-12 flex items-center justify-center ${isDark ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
                                 <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[hsl(220,20%,12%)]" />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-[hsl(220,20%,12%)]' : 'bg-slate-300'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-[hsl(220,20%,12%)]' : 'bg-slate-300'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-[hsl(220,20%,12%)]' : 'bg-slate-300'}`} />
                                 </div>
                             </div>
 
@@ -205,7 +205,7 @@ export default function LeaderboardPage() {
                                     </div>
                                     <div>
                                         <h4 className={`font-bold ${textStyle}`}>{user?.full_name || 'You'}</h4>
-                                        <p className="text-xs text-indigo-500 dark:text-indigo-400 font-medium">Rank #{userRank.rank}</p>
+                                        <p className={`text-xs font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>Rank #{userRank.rank}</p>
                                     </div>
                                 </div>
                                 <div className="w-24 text-right font-black text-amber-500">{userRank.points}</div>

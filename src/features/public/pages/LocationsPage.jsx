@@ -355,7 +355,7 @@ function ErrorState({ isDark }) {
             <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Failed to load venues
             </h3>
-            <p className={`text-sm font-medium ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+            <p className={`text-sm font-medium ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                 Check your connection and try again.
             </p>
         </motion.div>
@@ -372,12 +372,12 @@ function EmptyState({ query, isDark }) {
             className="flex flex-col items-center py-20 text-center"
         >
             <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
-                <SearchX size={36} className={isDark ? 'text-white/30' : 'text-gray-500 dark:text-gray-400'} />
+                <SearchX size={36} className={isDark ? 'text-white/30' : 'text-gray-400'} />
             </div>
             <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 No results {query ? `for "${query}"` : ''}
             </h3>
-            <p className={`text-sm font-medium mb-6 ${isDark ? 'text-white/40' : 'text-gray-500 dark:text-gray-400'}`}>
+            <p className={`text-sm font-medium mb-6 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                 Try a different keyword or remove some filters.
             </p>
             <button
@@ -490,7 +490,7 @@ const LocationsPage = () => {
     const [sortOpen, setSortOpen] = useState(false)
 
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
-    const subTextStyle = isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'
+    const subTextStyle = isDark ? 'text-gray-400' : 'text-gray-500'
     const currentSort = { value: sortBy, label: t(SORT_LABEL_KEYS[sortBy] || 'explore.top_rated') }
 
     // Sync header background with internal scroll container
@@ -561,7 +561,7 @@ const LocationsPage = () => {
                         <>
                             {/* Results counter + Clear filters */}
                             <div className="flex items-center justify-center gap-3 mb-3">
-                                <p className={`text-[12px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <p className={`text-[12px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                                     {t('explore.showing_of', { 
                                         shown: localFilteredLocations.length, 
                                         total: localFilteredLocations.length 
@@ -650,7 +650,7 @@ const LocationsPage = () => {
                                                     onClick={() => { setSortBy(value); setSortOpen(false) }}
                                                     className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors ${
                                                         sortBy === value
-                                                            ? 'text-blue-600 bg-blue-50 dark:bg-blue-600/10'
+                                                            ? isDark ? 'text-blue-400 bg-blue-600/10' : 'text-blue-600 bg-blue-50'
                                                             : isDark ? 'text-white/70 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'
                                                     }`}
                                                 >
@@ -681,11 +681,11 @@ const LocationsPage = () => {
                     <div className="flex justify-between items-center gap-6 mt-8">
                         {/* Breadcrumb */}
                         <nav className={`hidden md:flex items-center px-5 py-2.5 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-gray-100'}`}>
-                            <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
+                            <Link to="/dashboard" className={`flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase hover:text-blue-500 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                 <Home size={12} /><span>Dashboard</span>
                             </Link>
                             <ChevronRight size={14} className="mx-2 text-gray-500/50" />
-                            <Link to={`/explore/${country}`} className="text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors capitalize">{country}</Link>
+                            <Link to={`/explore/${country}`} className={`text-[10px] font-bold tracking-widest uppercase hover:text-blue-500 transition-colors capitalize ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{country}</Link>
                             <ChevronRight size={14} className="mx-2 text-gray-500/50" />
                             <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-blue-600">
                                 <MapPin size={12} className="fill-blue-600/20" />

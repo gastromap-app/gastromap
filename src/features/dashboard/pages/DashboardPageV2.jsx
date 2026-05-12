@@ -128,27 +128,31 @@ function HeroRecommendation({ location, isDark, navigate }) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                    {/* Floating rating */}
+                    {/* Floating rating — always on dark image overlay */}
                     {rating > 0 && (
                         <Float amplitude={3} speed={0.3} className="absolute top-4 right-4">
-                            <div className="bg-white/15 backdrop-blur-xl px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/20">
+                            <div className={`backdrop-blur-xl px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                                isDark ? 'bg-white/15 border border-white/20' : 'bg-black/40 border border-white/30'
+                            }`}>
                                 <Star size={11} className="text-yellow-400 fill-yellow-400" />
                                 <span className="text-[12px] font-semibold text-white">{Number(rating).toFixed(1)}</span>
                             </div>
                         </Float>
                     )}
 
-                    {/* Content overlay */}
+                    {/* Content overlay — on dark gradient */}
                     <div className="absolute bottom-0 left-0 right-0 p-5">
-                        <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-white/50 mb-1">
+                        <p className={`text-[10px] font-medium tracking-[0.15em] uppercase mb-1 ${
+                            isDark ? 'text-white/50' : 'text-white/70'
+                        }`}>
                             Recommended for you
                         </p>
                         <h3 className="text-[20px] font-semibold text-white leading-tight tracking-tight">{location.title}</h3>
                         <div className="flex items-center gap-2 mt-2">
-                            <span className="text-[11px] text-white/60 font-medium">{location.category}</span>
-                            {location.cuisine && <span className="text-[11px] text-white/40">·</span>}
-                            {location.cuisine && <span className="text-[11px] text-white/60 font-medium">{location.cuisine}</span>}
-                            {location.price_range && <span className="text-[11px] text-white/40">·</span>}
+                            <span className={`text-[11px] font-medium ${isDark ? 'text-white/60' : 'text-white/80'}`}>{location.category}</span>
+                            {location.cuisine && <span className={`text-[11px] ${isDark ? 'text-white/40' : 'text-white/50'}`}>·</span>}
+                            {location.cuisine && <span className={`text-[11px] font-medium ${isDark ? 'text-white/60' : 'text-white/80'}`}>{location.cuisine}</span>}
+                            {location.price_range && <span className={`text-[11px] ${isDark ? 'text-white/40' : 'text-white/50'}`}>·</span>}
                             {location.price_range && <span className="text-[11px] text-emerald-400 font-semibold">{location.price_range}</span>}
                         </div>
                     </div>
@@ -209,7 +213,7 @@ function TrendingRow({ location, index, isDark, navigate }) {
                 }`}
             >
                 <span className={`text-[14px] font-light w-5 text-center tabular-nums ${isDark ? 'text-white/20' : 'text-slate-300'}`}>{index + 1}</span>
-                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-black/5 dark:ring-white/5">
+                <div className={`w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 ring-1 ${isDark ? 'ring-white/5' : 'ring-black/5'}`}>
                     <LazyImage src={location.photos?.[0] || location.image || location.image_url} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0 text-left">

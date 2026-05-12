@@ -308,7 +308,7 @@ const ProfilePage = () => {
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 24 }}
-                        className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white bg-gray-900/95 backdrop-blur-md border border-white/10 max-w-xs text-center"
+                        className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold backdrop-blur-md border max-w-xs text-center ${isDark ? 'text-white bg-gray-900/95 border-white/10' : 'text-white bg-gray-900/95 border-gray-700/50'}`}
                     >
                         {typeof toast === 'string' ? toast : toast.message}
                     </motion.div>

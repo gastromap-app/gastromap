@@ -163,7 +163,7 @@ function normalizeForCompare(str) {
     const chipActive = `bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20`
     const chipInactive = isDark
         ? `bg-white/5 border-white/5 text-white/70 hover:bg-white/10`
-        : `bg-gray-50/50 border-gray-100 text-gray-500 hover:border-blue-500/30 hover:text-blue-600`
+        : `bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200`
 
     const blockBase = `p-2 rounded-[16px] border transition-all duration-300 group cursor-pointer flex items-center gap-3`
     const blockActive = `bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20`
@@ -209,7 +209,7 @@ function normalizeForCompare(str) {
                                 {activeCount > 0 && (
                                     <button
                                         onClick={handleReset}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 hover:text-gray-900'}`}
                                     >
                                         <RotateCcw size={12} />
                                         {t('filter.reset')}
@@ -217,7 +217,7 @@ function normalizeForCompare(str) {
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-500 dark:text-gray-400 hover:text-gray-900'}`}
+                                    className={`p-2 rounded-full transition-colors ${isDark ? 'bg-white/[0.04] text-[hsl(220,10%,55%)] hover:text-[hsl(220,20%,96%)]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`}
                                 >
                                     <X size={24} />
                                 </button>

@@ -72,14 +72,14 @@ const HelpCenterPage = () => {
                 </div>
 
                 {/* Support Action */}
-                <div className={`p-6 rounded-[32px] bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-500/20`}>
+                <div className={`p-6 rounded-[32px] bg-gradient-to-br from-blue-600 to-blue-700 text-white ${isDark ? 'shadow-xl shadow-blue-500/20' : 'shadow-lg shadow-blue-500/30'}`}>
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                        <div className={`p-3 rounded-2xl backdrop-blur-md ${isDark ? 'bg-white/20' : 'bg-white/30'}`}>
                             <MessageSquare size={24} />
                         </div>
                         <div>
                             <h4 className="text-lg font-black leading-none">Still need help?</h4>
-                            <p className="text-white/70 text-xs mt-1">Our support team is here for you 24/7</p>
+                            <p className={`text-xs mt-1 ${isDark ? 'text-white/70' : 'text-white/80'}`}>Our support team is here for you 24/7</p>
                         </div>
                     </div>
                     <button className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-sm active:scale-[0.98] transition-all">

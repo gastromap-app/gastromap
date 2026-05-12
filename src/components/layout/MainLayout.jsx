@@ -15,6 +15,7 @@ import { useRealtimeSubscription } from '@/shared/hooks/useRealtimeSubscription'
 
 export function MainLayout() {
     const { theme } = useTheme()
+    const isDark = theme === 'dark'
     const { user } = useAuthStore()
     const { isChatOpen, setIsChatOpen } = useAIChatStore()
     const { t } = useTranslation()
@@ -59,28 +60,26 @@ export function MainLayout() {
                                     exit={{ opacity: 0, y: 20, scale: 0.9 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                     onClick={() => setIsChatOpen(true)}
-                                    className="
+                                    className={`
                                         fixed z-40 hidden md:flex
                                         bottom-8 left-0 right-0 mx-auto w-fit
                                         items-center gap-2.5
                                         px-6 h-12
-                                        bg-white/10 dark:bg-white/[0.06]
                                         backdrop-blur-2xl
-                                        border border-white/20 dark:border-white/10
-                                        rounded-full
-                                        shadow-[0_8px_32px_rgba(0,0,0,0.12)]
-                                        hover:bg-white/20 dark:hover:bg-white/10
-                                        hover:shadow-[0_8px_40px_rgba(59,130,246,0.15)]
-                                        hover:border-blue-400/30
+                                        border rounded-full
                                         active:scale-[0.97]
                                         transition-all duration-300
                                         cursor-pointer group
-                                    "
+                                        ${isDark
+                                            ? 'bg-white/[0.06] border-white/10 hover:bg-white/10 hover:border-blue-400/30'
+                                            : 'bg-white/80 border-slate-200/80 shadow-lg hover:bg-white hover:shadow-xl hover:border-blue-400/30'
+                                        }
+                                    `}
                                 >
                                     <div className="w-7 h-7 rounded-full bg-blue-500/80 group-hover:bg-blue-500 flex items-center justify-center shrink-0 transition-colors">
                                         <Sparkles className="h-3.5 w-3.5 text-white" />
                                     </div>
-                                    <span className="text-sm font-semibold text-gray-800 dark:text-white/90 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors">
+                                    <span className={`text-sm font-semibold transition-colors ${isDark ? 'text-white/90 group-hover:text-blue-300' : 'text-gray-800 group-hover:text-blue-600'}`}>
                                         {t('ai.chat_button', 'GastroGuide AI')}
                                     </span>
                                 </motion.button>

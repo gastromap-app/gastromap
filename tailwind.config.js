@@ -90,9 +90,9 @@ export default {
                     '5': 'hsl(var(--chart-5))'
                 },
                 surface: {
-                    DEFAULT: 'hsl(220 20% 6%)',
-                    elevated: 'hsl(220 20% 9%)',
-                    foreground: 'hsl(220 20% 96%)'
+                    DEFAULT: 'hsl(var(--surface))',
+                    elevated: 'hsl(var(--surface-elevated))',
+                    foreground: 'hsl(var(--surface-foreground))'
                 },
                 sidebar: {
                     DEFAULT: 'hsl(var(--sidebar-background))',

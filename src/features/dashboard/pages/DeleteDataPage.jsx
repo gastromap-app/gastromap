@@ -11,8 +11,8 @@ const DeleteDataPage = () => {
     const [step, setStep] = useState(1) // 1: Info, 2: Confirmation, 3: Success
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
-    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-slate-200/50"
+    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const cardBg = isDark ? "bg-[#1f2128]/80 border-white/5" : "bg-white border-gray-200"
 
     const handleNext = () => setStep(2)
     const handleConfirm = () => {

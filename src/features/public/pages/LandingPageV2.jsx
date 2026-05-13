@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import V2Navbar from '@/components/layout/public/V2Navbar'
 import { getLocationsCount } from '@/shared/api/locations.api'
 import { ArrowUpRight, Check, ChevronDown, Heart, Instagram, List, User, Globe, Search, Sparkles, CheckCircle, MapPin } from 'lucide-react'
 import { gsap } from 'gsap'
@@ -1157,7 +1156,7 @@ const Footer = () => (
 export default function LandingPageV2() {
     return (
         <div className="bg-white dark:bg-[#0A0A0A] min-h-screen">
-            <V2Navbar />
+            
             <HeroSection />
             <AboutSection />
             <FeaturesSection />

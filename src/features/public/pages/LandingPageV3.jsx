@@ -291,7 +291,7 @@ function FeatureCard({ feature, index, isDark }) {
         >
             <div className={`${isEven ? '' : 'md:[direction:ltr]'}`}>
                 <span className={`text-[10px] font-medium tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'}`}>{feature.tag}</span>
-                <h3 className={`text-2xl md:text-4xl font-light tracking-tight mt-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
+                <h3 className={`text-2xl md:text-4xl font-light tracking-tight mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
                 <p className={`text-base md:text-lg mt-3 ${isDark ? 'text-white/50' : 'text-gray-500'} font-light leading-relaxed max-w-md`}>{feature.description}</p>
             </div>
             <div className={`${isEven ? '' : 'md:[direction:ltr]'}`}>

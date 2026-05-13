@@ -119,8 +119,8 @@ function Navbar({ isDark }) {
     return (
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? (isDark ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : 'bg-white/80 backdrop-blur-xl border-b border-gray-200/60 shadow-sm') : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
             <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 md:h-20 flex items-center justify-between">
-                <span className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg font-medium tracking-tight`}>GastroMap</span>
-                <Link to="/auth/signup" className={`h-9 px-5 rounded-full ${isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-gray-900 text-white hover:bg-gray-800'} text-sm font-medium flex items-center gap-1.5 transition-colors`}>
+                <span className={`text-lg font-medium tracking-tight transition-colors duration-300 ${isDark ? 'text-white' : scrolled ? 'text-gray-900' : 'text-white'}`}>GastroMap</span>
+                <Link to="/auth/signup" className={`h-9 px-5 rounded-full ${isDark ? 'bg-white text-black hover:bg-white/90' : scrolled ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-white/90'} text-sm font-medium flex items-center gap-1.5 transition-colors`}>
                     Get Started <ArrowUpRight size={14} />
                 </Link>
             </div>

@@ -36,7 +36,7 @@ i18n
         resources,
         lng: 'en',
         fallbackLng: 'en',
-        supportedLngs: ['en', 'pl', 'ua'],
+        supportedLngs: ['en', 'pl', 'ua', 'ru'],
         debug: false,
         interpolation: {
             escapeValue: false // React already escapes by default

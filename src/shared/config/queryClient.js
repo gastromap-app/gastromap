@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, MutationCache } from '@tanstack/react-query'
 
 /**
  * Single QueryClient instance for the entire app.
@@ -9,6 +9,14 @@ import { QueryClient } from '@tanstack/react-query'
  * - gcTime: 10 min — keeps data in cache between route changes
  */
 export const queryClient = new QueryClient({
+    mutationCache: new MutationCache({
+        onError: (error, _variables, _context, mutation) => {
+            // Only show global error if the mutation doesn't have its own onError
+            if (!mutation.options.onError) {
+                console.error('[Global Mutation Error]', error?.message || error)
+            }
+        },
+    }),
     defaultOptions: {
         queries: {
             refetchOnWindowFocus: true,

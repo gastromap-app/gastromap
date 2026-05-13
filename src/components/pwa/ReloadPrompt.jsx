@@ -15,9 +15,20 @@ function ReloadPrompt() {
             swRegRef.current = r
 
             // Фоновая проверка раз в час (пока приложение открыто)
-            setInterval(() => r.update(), 60 * 60 * 1000)
+            const intervalId = setInterval(() => r.update(), 60 * 60 * 1000)
+            // Store interval ID for cleanup
+            swRegRef.current.__intervalId = intervalId
         },
     })
+
+    // Cleanup interval on unmount to prevent memory leak
+    useEffect(() => {
+        return () => {
+            if (swRegRef.current?.__intervalId) {
+                clearInterval(swRegRef.current.__intervalId)
+            }
+        }
+    }, [])
 
     // Ключевой фикс для iOS PWA:
     // При открытии PWA с home screen iOS восстанавливает страницу из памяти

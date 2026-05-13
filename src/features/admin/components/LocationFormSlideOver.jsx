@@ -1306,7 +1306,8 @@ const LocationFormSlideOver = ({
                             <button
                                 onClick={() => {
                                     onDelete(selectedLocation?.id)
-                                    onClose()
+                                    // Don't call onClose() here — the delete handler in useAdminLocations
+                                    // will close the panel via setIsSlideOverOpen(false) on success
                                 }}
                                 className="px-4 py-2.5 rounded-lg border border-red-200 dark:border-red-500/20 text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/5 transition-all active:scale-[0.98] flex items-center gap-1.5"
                             >

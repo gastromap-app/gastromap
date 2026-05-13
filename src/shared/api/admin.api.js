@@ -1,4 +1,4 @@
-import { supabase } from './client'
+import { supabase, ApiError } from './client'
 
 export async function getAdminStats() {
     if (!supabase) return mockAdminStats
@@ -103,14 +103,15 @@ export async function getProfiles() {
 }
 
 export async function updateProfileRole(userId, role) {
-    if (!supabase) return { error: 'No Supabase' }
+    if (!supabase) throw new Error('Supabase not configured')
     const { data, error } = await supabase
         .from('profiles')
         .update({ role })
         .eq('id', userId)
         .select()
         .single()
-    return { data, error }
+    if (error) throw new ApiError(error.message, 500, error.code || 'UPDATE_ROLE_ERROR')
+    return data
 }
 
 export async function updateUserStatus(userId, status) {
@@ -208,7 +209,7 @@ export async function getPendingReviews() {
 }
 
 export async function updateReviewStatus(reviewId, status, _comment) {
-    if (!supabase) return { error: 'No Supabase' }
+    if (!supabase) throw new Error('Supabase not configured')
     // _comment parameter is intentionally unused — reviews table has no admin_comment column.
     // reviews table columns: id, user_id, location_id, rating, review_text, status, created_at, updated_at
     // Only update status + updated_at.
@@ -219,8 +220,8 @@ export async function updateReviewStatus(reviewId, status, _comment) {
         .eq('id', reviewId)
         .select()
         .single()
-    if (error) console.error('[admin.api] updateReviewStatus:', error.message)
-    return { data, error }
+    if (error) throw new ApiError(error.message, 500, error.code || 'UPDATE_REVIEW_ERROR')
+    return data
 }
 
 export async function getPendingLocations() {

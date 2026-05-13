@@ -102,7 +102,10 @@ const AdminLocationsPage = () => {
     const LABEL_GROUPS = getLabelGroups(i18n.language)
 
     const mapLocations = useMemo(() =>
-        filteredLocations.filter(l => l.coordinates?.lat && l.coordinates?.lng),
+        filteredLocations.filter(l =>
+            l.coordinates?.lat && l.coordinates?.lng &&
+            !(l.coordinates.lat === 0 && l.coordinates.lng === 0)
+        ),
         [filteredLocations]
     )
 

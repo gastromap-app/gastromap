@@ -465,14 +465,14 @@ const LocationFormSlideOver = ({
                 className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md"
             />
 
-            {/* Panel container — fullscreen on desktop */}
-            <div className="fixed inset-0 z-[110] flex items-end sm:items-stretch justify-center pointer-events-none">
+            {/* Panel container — fullscreen */}
+            <div className="fixed inset-0 z-[110] pointer-events-none">
                 <motion.div
                     initial={{ y: '100%', opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: '100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 35, stiffness: 250 }}
-                    className="w-full h-[100dvh] bg-background/95 backdrop-blur-2xl pointer-events-auto flex flex-col shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] rounded-t-sheet sm:rounded-none overflow-hidden border-t sm:border-0 border-white/5"
+                    className="absolute inset-0 bg-background backdrop-blur-2xl pointer-events-auto flex flex-col overflow-hidden"
                 >
                     {/* ── Drag Handle (Mobile Only) ── */}
                     <div className="sm:hidden w-12 h-1 bg-secondary/80 rounded-pill mx-auto mt-4 mb-2 shrink-0" />

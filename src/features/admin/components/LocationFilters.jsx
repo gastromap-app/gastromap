@@ -89,7 +89,7 @@ const LocationFilters = ({
                 </div>
 
                 {/* Right Actions: Advanced Toggle, View Switcher */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-1">
                     <button
                         onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
                         className={cn(

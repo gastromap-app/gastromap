@@ -15,7 +15,7 @@ export const VALID_LOCATION_COLUMNS = new Set([
     'image', 'image_url', 'google_photos', 'photos',
     
     // Rating & Price
-    'rating', 'google_rating', 'google_user_ratings_total',
+    'google_rating', 'google_user_ratings_total',
     'price_range', 'google_price_level',
     
     // Flags & Meta
@@ -66,6 +66,7 @@ export const VALID_LOCATION_COLUMNS = new Set([
 
 // Deprecated column names (should be mapped to canonical names)
 export const DEPRECATED_COLUMNS = {
+    'rating': 'google_rating',            // Column removed from DB; use google_rating
     'price_level': 'price_range',         // Renamed for clarity
     'images': 'google_photos',            // Renamed
     'image_url': null,                     // Still valid, no mapping needed

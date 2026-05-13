@@ -42,10 +42,10 @@ function normalise(row) {
     const lat = Number(row.lat ?? 0)
     const lng = Number(row.lng ?? 0)
 
-    // Schema: title, rating, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
+    // Schema: title, google_rating, price_range, cuisine_types (array), image_url, google_photos (array)
     const image         = row.image_url || null
-    const rating        = Number(row.rating ?? 0)
     const googleRating  = Number(row.google_rating ?? 0)
+    const rating        = Number(row.rating ?? googleRating ?? 0)
     
     // Robust price handling: default to '$$'
     const priceRange = row.price_range ?? row.price_level ?? row.priceLevel ?? '$$'
@@ -671,9 +671,9 @@ function _toRow(d) {
     else if (d.photos !== undefined) row.google_photos = d.photos
     else if (d.images !== undefined) row.google_photos = d.images
 
-    // Rating (both internal and Google)
-    if (d.rating !== undefined) row.rating = Number(d.rating)
+    // Rating — only google_rating exists in DB; 'rating' is a UI alias
     if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
+    else if (d.rating !== undefined) row.google_rating = Number(d.rating)
     
     // Total reviews (optional but good to have if present)
     if (d.google_user_ratings_total !== undefined) row.google_user_ratings_total = Number(d.google_user_ratings_total)

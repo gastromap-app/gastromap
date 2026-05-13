@@ -397,8 +397,14 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     const shouldTranslate = enableTranslation ?? isAiReady
 
     const row = _toRow(updates)
-    console.log('[locations.api] updateLocation START:', id, row)
-    const { data: updated, error } = await _smartSave('locations', id, row)
+    console.log('[locations.api] updateLocation START:', id, 'keys:', Object.keys(row), 'payload size:', JSON.stringify(row).length)
+    
+    // Timeout safety: if Supabase hangs (network stall, huge payload), reject after 20s
+    const savePromise = _smartSave('locations', id, row)
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new ApiError('Save timed out after 20s. Check network or payload size.', 408, 'TIMEOUT')), 20000)
+    )
+    const { data: updated, error } = await Promise.race([savePromise, timeoutPromise])
 
     if (error) {
         console.error('[locations.api] updateLocation ERROR:', error)

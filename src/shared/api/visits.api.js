@@ -49,6 +49,7 @@ export async function deleteVisit(visitId) {
 
 export async function hasVisited(userId, locationId) {
     if (!supabase) return false
-    const { data } = await supabase.from('user_visits').select('id').eq('user_id', userId).eq('location_id', locationId).maybeSingle()
+    const { data, error } = await supabase.from('user_visits').select('id').eq('user_id', userId).eq('location_id', locationId).maybeSingle()
+    if (error) { console.warn('[visits.api] hasVisited error:', error.message); return false }
     return !!data
 }

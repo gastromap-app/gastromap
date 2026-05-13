@@ -29,6 +29,7 @@ export async function removeFavorite(userId, locationId) {
 
 export async function isFavorite(userId, locationId) {
     if (!supabase) return false
-    const { data } = await supabase.from('user_favorites').select('id').eq('user_id', userId).eq('location_id', locationId).maybeSingle()
+    const { data, error } = await supabase.from('user_favorites').select('id').eq('user_id', userId).eq('location_id', locationId).maybeSingle()
+    if (error) { console.warn('[favorites.api] isFavorite error:', error.message); return false }
     return !!data
 }

@@ -31,11 +31,12 @@ export async function getAdminStats() {
 
 export async function getRecentLocations(limit = 5) {
     if (!supabase) return mockRecentLocations
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('locations')
         .select('id, title, category, city, created_at')
         .order('created_at', { ascending: false })
         .limit(limit)
+    if (error) throw new ApiError(error.message, 500, error.code || 'QUERY_ERROR')
     return data || []
 }
 

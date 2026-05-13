@@ -155,7 +155,6 @@ export const AppRouter = () => {
 
                 {/* Public Routes (Wrapped in PublicLayout) */}
                 <Route element={<PublicLayout />}>
-                    <Route path="/classic" element={<LandingPage />} />
                     <Route path="/features" element={<FeaturesPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
                     <Route path="/about" element={<AboutPage />} />

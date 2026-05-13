@@ -176,7 +176,7 @@ const DashboardPage = () => {
     // ── Missing variables for mobile & desktop layouts ──────────────────────
     const text = isDark ? 'text-white' : 'text-gray-900'
     const sub  = isDark ? 'text-gray-500' : 'text-slate-600'
-    const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || t('dashboard.traveler')
+    const firstName = user?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || t('dashboard.traveler')
     // Derive a "time-of-day period" that changes every hour, so the greeting
     // (Good morning / Good afternoon / …) updates even if the user keeps the
     // app open across noon, 6 PM, etc. without a full re-mount.

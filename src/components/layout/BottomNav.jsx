@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Map, Sparkles, Heart, CheckCircle } from 'lucide-react'
@@ -11,38 +11,6 @@ export function BottomNav() {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const [keyboardOpen, setKeyboardOpen] = useState(false)
-
-    // Detect mobile keyboard via visualViewport API
-    useEffect(() => {
-        const vv = window.visualViewport
-        if (!vv) return
-
-        let hideTimeout = null
-
-        const update = () => {
-            const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-            const isOpen = keyboardHeight > 100
-
-            if (isOpen) {
-                // Keyboard opened — hide immediately
-                if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null }
-                setKeyboardOpen(true)
-            } else {
-                // Keyboard closed — small delay to let iOS settle viewport
-                if (hideTimeout) clearTimeout(hideTimeout)
-                hideTimeout = setTimeout(() => setKeyboardOpen(false), 100)
-            }
-        }
-
-        vv.addEventListener('resize', update)
-        vv.addEventListener('scroll', update)
-        return () => {
-            vv.removeEventListener('resize', update)
-            vv.removeEventListener('scroll', update)
-            if (hideTimeout) clearTimeout(hideTimeout)
-        }
-    }, [])
 
     const navItems = [
         { icon: Home,        label: t('nav.overview'), path: '/dashboard' },
@@ -54,11 +22,8 @@ export function BottomNav() {
 
     return (
         <div
-            className={cn(
-                "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none transition-all duration-200",
-                keyboardOpen && "opacity-0 pointer-events-none translate-y-4"
-            )}
-            style={{ bottom: 'var(--mobile-toolbar-offset, max(12px, env(safe-area-inset-bottom, 12px)))' }}
+            className="fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none"
+            style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
         >
             <nav
                 className={cn(

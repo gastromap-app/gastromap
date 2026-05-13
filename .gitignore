@@ -66,12 +66,14 @@ htmlcov/
 # AI & Local Tools
 .agent/
 .agents/
+.kiro/
 .qoder/
 scratch/
 tmp/
 incoming_files/
 locations_pending/
 memory.md
+design-system/
 
 # Vercel & Build
 .vercel/
@@ -84,6 +86,12 @@ modularize_queries_plan.md
 # Local Test Scripts
 test_*.js
 check_env.js
+
+# Script output/logs
+scripts/*.log
+scripts/*.txt
+scripts/*.json
+scripts/*.csv
 
 # react-doctor reports
 .react-doctor/
@@ -100,3 +108,9 @@ supabase/.temp/
 # Batch scripts with secrets
 _batch_*.cjs
 _fix_*.cjs
+
+# Misc junk files
+0
+
+# Backup files
+*.bak

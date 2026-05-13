@@ -461,6 +461,13 @@ export const useAdminLocations = () => {
 
     const handleSave = () => {
         console.log('[useAdminLocations] handleSave function ENTERED');
+        
+        // Prevent double-click
+        if (updateLocMutation.isPending || createLocMutation.isPending) {
+            console.warn('[useAdminLocations] Mutation already pending, ignoring click');
+            return;
+        }
+        
         try {
             // Validation
             if (!formData) {
@@ -541,6 +548,7 @@ export const useAdminLocations = () => {
                 })
             } else {
                 console.log('[useAdminLocations] Initiating UPDATE mutation for ID:', selectedLocation.id);
+                console.log('[useAdminLocations] Submission payload keys:', Object.keys(submissionData));
                 updateLocMutation.mutate({ 
                     id: selectedLocation.id, 
                     updates: submissionData 
@@ -554,7 +562,9 @@ export const useAdminLocations = () => {
                     },
                     onError: (err) => {
                         console.error('[useAdminLocations] updateLocMutation ERROR callback', err)
-                        setToast({ message: `Ошибка сохранения: ${err?.message || 'Попробуйте ещё раз'}`, type: 'error' })
+                        const msg = err?.message || JSON.stringify(err) || 'Unknown error'
+                        alert('Save error: ' + msg)
+                        setToast({ message: `Ошибка сохранения: ${msg}`, type: 'error' })
                     }
                 })
             }

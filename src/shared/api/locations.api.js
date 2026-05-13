@@ -522,12 +522,38 @@ export async function updateLocation(id, updates, enableTranslation = null) {
 export async function deleteLocation(id) {
     if (!USE_SUPABASE) return _mockDelete(id)
 
+    // First verify the location exists
+    const { data: existing } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle()
+
+    if (!existing) {
+        throw new ApiError('Location not found', 404, 'NOT_FOUND')
+    }
+
     const { error } = await supabase
         .from('locations')
         .delete()
         .eq('id', id)
 
     if (error) throw new ApiError(error.message, 500, error.code)
+
+    // Verify deletion actually happened (RLS may silently block)
+    const { data: stillExists } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle()
+
+    if (stillExists) {
+        throw new ApiError(
+            'Delete blocked by permissions. Ensure you are logged in as admin.',
+            403,
+            'RLS_BLOCKED'
+        )
+    }
 }
 
 // ─── Get with Translation ──────────────────────────────────────────────────

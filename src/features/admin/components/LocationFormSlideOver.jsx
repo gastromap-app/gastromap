@@ -478,35 +478,34 @@ const LocationFormSlideOver = ({
                     <div className="sm:hidden w-12 h-1 bg-secondary/80 rounded-pill mx-auto mt-4 mb-2 shrink-0" />
 
                     {/* ── Header ── */}
-                    <div className="px-6 sm:px-16 py-8 sm:py-16 border-b border-white/[0.03] flex items-center gap-8 sm:gap-16 shrink-0 bg-background/40 backdrop-blur-xl z-20 sticky top-0 sm:relative">
+                    <div className="px-4 sm:px-8 py-3 sm:py-4 border-b border-white/[0.03] flex items-center gap-3 sm:gap-6 shrink-0 bg-background/40 backdrop-blur-xl z-20 sticky top-0 sm:relative">
                         {/* Safe area padding for mobile notches */}
                         <div className="absolute top-0 left-0 right-0 h-[env(safe-area-inset-top)] bg-background/10 pointer-events-none" />
                         
-                        <div className="w-16 h-16 sm:w-32 sm:h-32 rounded-card sm:rounded-sheet bg-primary flex items-center justify-center text-primary-foreground shadow-[0_20px_50px_-10px_rgba(var(--primary),0.4)] shrink-0 mt-[env(safe-area-inset-top)] sm:mt-0 transition-all hover:scale-105 active:scale-95 duration-500 group/icon">
-                            <Building2 size={32} className="sm:w-16 sm:h-16 opacity-90 transition-transform group-hover/icon:rotate-3" strokeWidth={1.5} />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shrink-0 mt-[env(safe-area-inset-top)] sm:mt-0">
+                            <Building2 size={20} className="sm:w-6 sm:h-6 opacity-90" strokeWidth={1.5} />
                         </div>
                         <div className="flex-1 min-w-0 mt-[env(safe-area-inset-top)] sm:mt-0">
-                            <div className="flex items-center flex-wrap gap-4 sm:gap-6">
-                                <h2 className="text-xl font-light text-slate-900 dark:text-white tracking-tight truncate max-w-[220px] sm:max-w-none">
+                            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+                                <h2 className="text-base font-medium text-slate-900 dark:text-white tracking-tight truncate max-w-[220px] sm:max-w-none">
                                     {formData.title || (isNew ? t('admin.locations.form.title_new') : t('admin.locations.form.title_edit'))}
                                 </h2>
                                 <span className={cn(
-                                    "px-3 py-1 rounded-full text-[9px] font-medium uppercase tracking-wider",
+                                    "px-2 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-wider",
                                     "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20"
                                 )}>
                                     {isNew ? t('admin.locations.form.status_draft') : (formData.status || 'Active')}
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-light flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/50 animate-pulse" />
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-light">
                                 {isNew ? t('admin.locations.form.creation_subtitle') : t('admin.locations.form.id_label', { id: selectedLocation.id.substring(0, 12) })}
                             </p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-11 h-11 sm:w-16 sm:h-16 flex items-center justify-center rounded-pill bg-secondary/20 text-t-secondary hover:text-t-primary hover:bg-secondary/40 transition-all border border-white/[0.05] shadow-lg active:scale-90 mt-[env(safe-area-inset-top)] sm:mt-0 group"
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-secondary/20 text-t-secondary hover:text-t-primary hover:bg-secondary/40 transition-all border border-white/[0.05] active:scale-90 mt-[env(safe-area-inset-top)] sm:mt-0"
                         >
-                            <X size={22} className="sm:w-8 sm:h-8 transition-transform duration-500 group-hover:rotate-180" />
+                            <X size={18} className="sm:w-5 sm:h-5" />
                         </button>
                     </div>
 
@@ -1295,35 +1294,33 @@ const LocationFormSlideOver = ({
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="px-4 sm:px-12 py-8 sm:py-12 pb-[calc(2.5rem+env(safe-area-inset-bottom))] border-t border-border/80 bg-background/80 backdrop-blur-2xl shrink-0 sticky bottom-0 z-30 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.3)]">
-                    <div className="flex flex-col gap-5 max-w-5xl mx-auto">
-                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                            <button
-                                onClick={onSave}
-                                className="order-1 sm:order-2 w-full sm:flex-[2.5] py-4 sm:py-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 uppercase tracking-wider"
-                            >
-                                <Save size={22} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
-                                <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="order-2 sm:order-1 w-full sm:flex-1 py-4 sm:py-5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all uppercase tracking-wider active:scale-[0.98]"
-                            >
-                                {t('admin.locations.form.actions.cancel')}
-                            </button>
-                        </div>
+                <div className="px-4 sm:px-8 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-border/80 bg-background/80 backdrop-blur-2xl shrink-0 sticky bottom-0 z-30 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.15)]">
+                    <div className="flex items-center gap-3 max-w-5xl mx-auto">
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all active:scale-[0.98]"
+                        >
+                            {t('admin.locations.form.actions.cancel')}
+                        </button>
                         {!isNew && onDelete && (
                             <button
                                 onClick={() => {
                                     onDelete(selectedLocation?.id)
                                     onClose()
                                 }}
-                                className="w-full py-3.5 rounded-xl border border-red-200 dark:border-red-500/20 text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/5 transition-all uppercase tracking-wider active:scale-[0.98] flex items-center justify-center gap-2"
+                                className="px-4 py-2.5 rounded-lg border border-red-200 dark:border-red-500/20 text-red-500 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/5 transition-all active:scale-[0.98] flex items-center gap-1.5"
                             >
-                                <Trash2 size={18} strokeWidth={2.5} />
+                                <Trash2 size={14} />
                                 <span>{t('admin.locations.form.actions.delete_location')}</span>
                             </button>
                         )}
+                        <button
+                            onClick={onSave}
+                            className="ml-auto px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+                        >
+                            <Save size={14} />
+                            <span>{isNew ? t('admin.locations.form.actions.create') : t('admin.locations.form.actions.save')}</span>
+                        </button>
                     </div>
                 </div>
                 </motion.div>

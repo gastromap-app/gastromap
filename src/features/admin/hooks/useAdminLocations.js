@@ -372,7 +372,15 @@ export const useAdminLocations = () => {
 
     const handleDelete = (id) => {
         if (confirm('Вы уверены, что хотите удалить этот объект? Это действие нельзя отменить.')) {
-            deleteLocMutation.mutate(id)
+            deleteLocMutation.mutate(id, {
+                onSuccess: () => {
+                    setToast({ message: 'Локация удалена', type: 'success' })
+                },
+                onError: (err) => {
+                    console.error('[Admin] Delete failed:', err)
+                    setToast({ message: `Ошибка удаления: ${err.message}`, type: 'error' })
+                }
+            })
         }
     }
 

@@ -58,7 +58,7 @@ export function BottomNav() {
                 "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none transition-all duration-200",
                 keyboardOpen && "opacity-0 pointer-events-none translate-y-4"
             )}
-            style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
+            style={{ bottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
         >
             <nav
                 className={cn(

@@ -69,7 +69,7 @@ const ForgotPasswordPage = () => {
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 size={32} className="text-green-600" />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Check your email</h2>
+                        <h2 className="text-3xl font-semibold text-gray-900 mb-4">Check your email</h2>
                         <p className="text-gray-500 mb-2">
                             We've sent a password reset link to:
                         </p>
@@ -88,7 +88,7 @@ const ForgotPasswordPage = () => {
                     <>
                         <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
                             <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
-                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Forgot password?</h2>
+                            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Forgot password?</h2>
                             <p className="text-gray-500 text-sm sm:text-base">Enter your email to reset your password.</p>
                         </motion.div>
 
@@ -104,7 +104,7 @@ const ForgotPasswordPage = () => {
                             )}
 
                             <motion.div variants={itemVariants} className="space-y-2">
-                                <label htmlFor="email" className="text-sm font-bold text-gray-900 ml-1">Email</label>
+                                <label htmlFor="email" className="text-sm font-semibold text-gray-900 ml-1">Email</label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                     <input

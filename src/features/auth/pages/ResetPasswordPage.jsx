@@ -127,7 +127,7 @@ const ResetPasswordPage = () => {
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 size={32} className="text-green-600" />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('auth.reset_password.success_title', 'Password updated!')}</h2>
+                        <h2 className="text-3xl font-semibold text-gray-900 mb-4">{t('auth.reset_password.success_title', 'Password updated!')}</h2>
                         <p className="text-gray-500 mb-8">
                             {t('auth.reset_password.success_message', 'Your password has been successfully reset. Redirecting to dashboard...')}
                         </p>
@@ -140,7 +140,7 @@ const ResetPasswordPage = () => {
                     <>
                         <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
                             <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
-                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Set new password</h2>
+                            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Set new password</h2>
                             <p className="text-gray-500 text-sm sm:text-base">Create a strong password for your account.</p>
                         </motion.div>
 
@@ -152,7 +152,7 @@ const ResetPasswordPage = () => {
                             )}
 
                             <motion.div variants={itemVariants} className="space-y-2">
-                                <label htmlFor="password" className="text-sm font-bold text-gray-900 ml-1">New Password</label>
+                                <label htmlFor="password" className="text-sm font-semibold text-gray-900 ml-1">New Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                     <input
@@ -187,7 +187,7 @@ const ResetPasswordPage = () => {
                             </motion.div>
 
                             <motion.div variants={itemVariants} className="space-y-2">
-                                <label htmlFor="confirmPassword" className="text-sm font-bold text-gray-900 ml-1">Confirm Password</label>
+                                <label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-900 ml-1">Confirm Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
                                     <input

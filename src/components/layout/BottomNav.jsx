@@ -18,13 +18,30 @@ export function BottomNav() {
         const vv = window.visualViewport
         if (!vv) return
 
+        let hideTimeout = null
+
         const update = () => {
             const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-            setKeyboardOpen(keyboardHeight > 100)
+            const isOpen = keyboardHeight > 100
+
+            if (isOpen) {
+                // Keyboard opened — hide immediately
+                if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null }
+                setKeyboardOpen(true)
+            } else {
+                // Keyboard closed — small delay to let iOS settle viewport
+                if (hideTimeout) clearTimeout(hideTimeout)
+                hideTimeout = setTimeout(() => setKeyboardOpen(false), 100)
+            }
         }
 
         vv.addEventListener('resize', update)
-        return () => vv.removeEventListener('resize', update)
+        vv.addEventListener('scroll', update)
+        return () => {
+            vv.removeEventListener('resize', update)
+            vv.removeEventListener('scroll', update)
+            if (hideTimeout) clearTimeout(hideTimeout)
+        }
     }, [])
 
     const navItems = [

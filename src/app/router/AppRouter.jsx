@@ -152,6 +152,8 @@ export const AppRouter = () => {
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/" element={<LandingPageV3 />} />
                 <Route path="/classic" element={<LandingPageV2 />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
 
                 {/* Public Routes (Wrapped in PublicLayout) */}
                 <Route element={<PublicLayout />}>
@@ -165,8 +167,6 @@ export const AppRouter = () => {
                     <Route path="/showcase" element={<PublicPage title="Showcase" subtitle="See what others are discovering." />} />
                     <Route path="/careers" element={<PublicPage title="Careers" subtitle="Join our team." />} />
                     <Route path="/blog" element={<BlogPage />} />
-                    <Route path="/privacy" element={<PrivacyPage />} />
-                    <Route path="/terms" element={<TermsPage />} />
                     <Route path="/security" element={<SecurityPage />} />
                     <Route path="/cookies" element={<CookiePolicyPage />} />
                     <Route path="/help" element={<HelpCenterPage />} />

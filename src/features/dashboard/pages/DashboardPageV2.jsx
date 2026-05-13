@@ -258,6 +258,12 @@ const DashboardPageV2 = () => {
     const { data: geoCoversData = [] } = useGeoCovers('country')
     const _dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
+    // City visibility — exclude hidden/coming-soon cities from country location counts
+    const { data: cityCoversData = [] } = useGeoCovers('city')
+    const excludedCitySlugs = useMemo(() => new Set(
+        cityCoversData.filter(c => c.is_visible === false || c.is_coming_soon === true).map(c => c.slug)
+    ), [cityCoversData])
+
     // Pull to refresh
     const handleRefresh = async () => { await useLocationsStore.getState().reinitialize() }
     const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
@@ -305,10 +311,25 @@ const DashboardPageV2 = () => {
 
     // Countries
     const countries = useMemo(() => {
+        // Build visibility map for countries
+        const countryVisibility = Object.fromEntries(
+            geoCoversData.map(c => [c.slug, { is_visible: c.is_visible !== false, is_coming_soon: c.is_coming_soon === true }])
+        )
         const map = {}
-        locations.forEach(loc => { const raw = loc.country ?? ''; if (!raw) return; const slug = raw.toLowerCase().replace(/\s+/g, '-'); if (!map[slug]) map[slug] = { name: raw.charAt(0).toUpperCase() + raw.slice(1), slug, count: 0 }; map[slug].count++ })
+        locations.forEach(loc => {
+            const raw = loc.country ?? ''
+            if (!raw) return
+            // Skip locations in hidden or coming-soon cities
+            const citySlug = (loc.city || '').toLowerCase().replace(/\s+/g, '-')
+            if (excludedCitySlugs.has(citySlug)) return
+            const slug = raw.toLowerCase().replace(/\s+/g, '-')
+            // Skip hidden countries
+            if (countryVisibility[slug]?.is_visible === false) return
+            if (!map[slug]) map[slug] = { name: raw.charAt(0).toUpperCase() + raw.slice(1), slug, count: 0 }
+            map[slug].count++
+        })
         return Object.values(map).sort((a, b) => b.count - a.count)
-    }, [locations])
+    }, [locations, excludedCitySlugs, geoCoversData])
 
     // Open now
     const openNow = useMemo(() => moodFiltered.filter(loc => { const { isOpen } = isCurrentlyOpen(loc.opening_hours || loc.openingHours); return isOpen === true }).slice(0, 8), [moodFiltered])

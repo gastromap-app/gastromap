@@ -488,7 +488,17 @@ export const useLocationsStore = create((set, get) => ({
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.info('[locations-realtime] ✅ Subscribed to locations table')
+                } else if (status === 'CHANNEL_ERROR') {
+                    // Most common cause: RLS policy blocks postgres_changes for this role,
+                    // or Realtime is not enabled for the locations table in Supabase Dashboard.
+                    console.warn('[locations-realtime] ⚠️ Channel error — check: 1) Supabase Dashboard → Database → Replication → locations table enabled, 2) RLS policies allow SELECT on locations for the current role')
+                } else if (status === 'TIMED_OUT') {
+                    console.warn('[locations-realtime] ⚠️ Timed out — Supabase Realtime may be unreachable')
+                }
+            })
 
         set({ _realtimeChannel: channel })
 

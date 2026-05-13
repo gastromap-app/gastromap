@@ -9,32 +9,41 @@ export const VALID_LOCATION_COLUMNS = new Set([
     // Core fields
     'id', 'title', 'description', 'address',
     'city', 'country', 'category', 'status',
-    'lat', 'lng',
+    'lat', 'lng', 'city_slug', 'country_slug',
     
     // Media
     'image', 'image_url', 'google_photos', 'photos',
     
-    // Rating & Price (only canonical names)
-    'google_rating', 'price_range',
+    // Rating & Price
+    'rating', 'google_rating', 'google_user_ratings_total',
+    'price_range', 'google_price_level',
+    
+    // Flags & Meta
+    'is_hidden_gem', 'is_featured', 'status',
     
     // Cuisine
     'cuisine_types', 'cuisine',
     
-    // Features
-    'tags', 'vibe', 'special_labels', 'best_for',
+    // Ambience & Logistics
+    'tags', 'vibe', 'special_labels', 'best_for', 'best_time_to_visit',
+    'noise_level', 'average_visit_duration',
     'amenities', 'features', 'dietary_options', 'dietary',
     
     // Amenities (specific)
-    'has_wifi',
-    'has_outdoor_seating',
-    'reservations_required',
+    'has_wifi', 'has_outdoor_seating', 'outdoor_seating',
+    'pet_friendly', 'child_friendly',
+    'reservations_required', 'reservation_required',
     
     // Content
     'opening_hours', 'website', 'phone', 'booking_url',
     'insider_tip', 'must_try', 'what_to_try',
     
-    // AI fields
-    'ai_keywords', 'ai_context', 'embedding',
+    // Google External Info
+    'google_place_id', 'google_maps_url', 'google_formatted_address', 'google_vicinity',
+    
+    // AI Content & Metadata
+    'ai_keywords', 'ai_context', 'embedding', 'ai_enriched',
+    'ai_description_generated', 'ai_insider_tip_generated', 'ai_must_try_generated',
     'ai_enrichment_status', 'ai_enrichment_error', 'ai_enrichment_last_attempt',
     
     // KG enrichment fields
@@ -43,22 +52,20 @@ export const VALID_LOCATION_COLUMNS = new Set([
     // Michelin
     'michelin_stars', 'michelin_bib',
     
-    // Social / Google
-    'social_instagram', 'social_facebook', 'google_place_id', 'google_maps_url',
+    // Social
+    'social_instagram', 'social_facebook',
     
-    // Analytics / Performance
+    // Analytics
     'views_count', 'saves_count', 'visits_count', 'comments_count',
     'trending_score', 'trending_at',
-    'city_slug', 'country_slug',
     
-    // Meta
+    // Admin
     'moderation_note',
     'created_at', 'updated_at'
 ]);
 
 // Deprecated column names (should be mapped to canonical names)
 export const DEPRECATED_COLUMNS = {
-    'rating': 'google_rating',           // Was renamed in schema migrations
     'price_level': 'price_range',         // Renamed for clarity
     'images': 'google_photos',            // Renamed
     'image_url': null,                     // Still valid, no mapping needed

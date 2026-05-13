@@ -107,14 +107,20 @@ export function useCreateLocationMutation() {
             return createLocation(data)
         },
         onSuccess: (data) => {
+            console.log('[location.queries] useCreateLocationMutation SUCCESS:', data)
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             // Sync to Zustand store
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 import('../locations.api').then(({ normalise }) => {
-                    const loc = normalise(data)
-                    if (loc) useLocationsStore.getState().addLocation(loc)
+                    try {
+                        const loc = normalise(data)
+                        console.log('[location.queries] Normalized created loc:', loc)
+                        if (loc) useLocationsStore.getState().addLocation(loc)
+                    } catch (err) {
+                        console.error('[location.queries] Normalization failed for created loc:', err)
+                    }
                 })
-            })
+            }).catch(err => console.error('[location.queries] Store/API import failed:', err))
         },
     })
 }
@@ -127,15 +133,21 @@ export function useUpdateLocationMutation() {
             return updateLocation(id, updates)
         },
         onSuccess: (data, { id }) => {
+            console.log('[location.queries] useUpdateLocationMutation SUCCESS:', id, data)
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
             // Sync to Zustand store
             import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                 import('../locations.api').then(({ normalise }) => {
-                    const loc = normalise(data)
-                    if (loc) useLocationsStore.getState().updateLocation(id, loc)
+                    try {
+                        const loc = normalise(data)
+                        console.log('[location.queries] Normalized updated loc:', loc)
+                        if (loc) useLocationsStore.getState().updateLocation(id, loc)
+                    } catch (err) {
+                        console.error('[location.queries] Normalization failed for updated loc:', err)
+                    }
                 })
-            })
+            }).catch(err => console.error('[location.queries] Store/API import failed:', err))
         },
     })
 }

@@ -26,11 +26,14 @@ const App = ({ includeRouter = true }) => {
         }
     }, [isAuthLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Step 3: Subscribe to Realtime updates
+    // Step 3: Subscribe to Realtime updates for locations table.
+    // Wait until auth is resolved — Supabase Realtime drops the WebSocket
+    // immediately if the anon role is blocked by RLS on postgres_changes.
     useEffect(() => {
+        if (isAuthLoading) return // auth not settled yet
         const unsubscribe = subscribeToRealtime()
         return () => { unsubscribe() }
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isAuthLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <AppProviders includeRouter={includeRouter}>

@@ -397,9 +397,15 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     const shouldTranslate = enableTranslation ?? isAiReady
 
     const row = _toRow(updates)
+    console.log('[locations.api] updateLocation START:', id, row)
     const { data: updated, error } = await _smartSave('locations', id, row)
 
-    if (error) throw new ApiError(error.message, 500, error.code)
+    if (error) {
+        console.error('[locations.api] updateLocation ERROR:', error)
+        throw new ApiError(error.message, 500, error.code)
+    }
+    
+    console.log('[locations.api] updateLocation SUCCESS:', updated)
     
     // ─── Background Tasks (Non-blocking) ──────────────────────────────────────
     
@@ -603,7 +609,9 @@ async function _smartSave(table, id, row) {
         ? supabase.from(table).update(payload).eq('id', id).select().single()
         : supabase.from(table).insert(payload).select().single()
 
+    console.log(`[locations.api] _smartSave ${id ? 'UPDATE' : 'INSERT'} on ${table}:`, payload)
     const { data, error } = await req
+    console.log(`[locations.api] _smartSave RESULT:`, { data, error })
 
     if (error) {
         // Detect missing column error (PostgREST PGRST200) and surface a clear message
@@ -663,8 +671,13 @@ function _toRow(d) {
     else if (d.photos !== undefined) row.google_photos = d.photos
     else if (d.images !== undefined) row.google_photos = d.images
 
-    // Rating (only google_rating exists in DB, no 'rating' column)
+    // Rating (both internal and Google)
+    if (d.rating !== undefined) row.rating = Number(d.rating)
     if (d.google_rating !== undefined) row.google_rating = Number(d.google_rating)
+    
+    // Total reviews (optional but good to have if present)
+    if (d.google_user_ratings_total !== undefined) row.google_user_ratings_total = Number(d.google_user_ratings_total)
+    else if (d.reviews_count !== undefined) row.google_user_ratings_total = Number(d.reviews_count)
 
     // Price
     if (d.price_range !== undefined)  row.price_range = d.price_range
@@ -701,6 +714,20 @@ function _toRow(d) {
     if (d.reservation_required !== undefined) row.reservations_required = d.reservation_required
     else if (d.reservations_required !== undefined) row.reservations_required = d.reservations_required
 
+    // Flags
+    if (d.is_hidden_gem !== undefined) row.is_hidden_gem = !!d.is_hidden_gem
+    if (d.is_featured !== undefined)   row.is_featured = !!d.is_featured
+
+    // Google Info
+    if (d.google_place_id !== undefined) row.google_place_id = d.google_place_id
+    if (d.google_maps_url !== undefined) row.google_maps_url = d.google_maps_url
+    if (d.google_formatted_address !== undefined) row.google_formatted_address = d.google_formatted_address
+    if (d.google_vicinity !== undefined) row.google_vicinity = d.google_vicinity
+    
+    // Social
+    if (d.social_instagram !== undefined) row.social_instagram = d.social_instagram
+    if (d.social_facebook !== undefined)  row.social_facebook = d.social_facebook
+
     if (d.insider_tip !== undefined)    row.insider_tip = d.insider_tip
 
     // What to try
@@ -717,6 +744,19 @@ function _toRow(d) {
     if (d.ai_enrichment_status !== undefined) row.ai_enrichment_status = d.ai_enrichment_status
     if (d.ai_enrichment_error !== undefined)  row.ai_enrichment_error = d.ai_enrichment_error
     if (d.ai_enrichment_last_attempt !== undefined) row.ai_enrichment_last_attempt = d.ai_enrichment_last_attempt
+    
+    // AI Generation Flags
+    if (d.ai_enriched !== undefined) row.ai_enriched = !!d.ai_enriched
+    if (d.ai_description_generated !== undefined) row.ai_description_generated = !!d.ai_description_generated
+    if (d.ai_insider_tip_generated !== undefined) row.ai_insider_tip_generated = !!d.ai_insider_tip_generated
+    if (d.ai_must_try_generated !== undefined) row.ai_must_try_generated = !!d.ai_must_try_generated
+
+    // Ambience & Logistics
+    if (d.noise_level !== undefined) row.noise_level = d.noise_level
+    if (d.pet_friendly !== undefined) row.pet_friendly = !!d.pet_friendly
+    if (d.child_friendly !== undefined) row.child_friendly = !!d.child_friendly
+    if (d.best_time_to_visit !== undefined) row.best_time_to_visit = d.best_time_to_visit
+    if (d.average_visit_duration !== undefined) row.average_visit_duration = Number(d.average_visit_duration)
 
     // Michelin
     if (d.michelin_stars !== undefined) row.michelin_stars = d.michelin_stars

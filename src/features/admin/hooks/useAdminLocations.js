@@ -290,7 +290,7 @@ export const useAdminLocations = () => {
             }
         } catch (error) {
             console.error('[Admin] AI Magic failed:', error)
-            alert('Failed to extract data. Check AI settings or connection.')
+            setToast({ message: 'Ошибка при извлечении данных. Проверьте настройки AI или соединение.', type: 'error' })
         }
     }
 
@@ -328,8 +328,10 @@ export const useAdminLocations = () => {
     const handleApprove = async (id) => {
         try {
             await updateLocStatusMutation.mutateAsync({ id, status: 'approved' })
+            setToast({ message: 'Локация успешно одобрена!', type: 'success' })
         } catch (error) {
             console.error('Approve failed:', error)
+            setToast({ message: 'Ошибка при одобрении локации.', type: 'error' })
         }
     }
 
@@ -337,16 +339,23 @@ export const useAdminLocations = () => {
         try {
             const newStatus = (currentStatus === 'active' || currentStatus === 'approved') ? 'hidden' : 'active'
             await updateLocStatusMutation.mutateAsync({ id, status: newStatus })
+            setToast({ 
+                message: newStatus === 'hidden' ? 'Локация скрыта' : 'Локация теперь видна', 
+                type: 'success' 
+            })
         } catch (error) {
             console.error('Toggle visibility failed:', error)
+            setToast({ message: 'Ошибка при изменении видимости.', type: 'error' })
         }
     }
 
     const handleReject = async (id) => {
         try {
             await updateLocStatusMutation.mutateAsync({ id, status: 'rejected' })
+            setToast({ message: 'Локация отклонена.', type: 'success' })
         } catch (error) {
             console.error('Reject failed:', error)
+            setToast({ message: 'Ошибка при отклонении локации.', type: 'error' })
         }
     }
 
@@ -387,7 +396,7 @@ export const useAdminLocations = () => {
     const handleImproveText = async (field) => {
         const text = formData[field]
         if (!text || text.length < 5) {
-            alert('Сначала введите хотя бы немного текста для улучшения')
+            setToast({ message: 'Сначала введите хотя бы немного текста для улучшения', type: 'info' })
             return
         }
         
@@ -434,73 +443,107 @@ export const useAdminLocations = () => {
     }
 
     const handleSave = () => {
-        // Validation
-        if (!formData.title?.trim()) return alert('Название обязательно')
-        if (!formData.category) return alert('Категория обязательна')
-        if (!formData.city) return alert('Город обязателен')
+        console.log('[useAdminLocations] handleSave function ENTERED');
+        try {
+            // Validation
+            if (!formData) {
+                console.error('[useAdminLocations] CRITICAL: formData is null in handleSave');
+                setToast({ message: 'Ошибка: данные формы отсутствуют', type: 'error' });
+                return;
+            }
 
-        // Basic URL Validation & Auto-correction
-        const urlFields = ['website', 'booking_url', 'social_instagram', 'social_facebook']
-        const updatedFields = {}
-        let hasErrors = false
+            console.log('[useAdminLocations] Current formData state:', formData);
 
-        for (const field of urlFields) {
-            let val = formData[field]?.trim()
-            if (val) {
-                // Auto-fix common omissions (e.g. instagram.com -> https://instagram.com)
-                if (!val.startsWith('http://') && !val.startsWith('https://')) {
-                    if (val.startsWith('www.') || val.includes('.')) {
-                        val = `https://${val}`
-                        updatedFields[field] = val
-                    } else {
-                        alert(t('admin.locations.form.errors.url_invalid', { 
-                            field: t(`admin.locations.form.fields.${field}`) 
-                        }))
-                        hasErrors = true
-                        break
+            if (!formData.title?.trim()) {
+                console.warn('[useAdminLocations] Validation failed: title is missing');
+                return setToast({ message: 'Название обязательно', type: 'error' });
+            }
+            if (!formData.category) {
+                console.warn('[useAdminLocations] Validation failed: category is missing');
+                return setToast({ message: 'Категория обязательна', type: 'error' });
+            }
+            if (!formData.city) {
+                console.warn('[useAdminLocations] Validation failed: city is missing');
+                return setToast({ message: 'Город обязателен', type: 'error' });
+            }
+
+            // Basic URL Validation & Auto-correction
+            const urlFields = ['website', 'booking_url', 'social_instagram', 'social_facebook']
+            const updatedFields = {}
+            let hasErrors = false
+
+            for (const field of urlFields) {
+                let val = formData[field]?.trim()
+                if (val) {
+                    if (!val.startsWith('http://') && !val.startsWith('https://')) {
+                        if (val.startsWith('www.') || val.includes('.')) {
+                            val = `https://${val}`
+                            updatedFields[field] = val
+                        } else {
+                            console.warn(`[useAdminLocations] URL validation failed for field: ${field}, value: ${val}`);
+                            alert(t('admin.locations.form.errors.url_invalid', { 
+                                field: t(`admin.locations.form.fields.${field}`) 
+                            }))
+                            hasErrors = true
+                            break
+                        }
                     }
                 }
             }
-        }
 
-        if (hasErrors) return
+            if (hasErrors) {
+                console.log('[useAdminLocations] Stopping save due to URL errors');
+                return;
+            }
 
-        // Apply fixes to state so UI stays in sync
-        if (Object.keys(updatedFields).length > 0) {
-            setFormData(prev => ({ ...prev, ...updatedFields }))
-        }
+            // Apply fixes to state so UI stays in sync
+            if (Object.keys(updatedFields).length > 0) {
+                console.log('[useAdminLocations] Auto-correcting URLs:', updatedFields);
+                setFormData(prev => ({ ...prev, ...updatedFields }))
+            }
 
-        const submissionData = prepareSubmissionData({ ...formData, ...updatedFields })
+            const submissionData = prepareSubmissionData({ ...formData, ...updatedFields })
+            console.log('[useAdminLocations] handleSave PROCEEDING. SubmissionData:', submissionData)
 
-        if (selectedLocation.id === 'NEW') {
-            submissionData.status = 'pending'
-            createLocMutation.mutate(submissionData, { 
-                onSuccess: () => {
-                    setIsSlideOverOpen(false)
-                    setFormData(null)
-                    setSelectedLocation(null)
-                    // FIX: Switch filter to 'pending' so newly created location is visible
-                    setStatusFilter('pending')
-                    setToast({ message: 'Локация создана! Статус: ожидает модерации.', type: 'success' })
-                },
-                onError: (err) => {
-                    alert('Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'))
-                }
-            })
-        } else {
-            updateLocMutation.mutate({ 
-                id: selectedLocation.id, 
-                updates: submissionData 
-            }, { 
-                onSuccess: () => {
-                    setIsSlideOverOpen(false)
-                    setFormData(null)
-                    setSelectedLocation(null)
-                },
-                onError: (err) => {
-                    alert('Ошибка сохранения: ' + (err?.message || 'Попробуйте ещё раз'))
-                }
-            })
+            if (selectedLocation.id === 'NEW') {
+                submissionData.status = 'pending'
+                console.log('[useAdminLocations] Initiating CREATE mutation');
+                createLocMutation.mutate(submissionData, { 
+                    onSuccess: (data) => {
+                        console.log('[useAdminLocations] createLocMutation SUCCESS callback', data)
+                        setIsSlideOverOpen(false)
+                        setFormData(null)
+                        setSelectedLocation(null)
+                        setStatusFilter('pending')
+                        setToast({ message: 'Локация создана! Статус: ожидает модерации.', type: 'success' })
+                    },
+                    onError: (err) => {
+                        console.error('[useAdminLocations] createLocMutation ERROR callback', err)
+                        setToast({ message: 'Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'), type: 'error' })
+                    }
+                })
+            } else {
+                console.log('[useAdminLocations] Initiating UPDATE mutation for ID:', selectedLocation.id);
+                updateLocMutation.mutate({ 
+                    id: selectedLocation.id, 
+                    updates: submissionData 
+                }, { 
+                    onSuccess: (data) => {
+                        console.log('[useAdminLocations] updateLocMutation SUCCESS callback', data)
+                        setIsSlideOverOpen(false)
+                        setFormData(null)
+                        setSelectedLocation(null)
+                        setToast({ message: 'Изменения сохранены успешно!', type: 'success' })
+                    },
+                    onError: (err) => {
+                        console.error('[useAdminLocations] updateLocMutation ERROR callback', err)
+                        setToast({ message: `Ошибка сохранения: ${err?.message || 'Попробуйте ещё раз'}`, type: 'error' })
+                    }
+                })
+            }
+        } catch (e) {
+            console.error('[useAdminLocations] CRITICAL ERROR in handleSave:', e);
+            setToast({ message: 'Критическая ошибка при сохранении: ' + e.message, type: 'error' });
         }
     }
 

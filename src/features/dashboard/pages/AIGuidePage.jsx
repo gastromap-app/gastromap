@@ -8,33 +8,51 @@ import { useUIStore } from '@/shared/store/useUIStore'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 /**
- * Hook to detect mobile virtual keyboard.
- * Returns { keyboardOpen, keyboardHeight } using visualViewport API.
+ * Detects mobile virtual keyboard via visualViewport API.
+ * 
+ * KEY INSIGHT: In PWA (standalone) mode, iOS resizes the viewport normally.
+ * In Safari browser mode, iOS does NOT resize the layout viewport — it scrolls
+ * the visual viewport up instead. We handle both cases.
  */
 function useKeyboard() {
-    const [keyboardOpen, setKeyboardOpen] = useState(false)
+    const [keyboardVisible, setKeyboardVisible] = useState(false)
     const [keyboardHeight, setKeyboardHeight] = useState(0)
 
     useEffect(() => {
         const vv = window.visualViewport
-        if (!vv) return
+        if (!vv) return // Desktop
+
+        let rafId = null
 
         const update = () => {
-            const kbHeight = window.innerHeight - vv.height - vv.offsetTop
-            const isOpen = kbHeight > 100
-            setKeyboardOpen(isOpen)
-            setKeyboardHeight(isOpen ? kbHeight : 0)
+            if (rafId) cancelAnimationFrame(rafId)
+            rafId = requestAnimationFrame(() => {
+                // Total keyboard height = full window - visible area - any scroll offset
+                const kbH = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+                const isOpen = kbH > 80
+                setKeyboardVisible(isOpen)
+                setKeyboardHeight(isOpen ? kbH : 0)
+            })
         }
 
         vv.addEventListener('resize', update)
         vv.addEventListener('scroll', update)
+        // Also listen to focus/blur on inputs as a fallback
+        const onFocus = (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') setTimeout(update, 300) }
+        const onBlur = () => setTimeout(update, 100)
+        document.addEventListener('focusin', onFocus)
+        document.addEventListener('focusout', onBlur)
+
         return () => {
             vv.removeEventListener('resize', update)
             vv.removeEventListener('scroll', update)
+            document.removeEventListener('focusin', onFocus)
+            document.removeEventListener('focusout', onBlur)
+            if (rafId) cancelAnimationFrame(rafId)
         }
     }, [])
 
-    return { keyboardOpen, keyboardHeight }
+    return { keyboardVisible, keyboardHeight }
 }
 
 const AIGuidePage = () => {
@@ -45,49 +63,41 @@ const AIGuidePage = () => {
     const navigate = useNavigate()
     const scrollRef = useRef(null)
     const hasDoneInitialScroll = useRef(false)
-    const { keyboardOpen, keyboardHeight } = useKeyboard()
+    const { keyboardVisible, keyboardHeight } = useKeyboard()
 
-    // INSTANT scroll to bottom when messages first appear
+    // ─── Scroll management ────────────────────────────────────────────────────
+
     useLayoutEffect(() => {
         if (!scrollRef.current) return
-        if (messages.length === 0) {
-            hasDoneInitialScroll.current = false
-            return
-        }
+        if (messages.length === 0) { hasDoneInitialScroll.current = false; return }
         if (hasDoneInitialScroll.current) return
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         hasDoneInitialScroll.current = true
     }, [messages.length])
 
-    // Auto-scroll on new messages (only if near bottom)
     useEffect(() => {
         if (!scrollRef.current || !hasDoneInitialScroll.current) return
-        const container = scrollRef.current
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
-        if (distanceFromBottom < 200) {
-            container.scrollTop = container.scrollHeight
+        const el = scrollRef.current
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+            el.scrollTop = el.scrollHeight
         }
     }, [messages.length, isTyping])
 
-    // Scroll to bottom when keyboard opens
     useEffect(() => {
-        if (keyboardOpen && scrollRef.current) {
-            setTimeout(() => {
-                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-            }, 150)
+        if (keyboardVisible && scrollRef.current) {
+            setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, 150)
         }
-    }, [keyboardOpen])
+    }, [keyboardVisible])
 
-    // Reset header state on mount
     useEffect(() => {
         setHeaderScrolled(false)
         return () => setHeaderScrolled(false)
     }, [setHeaderScrolled])
 
     const handleScroll = useCallback((e) => {
-        const scrollTop = e.currentTarget.scrollTop
-        setHeaderScrolled(scrollTop > 10)
-        if (scrollTop > 0) setLastScrollY(scrollTop)
+        const y = e.currentTarget.scrollTop
+        setHeaderScrolled(y > 10)
+        if (y > 0) setLastScrollY(y)
     }, [setHeaderScrolled, setLastScrollY])
 
     const handleCardClick = useCallback((locationId) => {
@@ -95,18 +105,33 @@ const AIGuidePage = () => {
         navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }, [navigate, setLastScrollY])
 
-    // Bottom offset for the input bar:
-    // - Keyboard open: just above keyboard (8px gap)
-    // - Keyboard closed: above BottomNav (76px = 64px nav + 12px bottom)
-    const inputBottomOffset = keyboardOpen
-        ? keyboardHeight + 8
-        : 76 + (typeof CSS !== 'undefined' ? 0 : 0) // BottomNav height + gap
+    // ─── Layout calculations ──────────────────────────────────────────────────
+    // 
+    // The input bar is rendered as a SIBLING to the page container (via Fragment),
+    // so it's truly fixed to the browser viewport — never clipped by overflow.
+    //
+    // When keyboard is CLOSED:
+    //   bottom = BottomNav height (64px) + BottomNav bottom offset (12px + safe-area) + 4px gap
+    //   ≈ 80px + safe-area-inset-bottom
+    //
+    // When keyboard is OPEN:
+    //   bottom = keyboardHeight + 6px (tight gap, no wasted space)
+    //   BottomNav is hidden by its own keyboard detection
+
+    const inputBottom = keyboardVisible
+        ? `${keyboardHeight + 6}px`
+        : `calc(80px + env(safe-area-inset-bottom, 0px))`
+
+    // Scroll container needs enough bottom padding so last message isn't hidden behind input
+    const scrollPaddingBottom = keyboardVisible
+        ? `${keyboardHeight + 80}px`
+        : `calc(160px + env(safe-area-inset-bottom, 0px))`
 
     return (
         <>
-            {/* Main chat container — NOT overflow-hidden, uses the page's natural flow */}
+            {/* ─── Page container ─── */}
             <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent">
-                {/* Aurora while typing */}
+                {/* Aurora effect while AI is typing */}
                 {isTyping && (
                     <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                         <div className="absolute bottom-0 left-[-10%] w-[120%] h-[50%] bg-gradient-to-t from-indigo-500/15 via-indigo-500/8 to-transparent blur-[60px]" />
@@ -120,17 +145,15 @@ const AIGuidePage = () => {
                     </div>
                 )}
 
-                {/* Scrollable messages area */}
+                {/* ─── Scrollable messages ─── */}
                 <div
                     ref={scrollRef}
                     onScroll={handleScroll}
                     data-lenis-prevent
                     className="relative z-10 flex-1 overflow-y-auto overscroll-contain"
-                    style={{ paddingBottom: `${inputBottomOffset + 70}px` }}
+                    style={{ paddingBottom: scrollPaddingBottom }}
                 >
-                    {/* Header spacer */}
                     <div style={{ height: HEADER_OFFSET }} className="w-full flex-shrink-0" />
-
                     <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
                         <ChatInterface
                             messages={messages}
@@ -148,12 +171,12 @@ const AIGuidePage = () => {
                 </div>
             </div>
 
-            {/* Input bar — OUTSIDE the overflow container, truly fixed to viewport */}
+            {/* ─── Input bar — OUTSIDE page container, fixed to viewport ─── */}
             <div
-                className="fixed left-0 right-0 md:left-[72px] z-[80] px-3 pointer-events-none"
-                style={{ bottom: `${inputBottomOffset}px` }}
+                className="fixed left-0 right-0 md:left-[72px] z-[80] px-3"
+                style={{ bottom: inputBottom, transition: 'bottom 0.15s ease-out' }}
             >
-                <div className="max-w-4xl mx-auto w-full pointer-events-auto">
+                <div className="max-w-4xl mx-auto w-full">
                     <ChatInputBar
                         onSendMessage={sendMessage}
                         isTyping={isTyping}

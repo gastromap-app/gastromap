@@ -289,10 +289,10 @@ function FeatureCard({ feature, index, isDark }) {
             transition={{ duration: 0.8, ease: CUBIC }}
             className={`grid md:grid-cols-2 gap-8 md:gap-16 items-center ${isEven ? '' : 'md:[direction:rtl]'}`}
         >
-            <div className={`space-y-6 ${isEven ? '' : 'md:[direction:ltr]'}`}>
+            <div className={`${isEven ? '' : 'md:[direction:ltr]'}`}>
                 <span className={`text-[10px] font-medium tracking-[0.3em] uppercase ${isDark ? 'text-white/30' : 'text-gray-400'}`}>{feature.tag}</span>
-                <h3 className={`text-2xl md:text-4xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
-                <p className={`text-base md:text-lg ${isDark ? 'text-white/50' : 'text-gray-500'} font-light leading-relaxed max-w-md`}>{feature.description}</p>
+                <h3 className={`text-2xl md:text-4xl font-light tracking-tight mt-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
+                <p className={`text-base md:text-lg mt-3 ${isDark ? 'text-white/50' : 'text-gray-500'} font-light leading-relaxed max-w-md`}>{feature.description}</p>
             </div>
             <div className={`${isEven ? '' : 'md:[direction:ltr]'}`}>
                 <ParallaxImage src={feature.image} alt={feature.title} className="aspect-[4/3] rounded-2xl" speed={0.15} />

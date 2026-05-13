@@ -33,7 +33,11 @@ const PublicLayout = () => {
 
             {/* Footer */}
             <footer className={`py-12 border-t ${isDark ? 'border-white/5' : 'border-gray-200'}`}>
-                <div className="max-w-4xl mx-auto px-6 text-center">
+                <div className="max-w-4xl mx-auto px-6 flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-4 text-sm">
+                        <Link to="/terms" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Terms</Link>
+                        <Link to="/privacy" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Privacy</Link>
+                    </div>
                     <p className="text-sm text-gray-400">© 2025 GastroMap. All rights reserved.</p>
                 </div>
             </footer>

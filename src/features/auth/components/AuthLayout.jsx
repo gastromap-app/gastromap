@@ -73,8 +73,8 @@ export function AuthLayout({ children, leftChildren, reverse = false, backTo = '
                 </Link>
 
                 {/* Form wrapper with mobile padding for safe area */}
-                <div className="relative z-10 w-full px-6 py-8 flex items-center justify-center min-h-screen"
-                    style={{ paddingTop: 'max(5rem, env(safe-area-inset-top) + 4rem)', paddingBottom: 'max(2rem, env(safe-area-inset-bottom) + 1rem)' }}>
+                <div className="relative z-10 w-full px-5 sm:px-6 py-4 sm:py-8 flex items-center justify-center min-h-[100dvh]"
+                    style={{ paddingTop: 'max(3.5rem, env(safe-area-inset-top) + 2.5rem)', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom) + 0.5rem)' }}>
                     {children}
                 </div>
             </div>

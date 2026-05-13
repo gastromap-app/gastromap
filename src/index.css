@@ -10,6 +10,28 @@
     overscroll-behavior: none;
   }
 
+  /* ─── Mobile browser toolbar compensation ─────────────────────────────────
+     In mobile browsers (not PWA), position:fixed bottom:X positions elements
+     from the layout viewport bottom, which extends BEHIND the browser toolbar.
+     In PWA standalone mode there's no toolbar, so no offset needed.
+     
+     We expose the toolbar height as --mobile-toolbar-offset using the
+     difference between 100vh (layout viewport) and 100dvh (dynamic/visible).
+     In PWA: 100vh === 100dvh → offset = 0. No change.
+     In browser: 100vh > 100dvh by toolbar height → offset = toolbar height.
+  ──────────────────────────────────────────────────────────────────────────── */
+  :root {
+    --mobile-toolbar-offset: 0px;
+  }
+
+  @supports (height: 100dvh) {
+    @media (display-mode: browser) and (max-width: 767px) and (hover: none) and (pointer: coarse) {
+      :root {
+        --mobile-toolbar-offset: calc(100vh - 100dvh);
+      }
+    }
+  }
+
   :root {
     /* Base HSL Values - Light Mode (Apple Style) */
     /* Subtle off-white so cards/sheets gain visible separation on the canvas */

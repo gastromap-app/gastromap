@@ -116,7 +116,7 @@ const ResetPasswordPage = () => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-[420px] bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100"
+                className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
                 {success ? (
                     <motion.div
@@ -138,13 +138,13 @@ const ResetPasswordPage = () => {
                     </motion.div>
                 ) : (
                     <>
-                        <motion.div variants={itemVariants} className="text-center mb-10">
-                            <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-12 h-12 object-cover rounded-full mx-auto mb-6 lg:hidden" />
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Set new password</h2>
-                            <p className="text-gray-500">Create a strong password for your account.</p>
+                        <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                            <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
+                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Set new password</h2>
+                            <p className="text-gray-500 text-sm sm:text-base">Create a strong password for your account.</p>
                         </motion.div>
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                             {error && (
                                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-2xl">
                                     {error}
@@ -215,7 +215,7 @@ const ResetPasswordPage = () => {
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
+                                className="w-full h-12 sm:h-14 mt-4 sm:mt-6 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                             >
                                 {isSubmitting ? (
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

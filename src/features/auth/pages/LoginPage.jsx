@@ -119,15 +119,15 @@ const LoginPage = () => {
                 variants={formContainerVariants}
                 initial="hidden"
                 animate="visible"
-                className="w-full max-w-[420px] bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100"
+                className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
-                <motion.div variants={itemVariants} className="text-center mb-10">
-                    <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-12 h-12 object-cover rounded-full mx-auto mb-6 lg:hidden" />
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-                    <p className="text-gray-500">Please enter your details to sign in.</p>
+                <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                    <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Welcome back</h2>
+                    <p className="text-gray-500 text-sm sm:text-base">Please enter your details to sign in.</p>
                 </motion.div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
 
                     {/* Error message */}
                     {error && (
@@ -186,7 +186,7 @@ const LoginPage = () => {
                         whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full h-14 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
+                        className="w-full h-12 sm:h-14 mt-4 sm:mt-6 bg-black text-white rounded-full font-bold text-lg shadow-xl hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                     >
                         {isSubmitting ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -196,7 +196,7 @@ const LoginPage = () => {
                     </motion.button>
                 </form>
 
-                <motion.div variants={itemVariants} className="mt-8 text-center">
+                <motion.div variants={itemVariants} className="mt-5 sm:mt-8 text-center">
                     <p className="text-gray-500 text-sm">
                         Don't have an account? <Link to="/auth/signup" className="font-bold text-blue-600 hover:text-blue-700">Sign up free</Link>
                     </p>

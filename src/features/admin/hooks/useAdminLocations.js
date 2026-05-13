@@ -427,9 +427,26 @@ export const useAdminLocations = () => {
         // and 'what_to_try' -> 'must_try' string etc.
         const submissionData = { ...formData }
         
-        // Clean up internal UI-only fields if any
+        // Clean up internal UI-only fields
         delete submissionData._data_source
         delete submissionData._candidates
+        delete submissionData._source
+        
+        // Remove read-only / computed fields that should never be sent on save
+        delete submissionData.id
+        delete submissionData.created_at
+        delete submissionData.updated_at
+        delete submissionData.createdAt
+        delete submissionData.updatedAt
+        delete submissionData.coordinates
+        delete submissionData.embedding       // Large vector — only set by AI enrichment
+        delete submissionData.fts             // Generated column
+        delete submissionData.views_count
+        delete submissionData.saves_count
+        delete submissionData.visits_count
+        delete submissionData.comments_count
+        delete submissionData.trending_score
+        delete submissionData.trending_at
         
         // Ensure numbers
         if (submissionData.rating !== undefined && submissionData.rating !== null) {

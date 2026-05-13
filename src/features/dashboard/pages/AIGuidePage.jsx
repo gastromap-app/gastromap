@@ -17,23 +17,35 @@ const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 /**
  * Hook to detect mobile keyboard and compute input position.
  * Uses visualViewport API (supported iOS 13+, Android Chrome 62+).
- * When keyboard is open, returns the offset from viewport bottom.
+ * 
+ * On iOS Safari, `position: fixed; bottom: X` breaks when keyboard opens
+ * because Safari scrolls the viewport UP instead of shrinking it.
+ * Solution: use `top` positioning based on visualViewport.height.
  */
 function useKeyboardOffset() {
     const [keyboardOpen, setKeyboardOpen] = useState(false)
-    const [bottomOffset, setBottomOffset] = useState(0)
+    const [inputTop, setInputTop] = useState(null) // null = use default bottom positioning
 
     useEffect(() => {
         const vv = window.visualViewport
         if (!vv) return // Desktop or unsupported browser
 
         const update = () => {
-            // window.innerHeight = full viewport (doesn't shrink with keyboard)
-            // vv.height = visible viewport (shrinks when keyboard opens)
+            // vv.height = visible area height (shrinks when keyboard opens)
+            // vv.offsetTop = how much the viewport has scrolled up
             const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-            const isOpen = keyboardHeight > 100 // Threshold to avoid false positives
+            const isOpen = keyboardHeight > 100
             setKeyboardOpen(isOpen)
-            setBottomOffset(isOpen ? keyboardHeight : 0)
+            
+            if (isOpen) {
+                // Position input at the bottom of the VISIBLE viewport
+                // vv.offsetTop = scroll offset, vv.height = visible height
+                // Input should be at: vv.offsetTop + vv.height - inputHeight - padding
+                const topPosition = vv.offsetTop + vv.height - 70 // 60px input + 10px padding
+                setInputTop(topPosition)
+            } else {
+                setInputTop(null)
+            }
         }
 
         vv.addEventListener('resize', update)
@@ -44,7 +56,7 @@ function useKeyboardOffset() {
         }
     }, [])
 
-    return { keyboardOpen, bottomOffset }
+    return { keyboardOpen, inputTop }
 }
 
 const AIGuidePage = () => {
@@ -55,18 +67,18 @@ const AIGuidePage = () => {
     const navigate = useNavigate()
     const scrollRef = useRef(null)
     const hasDoneInitialScroll = useRef(false)
-    const { keyboardOpen, bottomOffset } = useKeyboardOffset()
+    const { keyboardOpen, inputTop } = useKeyboardOffset()
 
-    // Compute input bar bottom position:
-    // - Keyboard closed: above BottomNav (68px + safe area)
-    // - Keyboard open: 10px above keyboard (nav is hidden behind keyboard)
-    const inputBottom = keyboardOpen
-        ? `${bottomOffset + 10}px`
-        : INPUT_BOTTOM_DEFAULT
+    // Compute input bar position:
+    // - Keyboard closed: use bottom positioning (above BottomNav)
+    // - Keyboard open: use top positioning (pinned to visible viewport bottom)
+    const inputStyle = keyboardOpen && inputTop != null
+        ? { position: 'fixed', top: `${inputTop}px`, bottom: 'auto', left: 0, right: 0 }
+        : { bottom: INPUT_BOTTOM_DEFAULT }
 
     // Adjust scroll padding when keyboard is open
     const scrollPadding = keyboardOpen
-        ? `${bottomOffset + 80}px`
+        ? '200px'
         : SCROLL_PADDING_BOTTOM
 
     // INSTANT scroll to bottom when messages first appear — runs BEFORE first paint
@@ -132,7 +144,7 @@ const AIGuidePage = () => {
     }
 
     return (
-        <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent overflow-hidden">
+        <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent overflow-hidden" style={{ height: '100dvh' }}>
             {/* Aurora while typing */}
             {isTyping && (
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -177,10 +189,10 @@ const AIGuidePage = () => {
                 </div>
             </div>
 
-            {/* Input fixed just above BottomNav (or above keyboard when open) */}
+            {/* Input — fixed above BottomNav, or pinned to visible viewport when keyboard open */}
             <div
-                className="fixed left-0 right-0 md:left-[72px] z-30 px-3 pointer-events-none transition-[bottom] duration-200 ease-out"
-                style={{ bottom: inputBottom }}
+                className="fixed left-0 right-0 md:left-[72px] z-30 px-3 pointer-events-none"
+                style={inputStyle}
             >
                 <div className="max-w-4xl mx-auto w-full pointer-events-auto">
                     <ChatInputBar

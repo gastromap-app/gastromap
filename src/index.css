@@ -27,7 +27,7 @@
   @supports (height: 100dvh) {
     @media (display-mode: browser) and (max-width: 767px) and (hover: none) and (pointer: coarse) {
       :root {
-        --mobile-toolbar-offset: calc(100vh - 100dvh);
+        --mobile-toolbar-offset: 10px;
       }
     }
   }

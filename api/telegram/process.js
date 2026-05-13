@@ -12,7 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
-import { normalizeOpeningHoursToJSON, formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
+import { formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
 import { normalizeCityName, normalizeCountryName } from '../../src/utils/normalizeCityName.js'
 
 // Polyfill AbortSignal.timeout for older Node.js
@@ -453,17 +453,10 @@ Generate EXACTLY this JSON structure (all fields required, no extras):
   "city": "City name in ENGLISH only. E.g.: 'Krakow' (NOT local names), 'Warsaw' (NOT Warszawa), 'Kyiv' (NOT Kiev), 'Rome' (NOT Roma). Always use English/international names.",
   "country": "Country in ENGLISH. E.g.: 'Poland', 'Ukraine', 'Italy'. Always use English names.",
 
-  "opening_hours": {
-    "monday": "08:00-18:00",
-    "tuesday": "08:00-18:00",
-    "wednesday": "08:00-18:00",
-    "thursday": "08:00-18:00",
-    "friday": "08:00-18:00",
-    "saturday": "09:00-18:00",
-    "sunday": "09:00-18:00"
-  },
-  // OR if same every day:
-  "opening_hours": "08:00-18:00",
+  "opening_hours": "Mon-Thu: 8AM-6PM, Fri: 8AM-8PM, Sat-Sun: 9AM-6PM",
+  // Format: abbreviated days + 12h time. Group consecutive days with same hours.
+  // Examples: "Daily: 9AM-10PM" or "Mon-Fri: 8AM-5PM, Sat-Sun: 9AM-5PM" or "Tue-Sat: 12PM-11PM"
+  // Use 12-hour format (8AM, 12PM, 9:30PM). Use 'Daily' if all 7 days are the same.
   
   "has_wifi": true or false,
   "has_outdoor_seating": true or false,
@@ -601,27 +594,23 @@ async function insertLocation(d, apifyHours = null) {
         try { new URL(d.website) } catch { d.website = null }
     }
 
-    // Normalize opening_hours to standardized JSON format
+    // Normalize opening_hours to standardized string format: "Mon-Fri: 8AM-5PM, Sat-Sun: 9AM-5PM"
     let openingHours = null
     
-    // Priority 1: LLM-generated structured hours
-    if (d.opening_hours) {
-        openingHours = normalizeOpeningHoursToJSON(d.opening_hours)
+    if (typeof d.opening_hours === 'string' && d.opening_hours.trim()) {
+        // LLM already returns the correct format — use as-is
+        openingHours = d.opening_hours.trim()
+    } else if (typeof d.opening_hours === 'object' && !Array.isArray(d.opening_hours) && d.opening_hours) {
+        // JSON object from LLM — convert to string format using formatOpeningHours
+        openingHours = formatOpeningHours(d.opening_hours)
+    } else if (Array.isArray(d.opening_hours) && d.opening_hours.length > 0) {
+        // Google Places weekday_text array — convert
+        openingHours = formatOpeningHours(d.opening_hours)
     }
     
-    // Priority 2: Google Places weekday_text
-    if (!openingHours && Array.isArray(d.opening_hours) && d.opening_hours.length > 0) {
-        openingHours = normalizeOpeningHoursToJSON(d.opening_hours)
-    }
-    
-    // Priority 3: Apify hours (passed as parameter)
+    // Fallback: Apify hours
     if (!openingHours && apifyHours?.length) {
-        openingHours = normalizeOpeningHoursToJSON(apifyHours)
-    }
-    
-    // Priority 4: Fallback to summary string (will be normalized if possible)
-    if (!openingHours && d.opening_hours_summary) {
-        openingHours = normalizeOpeningHoursToJSON(d.opening_hours_summary)
+        openingHours = formatOpeningHours(apifyHours)
     }
 
     const row = {

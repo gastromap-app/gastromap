@@ -420,7 +420,10 @@ export const useLocationsStore = create((set, get) => ({
             const data = result?.data ?? result;
             
             if (Array.isArray(data) && data.length > 0) {
-                const merged = [...state.locations, ...data];
+                // Deduplicate by id to prevent duplicates from realtime inserts
+                const existingIds = new Set(state.locations.map(l => l.id));
+                const newItems = data.filter(l => !existingIds.has(l.id));
+                const merged = [...state.locations, ...newItems];
                 set({
                     locations: merged,
                     filteredLocations: applyAllFilters(merged, get()),

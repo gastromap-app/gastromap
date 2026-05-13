@@ -21,10 +21,10 @@ export async function getAdminStats() {
     }
 
     return {
-        locations: safeGet(results[0], 'get_location_stats'),
-        users: safeGet(results[1], 'get_user_stats'),
-        engagement: safeGet(results[2], 'get_engagement_stats'),
-        payments: safeGet(results[3], 'get_payment_stats'),
+        locations: safeGet(results[0], 'get_location_stats') || { total: 0, active: 0, pending: 0 },
+        users: safeGet(results[1], 'get_user_stats') || { total: 0, active: 0, new_this_month: 0 },
+        engagement: safeGet(results[2], 'get_engagement_stats') || { reviews: 0, visits: 0, favorites: 0 },
+        payments: safeGet(results[3], 'get_payment_stats') || { total: 0, revenue: 0 },
         top_locations: safeGet(results[4], 'top_locations') || [],
     }
 }

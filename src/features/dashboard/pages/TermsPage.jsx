@@ -1,11 +1,18 @@
-import React from 'react'
-import PageHeader from '@/components/layout/public/PageHeader'
-import { FileText } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { FileText, ArrowUpRight } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 const TermsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+    const [scrolled, setScrolled] = useState(false)
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 50)
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
     const subTextStyle = isDark ? "text-gray-400" : "text-gray-600"
@@ -80,12 +87,23 @@ const TermsPage = () => {
     ]
 
     return (
-        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen">
-            <PageHeader
-                title="Terms of Service"
-                subtitle="The rules and guidelines for using the GastroMap platform."
-                highlight="Legal"
-            />
+        <div className={`min-h-screen ${isDark ? 'bg-black' : 'bg-[#F5F5F7]'}`}>
+            {/* Navbar — same as LandingPageV3 */}
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? (isDark ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : 'bg-white/80 backdrop-blur-xl border-b border-gray-200/60 shadow-sm') : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+                <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 md:h-20 flex items-center justify-between">
+                    <Link to="/" className={`${isDark ? 'text-white' : scrolled ? 'text-gray-900' : 'text-gray-900'} text-lg font-medium tracking-tight`}>GastroMap</Link>
+                    <Link to="/auth/signup" className={`h-9 px-5 rounded-full ${isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-gray-900 text-white hover:bg-gray-800'} text-sm font-medium flex items-center gap-1.5 transition-colors`}>
+                        Get Started <ArrowUpRight size={14} />
+                    </Link>
+                </div>
+            </nav>
+
+            {/* Page Title */}
+            <div className="pt-24 md:pt-32 pb-8 px-6 max-w-[800px] mx-auto">
+                <p className={`text-xs font-light tracking-[0.3em] uppercase mb-3 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Legal</p>
+                <h1 className={`text-3xl md:text-4xl font-light tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Terms of Service</h1>
+                <p className={`mt-2 text-base ${isDark ? 'text-white/50' : 'text-gray-500'} font-light`}>The rules and guidelines for using the GastroMap platform.</p>
+            </div>
 
             <div className="px-4 sm:px-6 md:px-8 pt-8 max-w-[800px] mx-auto space-y-6 pb-12">
                 {/* Meta Info */}

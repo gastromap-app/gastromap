@@ -409,6 +409,22 @@ export function subscribeToAuthChanges(onSession, onSignOut) {
             return
         }
 
+        // PASSWORD_RECOVERY: user clicked the reset link from email.
+        // Supabase auto-authenticates them, but we must redirect to the
+        // reset-password page instead of treating it as a normal sign-in.
+        if (event === 'PASSWORD_RECOVERY' && session?.user) {
+            try {
+                const profile = await _fetchProfile(session.user.id)
+                onSession({ user: _mapUser(session.user, profile), token: session.access_token })
+            } catch (err) {
+                console.warn('[auth] Failed to fetch profile on PASSWORD_RECOVERY:', err.message)
+                onSession({ user: _mapUser(session.user, null), token: session.access_token })
+            }
+            // Navigate to reset password page (import dynamically to avoid circular deps)
+            window.location.replace('/auth/reset-password')
+            return
+        }
+
         if (session?.user) {
             try {
                 // RACE CONDITION FIX: async in onAuthStateChange needs try/catch

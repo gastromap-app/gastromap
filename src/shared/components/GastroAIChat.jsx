@@ -114,16 +114,16 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
                 className={`relative flex items-center rounded-2xl border transition-all shadow-none ring-0 ${
                     transparent
                         ? isDark
-                            ? 'bg-black/40 border-white/10 focus-within:border-white/20 backdrop-blur-2xl'
-                            : 'bg-white/70 border-white/40 focus-within:border-white/60 backdrop-blur-2xl'
-                        : 'bg-gray-100/80 dark:bg-gray-800/80 border-transparent focus-within:border-indigo-500/30 focus-within:bg-white dark:focus-within:bg-gray-800'
+                            ? 'bg-black/40 border-white/10 focus-within:border-white/15 backdrop-blur-2xl'
+                            : 'bg-white/70 border-white/30 focus-within:border-white/50 backdrop-blur-2xl'
+                        : 'bg-gray-100/80 dark:bg-gray-800/80 border-transparent focus-within:border-indigo-500/20 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
             >
                 <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask about places..."
-                    className={`bg-transparent border-none shadow-none focus-visible:ring-0 text-[16px] py-6 pl-4 pr-12 placeholder:font-normal ${
+                    className={`bg-transparent border-none shadow-none outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[16px] py-6 pl-4 pr-12 placeholder:font-normal ${
                         transparent
                             ? isDark
                                 ? 'text-white placeholder:text-gray-500'

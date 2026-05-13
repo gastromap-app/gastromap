@@ -130,7 +130,7 @@ const AIGuidePage = () => {
     return (
         <>
             {/* ─── Page container ─── */}
-            <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent">
+            <div className="fixed top-0 left-0 right-0 md:left-[72px] flex flex-col bg-transparent" style={{ height: '100dvh' }}>
                 {/* Aurora effect while AI is typing */}
                 {isTyping && (
                     <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">

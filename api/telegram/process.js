@@ -624,42 +624,52 @@ async function insertLocation(d, apifyHours = null) {
         // Contact
         phone:          d.phone || null,
         website:        d.website || null,
-        // Data
-        rating:         d.rating ? Number(d.rating) : null,
-        price_level:    d.price_level || '$$',
+        // Data (canonical column names)
+        google_rating:  d.rating ? Number(d.rating) : null,
+        price_range:    d.price_level || '$$',
         opening_hours:  openingHours,
-        // Content
-        cuisine:        typeof d.cuisine === 'string' ? d.cuisine : (Array.isArray(d.cuisine) ? d.cuisine[0] : null),
+        // Content (canonical column names)
+        cuisine_types:  typeof d.cuisine === 'string' ? [d.cuisine] : (Array.isArray(d.cuisine) ? d.cuisine : []),
         tags:           d.tags || [],
         vibe:           d.vibe || [],
-        features:       d.features || [],
+        amenities:      d.features || [],
         best_for:       d.best_for || [],
-        dietary:        d.dietary || [],
+        dietary_options: d.dietary || [],
         what_to_try:    Array.isArray(d.what_to_try) ? d.what_to_try : (d.what_to_try ? [d.what_to_try] : []),
         insider_tip:    d.insider_tip || null,
         // Booleans
         has_wifi:               d.has_wifi || false,
         has_outdoor_seating:    d.has_outdoor_seating || false,
         reservations_required:  d.reservations_required || false,
-        // Media
-        image:          d.image || (d.photos?.[0]) || null,
-        photos:         d.photos || [],
+        // Media (canonical column names)
+        image_url:      d.image || (d.photos?.[0]) || null,
+        google_photos:  d.photos || [],
         // Location (normalize to English/international names)
         city:           d.city ? normalizeCityName(d.city) : null,
         country:        d.country ? normalizeCountryName(d.country) : null,
+        // Google
+        google_place_id: d.google_place_id || null,
+        google_maps_url: d.google_maps_url || null,
         // Meta
         status:         'draft',
-        source:         'telegram_bot',
     }
 
     const { data, error } = await supabase
         .from('locations')
         .insert(row)
-        .select('id, title, city, country, cuisine, tags, vibe, features, what_to_try, insider_tip, opening_hours, phone, website, price_level, rating, has_wifi, has_outdoor_seating')
+        .select('id, title, city, country, cuisine_types, tags, vibe, amenities, what_to_try, insider_tip, opening_hours, phone, website, price_range, google_rating, has_wifi, has_outdoor_seating')
         .single()
 
     if (error) throw new Error(`Supabase: ${error.message}`)
-    return data
+    
+    // Map to friendly names for Telegram response
+    return {
+        ...data,
+        cuisine: data.cuisine_types?.[0] || null,
+        features: data.amenities || [],
+        rating: data.google_rating,
+        price_level: data.price_range,
+    }
 }
 
 // ── Main Handler ──────────────────────────────────────────────────────────────

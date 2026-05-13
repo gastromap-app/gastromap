@@ -253,10 +253,19 @@ export async function getNotificationHistory(limit = 20, unreadOnly = false) {
 
         const { data, error } = await query
 
-        if (error) throw error
+        // Table doesn't exist yet (404) — silently return empty
+        if (error) {
+            if (error.code === 'PGRST204' || error.message?.includes('404') || error.code === '42P01') {
+                return []
+            }
+            throw error
+        }
         return data || []
     } catch (err) {
-        console.warn('[Notifications] Could not fetch history:', err.message)
+        // Don't spam console for missing table — it's expected until migration runs
+        if (!err.message?.includes('relation') && !err.message?.includes('404')) {
+            console.warn('[Notifications] Could not fetch history:', err.message)
+        }
         return []
     }
 }

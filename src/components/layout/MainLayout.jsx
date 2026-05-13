@@ -35,7 +35,7 @@ export function MainLayout() {
 
     return (
         <AuroraBackground theme={theme}>
-            <div className="flex min-h-svh text-foreground relative">
+            <div className="flex min-h-svh text-foreground relative overscroll-none">
                 {/* Desktop Sidebar Navigation */}
                 <DesktopSidebar />
 

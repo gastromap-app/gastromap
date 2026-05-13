@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent iOS rubber-band overscroll from revealing background behind content */
+  html, body {
+    overscroll-behavior: none;
+  }
+
   :root {
     /* Base HSL Values - Light Mode (Apple Style) */
     /* Subtle off-white so cards/sheets gain visible separation on the canvas */

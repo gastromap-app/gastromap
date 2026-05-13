@@ -108,11 +108,11 @@ const LocationFilters = ({
                         )}
                     </button>
 
-                    <div className="flex gap-1 p-1 bg-secondary rounded-card border border-border shrink-0 shadow-inner">
+                    <div className="flex gap-1 p-1 bg-secondary rounded-card border border-border flex-1 shadow-inner">
                         <button
                             onClick={() => onViewModeChange('geo')}
                             className={cn(
-                                "px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'geo' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'
@@ -124,7 +124,7 @@ const LocationFilters = ({
                         <button
                             onClick={() => onViewModeChange('list')}
                             className={cn(
-                                "px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'list' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'
@@ -136,7 +136,7 @@ const LocationFilters = ({
                         <button
                             onClick={() => onViewModeChange('map')}
                             className={cn(
-                                "px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'map' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'

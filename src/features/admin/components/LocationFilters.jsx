@@ -322,7 +322,7 @@ const LocationFilters = ({
 
             {/* Вкладки (Статус) */}
             <div className="px-4 lg:px-10 pb-5 flex items-center gap-3">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 pr-4 -mx-1 flex-1">
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1 pr-4 -mx-1 flex-1">
                     {[
                         { id: 'all', label: t('admin.tabs.all'), icon: ListIcon },
                         { id: 'pending', label: t('admin.tabs.pending'), icon: Clock },
@@ -332,13 +332,13 @@ const LocationFilters = ({
                             key={tab.id}
                             onClick={() => onViewChange(tab.id)}
                             className={cn(
-                                "flex items-center gap-2 px-5 py-3 rounded-card micro uppercase transition-all whitespace-nowrap border shrink-0",
+                                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap border shrink-0",
                                 view === tab.id
-                                    ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20'
+                                    ? 'bg-primary border-primary text-white shadow-md shadow-primary/20'
                                     : 'bg-secondary border-border text-t-tertiary hover:text-t-secondary'
                             )}
                         >
-                            <tab.icon size={12} strokeWidth={2.5} />
+                            <tab.icon size={11} strokeWidth={2.5} />
                             {tab.label}
                         </button>
                     ))}

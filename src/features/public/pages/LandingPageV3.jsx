@@ -307,7 +307,7 @@ function FeatureCard({ feature, index, isDark }) {
 function GallerySection({ isDark }) {
     const containerRef = useRef(null)
     const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start end', 'end start'] })
-    const x = useTransform(scrollYProgress, [0, 1], ['10%', '-30%'])
+    const x = useTransform(scrollYProgress, [0, 1], ['5%', '-60%'])
 
     const images = [
         'https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800&auto=format&fit=crop',

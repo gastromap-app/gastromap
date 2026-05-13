@@ -551,15 +551,15 @@ export default function AddPlacePage() {
                 country:      form.country,
                 country_code: form.country_code,
                 category:     form.category,
-                price_level:  form.price_range?.length || 1, // Map '$$' -> 2
+                price_level:  form.price_range || '$$', // Send as text string (DB column is TEXT)
                 images:       photos,
                 must_try:     form.must_try ? [form.must_try] : [], // Convert to array
-                insider_tip:  form.insider_tip,
-                lat:          form.lat ? parseFloat(form.lat) : null,
-                lng:          form.lng ? parseFloat(form.lng) : null,
-                outdoor_seating: form.outdoor_seating,
-                pet_friendly:    form.pet_friendly,
-                website_url:     form.website_url,
+                insider_tip:  form.insider_tip || '',
+                lat:          form.lat ? parseFloat(form.lat) : 0,
+                lng:          form.lng ? parseFloat(form.lng) : 0,
+                outdoor_seating: form.outdoor_seating || false,
+                pet_friendly:    form.pet_friendly || false,
+                website_url:     form.website_url || null,
                 ai_photo_url:    aiPhoto || null,
             }
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Map, Sparkles, Heart, CheckCircle } from 'lucide-react'
@@ -11,6 +11,23 @@ export function BottomNav() {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
+    const [keyboardOpen, setKeyboardOpen] = useState(false)
+
+    // Hide nav when virtual keyboard is open
+    useEffect(() => {
+        const vv = window.visualViewport
+        if (!vv) return
+        const update = () => {
+            const kbHeight = window.innerHeight - vv.height - vv.offsetTop
+            setKeyboardOpen(kbHeight > 100)
+        }
+        vv.addEventListener('resize', update)
+        vv.addEventListener('scroll', update)
+        return () => {
+            vv.removeEventListener('resize', update)
+            vv.removeEventListener('scroll', update)
+        }
+    }, [])
 
     const navItems = [
         { icon: Home,        label: t('nav.overview'), path: '/dashboard' },
@@ -22,7 +39,10 @@ export function BottomNav() {
 
     return (
         <div
-            className="fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none"
+            className={cn(
+                "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none transition-opacity duration-150",
+                keyboardOpen && "opacity-0 pointer-events-none"
+            )}
             style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
         >
             <nav

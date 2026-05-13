@@ -12,15 +12,22 @@ const App = ({ includeRouter = true }) => {
     const initialize = useLocationsStore(s => s.initialize)
     const subscribeToRealtime = useLocationsStore(s => s.subscribeToRealtime)
     const initAuth = useAuthStore(s => s.initAuth)
+    const isAuthLoading = useAuthStore(s => s.isLoading)
 
+    // Step 1: Restore auth session
     useEffect(() => {
-        // Restore Supabase session + subscribe to auth changes
         initAuth()
-        // Load locations from Supabase into the single source of truth store.
-        // initialize() is idempotent — skips if already loaded.
-        initialize()
-        // Subscribe to Realtime: when admin adds/edits/removes a location,
-        // the Zustand store auto-updates without a full re-fetch.
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Step 2: Load locations AFTER auth is ready (avoids RLS race condition)
+    useEffect(() => {
+        if (!isAuthLoading) {
+            initialize()
+        }
+    }, [isAuthLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Step 3: Subscribe to Realtime updates
+    useEffect(() => {
         const unsubscribe = subscribeToRealtime()
         return () => { unsubscribe() }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps

@@ -344,7 +344,7 @@ function CitiesMarquee({ isDark }) {
 
     return (
         <section className={`py-16 md:py-24 ${isDark ? 'bg-[#0A0A0A] border-y border-white/5' : 'bg-gray-50 border-y border-gray-200'}`}>
-            <Marquee speed={40} direction="right" className={isDark ? 'text-white/20' : 'text-gray-400'}>
+            <Marquee speed={8} direction="right" className={isDark ? 'text-white/20' : 'text-gray-400'}>
                 <div className="flex items-center gap-8 md:gap-12 px-4 md:px-6">
                     {cities.map((city, i) => (
                         <span key={i} className="text-4xl md:text-6xl font-light tracking-tight whitespace-nowrap">{city}</span>

@@ -180,9 +180,13 @@ export async function getLocations(filters = {}) {
     // always come from authenticated users who have full SELECT.
     const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_rating,price_range,status,created_at'
 
+    // Authenticated user columns — everything EXCEPT embedding (768-float vector, ~6KB per row).
+    // Embedding is only needed for semantic search (handled by RPC function, not SELECT).
+    const AUTH_COLS = 'id,title,description,address,city,country,lat,lng,city_slug,country_slug,category,status,image_url,google_photos,google_rating,google_user_ratings_total,price_range,google_price_level,is_hidden_gem,is_featured,cuisine_types,cuisine,tags,vibe,special_labels,best_for,best_time_to_visit,noise_level,average_visit_duration,amenities,dietary_options,has_wifi,has_outdoor_seating,pet_friendly,child_friendly,reservations_required,opening_hours,website,phone,booking_url,insider_tip,must_try,what_to_try,google_place_id,google_maps_url,google_formatted_address,google_vicinity,ai_keywords,ai_context,ai_enriched,ai_description_generated,ai_insider_tip_generated,ai_must_try_generated,ai_enrichment_status,ai_enrichment_error,ai_enrichment_last_attempt,kg_cuisines,kg_dishes,kg_ingredients,kg_allergens,kg_enriched_at,michelin_stars,michelin_bib,social_instagram,social_facebook,views_count,saves_count,visits_count,comments_count,trending_score,trending_at,moderation_note,last_enriched_at,created_at,updated_at'
+
     let q = supabase
         .from('locations')
-        .select(bypassStatus ? '*' : ANON_COLS, { count: 'exact' })
+        .select(bypassStatus ? AUTH_COLS : ANON_COLS, { count: 'exact' })
 
     // ─── Bounding Box Filter (High Performance) ──────────────────────────
     if (bounds) {
@@ -278,13 +282,15 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data: { session } } = await supabase.auth.getSession()
     const isAuthenticated = !!session
 
-    // Column selection: authenticated users get all columns (insider_tip, tags, kg_*, etc.)
+    // Column selection: authenticated users get all columns EXCEPT embedding.
+    // Embedding (768-float vector) is only used by semantic search RPC, never displayed in UI.
     // Anon users get only public-safe columns to avoid 401/403 errors.
     const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_rating,price_range,status,created_at'
+    const AUTH_COLS = 'id,title,description,address,city,country,lat,lng,city_slug,country_slug,category,status,image_url,google_photos,google_rating,google_user_ratings_total,price_range,google_price_level,is_hidden_gem,is_featured,cuisine_types,cuisine,tags,vibe,special_labels,best_for,best_time_to_visit,noise_level,average_visit_duration,amenities,dietary_options,has_wifi,has_outdoor_seating,pet_friendly,child_friendly,reservations_required,opening_hours,website,phone,booking_url,insider_tip,must_try,what_to_try,google_place_id,google_maps_url,google_formatted_address,google_vicinity,ai_keywords,ai_context,ai_enriched,ai_description_generated,ai_insider_tip_generated,ai_must_try_generated,ai_enrichment_status,ai_enrichment_error,ai_enrichment_last_attempt,kg_cuisines,kg_dishes,kg_ingredients,kg_allergens,kg_enriched_at,michelin_stars,michelin_bib,social_instagram,social_facebook,views_count,saves_count,visits_count,comments_count,trending_score,trending_at,moderation_note,last_enriched_at,created_at,updated_at'
 
     let q = supabase
         .from('locations')
-        .select(adminMode || isAuthenticated ? '*' : ANON_COLS)
+        .select(adminMode || isAuthenticated ? AUTH_COLS : ANON_COLS)
         .eq('id', id)
 
     // Public facing: only show active (approved) locations. Admin mode: show any status.

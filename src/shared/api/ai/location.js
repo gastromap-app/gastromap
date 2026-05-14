@@ -134,14 +134,16 @@ export async function extractLocationData(query) {
             ? window.location.origin
             : 'https://gastromap-five.vercel.app'
 
-        const res = await fetch(`${baseUrl}/api/places/search`, {
+        const res = await fetch(`${baseUrl}/api/locations/enrich`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: query.trim() }),
+            body: JSON.stringify({ action: 'places-search', query: query.trim() }),
         })
 
         if (res.ok) {
-            const { result, candidates } = await res.json()
+            const data = await res.json()
+            const result = data.result
+            const candidates = data.candidates
             if (result?.title) {
                 console.log('[ai.location] Google Places found:', result.title)
 

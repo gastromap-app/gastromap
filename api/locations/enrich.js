@@ -571,7 +571,109 @@ async function handleBraveSearch(body) {
     }
 }
 
-// ── Supported actions ─────────────────────────────────────────────────────────
+// ── Places Search (merged from api/places/search.js) ──────────────────────────
+
+async function handlePlacesSearch(body) {
+    if (!GOOGLE_API_KEY) return { success: false, error: 'GOOGLE_PLACES_API_KEY not configured', _status: 500 }
+
+    const { query, place_id } = body
+    const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place'
+
+    try {
+        let placeDetails = {}
+
+        if (place_id) {
+            placeDetails = await fetchPlaceDetails(place_id, PLACES_BASE)
+        } else if (query?.trim()) {
+            const searchUrl = new URL(`${PLACES_BASE}/textsearch/json`)
+            searchUrl.searchParams.set('query', query.trim())
+            searchUrl.searchParams.set('type', 'restaurant|cafe|bar|food')
+            searchUrl.searchParams.set('language', 'en')
+            searchUrl.searchParams.set('key', GOOGLE_API_KEY)
+
+            const searchRes = await fetch(searchUrl.toString())
+            const searchData = await searchRes.json()
+            trackApiCall()
+
+            if (searchData.status === 'REQUEST_DENIED') {
+                return { success: false, error: 'Google API key invalid', _status: 403 }
+            }
+            if (!searchData.results?.length) {
+                return { success: false, error: 'No places found', _status: 404 }
+            }
+
+            placeDetails = await fetchPlaceDetails(searchData.results[0].place_id, PLACES_BASE)
+
+            const candidates = searchData.results.slice(0, 3).map(r => ({
+                place_id: r.place_id, name: r.name, address: r.formatted_address, rating: r.rating,
+            }))
+
+            return { success: true, result: normalizePlaceResult(placeDetails), candidates, source: 'google_places' }
+        } else {
+            return { success: false, error: 'query or place_id is required', _status: 400 }
+        }
+
+        return { success: true, result: normalizePlaceResult(placeDetails), source: 'google_places' }
+    } catch (err) {
+        return { success: false, error: err.message, _status: 500 }
+    }
+}
+
+async function fetchPlaceDetails(placeId, PLACES_BASE) {
+    const fields = 'place_id,name,formatted_address,vicinity,geometry,types,rating,user_ratings_total,price_level,opening_hours,website,formatted_phone_number,photos,url,editorial_summary,serves_beer,serves_breakfast,serves_dinner,serves_lunch,serves_wine,takeout,delivery,dine_in,wheelchair_accessible_entrance'
+    const detailUrl = new URL(`${PLACES_BASE}/details/json`)
+    detailUrl.searchParams.set('place_id', placeId)
+    detailUrl.searchParams.set('fields', fields)
+    detailUrl.searchParams.set('language', 'en')
+    detailUrl.searchParams.set('key', GOOGLE_API_KEY)
+    const r = await fetch(detailUrl.toString())
+    const d = await r.json()
+    trackApiCall()
+    return d.result || {}
+}
+
+function normalizePlaceResult(p) {
+    const CATEGORY_MAP = { restaurant: 'Restaurant', cafe: 'Cafe', bar: 'Bar', bakery: 'Bakery', night_club: 'Bar', food: 'Restaurant', meal_takeaway: 'Fast Food', meal_delivery: 'Fast Food', fine_dining_restaurant: 'Fine Dining' }
+    const PRICE_MAP = { 0: '$', 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' }
+    const googleTypes = p.types || []
+    const category = googleTypes.reduce((f, t) => f || CATEGORY_MAP[t], null) || 'Restaurant'
+    const amenities = []
+    if (p.wheelchair_accessible_entrance) amenities.push('wheelchair accessible')
+    if (p.delivery) amenities.push('delivery')
+    if (p.takeout) amenities.push('takeout')
+    if (p.dine_in) amenities.push('dine-in')
+    if (p.serves_beer || p.serves_wine) amenities.push('alcohol')
+
+    // Extract city/country from address
+    const parts = (p.formatted_address || '').split(',').map(s => s.trim())
+    let city = '', country = ''
+    if (parts.length >= 3) {
+        city = parts[parts.length - 2].replace(/^\d{2}-\d{3}\s*/, '')
+        country = parts[parts.length - 1]
+    }
+    city = normalizeCity(city) || city
+
+    return {
+        title: p.name || null,
+        category,
+        address: p.formatted_address || p.vicinity || null,
+        city, country,
+        lat: p.geometry?.location?.lat || null,
+        lng: p.geometry?.location?.lng || null,
+        phone: p.formatted_phone_number || null,
+        website: p.website || null,
+        rating: p.rating || null,
+        google_rating: p.rating || null,
+        price_level: PRICE_MAP[p.price_level] || '$$',
+        opening_hours: p.opening_hours?.weekday_text?.join(' | ') || null,
+        description: p.editorial_summary?.overview || null,
+        tags: googleTypes.filter(t => ['cafe','bar','bakery'].includes(t)),
+        amenities,
+        google_place_id: p.place_id || null,
+        google_maps_url: p.url || null,
+        _source: 'google_places',
+    }
+}
 const ACTION_HANDLERS = {
     'enrich': handleEnrich,
     'upload-photos': handleUploadPhotos,
@@ -579,6 +681,7 @@ const ACTION_HANDLERS = {
     'quota-status': handleQuotaStatus,
     'storage-stats': handleStorageStats,
     'brave-search': handleBraveSearch,
+    'places-search': handlePlacesSearch,
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────

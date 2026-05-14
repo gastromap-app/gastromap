@@ -10,7 +10,6 @@
  * Uses OpenRouter API with automatic model cascade.
  */
 
-import { config } from '@/shared/config/env'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { fetchOpenRouter } from '@/shared/api/ai/openrouter'
 import { log as safeLog, warn as safeWarn, error as safeError } from '@/shared/lib/safe-console.js'
@@ -23,7 +22,7 @@ import { log as safeLog, warn as safeWarn, error as safeError } from '@/shared/l
  */
 export async function enrichLocationData(locationData, apiKey = null) {
     const appCfg = useAppConfigStore.getState()
-    const isAiReady = appCfg.aiApiKey || config.ai.openRouterKey
+    const isAiReady = true // API key is always server-side via proxy
 
     if (!isAiReady && !apiKey) {
         safeWarn('[enrichment] AI enrichment skipped: No API key found')

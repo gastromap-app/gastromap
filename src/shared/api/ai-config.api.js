@@ -3,20 +3,17 @@ import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 /**
  * Get active AI config — admin store overrides env vars at runtime.
- * Admin can change model/key in AdminAIPage without redeploying.
+ * Admin can change model in AdminAIPage without redeploying.
+ * 
+ * API key is ALWAYS server-side only (process.env.OPENROUTER_API_KEY).
+ * Client never has access to the key — all requests go through /api/ai/chat proxy.
  */
 export function getActiveAIConfig() {
     const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai?.openRouterKey || ''
     return {
-        apiKey,
         model:         appCfg.aiPrimaryModel  || config.ai?.model || 'openai/gpt-oss-120b:free',
         fallbackModel: appCfg.aiFallbackModel || config.ai?.modelFallback || 'meta-llama/llama-3.3-70b-instruct:free',
-        isConfigured:  !!apiKey && apiKey !== '',
-        /** 
-         * Use proxy only if NO key is provided (Store or Env) 
-         * AND we are in Production. In Dev, always direct unless specified.
-         */
-        useProxy: (!apiKey || apiKey === '') && import.meta.env.PROD
+        isConfigured:  true, // Always configured — key is server-side
+        useProxy:      true, // Always proxy — key never leaves the server
     }
 }

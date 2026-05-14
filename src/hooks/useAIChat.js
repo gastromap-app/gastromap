@@ -7,7 +7,6 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
-import { config } from '@/shared/config/env'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
 import { summarizeSession } from '@/shared/api/ai/summarize-session'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
@@ -64,8 +63,8 @@ export function useAIChat() {
     const { city: userCity, country: userCountry, requestGeo, status } = useUserGeo({ autoRequest: true })
     // Use centralized AI configuration logic (Runtime Admin key > Env key)
     const { apiKey: activeApiKey, useProxy } = getActiveAIConfig()
-    // hasAIAccess: true when either a direct key OR a proxy (prod environment) is available
-    const hasAIAccess = Boolean(activeApiKey) || useProxy || config.ai.useProxy
+    // hasAIAccess: always true — all requests go through server-side proxy
+    const hasAIAccess = true
 
     // Fetch chat history on mount or when user changes
     useEffect(() => {

@@ -22,7 +22,7 @@ export async function testAIConnection(message, preferredModel) {
 
     try {
         const { apiKey } = getActiveAIConfig()
-        const useProxy = config.ai.useProxy
+        const useProxy = true // Always proxy — key is server-side
 
         if (!apiKey && !useProxy) {
             return {

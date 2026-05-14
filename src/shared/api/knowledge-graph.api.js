@@ -7,7 +7,6 @@
 
 import { supabase } from './client'
 import { simulateDelay, ApiError } from './client'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
 import { getCachedData, setCachedData, invalidateCacheGroup, TTL } from '@/shared/lib/cache'
 import { ESTABLISHMENT_TYPE_NAMES } from '@/shared/config/filterOptions'
@@ -16,58 +15,20 @@ import { log as safeLog, warn as safeWarn, error as safeError } from '@/shared/l
 // ─── Embedding Generation ───────────────────────────────────────────────────
 
 /**
- * Generate embedding for text using OpenRouter's text-embedding-3-small model.
+ * Generate embedding for text using the server proxy.
+ * The server handles model fallback and API key management.
  * @param {string} text - Text to embed
  * @returns {Promise<number[]>} Embedding vector (dimensions match pgvector column)
  */
 async function generateEmbedding(text) {
-    const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-
-    if (!apiKey) {
-        throw new Error('OpenRouter API key not configured')
-    }
-
-    // Try primary model, fallback to alternative
-    // Model dimensions: text-embedding-3-small → 1536, nemotron-embed → 768
-    const models = [
-        { name: 'openai/text-embedding-3-small', dimensions: 768 },
-        { name: 'nvidia/nemotron-embed-20250702:free', dimensions: 768 },
-    ]
-
-    for (const { name: model, dimensions } of models) {
-        try {
-            const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://gastromap.app',
-                    'X-Title': 'GastroMap',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model,
-                    input: text,
-                    dimensions,
-                }),
-            })
-
-            if (!response.ok) {
-                const errBody = await response.json().catch(() => ({}))
-                safeWarn(`[KG] Embedding model ${model} failed: ${response.status}`, errBody.message)
-                continue
-            }
-
-            const data = await response.json()
-            const embedding = data.data?.[0]?.embedding
-            if (embedding && embedding.length > 0) return embedding
-        } catch (err) {
-            safeWarn(`[KG] Embedding fetch error for ${model}:`, err.message)
-            continue
-        }
-    }
-
-    throw new Error('All embedding models failed')
+    const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'embedding', input: text.slice(0, 2000), dimensions: 768 }),
+    })
+    if (!response.ok) throw new Error('Embedding generation failed')
+    const data = await response.json()
+    return data.data?.[0]?.embedding || null
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────

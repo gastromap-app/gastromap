@@ -9,7 +9,6 @@
 import { ApiError } from '../client'
 import { gastroIntelligence } from '@/services/gastroIntelligence'
 import { getActiveAIConfig } from '../ai-config.api'
-import { config } from '@/shared/config/env'
 import { buildSystemPrompt } from './prompts'
 import { detectIntent } from './intents'
 import { runAgentPass } from './agents'
@@ -118,7 +117,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     const intent = detectIntent(message)
 
-    if (getActiveAIConfig().apiKey || config.ai.useProxy) {
+    if (getActiveAIConfig().useProxy) {
         try {
             const historyMessages = (context.history ?? [])
                 .slice(-10)

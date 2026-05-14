@@ -16,8 +16,6 @@
 import { config } from '@/shared/config/env'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-
 // ─── 🔍 KG Agent Debugger ─────────────────────────────────────────────────────
 //
 // Автоматически активируется в localStorage: localStorage.setItem('KG_DEBUG', '1')
@@ -569,15 +567,9 @@ function clientDedup(items, existingCuisines, existingDishes, existingIngredient
 
 export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
     const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
 
     // ── 🔍 Debug session start ────────────────────────────────────────────────
     KGDebug.header(userMessage)
-
-    if (!apiKey) {
-        KGDebug.stepFail('AUTH', 'API key missing')
-        throw new Error('AI API key is not configured. Please add it in Admin → AI Settings.')
-    }
 
     const { cuisines = [], dishes = [], ingredients = [] } = context
 
@@ -673,13 +665,10 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
             const controller = new AbortController()
             const timeoutId  = setTimeout(() => controller.abort(), 45_000)
 
-            const resp = await fetch(OPENROUTER_URL, {
+            const resp = await fetch(config.ai.proxyUrlFallback, {
                 method: 'POST',
                 signal: controller.signal,
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://gastromap.app',
-                    'X-Title': 'GastroMap KG Agent',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -691,6 +680,7 @@ export async function callKGAgent(userMessage, context = {}, onModelAttempt) {
                     max_tokens:      maxTokens,
                     temperature:     0.3,
                     response_format: { type: 'json_object' },
+                    _direct_model:   true,
                 }),
             })
             clearTimeout(timeoutId)
@@ -893,11 +883,6 @@ export function resolveDishCuisineIds(dishes, allCuisines) {
 
 export async function callEnrichmentAI(cuisine, fieldsToEnrich, onModelAttempt) {
     const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai.openRouterKey
-
-    if (!apiKey) {
-        throw new Error('AI API key is not configured. Please add it in Admin → AI Settings.')
-    }
 
     const prompt = `You are a Senior Culinary Knowledge Expert. Your goal is to accurately fill in missing metadata for a specific cuisine entry.
 
@@ -941,13 +926,10 @@ Return ONLY a valid JSON object containing only the requested fields. No explana
             const controller = new AbortController()
             const timeoutId  = setTimeout(() => controller.abort(), 30_000)
 
-            const resp = await fetch(OPENROUTER_URL, {
+            const resp = await fetch(config.ai.proxyUrlFallback, {
                 method: 'POST',
                 signal: controller.signal,
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://gastromap.app',
-                    'X-Title': 'GastroMap KG Enrichment',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -955,7 +937,8 @@ Return ONLY a valid JSON object containing only the requested fields. No explana
                     messages: [{ role: 'user', content: prompt }],
                     max_tokens: 800,
                     temperature: 0.2,
-                    response_format: { type: 'json_object' }
+                    response_format: { type: 'json_object' },
+                    _direct_model: true,
                 }),
             })
             clearTimeout(timeoutId)

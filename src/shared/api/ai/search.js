@@ -6,44 +6,26 @@
  */
 
 import { supabase } from '@/shared/api/client'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { config } from '@/shared/config/env'
 
 /**
- * Generate an embedding vector for the given text via OpenRouter.
- * Tries paid model first, then free fallback.
+ * Generate an embedding vector for the given text via the server proxy.
+ * The server handles model fallback and API key management.
+ * @param {string} text - Text to embed
+ * @returns {Promise<number[] | null>} Embedding vector or null on failure
  */
 async function generateEmbedding(text) {
-    const appCfg = useAppConfigStore.getState()
-    const apiKey = appCfg.aiApiKey || config.ai?.openRouterKey
-    if (!apiKey) return null
-
-    const models = [
-        { name: 'openai/text-embedding-3-small', dimensions: 768 },
-        { name: 'nvidia/nemotron-embed-20250702:free', dimensions: 768 },
-    ]
-
-    for (const { name: model, dimensions } of models) {
-        try {
-            const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://gastromap.app',
-                    'X-Title': 'GastroMap',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ model, input: text, dimensions }),
-            })
-            if (!response.ok) continue
-            const data = await response.json()
-            const embedding = data.data?.[0]?.embedding
-            if (embedding?.length > 0) return embedding
-        } catch {
-            continue
-        }
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'embedding', input: text.slice(0, 2000), dimensions: 768 }),
+        })
+        if (!response.ok) return null
+        const data = await response.json()
+        return data.data?.[0]?.embedding || null
+    } catch {
+        return null
     }
-    return null
 }
 
 /**

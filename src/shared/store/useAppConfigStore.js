@@ -26,7 +26,6 @@ const DEFAULTS = {
     seoKeywords: 'food, gastromap, restaurants, local food, travel, foodie',
 
     // AI config — overridden by Supabase on load
-    aiApiKey: '',
     aiPrimaryModel:   'openai/gpt-oss-120b:free',
     aiFallbackModel:  'nvidia/nemotron-3-super-120b-a12b:free',
     aiGuideActive:    true,
@@ -85,7 +84,7 @@ async function saveToSupabase(aiFields) {
 
 // ─── AI fields that should be stored in Supabase ─────────────────────────────
 const AI_FIELDS = [
-    'aiApiKey', 'aiPrimaryModel', 'aiFallbackModel',
+    'aiPrimaryModel', 'aiFallbackModel',
     'aiGuideActive', 'aiAssistantActive',
     'aiGuideTemp', 'aiAssistantTemp',
     'aiModelCascade', 'aiGuideMaxTokens', 'aiAssistantMaxTokens',
@@ -132,6 +131,8 @@ export const useAppConfigStore = create(
                 try {
                     const remote = await loadFromSupabase()
                     if (remote) {
+                        // Strip aiApiKey — keys are now server-side only
+                        delete remote.aiApiKey
                         // Supabase wins — override whatever was in localStorage
                         set({ ...remote, _supabaseLoaded: true })
                         console.log('[AppConfig] Loaded from Supabase')
@@ -151,9 +152,9 @@ export const useAppConfigStore = create(
         }),
         {
             name: 'app-config-storage',
-            // Exclude _supabaseLoaded from localStorage
+            // Exclude internal fields and sensitive keys from localStorage
             partialize: (state) => {
-                const EXCLUDED = ['_supabaseLoaded', 'loadFromDB', 'updateSettings', 'setAppStatus']
+                const EXCLUDED = ['_supabaseLoaded', 'loadFromDB', 'updateSettings', 'setAppStatus', 'aiApiKey']
                 return Object.fromEntries(
                     Object.entries(state).filter(([k]) => !EXCLUDED.includes(k))
                 )

@@ -8,12 +8,11 @@ import {
     FileText, RotateCcw, Search, Key,
     Database, GitBranch, Thermometer, Hash, ArrowUp, ArrowDown,
     ToggleLeft, ToggleRight, Copy, Code, Clock, Wrench, Activity,
-    Layers, UserCheck, DollarSign
+    Layers, UserCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { config } from '@/shared/config/env'
 import { DEFAULT_PROMPTS, MODEL_CASCADE, PAID_MODELS, TOOLS } from '@/shared/api/ai/constants'
 import { testAIConnection } from '@/shared/api/ai/utils'
 import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'
@@ -462,52 +461,7 @@ const AdminAIPage = () => {
         appConfig.aiFallbackModel || 'z-ai/glm-4.5-air:free'
     )
 
-    // ── API key (MUST be declared before useEffect that uses it)
-    const [apiKey, setApiKey] = useState(appConfig.aiApiKey || '')
-    const [showKey, setShowKey] = useState(false)
-
-    // ── Key Status (Functional Improvement)
-    const [apiKeyStatus, setApiKeyStatus] = useState('idle') // idle | validating | valid | invalid | error
-    const [apiKeyError, setApiKeyError] = useState('')
-    const [validationTrigger, setValidationTrigger] = useState(0)
-
-    const validateKey = React.useCallback(async () => {
-        setApiKeyStatus('validating')
-        setApiKeyError('')
-
-        const timeoutId = setTimeout(() => {
-            setApiKeyStatus('error')
-            setApiKeyError('Validation timeout — no response in 10s')
-        }, 10000)
-
-        try {
-            const result = await testAIConnection('ping', primaryModel)
-            clearTimeout(timeoutId)
-            if (result.ok) {
-                setApiKeyStatus('valid')
-                setApiKeyError('')
-            } else {
-                setApiKeyStatus('invalid')
-                setApiKeyError(result.text || 'Invalid API Key')
-            }
-        } catch (err) {
-            clearTimeout(timeoutId)
-            setApiKeyStatus('error')
-            setApiKeyError(err.message || 'Connection failed')
-        }
-    }, [primaryModel])
-
-    // ── Validate API Key when it changes
-    React.useEffect(() => {
-        if (!primaryModel) return
-
-        if (apiKey && apiKey.startsWith('sk-or-')) {
-            validateKey()
-        } else {
-            setApiKeyStatus(apiKey ? 'invalid' : 'idle')
-            setApiKeyError(apiKey ? 'Must start with sk-or-' : '')
-        }
-    }, [apiKey, primaryModel, validationTrigger, validateKey])
+    // ── API key is now configured server-side only (no client state needed)
 
     // ── Agents
     const [agentActive, setAgentActive] = useState({
@@ -536,47 +490,6 @@ const AdminAIPage = () => {
         // Only free models enabled by default; paid models must be enabled manually
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
-
-    // ── OpenRouter Usage Stats
-    const [usageStats, setUsageStats] = useState(null)
-    const [usageError, setUsageError] = useState('')
-
-    useEffect(() => {
-        if (!apiKey || !apiKey.startsWith('sk-or-')) return
-        const fetchUsage = async () => {
-            try {
-                const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                })
-                if (!res.ok) { setUsageError('Failed to fetch usage'); return }
-                const { data } = await res.json()
-                setUsageStats({
-                    usage: data.usage?.toFixed(4) || '0.00',
-                    limit: data.limit || null,
-                    remaining: data.limit_remaining?.toFixed(4) || 'unlimited',
-                    isUnlimited: !data.limit,
-                })
-            } catch (err) {
-                setUsageError('Could not connect to OpenRouter')
-            }
-        }
-        fetchUsage()
-    }, [apiKey])
-
-    useEffect(() => {
-        if (!apiKey || !apiKey.startsWith('sk-or-')) return
-        const fetchGenerations = async () => {
-            try {
-                const res = await fetch('https://openrouter.ai/api/v1/generation?limit=100', {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                })
-                if (!res.ok) return
-                const { data } = await res.json()
-                setUsageStats(prev => prev ? { ...prev, requestCount: data?.length || 0 } : prev)
-            } catch {}
-        }
-        fetchGenerations()
-    }, [apiKey])
 
     const moveCascade = (index, direction) => {
         const newArr = [...cascadeModels]
@@ -646,7 +559,6 @@ const AdminAIPage = () => {
             aiAssistantActive: agentActive.assistant,
             aiPrimaryModel: primaryModel,
             aiFallbackModel: fallbackModel,
-            aiApiKey: apiKey,
             aiGuideSystemPrompt: guidePrompt,
             aiAssistantSystemPrompt: assistantPrompt,
             aiKGAgentSystemPrompt: kgAgentPrompt,
@@ -723,42 +635,27 @@ const AdminAIPage = () => {
                 subtitle="Configure AI models, agents, and system prompts."
             />
 
-            {/* 2. OpenRouter Usage Stats */}
-            {apiKey && (
-                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] overflow-hidden shadow-sm">
-                    <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
-                        <DollarSign size={16} className="text-emerald-500" />
-                        <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter Usage</h2>
-                    </div>
-                    <div className="p-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {/* Balance */}
-                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Balance</p>
-                                <p className="text-lg font-light text-slate-900 dark:text-white">{usageStats?.isUnlimited ? '∞' : `$${usageStats?.limit || '—'}`}</p>
-                            </div>
-                            {/* Usage */}
-                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Used</p>
-                                <p className="text-lg font-light text-slate-900 dark:text-white">${usageStats?.usage || '0.00'}</p>
-                            </div>
-                            {/* Remaining */}
-                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Remaining</p>
-                                <p className="text-lg font-light text-emerald-600 dark:text-emerald-400">{usageStats?.isUnlimited ? '∞' : `$${usageStats?.remaining || '—'}`}</p>
-                            </div>
-                            {/* Requests */}
-                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Requests</p>
-                                <p className="text-lg font-light text-slate-900 dark:text-white">{usageStats?.requestCount ?? '—'}</p>
-                            </div>
-                        </div>
-                        {usageError && (
-                            <p className="text-xs text-slate-400 mt-3 text-center">{usageError}</p>
-                        )}
-                    </div>
+            {/* 2. API Key Status — Server-side */}
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
+                    <Shield size={16} className="text-emerald-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter Connection</h2>
                 </div>
-            )}
+                <div className="p-6">
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                            <CheckCircle2 size={14} />
+                            API key: configured server-side ✓
+                        </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mt-3">
+                        Usage stats available on{' '}
+                        <a href="https://openrouter.ai/activity" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+                            OpenRouter dashboard
+                        </a>
+                    </p>
+                </div>
+            </div>
 
             {/* 3. Active Agents */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
@@ -1012,71 +909,6 @@ const AdminAIPage = () => {
                     </p>
                 </div>
             </CollapsibleSection>
-
-            {/* 6. API Key */}
-            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
-                    <Shield size={16} className="text-indigo-500" />
-                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter API Key</h2>
-                </div>
-                <div className="p-6">
-                    <div className="flex gap-3 mb-4">
-                        <div className="flex-1 relative">
-                            <input
-                                type={showKey ? 'text' : 'password'}
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                placeholder="sk-or-v1-..."
-                                className="w-full h-12 px-5 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[hsl(220,20%,9%)]/50 text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
-                            />
-                            <button
-                                onClick={() => setShowKey(!showKey)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)]"
-                                aria-label={showKey ? 'Hide API key' : 'Show API key'}
-                            >
-                                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setValidationTrigger(v => v + 1)}
-                                disabled={apiKeyStatus === 'validating' || !apiKey}
-                                className={cn(
-                                    "px-4 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all",
-                                    apiKeyStatus === 'valid' 
-                                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
-                                        : "bg-slate-50 border-slate-200 text-slate-600 dark:bg-[hsl(220,20%,9%)] dark:border-white/[0.08] dark:text-[hsl(220,10%,55%)]"
-                                )}
-                            >
-                                {apiKeyStatus === 'validating' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                                <span className="ml-2">Test Key</span>
-                            </button>
-                            <div className="flex-1 flex items-center gap-3 px-5 h-12 rounded-2xl bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border border-slate-100 dark:border-white/[0.04]">
-                                <div className={cn(
-                                    "w-2 h-2 rounded-full",
-                                    apiKeyStatus === 'valid' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
-                                    apiKeyStatus === 'invalid' || apiKeyStatus === 'error' ? "bg-red-500" :
-                                    apiKeyStatus === 'validating' ? "bg-amber-500 animate-pulse" : "bg-slate-300 dark:bg-[hsl(220,10%,35%)]"
-                                )} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-[hsl(220,10%,55%)]">
-                                    Status: {apiKeyStatus === 'idle' ? 'Not Checked' : apiKeyStatus.toUpperCase()}
-                                </span>
-                                {apiKeyError && (
-                                    <span className="text-[10px] text-red-500 truncate max-w-[200px]">
-                                        — {apiKeyError}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
-                        Get your free API key from{' '}
-                        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
-                            openrouter.ai/keys
-                        </a>
-                    </p>
-                </div>
-            </div>
 
             {/* 7. Generation Settings */}
             <CollapsibleSection title="Generation Settings" icon={Sliders} iconColor="text-emerald-500" defaultOpen={false}>
@@ -1525,10 +1357,10 @@ const AdminAIPage = () => {
                         />
                         <button
                             onClick={handleTest}
-                            disabled={testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)}
+                            disabled={testing || !testMessage.trim()}
                             className={cn(
                                 'h-10 px-5 rounded-2xl font-semibold text-sm text-white flex items-center gap-2 transition-all active:scale-95',
-                                testing || !testMessage.trim() || (!apiKey && !config.ai.useProxy)
+                                testing || !testMessage.trim()
                                     ? 'bg-slate-300 dark:bg-[hsl(220,20%,12%)] cursor-not-allowed'
                                     : fullPipelineTest
                                         ? 'bg-violet-600 hover:bg-violet-500 shadow-sm'

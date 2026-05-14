@@ -84,10 +84,22 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end()
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-    if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
+    // Mode validation — route embedding requests before chat rate-limit
+    const { mode } = req.body
+    if (mode && mode !== 'embedding') {
+        return res.status(400).json({ error: `Unsupported mode: ${mode}` })
+    }
 
     const apiKey = process.env.OPENROUTER_API_KEY
     if (!apiKey?.trim()) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
+
+    // Route to embedding handler if mode is 'embedding'
+    if (mode === 'embedding') {
+        return handleEmbedding(req, res, apiKey)
+    }
+
+    // Chat mode — apply chat-specific rate limit
+    if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
 
     try {
         let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag } = req.body
@@ -118,9 +130,12 @@ export default async function handler(req, res) {
             }
         }
 
+        // Cap max_tokens at 4096 for all chat modes
+        const cappedMaxTokens = Math.min(max_tokens || 1024, 4096)
+
         // ── Direct model mode ─────────────────────────────────────────────────
         if (_direct_model && model) {
-            const body = { model, messages, max_tokens: Math.min(max_tokens || 256, 4096) }
+            const body = { model, messages, max_tokens: cappedMaxTokens }
             if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
@@ -135,9 +150,9 @@ export default async function handler(req, res) {
         // ── Cascade mode ──────────────────────────────────────────────────────
         let startIdx = MODEL_CASCADE.indexOf(model)
         if (startIdx === -1) {
-            return runCascade([model, ...MODEL_CASCADE], 0, { ...req.body, messages }, apiKey, res)
+            return runCascade([model, ...MODEL_CASCADE], 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKey, res)
         }
-        return runCascade(MODEL_CASCADE, startIdx, { ...req.body, messages }, apiKey, res)
+        return runCascade(MODEL_CASCADE, startIdx, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKey, res)
 
     } catch (error) {
         console.error('[ai/chat proxy] Error:', error.message)
@@ -145,11 +160,62 @@ export default async function handler(req, res) {
     }
 }
 
+async function handleEmbedding(req, res, apiKey) {
+    const { input, model, dimensions } = req.body
+
+    // Validation
+    if (!input || typeof input !== 'string' || !input.trim()) {
+        return res.status(400).json({ error: 'input string is required for embedding mode' })
+    }
+    if (input.length > 2000) {
+        return res.status(400).json({ error: 'input exceeds maximum length of 2000 characters' })
+    }
+
+    // Rate limit: 20 req/60s for embeddings
+    if (applyRateLimit(req, res, 'ai-embedding', { maxRequests: 20, windowMs: 60000 })) return
+
+    const EMBEDDING_MODELS = [
+        { name: model || 'openai/text-embedding-3-small', dimensions: dimensions || 768 },
+        { name: 'nvidia/nemotron-embed-20250702:free', dimensions: dimensions || 768 },
+    ]
+
+    for (const { name: embModel, dimensions: dims } of EMBEDDING_MODELS) {
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://gastromap.app',
+                    'X-Title': 'GastroMap',
+                },
+                body: JSON.stringify({ model: embModel, input: input.trim(), dimensions: dims }),
+            })
+
+            if (!response.ok) {
+                console.warn(`[ai/chat] embedding model ${embModel} failed: ${response.status}`)
+                continue
+            }
+
+            const data = await response.json()
+            const embedding = data.data?.[0]?.embedding
+            if (embedding?.length > 0) {
+                return res.status(200).json({ data: [{ embedding }], model: embModel })
+            }
+        } catch (err) {
+            console.error(`[ai/chat] embedding error for ${embModel}:`, err.message)
+            continue
+        }
+    }
+
+    return res.status(502).json({ error: 'Embedding generation failed' })
+}
+
 async function runCascade(cascade, startIdx, reqBody, apiKey, res) {
     const { messages, max_tokens, tools, tool_choice } = reqBody
 
     let lastError = null
-    const maxTokens = Math.min(max_tokens || 1024, 4096)
+    const maxTokens = max_tokens || 1024
 
     for (let i = startIdx; i < cascade.length; i++) {
         const currentModel = cascade[i]

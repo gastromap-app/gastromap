@@ -490,13 +490,17 @@ const AdminAIPage = () => {
     // ── Model Cascade Editor
     const [cascadeModels, setCascadeModels] = useState(() => {
         const saved = appConfig.aiModelCascade
-        // Include paid models at the end of the list (disabled by default)
-        const allModels = [...MODEL_CASCADE, ...PAID_MODELS.map(m => m.id)]
-        return saved?.length > 0 ? saved : allModels
+        const paidIds = PAID_MODELS.map(m => m.id)
+        if (saved?.length > 0) {
+            // Merge: keep saved order + append any new paid models not already in the list
+            const missing = paidIds.filter(id => !saved.includes(id))
+            return [...saved, ...missing]
+        }
+        return [...MODEL_CASCADE, ...paidIds]
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
         const saved = appConfig.aiModelCascade
-        // Only free models enabled by default
+        // Only free models enabled by default; paid models must be enabled manually
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 
@@ -718,7 +722,7 @@ const AdminAIPage = () => {
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Cpu size={16} className="text-indigo-500" />
-                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter Free)</h2>
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter)</h2>
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">

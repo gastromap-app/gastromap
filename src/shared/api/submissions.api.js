@@ -24,13 +24,29 @@ export async function createSubmission(payload) {
     
     // We send the payload as-is. 
     // Default values like 'status' and 'created_at' are handled by the database.
-    return unwrap(
+    const result = unwrap(
         await supabase
             .from('user_submissions')
             .insert(payload)
             .select()
             .single()
     )
+
+    // Notify admin about new submission (fire-and-forget)
+    try {
+        await supabase.from('notifications').insert({
+            user_id: null, // null = admin notification (visible to all admins)
+            type: 'new_submission',
+            title: 'New place suggested',
+            body: `"${payload.title}" in ${payload.city || 'unknown city'} — review needed`,
+            data: { submission_id: result?.id, title: payload.title, city: payload.city },
+        })
+    } catch (e) {
+        // Don't block submission if notification fails
+        console.warn('[submissions] Admin notification failed:', e.message)
+    }
+
+    return result
 }
 
 /**

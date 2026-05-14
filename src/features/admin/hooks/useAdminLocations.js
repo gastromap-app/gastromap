@@ -403,20 +403,43 @@ export const useAdminLocations = () => {
         
         setIsImproving(field)
         try {
-            const prompt = `Improve this Gastronomic location ${field}. Make it engaging, evocative and professional, while keeping the original intent. Length should be proportional. Here is the text: "${text}"`
-            const result = await aiQueryMutation.mutateAsync({ message: prompt })
+            const prompt = `You are a professional food & travel copywriter for GastroMap app. Improve this restaurant/cafe ${field} text. Make it engaging, evocative, and professional — like a top food blogger would write. Keep the original meaning and facts. Output ONLY the improved text, nothing else. Length should be similar to original.\n\nOriginal text: "${text}"`
             
-            let improvedText = ""
-            if (typeof result === 'string') {
-                improvedText = result
-            } else if (result && typeof result === 'object') {
-                improvedText = result.text || result.content || result.result || result.output || JSON.stringify(result)
+            // Call proxy directly with _skip_rag and no tools for simple text generation
+            const response = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 500,
+                    temperature: 0.7,
+                    _skip_rag: true,
+                    _direct_model: false,
+                }),
+            })
+            
+            if (!response.ok) {
+                throw new Error(`AI request failed: ${response.status}`)
             }
             
-            improvedText = improvedText.replace(/^["']|["']$/g, '').trim()
-            setFormData(prev => ({ ...prev, [field]: improvedText }))
+            const data = await response.json()
+            let improvedText = data.choices?.[0]?.message?.content || ''
+            
+            // Clean up: remove quotes, markdown, extra whitespace
+            improvedText = improvedText
+                .replace(/^["'`]+|["'`]+$/g, '')
+                .replace(/^#+\s*/gm, '')
+                .trim()
+            
+            if (improvedText.length > 5) {
+                setFormData(prev => ({ ...prev, [field]: improvedText }))
+                setToast({ message: `${field} улучшено с помощью AI`, type: 'success' })
+            } else {
+                setToast({ message: 'AI не смог улучшить текст. Попробуйте ещё раз.', type: 'error' })
+            }
         } catch (error) {
             console.error('AI improvement failed:', error)
+            setToast({ message: 'Ошибка AI: ' + (error.message || 'попробуйте позже'), type: 'error' })
         } finally {
             setIsImproving(null)
         }

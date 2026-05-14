@@ -93,7 +93,7 @@ const LocationFilters = ({
                     <button
                         onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-2.5 rounded-card micro uppercase transition-all border",
+                            "flex items-center gap-2 px-4 py-2.5 rounded-card text-[10px] uppercase transition-all border",
                             isAdvancedExpanded 
                                 ? 'bg-primary/10 border-primary/20 text-primary' 
                                 : 'bg-secondary border-border text-t-tertiary'
@@ -112,7 +112,7 @@ const LocationFilters = ({
                         <button
                             onClick={() => onViewModeChange('geo')}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image text-[10px] uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'geo' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'
@@ -124,7 +124,7 @@ const LocationFilters = ({
                         <button
                             onClick={() => onViewModeChange('list')}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image text-[10px] uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'list' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'
@@ -136,7 +136,7 @@ const LocationFilters = ({
                         <button
                             onClick={() => onViewModeChange('map')}
                             className={cn(
-                                "flex-1 px-4 py-2.5 rounded-image micro uppercase transition-all flex items-center justify-center gap-2",
+                                "flex-1 px-4 py-2.5 rounded-image text-[10px] uppercase transition-all flex items-center justify-center gap-2",
                                 viewMode === 'map' 
                                     ? 'bg-card text-primary shadow-sm' 
                                     : 'text-t-tertiary hover:text-t-secondary'
@@ -163,13 +163,13 @@ const LocationFilters = ({
                             {/* Sort & Category */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                         <SortAsc size={12} /> {t('admin.sort')}
                                     </label>
                                     <select 
                                         value={sortBy}
                                         onChange={(e) => onSortChange(e.target.value)}
-                                        className="w-full bg-card border border-border rounded-image px-4 py-2.5 micro font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                        className="w-full bg-card border border-border rounded-image px-4 py-2.5 text-xs font-normal outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                     >
                                         <option value="newest">{t('admin.sort_options.newest')}</option>
                                         <option value="rating">{t('admin.sort_options.rating')}</option>
@@ -180,13 +180,13 @@ const LocationFilters = ({
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                         <LayoutGrid size={12} /> {t('admin.category')}
                                     </label>
                                     <select 
                                         value={activeCategory}
                                         onChange={(e) => onCategoryChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-micro font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-text-xs font-normal outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">{t('admin.all_categories')}</option>
                                         {ESTABLISHMENT_TYPES.filter(t => t.id !== 'all').map(type => (
@@ -199,13 +199,13 @@ const LocationFilters = ({
                             {/* Location Filters (Country/City) */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                         <MapIcon size={12} /> {t('admin.country')}
                                     </label>
                                     <select 
                                         value={activeCountry}
                                         onChange={(e) => onCountryChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-micro font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-text-xs font-normal outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">{t('admin.all_countries')}</option>
                                         {countries.map(country => (
@@ -214,13 +214,13 @@ const LocationFilters = ({
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                         <MapIcon size={12} /> {t('admin.city')}
                                     </label>
                                     <select 
                                         value={activeCity}
                                         onChange={(e) => onCityChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-micro font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-text-xs font-normal outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                                     >
                                         <option value="All">{t('admin.all_cities')}</option>
                                         {cities.map(city => (
@@ -233,7 +233,7 @@ const LocationFilters = ({
                             {/* Price & Rating */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                         <DollarSign size={12} /> {t('admin.price')}
                                     </label>
                                     <div className="flex gap-2">
@@ -242,7 +242,7 @@ const LocationFilters = ({
                                                 key={level}
                                                 onClick={() => togglePriceLevel(level)}
                                                 className={cn(
-                                                    "flex-1 py-2.5 rounded-image micro uppercase transition-all border",
+                                                    "flex-1 py-2.5 rounded-image text-[10px] uppercase transition-all border",
                                                     activePriceLevels.includes(level)
                                                         ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
                                                         : "bg-card border-border text-t-tertiary hover:border-primary/30"
@@ -254,31 +254,27 @@ const LocationFilters = ({
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
-                                        <Star size={12} /> {minRating ? t('admin.min_rating', { rating: minRating }) : t('admin.min_rating', { rating: t('admin.any_rating') })}
+                                    <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
+                                        <Star size={12} /> Min. Rating
                                     </label>
-                                    <div className="flex gap-1">
-                                        {[3, 3.5, 4, 4.5, 5].map(val => (
-                                            <button
-                                                key={val}
-                                                onClick={() => onMinRatingChange(minRating === val ? null : val)}
-                                                className={cn(
-                                                    "flex-1 py-2 rounded-image micro font-bold transition-all border",
-                                                    minRating === val
-                                                        ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20"
-                                                        : "bg-card border-border text-t-tertiary hover:border-primary/30"
-                                                )}
-                                            >
-                                                {val}+
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <select
+                                        value={minRating || ''}
+                                        onChange={(e) => onMinRatingChange(e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-xs font-normal outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                    >
+                                        <option value="">Any</option>
+                                        <option value="3">3.0+</option>
+                                        <option value="3.5">3.5+</option>
+                                        <option value="4">4.0+</option>
+                                        <option value="4.5">4.5+</option>
+                                        <option value="5">5.0</option>
+                                    </select>
                                 </div>
                             </div>
 
                             {/* Vibes / Features */}
                             <div className="lg:col-span-2 space-y-3">
-                                <label className="text-micro font-black uppercase tracking-[0.2em] text-t-tertiary flex items-center gap-2">
+                                <label className="text-[10px] font-medium uppercase tracking-wider text-t-tertiary flex items-center gap-2">
                                     <Tag size={12} /> {t('admin.vibes_features')}
                                 </label>
                                 <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto no-scrollbar pr-2">
@@ -287,7 +283,7 @@ const LocationFilters = ({
                                             key={vibe.value}
                                             onClick={() => toggleVibe(vibe.value)}
                                             className={cn(
-                                                "px-3 py-2 rounded-image micro uppercase transition-all border whitespace-nowrap",
+                                                "px-3 py-2 rounded-image text-[10px] uppercase transition-all border whitespace-nowrap",
                                                 activeVibes.includes(vibe.value)
                                                     ? "bg-primary border-primary text-white shadow-md shadow-primary/10"
                                                     : "bg-card border-border text-t-secondary hover:bg-secondary"
@@ -311,7 +307,7 @@ const LocationFilters = ({
                                     onCityChange('All')
                                     onCountryChange('All')
                                 }}
-                                className="text-micro font-black uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 transition-colors py-2 flex items-center gap-2"
+                                className="text-[10px] font-medium uppercase tracking-wider text-rose-500 hover:text-rose-600 transition-colors py-2 flex items-center gap-2"
                             >
                                 <X size={12} strokeWidth={3} /> {t('admin.reset_filters')}
                             </button>

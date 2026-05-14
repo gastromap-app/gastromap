@@ -316,6 +316,8 @@ const AdminLocationsPage = () => {
                                 </div>
                             )}
                         </div>
+                    ) : viewMode === 'geo' ? (
+                        <GeoHierarchyList locations={filteredLocations} onEditLocation={handleEdit} />
                     ) : viewMode === 'list' ? (
                         <ListViewSection
                             filteredLocations={paginatedLocations}
@@ -327,6 +329,8 @@ const AdminLocationsPage = () => {
                             onToggleVisibility={handleToggleVisibility}
                             openActionMenuId={openActionMenuId}
                             onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
+                            bulkReindexMutation={bulkReindexMutation}
+                            bulkEmbeddingMutation={bulkEmbeddingMutation}
                         />
                     ) : viewMode === 'map' ? (
                         <div className="flex-1 relative min-h-[500px]">

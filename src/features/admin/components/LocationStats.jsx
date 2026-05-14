@@ -41,7 +41,7 @@ const LocationStats = ({ locationsList = [], pendingLocations = [] }) => {
                     className="bg-white dark:bg-white/[0.03] p-3 lg:p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04] flex items-center gap-3 lg:gap-4 hover:border-slate-200 dark:hover:border-white/[0.08] transition-all"
                 >
                     <div className={cn(
-                        "w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center shrink-0", 
+                        "hidden sm:flex w-10 h-10 lg:w-12 lg:h-12 rounded-xl items-center justify-center shrink-0", 
                         s.bg, s.color
                     )}>
                         <s.icon size={18} className="lg:w-5 lg:h-5" strokeWidth={1.5} />

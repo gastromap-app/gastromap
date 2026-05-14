@@ -526,14 +526,21 @@ export default function AddPlacePage() {
         setSubmitError('')
         setSubmitLoading(true)
         try {
-            // Upload user photos
+            // Upload user photos (with individual error handling)
             let photoUrls = []
             if (userPhotos.length > 0) {
                 setPhotoUploading(true)
-                photoUrls = await Promise.all(
+                const results = await Promise.allSettled(
                     userPhotos.map((p) => uploadSubmissionPhoto(p.compressed || p.file, user?.id || 'anon'))
                 )
+                photoUrls = results
+                    .filter(r => r.status === 'fulfilled' && r.value)
+                    .map(r => r.value)
                 setPhotoUploading(false)
+                // Don't block submission if photos fail — submit without them
+                if (photoUrls.length === 0 && userPhotos.length > 0) {
+                    console.warn('[AddPlacePage] All photo uploads failed, submitting without photos')
+                }
             }
 
             const photos = [

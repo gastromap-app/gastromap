@@ -4,7 +4,6 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { MapPin, ChevronRight, Search, SlidersHorizontal, Home, AlertCircle } from 'lucide-react'
 import LazyImage from '@/components/ui/LazyImage'
 import { useTheme } from '@/hooks/useTheme'
-import MapTab from '../components/MapTab'
 import { useCitiesQuery } from '@/hooks/useCitiesQuery'
 import { CityCardSkeleton } from '@/components/ui/Skeleton'
 
@@ -97,7 +96,6 @@ const CitiesPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    const [activeTab, setActiveTab]     = useState('overview')
     const [searchQuery, setSearchQuery] = useState('')
 
     const { data: cities = [], isPending, isError } = useCitiesQuery(country)
@@ -191,23 +189,6 @@ const CitiesPage = () => {
 
                     {/* Tab bar + breadcrumb */}
                     <div className="flex items-center gap-6 mt-8">
-                        <div className="bg-blue-600 p-1.5 rounded-full flex shadow-lg">
-                            {['overview', 'map'].map(tab => (
-                                <button
-                                    key={tab}
-                                    role="tab"
-                                    aria-selected={activeTab === tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`relative px-8 py-3 rounded-full text-base font-bold capitalize transition-all z-10 ${activeTab === tab ? 'text-blue-600' : 'text-white hover:bg-white/10'}`}
-                                >
-                                    {activeTab === tab && (
-                                        <motion.div layoutId="activeTabCities" className="absolute inset-0 bg-white rounded-full shadow-sm z-[-1]" />
-                                    )}
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-
                         <nav className={`flex items-center px-4 py-2 rounded-full border backdrop-blur-md ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-slate-200/50'}`}>
                             <Link to="/dashboard" className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors">
                                 <Home size={12} /><span>Dashboard</span>
@@ -222,11 +203,7 @@ const CitiesPage = () => {
 
                     {/* Content */}
                     <div className="mt-8 min-h-[400px]">
-                        {activeTab === 'map' ? (
-                            <div className="h-[600px] rounded-[32px] overflow-hidden shadow-2xl">
-                                <MapTab activeFilter="All" />
-                            </div>
-                        ) : isPending ? (
+                        {isPending ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {Array.from({ length: 6 }).map((_, i) => <CityCardSkeleton key={i} desktop />)}
                             </div>

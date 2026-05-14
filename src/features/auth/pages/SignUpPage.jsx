@@ -105,7 +105,7 @@ const SignUpPage = () => {
                                     <CheckCircle2 size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold">100% Free Forever</h3>
+                                    <h3 className="font-bold">100% Free</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">No paywalls for the community.</p>
                                 </div>
                             </div>

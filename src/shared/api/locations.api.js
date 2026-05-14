@@ -178,16 +178,13 @@ export async function getLocations(filters = {}) {
     // fails with 401 for anon sessions — they can't read protected columns
     // (insider_tip, phone, booking_url, kg_*, etc.). Admin queries (all=true)
     // always come from authenticated users who have full SELECT.
-    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_rating,price_range,status,created_at'
-
-    // Authenticated user columns — everything EXCEPT embedding (768-float vector, ~6KB per row).
-    // Embedding is only needed for semantic search (handled by RPC function, not SELECT).
-    // Removed: last_enriched_at, ai_enrichment_* (may not exist in all environments)
-    const AUTH_COLS = 'id,title,description,address,city,country,lat,lng,city_slug,country_slug,category,status,image_url,google_photos,google_rating,google_user_ratings_total,price_range,google_price_level,is_hidden_gem,is_featured,cuisine_types,tags,vibe,special_labels,best_for,amenities,dietary_options,has_wifi,has_outdoor_seating,pet_friendly,child_friendly,reservations_required,opening_hours,website,phone,booking_url,insider_tip,must_try,what_to_try,google_place_id,google_maps_url,google_formatted_address,michelin_stars,michelin_bib,social_instagram,social_facebook,views_count,saves_count,visits_count,comments_count,trending_score,trending_at,moderation_note,created_at,updated_at'
+    // Authenticated user columns: use '*' to avoid 400 errors from non-existent columns.
+    // Anon users get minimal columns for the list view (includes google_photos for thumbnails).
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at'
 
     let q = supabase
         .from('locations')
-        .select(bypassStatus ? AUTH_COLS : ANON_COLS, { count: 'exact' })
+        .select(bypassStatus ? '*' : ANON_COLS, { count: 'exact' })
 
     // ─── Bounding Box Filter (High Performance) ──────────────────────────
     if (bounds) {
@@ -283,16 +280,12 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data: { session } } = await supabase.auth.getSession()
     const isAuthenticated = !!session
 
-    // Column selection: authenticated users get all columns EXCEPT embedding.
-    // Embedding (768-float vector) is only used by semantic search RPC, never displayed in UI.
-    // Anon users get only public-safe columns to avoid 401/403 errors.
-    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_rating,price_range,status,created_at'
-    // Public authenticated: columns needed for location detail page (no admin-only fields)
-    const PUBLIC_AUTH_COLS = 'id,title,description,address,city,country,lat,lng,category,status,image_url,google_photos,google_rating,google_user_ratings_total,price_range,is_hidden_gem,is_featured,cuisine_types,tags,vibe,special_labels,best_for,amenities,dietary_options,has_wifi,has_outdoor_seating,pet_friendly,child_friendly,reservations_required,opening_hours,website,phone,booking_url,insider_tip,must_try,what_to_try,google_place_id,google_maps_url,michelin_stars,michelin_bib,social_instagram,social_facebook,views_count,saves_count,created_at,updated_at'
-    // Admin: all columns except embedding
-    const ADMIN_COLS = 'id,title,description,address,city,country,lat,lng,city_slug,country_slug,category,status,image_url,google_photos,google_rating,google_user_ratings_total,price_range,google_price_level,is_hidden_gem,is_featured,cuisine_types,tags,vibe,special_labels,best_for,amenities,dietary_options,has_wifi,has_outdoor_seating,pet_friendly,child_friendly,reservations_required,opening_hours,website,phone,booking_url,insider_tip,must_try,what_to_try,google_place_id,google_maps_url,google_formatted_address,michelin_stars,michelin_bib,social_instagram,social_facebook,views_count,saves_count,visits_count,comments_count,trending_score,trending_at,moderation_note,created_at,updated_at'
+    // Column selection: anon users get minimal safe columns.
+    // Authenticated users get all columns (they have full SELECT grant via RLS).
+    // Using '*' for authenticated avoids 400 errors from non-existent columns.
+    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at'
 
-    const selectCols = adminMode ? ADMIN_COLS : isAuthenticated ? PUBLIC_AUTH_COLS : ANON_COLS
+    const selectCols = adminMode || isAuthenticated ? '*' : ANON_COLS
 
     let q = supabase
         .from('locations')

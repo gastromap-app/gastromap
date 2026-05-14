@@ -175,8 +175,8 @@ export function compressImage(file, { maxWidth = 1400, maxHeight = 1050, quality
 }
 
 /**
- * Upload a single (already-compressed) photo to Supabase Storage.
- * Bucket: 'submissions'  (create it in Supabase with public read access).
+ * Upload a single (already-compressed) photo to R2 via the serverless endpoint.
+ * Used by the Add Place form for user-submitted photos.
  *
  * @param {File}   file
  * @param {string} userId
@@ -187,9 +187,42 @@ export async function uploadSubmissionPhoto(file, userId) {
         // Dev mock — return a local object URL (valid for current session only)
         return URL.createObjectURL(file)
     }
-    const path = `${userId}/${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from('submissions').upload(path, file, { upsert: false })
-    if (error) throw new ApiError(error.message, 400, 'PHOTO_UPLOAD_ERROR')
-    const { data } = supabase.storage.from('submissions').getPublicUrl(path)
-    return data.publicUrl
+
+    const folder = `submissions/${userId}`
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+
+    // 20-second timeout to prevent hanging on throttled connections
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 20000)
+
+    try {
+        const response = await fetch('/api/upload-to-r2', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Upload failed' }))
+            throw new ApiError(
+                errorData.error || `Upload failed with status ${response.status}`,
+                response.status,
+                errorData.code || 'PHOTO_UPLOAD_ERROR'
+            )
+        }
+
+        const data = await response.json()
+        return data.url
+    } catch (err) {
+        clearTimeout(timeoutId)
+        if (err.name === 'AbortError') {
+            throw new ApiError('Photo upload timed out. Please try again.', 408, 'UPLOAD_TIMEOUT')
+        }
+        if (err instanceof ApiError) throw err
+        throw new ApiError(err.message || 'Photo upload failed', 500, 'PHOTO_UPLOAD_ERROR')
+    }
 }

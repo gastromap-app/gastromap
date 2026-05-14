@@ -62,7 +62,10 @@ export const VALID_LOCATION_COLUMNS = new Set([
     
     // Admin
     'moderation_note',
-    'created_at', 'updated_at'
+    'created_at', 'updated_at',
+    
+    // Enrichment tracking
+    'last_enriched_at'
 ]);
 
 // Deprecated/dropped column names — mapped to their canonical replacements.

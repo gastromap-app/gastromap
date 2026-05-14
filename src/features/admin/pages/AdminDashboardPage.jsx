@@ -117,14 +117,14 @@ const AdminDashboardPage = () => {
     const { data: pendingReviews = [] } = usePendingReviews()
 
     // Health check state
-    const [health, setHealth] = useState({ supabase: 'ok', ai: 'ok', storage: 'ok', storageDetail: '—' })
+    const [health, setHealth] = useState({ supabase: 'ok', ai: 'ok', r2: 'ok', r2Detail: '—' })
+    const [r2Stats, setR2Stats] = useState(null)
 
     useEffect(() => {
-        // Check Supabase connectivity
         const checkHealth = async () => {
-            const newHealth = { supabase: 'ok', ai: 'ok', storage: 'ok', storageDetail: '—' }
+            const newHealth = { supabase: 'ok', ai: 'ok', r2: 'ok', r2Detail: '—' }
 
-            // Supabase
+            // Supabase DB
             try {
                 if (!supabase) { newHealth.supabase = 'error'; }
                 else {
@@ -137,11 +137,29 @@ const AdminDashboardPage = () => {
             const aiConfig = getActiveAIConfig()
             newHealth.ai = aiConfig.isConfigured ? 'ok' : aiConfig.useProxy ? 'warning' : 'error'
 
-            // Storage (estimate from location count × avg photo size)
-            const locCount = adminStats?.locations?.total || 0
-            const estimatedMB = Math.round(locCount * 0.1) // ~100KB avg per location photo
-            newHealth.storageDetail = `~${estimatedMB} MB / 1 GB`
-            newHealth.storage = estimatedMB > 800 ? 'warning' : 'ok'
+            // R2 Storage — try real API, fallback to estimate
+            try {
+                const storageRes = await fetch('/api/storage/stats')
+                if (storageRes.ok) {
+                    const stats = await storageRes.json()
+                    setR2Stats(stats)
+                    newHealth.r2Detail = `${stats.usedMB < 1024 ? stats.usedMB + ' MB' : stats.usedGB + ' GB'} / ${stats.limitGB} GB`
+                    newHealth.r2 = stats.percentUsed > 80 ? 'warning' : 'ok'
+                } else {
+                    // Fallback: estimate from location count
+                    const locCount = adminStats?.locations?.total || 0
+                    const estimatedMB = Math.round(locCount * 0.8) // ~800KB avg per location (main + gallery)
+                    setR2Stats({ usedMB: estimatedMB, usedGB: Math.round(estimatedMB / 1024 * 100) / 100, objectCount: locCount * 5, limitGB: 10, percentUsed: Math.round(estimatedMB / 10240 * 100 * 10) / 10, isEstimate: true })
+                    newHealth.r2Detail = `~${estimatedMB} MB / 10 GB (est.)`
+                    newHealth.r2 = 'ok'
+                }
+            } catch {
+                const locCount = adminStats?.locations?.total || 0
+                const estimatedMB = Math.round(locCount * 0.8)
+                setR2Stats({ usedMB: estimatedMB, usedGB: Math.round(estimatedMB / 1024 * 100) / 100, objectCount: locCount * 5, limitGB: 10, percentUsed: Math.round(estimatedMB / 10240 * 100 * 10) / 10, isEstimate: true })
+                newHealth.r2Detail = `~${estimatedMB} MB / 10 GB (est.)`
+                newHealth.r2 = 'ok'
+            }
 
             setHealth(newHealth)
         }
@@ -174,7 +192,7 @@ const AdminDashboardPage = () => {
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
 
-                {/* Left column: Stats + Quick Actions + Health */}
+                {/* Left column: Stats + Quick Actions */}
                 <div className="lg:col-span-1 space-y-5">
 
                     {/* Analytics Card */}
@@ -235,19 +253,6 @@ const AdminDashboardPage = () => {
                         />
                     </div>
 
-                    {/* Health Check */}
-                    <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Cpu size={14} className="text-slate-400" strokeWidth={1.5} />
-                            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400">System Health</h3>
-                        </div>
-                        <div className="space-y-1 divide-y divide-slate-50 dark:divide-white/[0.03]">
-                            <HealthItem label="Supabase" status={health.supabase} detail={health.supabase === 'ok' ? 'Connected' : 'Issue'} />
-                            <HealthItem label="AI API" status={health.ai} detail={health.ai === 'ok' ? 'Key active' : health.ai === 'warning' ? 'Proxy mode' : 'No key'} />
-                            <HealthItem label="Storage" status={health.storage} detail={health.storageDetail} />
-                        </div>
-                    </div>
-
                     {/* AI Insight Card */}
                     <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm relative overflow-hidden">
                         <div className="absolute -right-3 -bottom-3 opacity-[0.04] dark:opacity-[0.06] pointer-events-none">
@@ -274,7 +279,7 @@ const AdminDashboardPage = () => {
                     </div>
                 </div>
 
-                {/* Right column: Activity */}
+                {/* Right column: Activity + Health + Storage */}
                 <div className="lg:col-span-2 space-y-5">
 
                     {/* Recent Activity Card */}
@@ -301,6 +306,68 @@ const AdminDashboardPage = () => {
                                     <EmptyRow key={i} />
                                 ))
                             }
+                        </div>
+                    </div>
+
+                    {/* Health + R2 Storage — side by side on desktop */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                        {/* Health Check */}
+                        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Cpu size={14} className="text-slate-400" strokeWidth={1.5} />
+                                <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400">System Health</h3>
+                            </div>
+                            <div className="space-y-1 divide-y divide-slate-50 dark:divide-white/[0.03]">
+                                <HealthItem label="Supabase DB" status={health.supabase} detail={health.supabase === 'ok' ? 'Connected' : 'Issue'} />
+                                <HealthItem label="AI API" status={health.ai} detail={health.ai === 'ok' ? 'Key active' : health.ai === 'warning' ? 'Proxy mode' : 'No key'} />
+                                <HealthItem label="R2 Photos" status={health.r2} detail={health.r2Detail} />
+                            </div>
+                        </div>
+
+                        {/* R2 Storage Card */}
+                        <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] p-5 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <HardDrive size={14} className="text-slate-400" strokeWidth={1.5} />
+                                <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                                    Cloudflare R2{r2Stats?.isEstimate ? ' (est.)' : ''}
+                                </h3>
+                            </div>
+
+                            {r2Stats ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-2xl font-light text-slate-900 dark:text-white">
+                                            {r2Stats.isEstimate ? '~' : ''}{r2Stats.usedMB < 1024 ? `${r2Stats.usedMB} MB` : `${r2Stats.usedGB} GB`}
+                                        </span>
+                                        <span className="text-xs font-medium text-slate-400">
+                                            / {r2Stats.limitGB} GB
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2.5 bg-slate-100 dark:bg-white/[0.05] rounded-full overflow-hidden">
+                                        <div
+                                            className={cn(
+                                                "h-full rounded-full transition-all duration-500",
+                                                r2Stats.percentUsed > 80 ? 'bg-amber-500' : r2Stats.percentUsed > 50 ? 'bg-blue-500' : 'bg-emerald-500'
+                                            )}
+                                            style={{ width: `${Math.min(r2Stats.percentUsed, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-medium text-slate-400">
+                                            {r2Stats.percentUsed}% used
+                                        </span>
+                                        <span className="text-[10px] font-medium text-slate-500">
+                                            {r2Stats.isEstimate ? '~' : ''}{r2Stats.objectCount.toLocaleString()} files
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-sm text-slate-400">
+                                    <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+                                    Loading...
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

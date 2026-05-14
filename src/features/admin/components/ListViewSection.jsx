@@ -1,15 +1,29 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Star, MoreHorizontal, Edit, Trash2, Eye, EyeOff, CheckCircle, XCircle, Sparkles, Download, X } from 'lucide-react'
+import { Star, MoreHorizontal, Edit, Trash2, Eye, EyeOff, CheckCircle, XCircle, Sparkles, Download, X, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MissingDataBadge } from './enrichment'
 
 /**
  * ListViewSection — DaisyUI-style table for admin locations list.
  * Supports bulk selection with action bar.
  */
-const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation }) => {
+const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation, onEnrichLocation }) => {
     const { t } = useTranslation()
     const [selectedIds, setSelectedIds] = useState(new Set())
+    const menuRef = useRef(null)
+
+    // Close action menu when clicking outside
+    useEffect(() => {
+        if (!openActionMenuId) return
+        const handleClickOutside = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                onToggleActionMenu(null)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [openActionMenuId, onToggleActionMenu])
 
     const toggleSelect = (id) => {
         setSelectedIds(prev => {
@@ -131,6 +145,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                         <div className="flex-1 min-w-0">
                             <div className="font-medium text-xs truncate">{loc.title}</div>
                             <div className="text-[10px] opacity-50 truncate">{loc.city}{loc.country ? `, ${loc.country}` : ''}</div>
+                            <MissingDataBadge location={loc} />
                         </div>
                         {/* Right side */}
                         <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -205,6 +220,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                                     <div>
                                         <div className="font-medium text-xs line-clamp-1">{loc.title}</div>
                                         <div className="text-[10px] opacity-50">{loc.city}{loc.country ? `, ${loc.country}` : ''}</div>
+                                        <MissingDataBadge location={loc} />
                                     </div>
                                 </div>
                             </td>
@@ -239,7 +255,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                                 <span className="text-[10px] opacity-60">{formatDate(loc.updatedAt || loc.updated_at)}</span>
                             </td>
                             <td onClick={(e) => e.stopPropagation()}>
-                                <div className="relative">
+                                <div className="relative" ref={openActionMenuId === loc.id ? menuRef : null}>
                                     <button
                                         onClick={() => onToggleActionMenu(loc.id)}
                                         className="btn btn-ghost btn-xs"
@@ -251,6 +267,11 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                                             <button onClick={() => { onEditLocation(loc); onToggleActionMenu(null) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-base-200 transition-colors">
                                                 <Edit size={14} /> Edit
                                             </button>
+                                            {onEnrichLocation && (
+                                                <button onClick={() => { onEnrichLocation(loc); onToggleActionMenu(null) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-base-200 text-primary transition-colors">
+                                                    <Wand2 size={14} /> Enrich
+                                                </button>
+                                            )}
                                             {loc.status === 'pending' && (
                                                 <button onClick={() => { onApprove(loc.id); onToggleActionMenu(null) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-base-200 text-success transition-colors">
                                                     <CheckCircle size={14} /> Approve

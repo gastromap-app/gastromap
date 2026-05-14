@@ -204,18 +204,36 @@ describe('submissions.api', () => {
     })
 
     describe('uploadSubmissionPhoto', () => {
-        it('uploads file and returns public URL', async () => {
-            mockUpload.mockResolvedValue({ error: null })
-            mockGetPublicUrl.mockReturnValue({ data: { publicUrl: 'https://cdn.example.com/photo.jpg' } })
+        it('uploads file and returns public URL from R2 endpoint', async () => {
+            const mockUrl = 'https://pub-test.r2.dev/locations/submissions/user-1/1234-photo.webp'
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({ url: mockUrl }),
+            })
             const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })
             const result = await uploadSubmissionPhoto(file, 'user-1')
-            expect(result).toBe('https://cdn.example.com/photo.jpg')
+            expect(result).toBe(mockUrl)
+            expect(global.fetch).toHaveBeenCalledWith('/api/upload-to-r2', expect.objectContaining({
+                method: 'POST',
+            }))
         })
 
         it('throws ApiError on upload failure', async () => {
-            mockUpload.mockResolvedValue({ error: { message: 'bucket not found' } })
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: false,
+                status: 400,
+                json: () => Promise.resolve({ error: 'Invalid file', code: 'INVALID_MIME' }),
+            })
             const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })
             await expect(uploadSubmissionPhoto(file, 'user-1')).rejects.toThrow()
+        })
+
+        it('throws UPLOAD_TIMEOUT on AbortError', async () => {
+            const abortError = new Error('Aborted')
+            abortError.name = 'AbortError'
+            global.fetch = vi.fn().mockRejectedValue(abortError)
+            const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })
+            await expect(uploadSubmissionPhoto(file, 'user-1')).rejects.toThrow('timed out')
         })
     })
 })

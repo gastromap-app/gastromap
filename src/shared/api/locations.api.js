@@ -405,7 +405,7 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     // Timeout safety: if Supabase hangs (network stall, huge payload), reject after 20s
     const savePromise = _smartSave('locations', id, row)
     const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new ApiError('Save timed out after 20s. Check network or payload size.', 408, 'TIMEOUT')), 20000)
+        setTimeout(() => reject(new ApiError('Save timed out after 30s. Check network or payload size.', 408, 'TIMEOUT')), 30000)
     )
     const { data: updated, error } = await Promise.race([savePromise, timeoutPromise])
 

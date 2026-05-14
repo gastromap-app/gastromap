@@ -13,6 +13,7 @@ import {
 } from '@/shared/api/queries'
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { exportLocationsToCSV } from '@/shared/utils/importExportUtils'
+import { getMissingDataIndicators } from '../components/enrichment/MissingDataBadge'
 
 /**
  * Custom hook for Admin Locations page business logic
@@ -447,6 +448,11 @@ export const useAdminLocations = () => {
         delete submissionData.comments_count
         delete submissionData.trending_score
         delete submissionData.trending_at
+        delete submissionData.ai_enrichment_status
+        delete submissionData.ai_enrichment_error
+        delete submissionData.ai_enrichment_last_attempt
+        delete submissionData.last_enriched_at
+        delete submissionData.kg_enriched_at
         
         // Ensure numbers
         if (submissionData.rating !== undefined && submissionData.rating !== null) {
@@ -583,7 +589,11 @@ export const useAdminLocations = () => {
         sortBy,
         activeCity,
         activeCountry,
-    }).filter(loc => statusFilter === 'all' || loc.status === statusFilter)
+    }).filter(loc => {
+        if (statusFilter === 'all') return true
+        if (statusFilter === 'missing_data') return getMissingDataIndicators(loc).length > 0
+        return loc.status === statusFilter
+    })
 
     // Derived data for filters
     const countries = Array.from(new Set(locationsList.map(l => l.country).filter(Boolean))).sort()

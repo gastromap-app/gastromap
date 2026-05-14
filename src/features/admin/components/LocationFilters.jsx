@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { 
     Search, List as ListIcon, Map as MapIcon, Filter, X, ChevronDown,
-    Star, DollarSign, Tag, SortAsc, SlidersHorizontal, Globe, Clock, MessageSquare, LayoutGrid
+    Star, DollarSign, Tag, SortAsc, SlidersHorizontal, Globe, Clock, MessageSquare, LayoutGrid, AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
@@ -323,6 +323,7 @@ const LocationFilters = ({
                         { id: 'all', label: t('admin.tabs.all'), icon: ListIcon },
                         { id: 'pending', label: t('admin.tabs.pending'), icon: Clock },
                         { id: 'reviews', label: t('admin.tabs.reviews'), icon: MessageSquare },
+                        { id: 'missing_data', label: 'Missing Data', icon: AlertTriangle },
                     ].map(tab => (
                         <button
                             key={tab.id}

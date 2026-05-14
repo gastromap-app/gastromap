@@ -452,7 +452,17 @@ const LocationFormSlideOver = ({
     }
     const removeDish = (i) => set('what_to_try', whatToTry.filter((_, idx) => idx !== i))
 
-    const photos = Array.isArray(formData.photos) ? formData.photos : (formData.image ? [formData.image] : [])
+    // Photos: combine image_url (main) + google_photos (gallery). 
+    // If google_photos is empty but image_url exists, show image_url as the only photo.
+    const photos = (() => {
+        const gallery = Array.isArray(formData.photos) ? formData.photos.filter(Boolean) : []
+        const mainImage = formData.image_url || formData.image || ''
+        if (gallery.length > 0) {
+            // If main image is not in gallery, prepend it
+            return mainImage && !gallery.includes(mainImage) ? [mainImage, ...gallery] : gallery
+        }
+        return mainImage ? [mainImage] : []
+    })()
 
     // ─── Render ───────────────────────────────────────────────────────────────
 

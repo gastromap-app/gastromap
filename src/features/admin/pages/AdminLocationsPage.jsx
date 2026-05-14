@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Plus, Search, Filter, MoreHorizontal, Edit, Trash2,
@@ -26,6 +26,7 @@ import LocationFormSlideOver from '../components/LocationFormSlideOver'
 import LocationFilters from '../components/LocationFilters'
 import LocationStats from '../components/LocationStats'
 import ListViewSection from '../components/ListViewSection'
+import { EnrichmentPanel } from '../components/enrichment'
 import { getLabelGroups } from '@/shared/config/filterOptions'
 
 // Fix for default marker icon issue with Leaflet
@@ -88,13 +89,15 @@ const AdminLocationsPage = () => {
         paginatedLocations, totalPages, currentPage, setCurrentPage, PAGE_SIZE,
         extractMutation, reindexMutation, bulkReindexMutation, spoonacularMutation,
         embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
-        aiQueryMutation,
+        aiQueryMutation, updateLocMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
         handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
         handleApproveReview, handleRejectReview,
         isExporting, handleExport,
         toast, setToast
     } = hook
+
+    const [enrichLocation, setEnrichLocation] = useState(null)
 
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -331,6 +334,7 @@ const AdminLocationsPage = () => {
                             onToggleActionMenu={(id) => setOpenActionMenuId(openActionMenuId === id ? null : id)}
                             bulkReindexMutation={bulkReindexMutation}
                             bulkEmbeddingMutation={bulkEmbeddingMutation}
+                            onEnrichLocation={setEnrichLocation}
                         />
                     ) : viewMode === 'map' ? (
                         <div className="flex-1 relative min-h-[500px]">
@@ -445,6 +449,20 @@ const AdminLocationsPage = () => {
                         onImportComplete={() => {
                             // Optionally refresh list
                             console.log('Import successful')
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Enrichment Panel */}
+            <AnimatePresence>
+                {enrichLocation && (
+                    <EnrichmentPanel
+                        location={enrichLocation}
+                        onClose={() => setEnrichLocation(null)}
+                        onApplyChanges={(updates) => {
+                            updateLocMutation.mutate({ id: enrichLocation.id, updates })
+                            setEnrichLocation(null)
                         }}
                     />
                 )}

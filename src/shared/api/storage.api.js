@@ -1,23 +1,17 @@
-import { supabase, ApiError } from './client'
-import { config } from '@/shared/config/env'
-
-const USE_SUPABASE = config.supabase.isConfigured
+import { ApiError } from './client'
 
 /**
  * Maximum dimensions and quality for uploaded images.
- * Optimized for free Supabase tier (1GB storage limit):
+ * Client-side pre-compression before sending to the R2 upload endpoint:
  * - WebP format: ~40% smaller than JPEG at same visual quality
- * - 1200px max width: sufficient for detail pages, saves ~30% vs 1400px
+ * - 1200px max width: sufficient for detail pages
  * - Quality 0.75: visually indistinguishable from 0.82 but ~20% smaller
- * 
- * Typical result: 60-120KB per photo (vs 200-400KB with old JPEG settings)
- * At 100KB avg: ~10,000 photos fit in 1GB free tier
  */
 const COMPRESS_DEFAULTS = {
     maxWidth: 1200,
     maxHeight: 900,
     quality: 0.75,
-    format: 'webp', // WebP: ~40% smaller than JPEG, supported by all modern browsers
+    format: 'webp',
 }
 
 /**
@@ -76,52 +70,115 @@ export function compressImage(file, opts = {}) {
     })
 }
 
+/** Small delay helper for retry logic */
+function delay(ms) { return new Promise(r => setTimeout(r, ms)) }
+
 /**
- * Upload a file to Supabase Storage.
- * Automatically compresses images before upload to save storage space.
+ * Upload a file to Cloudflare R2 via the serverless endpoint.
+ * Automatically compresses images client-side before upload.
+ * Independent of Supabase Storage — works even when Supabase is throttling.
  * 
  * @param {File} file - File to upload
- * @param {string} bucket - Storage bucket name
- * @param {string} folder - Folder path within bucket
+ * @param {string} bucket - Ignored (kept for API compatibility), R2 uses folder-based organization
+ * @param {string} folder - Folder path within R2 bucket (default: 'general')
  * @param {object} options - Upload options
- * @param {boolean} options.skipCompression - Skip auto-compression (for already-compressed files)
+ * @param {boolean} options.skipCompression - Skip client-side pre-compression
+ * @returns {Promise<string>} Public URL of the uploaded file
  */
 export async function uploadFile(file, bucket = 'locations', folder = 'general', options = {}) {
-    if (!USE_SUPABASE) {
-        console.warn('[Storage] Supabase not configured, using mock URL')
-        return URL.createObjectURL(file)
-    }
-
-    // Auto-compress images unless explicitly skipped
+    // Client-side pre-compression (reduces upload size)
     let fileToUpload = file
     if (!options.skipCompression && file.type.startsWith('image/')) {
         try {
             fileToUpload = await compressImage(file)
         } catch (err) {
-            console.warn('[Storage] Compression failed, uploading original:', err.message)
+            console.warn('[Storage] Client compression failed, uploading original:', err.message)
             fileToUpload = file
         }
     }
 
-    const timestamp = Date.now()
-    const safeName = fileToUpload.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()
-    const path = `${folder}/${timestamp}-${safeName}`
+    // Build multipart form data
+    const formData = new FormData()
+    formData.append('file', fileToUpload)
+    formData.append('folder', folder)
 
-    const { error } = await supabase.storage
-        .from(bucket)
-        .upload(path, fileToUpload, { 
-            upsert: false,
-            contentType: fileToUpload.type 
-        })
+    // Retry logic: up to 2 retries for transient errors
+    const MAX_RETRIES = 2
+    let lastError = null
 
-    if (error) {
-        console.error('[Storage] Upload error:', error)
-        throw new ApiError(error.message, 400, 'UPLOAD_ERROR')
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+            console.warn(`[Storage] Retry attempt ${attempt}/${MAX_RETRIES}...`)
+            await delay(1000) // 1s delay between retries
+        }
+
+        try {
+            // 20-second timeout to prevent hanging on throttled connections
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 20000)
+
+            const response = await fetch('/api/upload-to-r2', {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal,
+            })
+
+            clearTimeout(timeoutId)
+
+            // Success
+            if (response.ok) {
+                const data = await response.json()
+                return data.url
+            }
+
+            // Non-retryable client errors (4xx)
+            if (response.status >= 400 && response.status < 500) {
+                const errorData = await response.json().catch(() => ({ error: 'Upload failed' }))
+                throw new ApiError(
+                    errorData.error || `Upload failed with status ${response.status}`,
+                    response.status,
+                    errorData.code || 'UPLOAD_ERROR'
+                )
+            }
+
+            // Server errors (5xx) — retryable
+            lastError = new ApiError(
+                'Storage service temporarily unavailable. Please retry.',
+                response.status,
+                'UPLOAD_UNAVAILABLE'
+            )
+
+        } catch (err) {
+            // AbortController timeout
+            if (err.name === 'AbortError') {
+                throw new ApiError(
+                    'Upload timed out after 20 seconds. Please try again.',
+                    408,
+                    'UPLOAD_TIMEOUT'
+                )
+            }
+
+            // Network errors — retryable
+            if (err instanceof ApiError) {
+                // 4xx errors are not retryable — rethrow immediately
+                if (err.status >= 400 && err.status < 500) {
+                    throw err
+                }
+                lastError = err
+            } else {
+                lastError = new ApiError(
+                    'Network error during upload. Please check your connection.',
+                    0,
+                    'UPLOAD_UNAVAILABLE'
+                )
+            }
+        }
     }
 
-    const { data: publicUrlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(path)
-
-    return publicUrlData.publicUrl
+    // All retries exhausted
+    throw lastError || new ApiError(
+        'Upload failed after multiple attempts. Please try again later.',
+        503,
+        'UPLOAD_UNAVAILABLE'
+    )
 }

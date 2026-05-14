@@ -75,10 +75,24 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // ─── Supabase Storage (фото локаций) — сжатый кэш ──────────────────────
-          // Оптимизация: maxEntries снижен с 20 до 10, purgeOnQuotaError включает
-          // автоочистку при приближении к iOS лимиту 50MB.
-          // LazyImage.jsx добавляет ?format=webp — фото весят ~30% меньше.
+          // ─── Cloudflare R2 (фото локаций) — CacheFirst с длинным TTL ──────────
+          // R2 photos are immutable (filename includes timestamp), so CacheFirst is safe.
+          // WebP format, ~80-120KB per photo.
+          {
+            urlPattern: /^https:\/\/pub-[a-z0-9]+\.r2\.dev\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'r2-photos-cache',
+              expiration: {
+                maxEntries: 30,               // 30 фото × ~100KB (webp) = ~3MB
+                maxAgeSeconds: 60 * 60 * 24 * 30,  // 30 дней (immutable files)
+                purgeOnQuotaError: true
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // ─── Supabase Storage (geo-covers, avatars) — сжатый кэш ──────────────
+          // Only used for geo-covers and avatars now (location photos moved to R2).
           {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',

@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { applyRateLimit } from '../_shared/rate-limit.js'
 import { formatOpeningHours } from '../../src/utils/formatOpeningHours.js'
 import { normalizeCityName, normalizeCountryName } from '../../src/utils/normalizeCityName.js'
@@ -30,6 +31,54 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
+}
+
+// ── R2 Upload Helper ─────────────────────────────────────────────────────────
+const r2Client = (process.env.R2_ACCESS_KEY_ID && process.env.R2_ENDPOINT)
+    ? new S3Client({
+        region: 'auto',
+        endpoint: process.env.R2_ENDPOINT,
+        credentials: {
+            accessKeyId: process.env.R2_ACCESS_KEY_ID,
+            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+        },
+    })
+    : null
+
+/**
+ * Download a photo from a URL and upload it to R2.
+ * Returns the R2 public URL, or null on failure.
+ */
+async function downloadAndUploadToR2(photoUrl, locationId, index) {
+    if (!r2Client || !process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) return null
+    try {
+        const res = await fetch(photoUrl, { redirect: 'follow', signal: AbortSignal.timeout(10000) })
+        if (!res.ok) return null
+        const buffer = Buffer.from(await res.arrayBuffer())
+        if (buffer.length < 1000) return null // too small, likely error page
+
+        const key = `locations/${locationId}/${index === 0 ? 'main' : index - 1}.webp`
+
+        // Import sharp dynamically (heavy module, only load when needed)
+        const sharp = (await import('sharp')).default
+        const webpBuffer = await sharp(buffer)
+            .resize(1200, null, { withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer()
+
+        await r2Client.send(new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key,
+            Body: webpBuffer,
+            ContentType: 'image/webp',
+            CacheControl: 'public, max-age=31536000, immutable',
+        }))
+
+        return `${process.env.R2_PUBLIC_URL}/${key}`
+    } catch (err) {
+        console.warn(`[process] R2 upload failed for photo ${index}:`, err.message)
+        return null
+    }
 }
 
 // ── Step 0: Normalize query to English ──────────────────────────────────────
@@ -641,9 +690,9 @@ async function insertLocation(d, apifyHours = null) {
         has_wifi:               d.has_wifi || false,
         has_outdoor_seating:    d.has_outdoor_seating || false,
         reservations_required:  d.reservations_required || false,
-        // Media (canonical column names)
-        image_url:      d.image || (d.photos?.[0]) || null,
-        google_photos:  d.photos || [],
+        // Media (canonical column names) — initially empty, will be filled with R2 URLs after insert
+        image_url:      null,
+        google_photos:  [],
         // Location (normalize to English/international names)
         city:           d.city ? normalizeCityName(d.city) : null,
         country:        d.country ? normalizeCountryName(d.country) : null,
@@ -661,6 +710,32 @@ async function insertLocation(d, apifyHours = null) {
         .single()
 
     if (error) throw new Error(`Supabase: ${error.message}`)
+
+    // ── Upload photos to R2 (non-blocking for Telegram response speed) ──
+    // Download from Google/Apify URLs and re-upload to R2 so we never store API keys in DB
+    const photoSources = d.photos || []
+    if (photoSources.length > 0 && r2Client) {
+        // Fire-and-forget: upload photos in background, update DB when done
+        void (async () => {
+            try {
+                const r2Urls = []
+                for (let i = 0; i < Math.min(photoSources.length, 10); i++) {
+                    const url = await downloadAndUploadToR2(photoSources[i], data.id, i)
+                    if (url) r2Urls.push(url)
+                    // Small delay to avoid rate limiting
+                    if (i < photoSources.length - 1) await new Promise(r => setTimeout(r, 150))
+                }
+                if (r2Urls.length > 0) {
+                    const photoUpdate = { image_url: r2Urls[0] }
+                    if (r2Urls.length > 1) photoUpdate.google_photos = r2Urls.slice(1)
+                    await supabase.from('locations').update(photoUpdate).eq('id', data.id)
+                    console.log(`[process] ${r2Urls.length} photos uploaded to R2 for ${data.id}`)
+                }
+            } catch (err) {
+                console.warn('[process] Background photo upload failed:', err.message)
+            }
+        })()
+    }
     
     // Map to friendly names for Telegram response
     return {

@@ -37,7 +37,7 @@ export async function enrichLocation({ name, address, city, category }) {
                 { role: 'system', content: ENRICHMENT_SYSTEM_PROMPT },
                 { role: 'user',   content: userMessage },
             ],
-            { withTools: false, modelOverride: 'meta-llama/llama-3.3-70b-instruct:free' }
+            { withTools: false, maxTokens: 800 }
         )
 
         const text = await response.text()

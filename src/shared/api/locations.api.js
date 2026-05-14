@@ -390,9 +390,12 @@ export async function createLocation(data, enableTranslation = null) {
  * @returns {Promise<Object>} Updated location
  */
 export async function updateLocation(id, updates, enableTranslation = null) {
+    console.log('[locations.api] updateLocation CALLED:', id)
     if (!USE_SUPABASE) return _mockUpdate(id, updates)
 
+    console.log('[locations.api] importing ai-config...')
     const { getActiveAIConfig } = await import('./ai-config.api')
+    console.log('[locations.api] ai-config imported, checking config...')
     const isAiReady = getActiveAIConfig().isConfigured
     const shouldTranslate = enableTranslation ?? isAiReady
 

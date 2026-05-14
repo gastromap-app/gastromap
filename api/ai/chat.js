@@ -91,6 +91,7 @@ export default async function handler(req, res) {
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY
+    const apiKeyFallback = process.env.OPENROUTER_API_KEY_2 || null
     if (!apiKey?.trim()) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
 
     // Route to embedding handler if mode is 'embedding'
@@ -150,9 +151,9 @@ export default async function handler(req, res) {
         // ── Cascade mode ──────────────────────────────────────────────────────
         let startIdx = MODEL_CASCADE.indexOf(model)
         if (startIdx === -1) {
-            return runCascade([model, ...MODEL_CASCADE], 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKey, res)
+            return runCascade([model, ...MODEL_CASCADE], 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
         }
-        return runCascade(MODEL_CASCADE, startIdx, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKey, res)
+        return runCascade(MODEL_CASCADE, startIdx, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
 
     } catch (error) {
         console.error('[ai/chat proxy] Error:', error.message)
@@ -211,11 +212,13 @@ async function handleEmbedding(req, res, apiKey) {
     return res.status(502).json({ error: 'Embedding generation failed' })
 }
 
-async function runCascade(cascade, startIdx, reqBody, apiKey, res) {
+async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
     const { messages, max_tokens, tools, tool_choice } = reqBody
+    const keys = Array.isArray(apiKeys) ? apiKeys : [apiKeys]
 
     let lastError = null
     const maxTokens = max_tokens || 1024
+    let currentKeyIdx = 0
 
     for (let i = startIdx; i < cascade.length; i++) {
         const currentModel = cascade[i]
@@ -226,7 +229,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKey, res) {
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
+                    'Authorization': `Bearer ${keys[currentKeyIdx]}`,
                     'HTTP-Referer': 'https://gastromap.app',
                     'X-Title': 'GastroMap',
                     'Content-Type': 'application/json',
@@ -234,9 +237,17 @@ async function runCascade(cascade, startIdx, reqBody, apiKey, res) {
                 body: JSON.stringify(body),
             })
 
+            // If 401 (invalid key) or 429 (rate limited) — try fallback key
+            if ((response.status === 401 || response.status === 429) && currentKeyIdx < keys.length - 1) {
+                currentKeyIdx++
+                console.warn(`[ai/chat] Key ${currentKeyIdx} failed (${response.status}), switching to fallback key`)
+                i-- // retry same model with new key
+                continue
+            }
+
             if (response.status === 429) {
                 lastError = { error: { message: `429 on ${currentModel}` } }
-                console.warn(`[ai/chat] 429 on ${currentModel}, trying next...`)
+                console.warn(`[ai/chat] 429 on ${currentModel}, trying next model...`)
                 await new Promise(r => setTimeout(r, 500))
                 continue
             }

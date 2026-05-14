@@ -252,7 +252,7 @@ function SuccessScreen({ onAddAnother, onHome }) {
                 <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Submitted!</h2>
                 <p className="text-slate-500 dark:text-[hsl(220,10%,55%)] mb-5">Our team reviews submissions within 48 hours.</p>
                 <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl px-4 py-2.5 mb-8">
-                    <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">🏆 +100 points</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">🏆 +1 point</span>
                     <span className="text-indigo-400 text-sm">credited on approval</span>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -1069,7 +1069,7 @@ export default function AddPlacePage() {
                                     <><CheckCircle2 size={20} /> Submit for Review</>
                                 )}
                             </button>
-                            <p className="text-center text-xs text-slate-400">🏆 +100 points on approval · Reviewed within 48 hours</p>
+                            <p className="text-center text-xs text-slate-400">🏆 +1 point on approval · Reviewed within 48 hours</p>
                         </motion.div>
                     )}
 

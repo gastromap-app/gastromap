@@ -234,6 +234,40 @@ const FREE_MODELS = [
         description: 'Flagship coding agent model. Tool calling, reasoning, 128K context.',
         toolUse: true,
     },
+    // ── PAID TIER — Higher quality, faster, more stable ─────────────────────
+    {
+        id: 'google/gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        provider: 'Google',
+        context: '1M',
+        languages: 'EN / RU / PL / UA / multilingual',
+        badge: '💰 $0.05/$0.30',
+        badgeColor: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        description: 'Cheapest paid model. Ultra-fast, 1M context. ~$0.40/month at 100 req/day.',
+        toolUse: true,
+    },
+    {
+        id: 'google/gemini-3.1-flash-lite',
+        name: 'Gemini 3.1 Flash Lite',
+        provider: 'Google',
+        context: '1M',
+        languages: 'EN / RU / PL / UA / multilingual',
+        badge: '💰 $0.25/$1.50',
+        badgeColor: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        description: 'Newest Google model. Best quality/speed ratio. ~$2/month at 100 req/day.',
+        toolUse: true,
+    },
+    {
+        id: 'deepseek/deepseek-chat',
+        name: 'DeepSeek V3.2 Chat',
+        provider: 'DeepSeek',
+        context: '128K',
+        languages: 'EN / RU / PL / multilingual',
+        badge: '💰 $0.32/$0.89',
+        badgeColor: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        description: 'Best reasoning for price. 685B MoE model. ~$1.60/month at 100 req/day.',
+        toolUse: true,
+    },
 ]
 
 // ─── Model card ──────────────────────────────────────────────────────────────

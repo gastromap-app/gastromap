@@ -526,13 +526,13 @@ const LocationFormSlideOver = ({
                                 {/* ── Left Column: Core Info & Location ── */}
                                     <div className="space-y-6 sm:space-y-10">
                                         {/* Google Places Autocomplete */}
-                                        <div className="bg-primary/[0.03] dark:bg-primary/[0.05] p-8 sm:p-12 rounded-sheet border border-primary/10 space-y-8 shadow-sm relative overflow-hidden group/magic transition-all hover:bg-primary/[0.05] dark:hover:bg-primary/[0.08]">
+                                        <div className="bg-primary/[0.03] dark:bg-primary/[0.05] p-4 sm:p-6 rounded-sheet border border-primary/10 space-y-4 shadow-sm relative overflow-hidden group/magic transition-all hover:bg-primary/[0.05] dark:hover:bg-primary/[0.08]">
                                             <div className="absolute -top-12 -right-12 p-8 opacity-[0.03] pointer-events-none transition-all duration-1000 group-hover/magic:opacity-[0.08] group-hover/magic:scale-125 group-hover/magic:-rotate-12">
-                                                <Zap size={240} fill="currentColor" className="text-primary" />
+                                                <Zap size={160} fill="currentColor" className="text-primary" />
                                             </div>
-                                            <label className="flex items-center gap-3 text-eyebrow font-bold uppercase tracking-[0.25em] text-primary relative z-10">
-                                                <div className="p-2 rounded-input bg-primary/10 border border-primary/20 shadow-sm">
-                                                    <Wand2 size={16} className="sm:w-5 sm:h-5" />
+                                            <label className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.2em] text-primary relative z-10">
+                                                <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                                    <Wand2 size={14} />
                                                 </div>
                                                 {t('admin.locations.form.fields.google_autocomplete')}
                                                 {formData._source === 'google_places' && (
@@ -541,7 +541,7 @@ const LocationFormSlideOver = ({
                                                     </span>
                                                 )}
                                             </label>
-                                            <div className="flex gap-4 relative z-10">
+                                            <div className="flex gap-3 relative z-10">
                                                 <div className="flex-1">
                                                     <PlacesAutocomplete
                                                         onPlaceSelected={handlePlaceSelected}
@@ -555,10 +555,10 @@ const LocationFormSlideOver = ({
                                                             if (query) handleAIMagic(query)
                                                         }}
                                                         disabled={extractMutation?.isPending}
-                                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-input bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-40 transition-all shadow-xl shadow-primary/20 flex items-center justify-center shrink-0 active:scale-95"
+                                                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-40 transition-all shadow-md shadow-primary/20 flex items-center justify-center shrink-0 active:scale-95"
                                                         title={t('admin.locations.form.fields.ai_magic_extraction')}
                                                     >
-                                                        {extractMutation?.isPending ? <RefreshCw size={22} className="animate-spin" /> : <Sparkles size={22} />}
+                                                        {extractMutation?.isPending ? <RefreshCw size={18} className="animate-spin" /> : <Sparkles size={18} />}
                                                     </button>
                                                 )}
                                             </div>

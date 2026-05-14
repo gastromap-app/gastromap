@@ -139,7 +139,11 @@ const AdminDashboardPage = () => {
 
             // R2 Storage — try real API, fallback to estimate
             try {
-                const storageRes = await fetch('/api/storage/stats')
+                const storageRes = await fetch('/api/locations/enrich', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'storage-stats' }),
+                })
                 if (storageRes.ok) {
                     const stats = await storageRes.json()
                     setR2Stats(stats)

@@ -160,10 +160,10 @@ const KGDebug = (() => {
 export async function searchBrave(query, apiKey, count = 5) {
     if (!apiKey || !apiKey.trim()) return null
     try {
-        const resp = await fetch('/api/brave-search', {
+        const resp = await fetch('/api/locations/enrich', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, count, apiKey }),
+            body: JSON.stringify({ action: 'brave-search', query, count }),
         })
         if (!resp.ok) return null
         const data = await resp.json()

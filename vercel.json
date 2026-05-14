@@ -13,6 +13,9 @@
     },
     "api/webhook/stripe.js": {
       "maxDuration": 30
+    },
+    "api/locations/enrich.js": {
+      "maxDuration": 60
     }
   },
   "headers": [

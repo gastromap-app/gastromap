@@ -15,7 +15,7 @@ import { setCorsHeaders } from '../_shared/cors.js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
 import { normalizeCity, normalizeDiacritics } from '../_shared/normalize.js'
 import { createClient } from '@supabase/supabase-js'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
 import sharp from 'sharp'
 
 // ── Environment variables ─────────────────────────────────────────────────────
@@ -495,12 +495,90 @@ function handleQuotaStatus() {
     return { success: true, ...status }
 }
 
+async function handleStorageStats() {
+    if (!s3 || !R2_BUCKET_NAME) {
+        return { success: false, error: 'R2 not configured', _status: 503 }
+    }
+
+    const R2_FREE_TIER_LIMIT_GB = 10
+    let totalSize = 0
+    let objectCount = 0
+    let continuationToken = undefined
+
+    do {
+        const response = await s3.send(new ListObjectsV2Command({
+            Bucket: R2_BUCKET_NAME,
+            ContinuationToken: continuationToken,
+            MaxKeys: 1000,
+        }))
+        if (response.Contents) {
+            for (const obj of response.Contents) {
+                totalSize += obj.Size || 0
+                objectCount++
+            }
+        }
+        continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined
+    } while (continuationToken)
+
+    const usedMB = Math.round(totalSize / (1024 * 1024) * 10) / 10
+    const usedGB = Math.round(totalSize / (1024 * 1024 * 1024) * 100) / 100
+    const percentUsed = Math.round((usedGB / R2_FREE_TIER_LIMIT_GB) * 100 * 10) / 10
+
+    return { success: true, usedBytes: totalSize, usedMB, usedGB, objectCount, limitGB: R2_FREE_TIER_LIMIT_GB, percentUsed }
+}
+
+// ── Brave Search (merged from api/brave-search.js) ────────────────────────────
+
+const BRAVE_URL = 'https://api.search.brave.com/res/v1/web/search'
+const BLOCKED_DOMAINS = ['food.ru', 'eda.ru', 'gastronom.ru', 'povarenok.ru', 'russianfood.com', 'cooking.nytimes.com', 'yandex.ru', 'ok.ru', 'vk.com']
+const TRUSTED_DOMAINS = ['wikipedia.org', 'britannica.com', 'seriouseats.com', 'bonappetit.com', 'epicurious.com', 'food52.com', 'tasteatlas.com', 'thespruceeats.com', 'bbcgoodfood.com', 'allrecipes.com', 'finedininglovers.com', 'eater.com', 'michelin.com']
+
+async function handleBraveSearch(body) {
+    const apiKey = process.env.BRAVE_SEARCH_API_KEY || ''
+    if (!apiKey.trim()) return { success: false, error: 'Brave Search API key not configured', _status: 400 }
+
+    const { query, count = 5 } = body
+    if (!query?.trim()) return { success: false, error: 'query is required', _status: 400 }
+
+    const cleanQuery = query.trim()
+    const hasNonLatin = /[а-яёА-ЯЁ\u4e00-\u9fff\u3040-\u309f]/.test(cleanQuery)
+    const searchQuery = hasNonLatin ? `${cleanQuery} cuisine traditional dishes food` : cleanQuery
+
+    try {
+        const url = new URL(BRAVE_URL)
+        url.searchParams.set('q', searchQuery)
+        url.searchParams.set('count', String(Math.min(Number(count) * 2 || 10, 20)))
+        url.searchParams.set('search_lang', 'en')
+        url.searchParams.set('country', 'us')
+        url.searchParams.set('result_filter', 'web')
+
+        const response = await fetch(url.toString(), {
+            headers: { 'Accept': 'application/json', 'X-Subscription-Token': apiKey.trim() },
+        })
+
+        if (!response.ok) return { success: false, error: `Brave API returned ${response.status}`, _status: response.status }
+
+        const data = await response.json()
+        const allResults = data?.web?.results || []
+        const filtered = allResults.filter(r => { try { const h = new URL(r.url).hostname.replace('www.', ''); return !BLOCKED_DOMAINS.some(d => h.includes(d)) } catch { return true } })
+        const trusted = filtered.filter(r => { try { const h = new URL(r.url).hostname.replace('www.', ''); return TRUSTED_DOMAINS.some(d => h.includes(d)) } catch { return false } })
+        const rest = filtered.filter(r => !trusted.includes(r))
+        const results = [...trusted, ...rest].slice(0, count)
+
+        return { success: true, results }
+    } catch (err) {
+        return { success: false, error: err.message, _status: 500 }
+    }
+}
+
 // ── Supported actions ─────────────────────────────────────────────────────────
 const ACTION_HANDLERS = {
     'enrich': handleEnrich,
     'upload-photos': handleUploadPhotos,
     'freshness-check': handleFreshnessCheck,
     'quota-status': handleQuotaStatus,
+    'storage-stats': handleStorageStats,
+    'brave-search': handleBraveSearch,
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────

@@ -263,6 +263,16 @@ const LocationDetailsPage = () => {
     const [menuSaving, setMenuSaving] = useState(false)
     const [menuToast, setMenuToast] = useState(null)
     const [lightbox, setLightbox] = useState({ open: false, index: 0 })
+    const [currentSlide, setCurrentSlide] = useState(0)
+    const [touchStart, setTouchStart] = useState(0)
+
+    // Combine all photos: main image + gallery
+    const allPhotos = useMemo(() => {
+        const main = location?.image_url || location?.image || ''
+        const gallery = Array.isArray(location?.photos) ? location.photos.filter(Boolean) : []
+        const combined = main ? [main, ...gallery.filter(u => u !== main)] : gallery
+        return combined.length > 0 ? combined : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
+    }, [location?.image_url, location?.image, location?.photos])
 
     useEffect(() => {
         if (location?.id) {
@@ -470,42 +480,61 @@ const LocationDetailsPage = () => {
             <section className="space-y-3">
                 <div className="flex justify-between items-center">
                     <h3 className={`text-lg font-black ${textStyle}`}>{t('location.venue_gallery')}</h3>
-                    <button onClick={() => !isPreview && setActiveTab('Photos')} className={`text-blue-600 font-black text-xs ${isPreview ? 'opacity-40 cursor-not-allowed' : 'hover:underline'}`}>{t('location.full_album')}</button>
+                    <span className={`text-xs font-bold ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        {currentSlide + 1} / {allPhotos.length}
+                    </span>
                 </div>
 
-                {/* Bento Style Gallery Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-[300px] md:h-[600px]">
-                    <div className="col-span-2 md:col-span-6 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LocationImage
-                            src={location.image_url || location.image}
-                            alt={location.title}
-                            width={800}
-                            className="transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Photo Slider */}
+                <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ height: '40vh', minHeight: '240px', maxHeight: '400px' }}>
+                    <div
+                        className="flex h-full transition-transform duration-300 ease-out"
+                        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                        onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+                        onTouchEnd={(e) => {
+                            const diff = touchStart - e.changedTouches[0].clientX
+                            if (Math.abs(diff) > 50) {
+                                if (diff > 0 && currentSlide < allPhotos.length - 1) setCurrentSlide(s => s + 1)
+                                else if (diff < 0 && currentSlide > 0) setCurrentSlide(s => s - 1)
+                            }
+                        }}
+                    >
+                        {allPhotos.map((url, i) => (
+                            <div key={i} className="w-full h-full flex-shrink-0 cursor-pointer" onClick={() => setLightbox({ open: true, index: i })}>
+                                <LazyImage src={url} alt={`${location.title} photo ${i + 1}`} className="w-full h-full object-cover" />
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[0] || "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 1" />
-                    </div>
+                    {/* Navigation arrows (desktop) */}
+                    {currentSlide > 0 && (
+                        <button onClick={() => setCurrentSlide(s => s - 1)} className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm items-center justify-center text-white hover:bg-black/70 transition-all">
+                            <ChevronRight size={20} className="rotate-180" />
+                        </button>
+                    )}
+                    {currentSlide < allPhotos.length - 1 && (
+                        <button onClick={() => setCurrentSlide(s => s + 1)} className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm items-center justify-center text-white hover:bg-black/70 transition-all">
+                            <ChevronRight size={20} />
+                        </button>
+                    )}
 
-                    <div className="col-span-1 md:col-span-3 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[1] || "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 2" />
-                    </div>
-
-                    <div className="col-span-1 md:col-span-4 rounded-2xl overflow-hidden group cursor-pointer relative shadow-lg">
-                        <LazyImage src={location.photos?.[2] || "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 3" />
-                    </div>
-
-                    <div className="col-span-1 md:col-span-8 rounded-3xl overflow-hidden relative group cursor-pointer shadow-lg">
-                        <LazyImage src={location.photos?.[3] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="detail 4" />
-                        <div className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                            <Camera size={24} className="mb-1" />
-                            <span className="text-xl font-black">+{location.photos?.length || 0}</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest">Explore</span>
+                    {/* Dots indicator */}
+                    {allPhotos.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            {allPhotos.slice(0, 8).map((_, i) => (
+                                <button key={i} onClick={() => setCurrentSlide(i)} className={`w-2 h-2 rounded-full transition-all ${currentSlide === i ? 'bg-white w-5' : 'bg-white/50'}`} />
+                            ))}
+                            {allPhotos.length > 8 && <span className="text-white/60 text-[9px] font-bold ml-1">+{allPhotos.length - 8}</span>}
                         </div>
-                    </div>
+                    )}
                 </div>
+
+                <PhotoLightbox
+                    photos={allPhotos}
+                    open={lightbox.open}
+                    initialIndex={lightbox.index}
+                    onClose={() => setLightbox(s => ({ ...s, open: false }))}
+                />
             </section>
 
             {/* 5. Connect & External Links — hidden in preview mode */}
@@ -1132,7 +1161,6 @@ const LocationDetailsPage = () => {
                                     { id: 'Menu',     label: t('location.menu') },
                                     { id: 'Booking',  label: t('location.booking') },
                                     { id: 'Reviews',  label: t('location.reviews') },
-                                    { id: 'Photos',   label: t('location.photos') },
                                     { id: 'Notes',    label: t('location.notes') },
                                 ] : [])
                             ].map((tab) => {

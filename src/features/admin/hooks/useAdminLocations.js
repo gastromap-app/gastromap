@@ -405,25 +405,40 @@ export const useAdminLocations = () => {
         try {
             const prompt = `You are a professional food & travel copywriter for GastroMap app. Improve this restaurant/cafe ${field} text. Make it engaging, evocative, and professional — like a top food blogger would write. Keep the original meaning and facts. Output ONLY the improved text, nothing else. Length should be similar to original.\n\nOriginal text: "${text}"`
             
-            // Call proxy directly with _skip_rag and no tools for simple text generation
-            const response = await fetch('/api/ai/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 500,
-                    temperature: 0.7,
-                    _skip_rag: true,
-                    _direct_model: false,
-                }),
+            const body = JSON.stringify({
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 500,
+                temperature: 0.7,
+                _skip_rag: true,
             })
+
+            // Try Supabase Edge Function first (works from localhost + production)
+            // Fallback to Vercel function (only works on production)
+            const { config } = await import('@/shared/config/env')
+            const urls = [config.ai?.proxyUrl, '/api/ai/chat'].filter(Boolean)
             
-            if (!response.ok) {
-                throw new Error(`AI request failed: ${response.status}`)
+            let data = null
+            for (const url of urls) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body,
+                    })
+                    if (response.ok) {
+                        data = await response.json()
+                        break
+                    }
+                } catch { continue }
             }
             
-            const data = await response.json()
-            let improvedText = data.choices?.[0]?.message?.content || ''
+            if (!data) throw new Error('All AI endpoints failed')
+            
+            // Extract text from response (handles both OpenRouter format and proxy format)
+            let improvedText = data.choices?.[0]?.message?.content 
+                || data.content 
+                || data.text 
+                || ''
             
             // Clean up: remove quotes, markdown, extra whitespace
             improvedText = improvedText

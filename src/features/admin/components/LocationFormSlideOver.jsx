@@ -168,8 +168,6 @@ const LocationFormSlideOver = ({
     fullEnrichMutation,
     extractMutation,
     handleAIMagic,
-    isImproving,
-    setIsImproving,
     setToast,
 }) => {
     const { t, i18n } = useTranslation()
@@ -308,23 +306,6 @@ const LocationFormSlideOver = ({
     }
 
     if (!isOpen || !formData) return null
-
-    const handleImproveDesc = async () => {
-        const text = formData.description
-        if (!text || text.length < 10) return
-        setIsImproving('description')
-        try {
-            const prompt = `Improve this restaurant description. Keep the original language (Russian or English). Make it warm, evocative, 2-3 sentences. Text: "${text}"`
-            const result = await aiQueryMutation.mutateAsync({ message: prompt })
-            const improved = (typeof result === 'string' ? result : result?.text || result?.content || '')
-                .replace(/^["']|["']$/g, '').trim()
-            if (improved) set('description', improved)
-        } catch (e) {
-            console.error('Improve failed:', e)
-        } finally {
-            setIsImproving(null)
-        }
-    }
 
     const handleFullEnrich = () => {
         if (!selectedLocation?.id) return
@@ -873,18 +854,6 @@ const LocationFormSlideOver = ({
                                                         {t('admin.locations.form.fields.description_tip')}
                                                     </p>
                                                 </div>
-                                                {aiQueryMutation && (
-                                                    <button
-                                                        onClick={handleImproveDesc}
-                                                        disabled={isImproving === 'description' || !formData.description}
-                                                        className="absolute bottom-4 right-4 px-6 py-3.5 rounded-card bg-primary text-primary-foreground hover:shadow-xl hover:shadow-primary/30 disabled:opacity-40 transition-all shadow-2xl shadow-primary/40 flex items-center gap-2.5 text-micro font-black uppercase tracking-widest active:scale-95"
-                                                    >
-                                                        {isImproving === 'description'
-                                                            ? <><RefreshCw size={16} className="animate-spin" /> {t('admin.locations.form.actions.improving')}</>
-                                                            : <><Sparkles size={16} /> {t('admin.locations.form.actions.improve_ai')}</>
-                                                        }
-                                                    </button>
-                                                )}
                                             </div>
                                         </Field>
 

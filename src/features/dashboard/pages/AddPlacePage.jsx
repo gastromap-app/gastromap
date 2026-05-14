@@ -598,7 +598,7 @@ export default function AddPlacePage() {
     const labelCls  = 'block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5'
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8 mt-14 md:mt-20 pb-20">
+        <div className="max-w-2xl mx-auto px-4 py-8 mt-20 md:mt-24 pb-20">
             {/* ── Draft-restored banner ── */}
             {draftRestored && (
                 <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-sm">

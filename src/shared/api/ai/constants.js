@@ -34,6 +34,15 @@ export const MODEL_CASCADE = [
     'nvidia/nemotron-3-nano-30b-a3b:free',    // ✅ 256K ctx, lightweight
 ]
 
+// ── Paid models (higher quality, faster, more stable) ─────────────────────────
+// These are NOT in the default cascade — admin can enable them in AdminAIPage.
+// Pricing is per 1M tokens via OpenRouter (includes 5.5% fee).
+export const PAID_MODELS = [
+    { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', input: '$0.05/1M', output: '$0.30/1M', note: '⚡ Cheapest paid, fast, 1M ctx' },
+    { id: 'google/gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', input: '$0.25/1M', output: '$1.50/1M', note: '⚡ Newest, best quality/speed' },
+    { id: 'deepseek/deepseek-chat',       label: 'DeepSeek V3.2 Chat',   input: '$0.32/1M', output: '$0.89/1M', note: '🧠 Best reasoning for price' },
+]
+
 /**
  * Tool definitions (OpenAI function calling format)
  * These are the tools the AI can use to search and get location details

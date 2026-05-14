@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { config } from '@/shared/config/env'
-import { DEFAULT_PROMPTS, MODEL_CASCADE, TOOLS } from '@/shared/api/ai/constants'
+import { DEFAULT_PROMPTS, MODEL_CASCADE, PAID_MODELS, TOOLS } from '@/shared/api/ai/constants'
 import { testAIConnection } from '@/shared/api/ai/utils'
 import { DEFAULT_KG_SYSTEM_PROMPT } from '@/shared/api/kg-ai-agent.api'
 
@@ -490,10 +490,13 @@ const AdminAIPage = () => {
     // ── Model Cascade Editor
     const [cascadeModels, setCascadeModels] = useState(() => {
         const saved = appConfig.aiModelCascade
-        return saved?.length > 0 ? saved : [...MODEL_CASCADE]
+        // Include paid models at the end of the list (disabled by default)
+        const allModels = [...MODEL_CASCADE, ...PAID_MODELS.map(m => m.id)]
+        return saved?.length > 0 ? saved : allModels
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
         const saved = appConfig.aiModelCascade
+        // Only free models enabled by default
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 
@@ -828,6 +831,7 @@ const AdminAIPage = () => {
                     <div className="space-y-2">
                         {cascadeModels.map((modelId, index) => {
                             const enabled = cascadeEnabled.has(modelId)
+                            const paidModel = PAID_MODELS.find(m => m.id === modelId)
                             return (
                                 <div
                                     key={modelId}
@@ -841,12 +845,19 @@ const AdminAIPage = () => {
                                     <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex-shrink-0">
                                         {index + 1}
                                     </span>
-                                    <span className={cn(
-                                        'flex-1 text-sm font-mono truncate',
-                                        enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[hsl(220,10%,55%)]'
-                                    )}>
-                                        {modelDisplayName(modelId)}
-                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className={cn(
+                                            'text-sm font-mono truncate block',
+                                            enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[hsl(220,10%,55%)]'
+                                        )}>
+                                            {modelDisplayName(modelId)}
+                                        </span>
+                                        {paidModel && (
+                                            <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
+                                                💰 PAID · {paidModel.input} in / {paidModel.output} out · {paidModel.note}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                         <button
                                             onClick={() => moveCascade(index, -1)}

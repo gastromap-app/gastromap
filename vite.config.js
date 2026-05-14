@@ -112,13 +112,13 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-rest-cache',
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 30,               // ~30 запросов, небольшие JSON
                 maxAgeSeconds: 60 * 60 * 2,   // 2 часа
                 purgeOnQuotaError: true
               },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           },
           // ─── AI chat — никогда не кэшировать ───────────────────────────────────

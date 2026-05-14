@@ -30,6 +30,18 @@ export const supabase = config.supabase.isConfigured
             // that's acceptable — the alternative is a frozen UI.
             lock: async (_name, _acquireTimeout, fn) => fn(),
         },
+        global: {
+            // 15-second timeout on all Supabase fetch requests.
+            // Prevents infinite loading states when network hangs.
+            fetch: (url, options = {}) => {
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 15000)
+                return fetch(url, {
+                    ...options,
+                    signal: controller.signal,
+                }).finally(() => clearTimeout(timeoutId))
+            },
+        },
     })
     : null
 

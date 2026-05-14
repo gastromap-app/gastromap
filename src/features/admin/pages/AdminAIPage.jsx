@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Bot, MessageSquare, Zap, Shield, Settings,
@@ -8,7 +8,7 @@ import {
     FileText, RotateCcw, Search, Key,
     Database, GitBranch, Thermometer, Hash, ArrowUp, ArrowDown,
     ToggleLeft, ToggleRight, Copy, Code, Clock, Wrench, Activity,
-    Layers, UserCheck
+    Layers, UserCheck, DollarSign
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import AdminPageHeader, { adminBtnPrimary } from '../components/AdminPageHeader'
@@ -317,40 +317,39 @@ const ModelCard = ({ model, selected, onSelect, disabled }) => (
 // ─── Agent card ───────────────────────────────────────────────────────────────
 
 const AgentCard = ({ name, role, isActive, onToggle, icon: Icon, color, description }) => (
-    <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-6 rounded-[28px] border border-slate-100 dark:border-white/[0.06] shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
-        <div className={cn('absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-10 transition-opacity group-hover:opacity-20', color.replace('text-', 'bg-'))} />
+    <div className="bg-white dark:bg-[hsl(220,20%,6%)] p-4 rounded-2xl border border-slate-100 dark:border-white/[0.06] shadow-sm relative overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
+        <div className={cn('absolute top-0 right-0 w-24 h-24 blur-[60px] opacity-10 transition-opacity group-hover:opacity-20', color.replace('text-', 'bg-'))} />
         <div className="relative z-10">
-            <div className="flex justify-between items-start mb-5">
-                <div className={cn('p-4 rounded-2xl bg-opacity-10 dark:bg-opacity-20 shadow-inner', color)}>
-                    <Icon size={24} />
+            <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-3">
+                    <div className={cn('p-2.5 rounded-xl bg-opacity-10 dark:bg-opacity-20 shadow-inner', color)}>
+                        <Icon size={18} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{name}</h3>
+                        <p className="text-[9px] font-bold text-indigo-500/80 uppercase tracking-widest">{role}</p>
+                    </div>
                 </div>
                 <div className={cn(
-                    'px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-[0.2em] flex items-center gap-1.5',
+                    'px-2.5 py-1 rounded-lg text-[8px] font-bold uppercase tracking-[0.15em] flex items-center gap-1.5',
                     isActive ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-slate-400'
                 )}>
                     <div className={cn('w-1.5 h-1.5 rounded-full', isActive ? 'bg-green-500 animate-pulse' : 'bg-slate-300')} />
                     {isActive ? 'ACTIVE' : 'PAUSED'}
                 </div>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-0.5">{name}</h3>
-            <p className="text-[10px] font-bold text-indigo-500/80 uppercase tracking-widest mb-3">{role}</p>
-            <p className="text-sm text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-6">{description}</p>
-            <div className="flex gap-2">
-                <button
-                    onClick={onToggle}
-                    aria-label={isActive ? `Stop ${name}` : `Start ${name}`}
-                    className={cn(
-                        'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md',
-                        isActive ? 'bg-slate-900 dark:bg-[hsl(220,20%,9%)] text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'
-                    )}
-                >
-                    {isActive ? <Pause size={14} /> : <Play size={14} />}
-                    {isActive ? 'STOP' : 'START'}
-                </button>
-                <button aria-label={`${name} settings`} className="p-3 rounded-xl bg-slate-50 dark:bg-[hsl(220,20%,9%)] text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all">
-                    <Settings size={18} />
-                </button>
-            </div>
+            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-3">{description}</p>
+            <button
+                onClick={onToggle}
+                aria-label={isActive ? `Stop ${name}` : `Start ${name}`}
+                className={cn(
+                    'w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md',
+                    isActive ? 'bg-slate-900 dark:bg-[hsl(220,20%,9%)] text-white' : 'bg-indigo-600 text-white shadow-indigo-500/20'
+                )}
+            >
+                {isActive ? <Pause size={12} /> : <Play size={12} />}
+                {isActive ? 'STOP' : 'START'}
+            </button>
         </div>
     </div>
 )
@@ -538,6 +537,47 @@ const AdminAIPage = () => {
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 
+    // ── OpenRouter Usage Stats
+    const [usageStats, setUsageStats] = useState(null)
+    const [usageError, setUsageError] = useState('')
+
+    useEffect(() => {
+        if (!apiKey || !apiKey.startsWith('sk-or-')) return
+        const fetchUsage = async () => {
+            try {
+                const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                })
+                if (!res.ok) { setUsageError('Failed to fetch usage'); return }
+                const { data } = await res.json()
+                setUsageStats({
+                    usage: data.usage?.toFixed(4) || '0.00',
+                    limit: data.limit || null,
+                    remaining: data.limit_remaining?.toFixed(4) || 'unlimited',
+                    isUnlimited: !data.limit,
+                })
+            } catch (err) {
+                setUsageError('Could not connect to OpenRouter')
+            }
+        }
+        fetchUsage()
+    }, [apiKey])
+
+    useEffect(() => {
+        if (!apiKey || !apiKey.startsWith('sk-or-')) return
+        const fetchGenerations = async () => {
+            try {
+                const res = await fetch('https://openrouter.ai/api/v1/generation?limit=100', {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                })
+                if (!res.ok) return
+                const { data } = await res.json()
+                setUsageStats(prev => prev ? { ...prev, requestCount: data?.length || 0 } : prev)
+            } catch {}
+        }
+        fetchGenerations()
+    }, [apiKey])
+
     const moveCascade = (index, direction) => {
         const newArr = [...cascadeModels]
         const swapIdx = index + direction
@@ -683,7 +723,44 @@ const AdminAIPage = () => {
                 subtitle="Configure AI models, agents, and system prompts."
             />
 
-            {/* 2. Active Agents */}
+            {/* 2. OpenRouter Usage Stats */}
+            {apiKey && (
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] overflow-hidden shadow-sm">
+                    <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
+                        <DollarSign size={16} className="text-emerald-500" />
+                        <h2 className="font-semibold text-sm text-slate-900 dark:text-white">OpenRouter Usage</h2>
+                    </div>
+                    <div className="p-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {/* Balance */}
+                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Balance</p>
+                                <p className="text-lg font-light text-slate-900 dark:text-white">{usageStats?.isUnlimited ? '∞' : `$${usageStats?.limit || '—'}`}</p>
+                            </div>
+                            {/* Usage */}
+                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Used</p>
+                                <p className="text-lg font-light text-slate-900 dark:text-white">${usageStats?.usage || '0.00'}</p>
+                            </div>
+                            {/* Remaining */}
+                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Remaining</p>
+                                <p className="text-lg font-light text-emerald-600 dark:text-emerald-400">{usageStats?.isUnlimited ? '∞' : `$${usageStats?.remaining || '—'}`}</p>
+                            </div>
+                            {/* Requests */}
+                            <div className="text-center p-3 bg-slate-50/70 dark:bg-white/[0.03] rounded-xl">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Requests</p>
+                                <p className="text-lg font-light text-slate-900 dark:text-white">{usageStats?.requestCount ?? '—'}</p>
+                            </div>
+                        </div>
+                        {usageError && (
+                            <p className="text-xs text-slate-400 mt-3 text-center">{usageError}</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* 3. Active Agents */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Bot size={16} className="text-indigo-500" />
@@ -713,7 +790,7 @@ const AdminAIPage = () => {
                 </div>
             </div>
 
-            {/* 3. Data Sources Pipeline */}
+            {/* 4. Data Sources Pipeline */}
             <CollapsibleSection title="Data Sources Pipeline" icon={Layers} iconColor="text-violet-500" defaultOpen={false}>
                 <div className="p-6">
                     <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-5">

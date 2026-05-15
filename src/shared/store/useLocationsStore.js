@@ -36,9 +36,7 @@ const DEFAULT_FILTERS = {
     isOpenNow: false,
 }
 
-// FIX ARCH-2: Do NOT seed with mocks in production — causes stale data flash
-const isDev = import.meta.env.DEV
-const INITIAL_LOCATIONS = isDev ? MOCK_LOCATIONS : []
+const INITIAL_LOCATIONS = []
 
 export const useLocationsStore = create((set, get) => ({
     locations: INITIAL_LOCATIONS,

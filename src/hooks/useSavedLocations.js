@@ -26,6 +26,7 @@ export function useSavedLocations() {
     // Guest path: localStorage + locations store hydration
     const { favoriteIds: localIds, toggleFavorite: localToggle } = useFavoritesStore()
     const allLocations = useLocationsStore((s) => s.locations)
+    const isStoreLoading = useLocationsStore((s) => s.isLoading)
 
     const localFavorites = useMemo(() => {
         if (user?.id) return []
@@ -47,7 +48,7 @@ export function useSavedLocations() {
 
     return {
         favorites,
-        isLoading: user?.id ? isLoading : false,
+        isLoading: user?.id ? isLoading : isStoreLoading,
         isError: user?.id ? isError : false,
         refetch,
         remove,

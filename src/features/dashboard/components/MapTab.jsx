@@ -105,7 +105,7 @@ function MapBoundsHandler() {
 
             // Debounce: skip fetch if less than 300ms since last one
             const now = Date.now()
-            if (now - lastFetchRef.current > 300) {
+            if (now - lastFetchRef.current > 600) {
                 lastFetchRef.current = now
                 fetchInBounds(bounds)
             }

@@ -43,7 +43,7 @@ export const useAuthStore = create(
                         console.warn('[auth] initAuth timed out — clearing stale state')
                         set({ isLoading: false })
                     }
-                }, 5000)
+                }, 3000)
 
                 const unsubscribe = subscribeToAuthChanges(
                     ({ user, token }) => {

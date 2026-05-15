@@ -92,7 +92,6 @@ const DashboardPage = () => {
     const locations = useLocationsStore(state => state.locations)
     const filteredLocations = useLocationsStore(state => state.filteredLocations)
     const isLoading = useLocationsStore(state => state.isLoading)
-    const initialize = useLocationsStore(state => state.initialize)
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -124,10 +123,6 @@ const DashboardPage = () => {
     // Local search — NOT synced to store. SmartSearchBar dropdown uses server
     // FTS independently; card lists on the page are unaffected by typing.
     const [searchQuery, setSearchQuery] = useState('')
-
-    useEffect(() => {
-        if (!useLocationsStore.getState().isInitialized) initialize()
-    }, [initialize])
 
     useEffect(() => {
         if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })

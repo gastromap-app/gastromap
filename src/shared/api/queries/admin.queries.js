@@ -179,8 +179,9 @@ export function useUpdateLocationStatusMutation() {
                         if (loc) useLocationsStore.getState().addLocation(loc)
                     })
                 })
-            } else if (source !== 'submission') {
-                // For direct location deletions/rejections
+            }
+            // Always sync rejected/hidden status to user-facing store
+            if (status === 'rejected' || status === 'hidden') {
                 import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
                     useLocationsStore.getState().deleteLocation(id)
                 })

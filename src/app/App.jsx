@@ -8,6 +8,24 @@ import { OnboardingGate } from '@/features/auth/components/OnboardingGate'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
+/** Inline error banner — shows when location data fails to load */
+const InitErrorBanner = () => {
+    const initError = useLocationsStore(s => s.initError)
+    const reinitialize = useLocationsStore(s => s.reinitialize)
+    if (!initError) return null
+    return (
+        <div role="alert" className="bg-red-600 text-white text-sm px-4 py-2 flex items-center justify-between gap-3 z-50">
+            <span>Failed to load locations: {initError}</span>
+            <button
+                onClick={reinitialize}
+                className="px-3 py-1 rounded bg-white/20 hover:bg-white/30 text-xs font-semibold whitespace-nowrap"
+            >
+                Retry
+            </button>
+        </div>
+    )
+}
+
 const App = ({ includeRouter = true }) => {
     const initialize = useLocationsStore(s => s.initialize)
     const subscribeToRealtime = useLocationsStore(s => s.subscribeToRealtime)
@@ -37,6 +55,7 @@ const App = ({ includeRouter = true }) => {
 
     return (
         <AppProviders includeRouter={includeRouter}>
+            <InitErrorBanner />
             <OfflineIndicator />
 
             <OnboardingGate>

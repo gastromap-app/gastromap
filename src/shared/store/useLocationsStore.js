@@ -369,7 +369,6 @@ export const useLocationsStore = create((set, get) => ({
                 set({
                     locations: data,
                     filteredLocations: applyAllFilters(data, get()),
-                    mapMarkers: data,
                     isLoading: false,
                     isInitialized: true,
                     initError: null,

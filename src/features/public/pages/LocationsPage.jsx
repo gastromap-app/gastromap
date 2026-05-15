@@ -456,7 +456,12 @@ const LocationsPage = () => {
         const items = infiniteData?.pages?.flatMap(page => page.data) || []
         
         // If no server data yet but store has data, use store as fallback
-        const sourceItems = items.length > 0 ? items : storeLocations
+        // FIX: Filter store fallback by current city/country to avoid showing wrong-city data
+        const sourceItems = items.length > 0 ? items : storeLocations.filter(l => {
+            if (city && !l.city?.toLowerCase().includes(city.toLowerCase())) return false
+            if (country && !l.country?.toLowerCase().includes(country.toLowerCase())) return false
+            return true
+        })
         
         const filters = {
             activeCategories,

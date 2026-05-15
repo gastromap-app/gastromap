@@ -45,7 +45,7 @@ export function LocationCardNearby({
 
             {/* Content */}
             <div className="p-2.5 md:p-4">
-                <h4 className="text-[0.8125rem] font-semibold leading-tight truncate text-t-primary group-hover:text-blue-500 transition-colors tracking-[-0.012em]">
+                <h4 className="text-[0.8125rem] font-semibold leading-tight truncate text-t-primary group-hover:text-blue-600 transition-colors tracking-[-0.012em]">
                     {location.title}
                 </h4>
                 <p className="text-[0.625rem] text-t-tertiary truncate mt-1.5 font-medium uppercase tracking-[0.06em]">

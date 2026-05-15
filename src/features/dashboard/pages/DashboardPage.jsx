@@ -67,7 +67,7 @@ const SectionHeader = ({ title, subtitle, onSeeAll, isDark: _isDark }) => {
             {onSeeAll && (
                 <button 
                     onClick={onSeeAll} 
-                    className="group flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-all"
+                    className="group flex items-center gap-1.5 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-all"
                 >
                     {t('dashboard.see_all')}
                     <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />

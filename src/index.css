@@ -75,7 +75,7 @@
     --text-primary:     222 47% 11%;  /* slate-900 */
     --text-secondary:   215 25% 27%;  /* slate-700 */
     --text-tertiary:    215 25% 40%;  /* darker slate-500 */
-    --text-quaternary:  215 20% 52%;  /* darker slate-400 */
+    --text-quaternary:  215 20% 44%;  /* WCAG AA 4.5:1 on white and light bg */
 
     --radius: 1rem;
 
@@ -126,7 +126,7 @@
     --text-primary:     220 20% 98%;
     --text-secondary:   220 15% 80%;
     --text-tertiary:    220 15% 68%;
-    --text-quaternary:  220 10% 58%;
+    --text-quaternary:  220 10% 64%;  /* lightened for WCAG AA on dark bg */
 
     --surface: 220 20% 6%;
     --surface-elevated: 220 20% 9%;

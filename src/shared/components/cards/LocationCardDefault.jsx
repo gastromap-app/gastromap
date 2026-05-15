@@ -63,12 +63,12 @@ export function LocationCardDefault({
 
             {/* Content */}
             <div className="p-2.5 md:p-5">
-                <h3 className="text-[1.0625rem] font-semibold leading-[1.3] text-t-primary group-hover:text-blue-500 transition-colors tracking-[-0.012em]">
+                <h3 className="text-[1.0625rem] font-semibold leading-[1.3] text-t-primary group-hover:text-blue-600 transition-colors tracking-[-0.012em]">
                     {location.title}
                 </h3>
 
                 <div className="flex items-center gap-2 mt-2 text-[0.6875rem] font-medium uppercase tracking-[0.08em]">
-                    <span className="text-blue-500 truncate">
+                    <span className="text-blue-600 dark:text-blue-400 truncate">
                         {location.city}
                     </span>
                     {price && (

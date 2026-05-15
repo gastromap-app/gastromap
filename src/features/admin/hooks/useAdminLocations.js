@@ -385,6 +385,12 @@ export const useAdminLocations = () => {
             deleteLocMutation.mutate(id, {
                 onSuccess: () => {
                     setToast({ message: 'Локация удалена', type: 'success' })
+                    // Close slide-over if it was open for this location
+                    if (isSlideOverOpen) {
+                        setIsSlideOverOpen(false)
+                        setSelectedLocation(null)
+                        setFormData(null)
+                    }
                 },
                 onError: (err) => {
                     console.error('[Admin] Delete failed:', err)
@@ -392,6 +398,40 @@ export const useAdminLocations = () => {
                 }
             })
         }
+    }
+
+    const handleBulkDelete = (ids) => {
+        if (!ids || ids.length === 0) return
+        if (!confirm(`Удалить ${ids.length} локаций? Это действие нельзя отменить.`)) return
+        
+        let successCount = 0
+        let errorCount = 0
+        
+        ids.forEach(id => {
+            deleteLocMutation.mutate(id, {
+                onSuccess: () => {
+                    successCount++
+                    if (successCount + errorCount === ids.length) {
+                        setToast({ 
+                            message: errorCount > 0 
+                                ? `Удалено ${successCount} из ${ids.length} локаций (ошибок: ${errorCount})`
+                                : `Удалено ${successCount} локаций`, 
+                            type: errorCount > 0 ? 'error' : 'success' 
+                        })
+                    }
+                },
+                onError: (err) => {
+                    errorCount++
+                    console.error('[Admin] Bulk delete failed for one item:', err)
+                    if (successCount + errorCount === ids.length) {
+                        setToast({ 
+                            message: `Удалено ${successCount} из ${ids.length} локаций (ошибок: ${errorCount})`, 
+                            type: 'error' 
+                        })
+                    }
+                }
+            })
+        })
     }
 
     const handleImproveText = async (field) => {
@@ -764,6 +804,7 @@ export const useAdminLocations = () => {
         handleReject,
         handleToggleVisibility,
         handleDelete,
+        handleBulkDelete,
         handleImproveText,
         handleSave,
         addImageUrl,

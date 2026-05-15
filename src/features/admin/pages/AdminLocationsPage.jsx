@@ -91,7 +91,7 @@ const AdminLocationsPage = () => {
         embeddingMutation, bulkEmbeddingMutation, fullEnrichMutation,
         aiQueryMutation, updateLocMutation,
         handleCreateNew, handleEdit, handleAIMagic, handleCulinarySearch, addCulinaryItem,
-        handleApprove, handleReject, handleToggleVisibility, handleDelete, handleSave,
+        handleApprove, handleReject, handleToggleVisibility, handleDelete, handleBulkDelete, handleSave,
         handleApproveReview, handleRejectReview,
         isExporting, handleExport,
         toast, setToast
@@ -327,6 +327,7 @@ const AdminLocationsPage = () => {
                             viewMode={viewMode}
                             onEditLocation={handleEdit}
                             onDelete={handleDelete}
+                            onBulkDelete={handleBulkDelete}
                             onApprove={handleApprove}
                             onReject={handleReject}
                             onToggleVisibility={handleToggleVisibility}

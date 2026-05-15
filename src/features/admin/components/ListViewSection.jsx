@@ -8,7 +8,7 @@ import { MissingDataBadge } from './enrichment'
  * ListViewSection — DaisyUI-style table for admin locations list.
  * Supports bulk selection with action bar.
  */
-const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation, onEnrichLocation }) => {
+const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onBulkDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation, onEnrichLocation }) => {
     const { t } = useTranslation()
     const [selectedIds, setSelectedIds] = useState(new Set())
     const menuRef = useRef(null)
@@ -44,8 +44,13 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
     const clearSelection = () => setSelectedIds(new Set())
 
     const handleBulkDelete = () => {
-        if (!confirm(`Delete ${selectedIds.size} locations? This cannot be undone.`)) return
-        selectedIds.forEach(id => onDelete(id))
+        if (onBulkDelete) {
+            onBulkDelete(Array.from(selectedIds))
+        } else {
+            // Fallback: single confirm then delete each
+            if (!confirm(`Delete ${selectedIds.size} locations? This cannot be undone.`)) return
+            selectedIds.forEach(id => onDelete(id))
+        }
         clearSelection()
     }
 

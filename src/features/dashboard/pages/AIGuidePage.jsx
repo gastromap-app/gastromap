@@ -17,9 +17,9 @@ const SCROLL_SNAP_BOTTOM = 'calc(168px + env(safe-area-inset-bottom, 0px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 /**
- * Hook to detect mobile keyboard and compute input position.
- * Uses visualViewport API (supported iOS 13+, Android Chrome 62+).
- * When keyboard is open, returns the offset from viewport bottom.
+ * Cross-browser keyboard detection hook.
+ * Works on: Safari iOS, Chrome iOS, Chrome Android, Samsung Browser, Firefox Android.
+ * Uses visualViewport API + window.resize + focusin/focusout as fallbacks.
  */
 function useKeyboardOffset() {
     const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -27,22 +27,59 @@ function useKeyboardOffset() {
 
     useEffect(() => {
         const vv = window.visualViewport
-        if (!vv) return // Desktop or unsupported browser
+        let rafId = null
+        let focusedEl = null
+        // Store initial height on mount (before any keyboard)
+        const initialHeight = window.innerHeight
 
-        const update = () => {
-            // window.innerHeight = full viewport (doesn't shrink with keyboard)
-            // vv.height = visible viewport (shrinks when keyboard opens)
-            const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-            const isOpen = keyboardHeight > 100 // Threshold to avoid false positives
+        const check = () => {
+            let kbHeight = 0
+
+            if (vv) {
+                kbHeight = window.innerHeight - vv.height - vv.offsetTop
+            } else {
+                // Android Chrome fallback: window.innerHeight shrinks
+                kbHeight = initialHeight - window.innerHeight
+            }
+
+            const isOpen = kbHeight > 100
             setKeyboardOpen(isOpen)
-            setBottomOffset(isOpen ? keyboardHeight : 0)
+            setBottomOffset(isOpen ? kbHeight : 0)
         }
 
-        vv.addEventListener('resize', update)
-        vv.addEventListener('scroll', update)
+        const scheduleCheck = () => {
+            if (rafId) cancelAnimationFrame(rafId)
+            rafId = requestAnimationFrame(check)
+        }
+
+        if (vv) {
+            vv.addEventListener('resize', scheduleCheck)
+            vv.addEventListener('scroll', scheduleCheck)
+        }
+        window.addEventListener('resize', scheduleCheck)
+
+        const onFocusIn = (e) => {
+            focusedEl = e.target
+            setTimeout(scheduleCheck, 150)
+            setTimeout(scheduleCheck, 350)
+        }
+        const onFocusOut = () => {
+            focusedEl = null
+            setTimeout(scheduleCheck, 100)
+            setTimeout(scheduleCheck, 300)
+        }
+        document.addEventListener('focusin', onFocusIn)
+        document.addEventListener('focusout', onFocusOut)
+
         return () => {
-            vv.removeEventListener('resize', update)
-            vv.removeEventListener('scroll', update)
+            if (rafId) cancelAnimationFrame(rafId)
+            if (vv) {
+                vv.removeEventListener('resize', scheduleCheck)
+                vv.removeEventListener('scroll', scheduleCheck)
+            }
+            window.removeEventListener('resize', scheduleCheck)
+            document.removeEventListener('focusin', onFocusIn)
+            document.removeEventListener('focusout', onFocusOut)
         }
     }, [])
 

@@ -13,34 +13,81 @@ export function BottomNav() {
     const { t } = useTranslation()
     const [keyboardOpen, setKeyboardOpen] = useState(false)
 
-    // Hide nav when virtual keyboard is open
+    // Cross-browser keyboard detection (Safari iOS, Chrome iOS, Chrome Android, Samsung Browser)
     useEffect(() => {
+        // Strategy 1: visualViewport API (best, supported iOS 13+, Chrome 62+)
         const vv = window.visualViewport
-        if (!vv) return
-        const update = () => {
-            const kbHeight = window.innerHeight - vv.height - vv.offsetTop
-            setKeyboardOpen(kbHeight > 100)
-        }
-        vv.addEventListener('resize', update)
-        vv.addEventListener('scroll', update)
+        let rafId = null
+        let focusedElement = null
 
-        // Fallback: detect focus on input/textarea elements
-        const onFocusIn = (e) => {
-            const tag = e.target?.tagName?.toLowerCase()
-            if (tag === 'input' || tag === 'textarea') {
-                // Small delay to let visualViewport update
-                setTimeout(update, 100)
+        const checkKeyboard = () => {
+            let isOpen = false
+
+            if (vv) {
+                // visualViewport.height shrinks when keyboard opens
+                // offsetTop accounts for Safari's URL bar
+                const kbHeight = window.innerHeight - vv.height - vv.offsetTop
+                isOpen = kbHeight > 100
+            } else {
+                // Strategy 2: Fallback for older browsers — compare window heights
+                // On Android Chrome, window.innerHeight shrinks when keyboard opens
+                const initialHeight = window.screen.height * 0.7
+                isOpen = window.innerHeight < initialHeight
             }
+
+            // Strategy 3: If visualViewport says no keyboard but an input is focused,
+            // use a heuristic — on mobile, focused input almost always means keyboard
+            if (!isOpen && focusedElement) {
+                const tag = focusedElement.tagName?.toLowerCase()
+                const type = focusedElement.type?.toLowerCase()
+                const isTextInput = (tag === 'input' && !['checkbox', 'radio', 'submit', 'button', 'file', 'hidden', 'range'].includes(type)) || tag === 'textarea'
+                if (isTextInput && window.innerWidth < 768) {
+                    // Double-check with a slight delay — visualViewport may not have updated yet
+                    // Don't force isOpen here, let the delayed re-check handle it
+                }
+            }
+
+            setKeyboardOpen(isOpen)
         }
-        const onFocusOut = () => {
-            setTimeout(update, 100)
+
+        // Throttled check using rAF to avoid layout thrashing
+        const scheduleCheck = () => {
+            if (rafId) cancelAnimationFrame(rafId)
+            rafId = requestAnimationFrame(checkKeyboard)
+        }
+
+        // visualViewport events
+        if (vv) {
+            vv.addEventListener('resize', scheduleCheck)
+            vv.addEventListener('scroll', scheduleCheck)
+        }
+
+        // Window resize fallback (Android Chrome shrinks window on keyboard)
+        window.addEventListener('resize', scheduleCheck)
+
+        // Focus tracking — critical for Safari iOS which may not fire visualViewport resize
+        const onFocusIn = (e) => {
+            focusedElement = e.target
+            // Delay to allow keyboard animation to complete and viewport to update
+            setTimeout(scheduleCheck, 150)
+            setTimeout(scheduleCheck, 350) // Second check for slow keyboards
+        }
+        const onFocusOut = (e) => {
+            focusedElement = null
+            // Delay to allow keyboard dismiss animation
+            setTimeout(scheduleCheck, 100)
+            setTimeout(scheduleCheck, 300)
         }
         document.addEventListener('focusin', onFocusIn)
         document.addEventListener('focusout', onFocusOut)
 
         return () => {
-            vv.removeEventListener('resize', update)
-            vv.removeEventListener('scroll', update)
+            if (rafId) cancelAnimationFrame(rafId)
+            if (vv) {
+                vv.removeEventListener('resize', scheduleCheck)
+                vv.removeEventListener('scroll', scheduleCheck)
+            }
+            window.removeEventListener('resize', scheduleCheck)
             document.removeEventListener('focusin', onFocusIn)
             document.removeEventListener('focusout', onFocusOut)
         }

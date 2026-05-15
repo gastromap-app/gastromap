@@ -336,7 +336,7 @@ const LocationDetailsPage = () => {
     }
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-white/60" : "text-slate-600"
+    const subTextStyle = isDark ? "text-white/70" : "text-slate-600"
     const cardBg = isDark
         ? "bg-white/[0.05] border-white/10"
         : "bg-white border-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_10px_rgba(15,23,42,0.05)]"
@@ -387,9 +387,9 @@ const LocationDetailsPage = () => {
                             <info.icon size={15} className={info.color} />
                         </div>
                         <div className="min-w-0">
-                            <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-40 ${textStyle}`}>{info.label}</p>
+                            <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-60 ${textStyle}`}>{info.label}</p>
                             <p className={`text-[12px] font-bold leading-tight truncate ${textStyle}`}>{info.value}</p>
-                            {info.sub && <p className={`text-[10px] opacity-40 ${textStyle}`}>{info.sub}</p>}
+                            {info.sub && <p className={`text-[10px] opacity-60 ${textStyle}`}>{info.sub}</p>}
                         </div>
                     </motion.div>
                 )})}
@@ -417,7 +417,7 @@ const LocationDetailsPage = () => {
                     {location.special_labels?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                             {location.special_labels.map(label => (
-                                <span key={label} className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${isDark ? 'bg-white/[0.04] border-white/8 text-white/60 hover:bg-white/[0.08]' : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'}`}>
+                                <span key={label} className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${isDark ? 'bg-white/[0.04] border-white/8 text-white/70 hover:bg-white/[0.08]' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                                     {getLabelEmoji(label)} {translate(label)}
                                 </span>
                             ))}
@@ -436,7 +436,7 @@ const LocationDetailsPage = () => {
                 </p>
                 <div className="flex flex-wrap gap-1.5 pt-1">
                     {location.tags?.map(tag => (
-                        <span key={tag} className={`px-3 py-1 rounded-full text-[11px] font-medium border cursor-default ${isDark ? 'bg-white/[0.04] border-white/8 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                        <span key={tag} className={`px-3 py-1 rounded-full text-[11px] font-medium border cursor-default ${isDark ? 'bg-white/[0.04] border-white/8 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
                             #{translate(tag)}
                         </span>
                     ))}
@@ -485,7 +485,7 @@ const LocationDetailsPage = () => {
             <section className="space-y-3">
                 <div className="flex justify-between items-center">
                     <h3 className={`text-lg font-black ${textStyle}`}>{t('location.venue_gallery')}</h3>
-                    <span className={`text-xs font-bold ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                    <span className={`text-xs font-bold ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
                         {currentSlide + 1} / {allPhotos.length}
                     </span>
                 </div>

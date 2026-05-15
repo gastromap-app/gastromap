@@ -292,7 +292,7 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full min-h-screen relative z-10 pb-32">
-            <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto w-full px-0 md:px-6 lg:px-8">
             <FeedbackModal 
                 isOpen={isFeedbackOpen} 
                 onClose={() => setIsFeedbackOpen(false)} 

@@ -174,6 +174,32 @@ export async function runAgentPass(messages, ctx = {}) {
     // ── Path C: No tool calls — return text directly ─────────────────────────
     // Strip any stray XML/JSON artifacts the model might have left in the text
     const cleanText = cleanModelOutput(assistantMsg.content)
+
+    // ── HALLUCINATION GUARD: If model mentions specific place names without
+    // calling search_locations, it's likely hallucinating from training data.
+    // Force a tool call retry if the response looks like a recommendation.
+    const looksLikeRecommendation = /\*\*[^*]+\*\*/.test(cleanText) || // Bold place names
+        (cleanText.split('\n').filter(l => l.trim().startsWith('**')).length >= 1)
+
+    if (looksLikeRecommendation && trackedToolCalls.length === 0) {
+        console.warn('[ai.agents] ⚠️ Model responded with recommendations without calling tools — likely hallucination. Adding disclaimer.')
+        // Add a disclaimer that these are not from our database
+        const disclaimer = cleanText + '\n\n⚠️ _Эти рекомендации основаны на общих знаниях, а не на нашей базе данных. Для проверенных мест используйте поиск._'
+        return {
+            text: disclaimer,
+            usedLocations: [],
+            attachments: [],
+            modelUsed,
+            toolCalls: trackedToolCalls,
+            hallucinated: true,
+            timing: {
+                startMs: startTime,
+                toolExecutionMs: 0,
+                totalMs: Date.now() - startTime,
+            },
+        }
+    }
+
     return {
         text: cleanText,
         usedLocations: [],

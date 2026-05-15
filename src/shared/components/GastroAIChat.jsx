@@ -96,7 +96,7 @@ function TypingBubble({ transparent, isDark }) {
 /**
  * ChatInputBar — standalone input bar for placing anywhere (e.g. fixed bottom).
  */
-export function ChatInputBar({ onSendMessage, isTyping, transparent = false, className = '' }) {
+export function ChatInputBar({ onSendMessage, isTyping, transparent = false, className = '', inputContainerClassName = '' }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const [input, setInput] = useState('')
@@ -117,7 +117,7 @@ export function ChatInputBar({ onSendMessage, isTyping, transparent = false, cla
                             ? 'bg-black/40 border-white/10 focus-within:border-white/15 backdrop-blur-2xl'
                             : 'bg-white/70 border-white/30 focus-within:border-white/50 backdrop-blur-2xl'
                         : 'bg-gray-100/80 dark:bg-gray-800/80 border-transparent focus-within:border-indigo-500/20 focus-within:bg-white dark:focus-within:bg-gray-800'
-                }`}
+                } ${inputContainerClassName}`}
             >
                 <Input
                     value={input}

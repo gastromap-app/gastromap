@@ -140,23 +140,20 @@ const AIGuidePage = () => {
                     <div className="h-2 flex-shrink-0" />
                 </div>
 
-                {/* Input bar — same dimensions/style as BottomNav (64px height, rounded-[28px]) */}
+                {/* Input bar — BottomNav style (single container, no double border) */}
                 <div
-                    className="relative z-30 px-4 flex-shrink-0"
+                    className="relative z-30 px-4 flex-shrink-0 md:px-3"
                     style={{
                         paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
                     }}
                 >
-                    <div className={`max-w-md md:max-w-4xl mx-auto rounded-[28px] border backdrop-blur-2xl ${
-                        isDark
-                            ? 'bg-black/65 border-white/10 shadow-2xl shadow-black/50'
-                            : 'bg-white/90 border-slate-200/80 shadow-[0_4px_16px_rgba(15,23,42,0.08),0_20px_40px_rgba(15,23,42,0.1)]'
-                    }`}>
+                    <div className="max-w-md md:max-w-4xl mx-auto">
                         <ChatInputBar
                             onSendMessage={sendMessage}
                             isTyping={isTyping}
                             transparent={true}
-                            className="!px-2 !py-1"
+                            className="!p-0"
+                            inputContainerClassName={`!rounded-[28px] !border ${isDark ? '!bg-black/65 !border-white/10 shadow-2xl shadow-black/50 backdrop-blur-2xl' : '!bg-white/90 !border-slate-200/80 shadow-[0_4px_16px_rgba(15,23,42,0.08),0_20px_40px_rgba(15,23,42,0.1)] backdrop-blur-2xl'}`}
                         />
                     </div>
                 </div>

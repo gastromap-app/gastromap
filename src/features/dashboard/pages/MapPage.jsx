@@ -49,7 +49,7 @@ const MapPage = () => {
     }
 
     return (
-        <div className="fixed inset-0 z-0">
+        <div className="fixed inset-0 z-0" style={{ height: '100vh' }}>
             {/* Search + Categories Overlay */}
             <div
                 className="absolute top-0 left-0 right-0 z-[600] px-4 pb-4 pointer-events-none"

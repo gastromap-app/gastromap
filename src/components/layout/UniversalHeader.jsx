@@ -67,7 +67,7 @@ export function UniversalHeader() {
                 className={`absolute inset-0 w-full h-full transition-all duration-500 pointer-events-none ${headerBgClass}`}
             />
 
-            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-4 md:py-4">
+            <div className="max-w-[1400px] mx-auto relative min-h-[40px] px-[2.5vw] md:px-[20px] pt-2 pb-2 md:py-4">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key="standard-header"

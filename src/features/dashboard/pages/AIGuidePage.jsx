@@ -6,17 +6,9 @@ import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useUIStore } from '@/shared/store/useUIStore'
 
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
+// BottomNav height (64px) + its bottom offset (12px) + breathing room (10px)
+const BOTTOM_NAV_SPACE = 86
 
-/**
- * AIGuidePage — WhatsApp-style chat layout.
- *
- * Architecture (like WhatsApp/Telegram):
- * - Container fills the VISUAL viewport (not layout viewport)
- * - Uses visualViewport API to dynamically resize when keyboard opens
- * - Input is part of the flex column (not position:fixed)
- * - No fixed positioning for input = no iOS Safari scroll issues
- * - BottomNav hides via focus detection (handled in BottomNav component)
- */
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const { setLastScrollY } = useAIChatStore()
@@ -26,29 +18,26 @@ const AIGuidePage = () => {
     const scrollRef = useRef(null)
     const containerRef = useRef(null)
     const hasDoneInitialScroll = useRef(false)
+    const [keyboardOpen, setKeyboardOpen] = useState(false)
 
-    // Dynamic viewport height — tracks visualViewport to resize container
-    // This is the key to WhatsApp-like behavior on iOS Safari
-    const [viewportHeight, setViewportHeight] = useState('100dvh')
-
+    // Track visual viewport to resize container dynamically
     useEffect(() => {
         const vv = window.visualViewport
         if (!vv) return
 
         const update = () => {
-            // Set container height to exactly the visible viewport
-            // This shrinks the chat when keyboard opens — no overflow, no black gap
-            setViewportHeight(`${vv.height}px`)
+            if (!containerRef.current) return
+            const kbHeight = window.innerHeight - vv.height - vv.offsetTop
+            const isOpen = kbHeight > 100
+            setKeyboardOpen(isOpen)
 
-            // Also adjust container top to account for Safari's URL bar scroll
-            if (containerRef.current) {
-                containerRef.current.style.top = `${vv.offsetTop}px`
-            }
+            // Set container to fill exactly the visible area
+            containerRef.current.style.height = `${vv.height}px`
+            containerRef.current.style.top = `${vv.offsetTop}px`
         }
 
         vv.addEventListener('resize', update)
         vv.addEventListener('scroll', update)
-        // Initial set
         update()
 
         return () => {
@@ -79,16 +68,14 @@ const AIGuidePage = () => {
         }
     }, [messages.length, isTyping])
 
-    // Scroll to bottom when viewport shrinks (keyboard opens)
+    // Scroll to bottom when keyboard opens
     useEffect(() => {
-        // Small delay to let layout settle after resize
-        const timer = setTimeout(() => {
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-            }
-        }, 150)
-        return () => clearTimeout(timer)
-    }, [viewportHeight])
+        if (keyboardOpen && scrollRef.current) {
+            setTimeout(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            }, 150)
+        }
+    }, [keyboardOpen])
 
     // Reset header state on mount
     useEffect(() => {
@@ -108,71 +95,81 @@ const AIGuidePage = () => {
     }, [navigate, setLastScrollY])
 
     return (
-        <div
-            ref={containerRef}
-            className="fixed left-0 right-0 md:left-[72px] flex flex-col overflow-hidden"
-            style={{
-                height: viewportHeight,
-                top: 0,
-                // Prevent iOS rubber-band revealing content behind
-                overscrollBehavior: 'none',
-            }}
-        >
-            {/* Aurora while typing */}
-            {isTyping && (
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                    <div className="absolute bottom-0 left-[-10%] w-[120%] h-[50%] bg-gradient-to-t from-indigo-500/15 via-indigo-500/8 to-transparent blur-[60px]" />
-                    {!shouldReduceMotion && (
-                        <motion.div
-                            animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.4, 0.25] }}
-                            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                            className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[60px]"
-                        />
-                    )}
-                </div>
-            )}
+        <>
+            {/* Background fill — prevents black gap on iOS Safari overscroll */}
+            <div className="fixed inset-0 bg-background md:left-[72px]" style={{ zIndex: -1 }} />
 
-            {/* Messages scroll area — flex-1 takes all available space */}
             <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                data-lenis-prevent
-                className="relative z-10 flex-1 overflow-y-auto overscroll-contain"
+                ref={containerRef}
+                className="fixed left-0 right-0 md:left-[72px] flex flex-col overflow-hidden"
+                style={{
+                    height: '100dvh',
+                    top: 0,
+                    overscrollBehavior: 'none',
+                }}
             >
-                {/* Header spacer */}
-                <div style={{ height: HEADER_OFFSET }} className="w-full flex-shrink-0" />
+                {/* Aurora while typing */}
+                {isTyping && (
+                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                        <div className="absolute bottom-0 left-[-10%] w-[120%] h-[50%] bg-gradient-to-t from-indigo-500/15 via-indigo-500/8 to-transparent blur-[60px]" />
+                        {!shouldReduceMotion && (
+                            <motion.div
+                                animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.4, 0.25] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                                className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[60px]"
+                            />
+                        )}
+                    </div>
+                )}
 
-                <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
-                    <ChatInterface
-                        messages={messages}
-                        isTyping={isTyping}
-                        onSendMessage={sendMessage}
-                        onCardClick={handleCardClick}
-                        transparent={true}
-                        scrollContainerRef={scrollRef}
-                        contentClassName=""
-                        geoStatus={geoStatus}
-                        requestGeo={requestGeo}
-                        autoScroll={false}
-                    />
+                {/* Messages scroll area */}
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    data-lenis-prevent
+                    className="relative z-10 flex-1 overflow-y-auto overscroll-contain"
+                >
+                    {/* Header spacer */}
+                    <div style={{ height: HEADER_OFFSET }} className="w-full flex-shrink-0" />
+
+                    <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
+                        <ChatInterface
+                            messages={messages}
+                            isTyping={isTyping}
+                            onSendMessage={sendMessage}
+                            onCardClick={handleCardClick}
+                            transparent={true}
+                            scrollContainerRef={scrollRef}
+                            contentClassName=""
+                            geoStatus={geoStatus}
+                            requestGeo={requestGeo}
+                            autoScroll={false}
+                        />
+                    </div>
+
+                    {/* Bottom spacer */}
+                    <div className="h-2 flex-shrink-0" />
                 </div>
 
-                {/* Bottom spacer — space for input bar when keyboard is closed */}
-                <div className="h-4 flex-shrink-0" />
-            </div>
-
-            {/* Input bar — part of flex column, NOT fixed.
-                When keyboard opens, container shrinks → input stays at bottom naturally */}
-            <div className="relative z-30 px-3 pb-2 flex-shrink-0">
-                <div className="max-w-4xl mx-auto w-full">
-                    <ChatInputBar
-                        onSendMessage={sendMessage}
-                        isTyping={isTyping}
-                        transparent={true}
-                    />
+                {/* Input bar — in flex flow, sits at bottom of container */}
+                <div
+                    className="relative z-30 px-3 flex-shrink-0"
+                    style={{
+                        // When keyboard closed: add padding so input sits above BottomNav
+                        // When keyboard open: no extra padding needed (nav is hidden)
+                        paddingBottom: keyboardOpen ? 4 : BOTTOM_NAV_SPACE,
+                    }}
+                >
+                    <div className="max-w-4xl mx-auto w-full">
+                        <ChatInputBar
+                            onSendMessage={sendMessage}
+                            isTyping={isTyping}
+                            transparent={true}
+                        />
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
 

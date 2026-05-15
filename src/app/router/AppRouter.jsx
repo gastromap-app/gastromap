@@ -177,7 +177,7 @@ export const AppRouter = () => {
                 </Route>
 
                 {/* Public App Routes — no auth needed (location details) */}
-                <Route element={<MaintenanceGuard><MainLayout /></MaintenanceGuard>}>
+                <Route element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><MaintenanceGuard><MainLayout /></MaintenanceGuard></ErrorBoundary>}>
                     <Route path="/location/:id" element={<ErrorBoundary fallback={({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />}><LocationDetailsPage /></ErrorBoundary>} />
 
                     {/* Private App Routes — requires authentication */}

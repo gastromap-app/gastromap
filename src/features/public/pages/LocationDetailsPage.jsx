@@ -77,11 +77,12 @@ const LocationDetailsPage = () => {
     const isPageLoading = !location && (storeIsLoading || queryLoading || queryFetching)
 
     // Also trigger store.initialize() if store is empty and we have no location yet
+    // Skip for anon users — they don't need the full store, useLocationQuery handles it
     useEffect(() => {
-        if (storeLocations.length === 0 && !storeIsLoading) {
+        if (isAuthenticated && storeLocations.length === 0 && !storeIsLoading) {
             useLocationsStore.getState().initialize()
         }
-    }, [storeLocations.length, storeIsLoading])
+    }, [storeLocations.length, storeIsLoading, isAuthenticated])
 
     // PERF: Increment view count on load (fire-and-forget, never blocks rendering)
     useEffect(() => {

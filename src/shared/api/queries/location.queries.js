@@ -44,6 +44,8 @@ export function useAdminLocationsQuery(filters = {}) {
  */
 export function useInfiniteLocations(filters = {}) {
     const pageSize = filters.limit || 10
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+    const isAuthLoading = useAuthStore(s => s.isLoading)
     return useInfiniteQuery({
         queryKey: [...queryKeys.locations.filtered(filters), 'infinite'],
         queryFn: async ({ pageParam = 0 }) => {
@@ -53,6 +55,12 @@ export function useInfiniteLocations(filters = {}) {
         getNextPageParam: (lastPage, pages) =>
             lastPage.hasMore ? pages.length * pageSize : undefined,
         initialPageParam: 0,
+        // Wait for auth to resolve before fetching (prevents RLS issues)
+        enabled: !isAuthLoading,
+        // Cache for 2 minutes — prevents refetch on every navigation
+        staleTime: 2 * 60 * 1000,
+        // Keep data in cache for 5 minutes between route changes
+        gcTime: 5 * 60 * 1000,
     })
 }
 

@@ -442,7 +442,7 @@ const LocationsPage = () => {
     // independently by SmartSearchBar (server-side FTS in dropdown).
     const {
         data: infiniteData,
-        isPending: isLoading,
+        isPending: isQueryPending,
         isError,
         fetchNextPage,
         hasNextPage,
@@ -450,8 +450,14 @@ const LocationsPage = () => {
     } = useInfiniteLocations({ city, country, category: activeCategory !== 'All' ? activeCategory : null, price_range: activePriceLevels, minRating, sortBy, limit: 24 })
 
     // Flatten pages into a single array for rendering
+    // FALLBACK: If infinite query is still loading, use store data filtered by city/country
+    const storeLocations = useLocationsStore(s => s.locations)
     const localFilteredLocations = useMemo(() => {
         const items = infiniteData?.pages?.flatMap(page => page.data) || []
+        
+        // If no server data yet but store has data, use store as fallback
+        const sourceItems = items.length > 0 ? items : storeLocations
+        
         const filters = {
             activeCategories,
             activeCity: city,
@@ -462,10 +468,13 @@ const LocationsPage = () => {
         }
         if (typeof applyAllFilters !== 'function') {
             console.warn('[LocationsPage] applyAllFilters is not ready yet')
-            return items
+            return sourceItems
         }
-        return applyAllFilters(items, filters)
-    }, [infiniteData, activeCategories, city, country, activePriceLevels, minRating, sortBy])
+        return applyAllFilters(sourceItems, filters)
+    }, [infiniteData, storeLocations, activeCategories, city, country, activePriceLevels, minRating, sortBy])
+
+    // Show loading skeleton only if query is pending AND no fallback data available
+    const isLoading = isQueryPending && localFilteredLocations.length === 0
 
     // Infinite Scroll (Mobile Intersection Observer)
     const mobileSentinelRef = useRef(null)

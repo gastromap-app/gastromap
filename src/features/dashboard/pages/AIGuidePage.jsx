@@ -87,12 +87,17 @@ const AIGuidePage = () => {
         }
     }, [messages.length, isTyping])
 
-    // Sync header scroll state for glass effect
+    // Header glass effect — always on for chat page
+    useEffect(() => {
+        setHeaderScrolled(true)
+        return () => setHeaderScrolled(false)
+    }, [setHeaderScrolled])
+
+    // Sync scroll position for store
     const handleScroll = useCallback((e) => {
         const scrollTop = e.currentTarget.scrollTop
-        setHeaderScrolled(scrollTop > 10)
         if (scrollTop > 0) setLastScrollY(scrollTop)
-    }, [setHeaderScrolled, setLastScrollY])
+    }, [setLastScrollY])
 
     const handleCardClick = useCallback((locationId) => {
         if (scrollRef.current) setLastScrollY(scrollRef.current.scrollTop)

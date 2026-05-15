@@ -275,10 +275,17 @@ export async function getLocations(filters = {}) {
 export async function getLocation(id, { adminMode = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocation(id)
 
-    // Check auth status: authenticated users have full SELECT on locations.
-    // Anon users are restricted by column-level GRANT (see 20260511_anon_column_grant.sql).
-    const { data: { session } } = await supabase.auth.getSession()
-    const isAuthenticated = !!session
+    // Check auth status with timeout — getSession() can hang on cold start
+    let isAuthenticated = false
+    try {
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 3000))
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
+        isAuthenticated = !!session
+    } catch {
+        // Auth check failed — proceed as anon
+        isAuthenticated = false
+    }
 
     // For anon users: use server API endpoint (bypasses RLS, no cold-start issues)
     if (!isAuthenticated && !adminMode) {

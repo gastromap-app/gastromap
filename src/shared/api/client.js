@@ -31,12 +31,13 @@ export const supabase = config.supabase.isConfigured
             lock: async (_name, _acquireTimeout, fn) => fn(),
         },
         global: {
-            // 8-second timeout on all Supabase fetch requests.
+            // 10-second timeout on all Supabase fetch requests.
             // Supabase free tier may throttle — shorter timeout + retry is better
-            // than waiting 15s for a single attempt that might never respond.
+            // than waiting forever. 10s balances between giving Supabase time
+            // to respond (cold start) and not blocking the UI too long.
             fetch: (url, options = {}) => {
                 const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), 8000)
+                const timeoutId = setTimeout(() => controller.abort(), 10000)
                 return fetch(url, {
                     ...options,
                     signal: controller.signal,

@@ -27,6 +27,8 @@ export const queryClient = new QueryClient({
                 if (error?.status === 401 || error?.status === 403 || error?.code === 'NOT_AUTH') return false
                 // Don't retry validation errors (400)
                 if (error?.status === 400) return false
+                // Don't retry AbortError more than once (timeout — retrying immediately will likely timeout again)
+                if (error?.name === 'AbortError' && failureCount >= 1) return false
                 // Retry network/timeout errors up to 3 times
                 return failureCount < 3
             },

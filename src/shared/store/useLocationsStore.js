@@ -314,11 +314,11 @@ export const useLocationsStore = create((set, get) => ({
         const state = get();
 
         // Skip if already initialized and not forced — prevents duplicate fetches
-        // on route changes (Dashboard → Map → Dashboard).
         if (state.isInitialized && state.locations.length > 0 && !_customFilters.force) return;
 
-        // If a fetch is already in-flight, don't start another — but do
-        // increment a generation counter so the stale fetch result is discarded.
+        // GUARD: If already loading, don't start another request (prevents double-fetch)
+        if (state.isLoading && !_customFilters.force) return;
+
         const currentGen = (state._initGen || 0) + 1
 
         // Only clear if we don't have any locations yet to avoid flicker
@@ -336,7 +336,11 @@ export const useLocationsStore = create((set, get) => ({
             const { getLocations } = await import('@/shared/api/locations.api');
             const freshState = get();
             // If another initialize() started after us, discard our result
-            if (freshState._initGen !== currentGen) return;
+            // BUT always reset isLoading to prevent stuck state
+            if (freshState._initGen !== currentGen) {
+                set({ isLoading: false });
+                return;
+            }
 
             const filters = {
                 category: freshState.activeCategory !== 'All' ? freshState.activeCategory : null,
@@ -356,13 +360,16 @@ export const useLocationsStore = create((set, get) => ({
             const data = result?.data ?? result;
 
             // Check again — a newer initialize() might have started
-            if (get()._initGen !== currentGen) return;
+            if (get()._initGen !== currentGen) {
+                set({ isLoading: false });
+                return;
+            }
             
             if (Array.isArray(data)) {
                 set({
                     locations: data,
                     filteredLocations: applyAllFilters(data, get()),
-                    mapMarkers: data, // Sync map markers on full init
+                    mapMarkers: data,
                     isLoading: false,
                     isInitialized: true,
                     initError: null,
@@ -374,21 +381,21 @@ export const useLocationsStore = create((set, get) => ({
             }
         } catch (err) {
             console.error('[useLocationsStore] initialize failed:', err.message);
-            // Only set error if we're still the active generation
-            if (get()._initGen === currentGen) {
-                set({ isLoading: false, initError: err.message });
-                
-                // Auto-retry once after 3 seconds on network errors
-                if (!_customFilters._isRetry && (
-                    err.message?.includes('fetch') || 
-                    err.message?.includes('network') ||
-                    err.message?.includes('Failed') ||
-                    err.name === 'TypeError'
-                )) {
-                    setTimeout(() => {
-                        get().initialize({ ..._customFilters, _isRetry: true, force: true })
-                    }, 3000)
-                }
+            // ALWAYS reset isLoading on error (prevents stuck skeleton)
+            set({ isLoading: false, initError: err.message });
+            
+            // Auto-retry once after 3 seconds on network/timeout errors
+            if (!_customFilters._isRetry && get()._initGen === currentGen && (
+                err.name === 'AbortError' ||
+                err.message?.includes('fetch') || 
+                err.message?.includes('network') ||
+                err.message?.includes('Failed') ||
+                err.message?.includes('aborted') ||
+                err.name === 'TypeError'
+            )) {
+                setTimeout(() => {
+                    get().initialize({ ..._customFilters, _isRetry: true, force: true })
+                }, 3000)
             }
         }
     },

@@ -268,13 +268,14 @@ const LocationDetailsPage = () => {
     const [currentSlide, setCurrentSlide] = useState(0)
     const [touchStart, setTouchStart] = useState(0)
 
-    // Combine all photos: main image + gallery
+    // Combine all photos: google_photos first (fast Google CDN), then R2 main image
     const allPhotos = useMemo(() => {
         const main = location?.image_url || location?.image || ''
         const gallery = Array.isArray(location?.photos) ? location.photos.filter(Boolean) : []
         const googlePhotos = Array.isArray(location?.google_photos) ? location.google_photos.filter(Boolean) : []
-        // Merge all sources, deduplicate
-        const all = [...(main ? [main] : []), ...gallery, ...googlePhotos]
+        // Priority: google_photos (fast CDN) → R2 main image → gallery
+        // For hero: first google photo loads instantly, R2 may have cold start
+        const all = [...googlePhotos, ...(main ? [main] : []), ...gallery]
         const unique = [...new Set(all)]
         return unique.length > 0 ? unique : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
     }, [location?.image_url, location?.image, location?.photos, location?.google_photos])

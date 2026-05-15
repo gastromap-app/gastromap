@@ -243,59 +243,30 @@ async function main() {
             continue
         }
 
-        // ── Step 3: Verify address match before updating coordinates ──
-        // Safety: if DB has an address and Google returns a very different one,
-        // it means Text Search found the WRONG place (e.g. different branch).
-        // In that case, skip coordinate update to avoid moving the pin to wrong location.
+        // ── Step 3: Compare addresses ──
+        // Google address is always considered the source of truth.
+        // If addresses differ, we STILL update coords and address from Google.
         let addressMismatch = false
         if (details.formatted_address && loc.address && loc.address.length > 5) {
-            // Normalize: remove diacritics (ó→o, ą→a, ś→s), lowercase, keep only alphanumeric
             const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
             
-            const dbFull = norm(loc.address)
-            const googleFull = norm(details.formatted_address)
             const dbStreet = norm(loc.address.split(',')[0])
             const googleStreet = norm(details.formatted_address.split(',')[0])
 
-            // Extract house number
-            const dbNum = loc.address.match(/\d+/)?.[0] || ''
-            const googleNum = details.formatted_address.match(/\d+/)?.[0] || ''
-
-            // Match criteria (any one is enough):
-            // 1. Street names share 5+ char common substring
-            // 2. Same house number AND partial street overlap (4+ chars)
-            // 3. Postal codes match (strong signal)
-            // 4. Full address contains the other's street
             const streetOverlap = 
                 dbStreet.includes(googleStreet.slice(0, Math.min(5, googleStreet.length))) ||
                 googleStreet.includes(dbStreet.slice(0, Math.min(5, dbStreet.length)))
-            
-            const numAndPartial = dbNum && dbNum === googleNum && (
-                dbStreet.includes(googleStreet.slice(0, 4)) ||
-                googleStreet.includes(dbStreet.slice(0, 4))
-            )
 
-            const dbPostal = loc.address.match(/\d{2}-\d{3}/)?.[0] || ''
-            const googlePostal = details.formatted_address.match(/\d{2}-\d{3}/)?.[0] || ''
-            const postalMatch = dbPostal && googlePostal && dbPostal === googlePostal
-
-            const crossContains = googleFull.includes(dbStreet.slice(0, 6)) || dbFull.includes(googleStreet.slice(0, 6))
-
-            if (!streetOverlap && !numAndPartial && !postalMatch && !crossContains && dbStreet.length > 4 && googleStreet.length > 4) {
+            if (!streetOverlap && dbStreet.length > 4 && googleStreet.length > 4) {
                 addressMismatch = true
-                console.log(`    ⚠️  ADDRESS MISMATCH — skipping coords update`)
+                console.log(`    ⚠️  ADDRESS DIFFERS — updating to Google address`)
                 console.log(`       DB: ${loc.address}`)
                 console.log(`       Google: ${details.formatted_address}`)
-                // Don't save this wrong place_id if we just found it
-                if (updates.google_place_id) {
-                    delete updates.google_place_id
-                    stats.placeIdFound--
-                }
             }
         }
 
-        // ── Step 4: Verify/update coordinates (only if address matches) ──
-        if (!addressMismatch && details.geometry?.location) {
+        // ── Step 4: Update coordinates from Google (always trust Google) ──
+        if (details.geometry?.location) {
             const gLat = details.geometry.location.lat
             const gLng = details.geometry.location.lng
             const latDiff = Math.abs((loc.lat || 0) - gLat)
@@ -309,10 +280,11 @@ async function main() {
             }
         }
 
-        // ── Step 5: Verify/update address ──
-        if (!addressMismatch && details.formatted_address) {
+        // ── Step 5: Always update address from Google (source of truth) ──
+        if (details.formatted_address) {
             updates.google_formatted_address = details.formatted_address
-            if (!loc.address || loc.address.length < 5) {
+            // Always overwrite DB address with Google address
+            if (addressMismatch || !loc.address || loc.address.length < 5) {
                 updates.address = details.formatted_address
                 console.log(`    🏠 Address: ${details.formatted_address}`)
                 stats.addressFixed++
@@ -333,7 +305,7 @@ async function main() {
         }
 
         // ── Step 7: Download photos if needed ──
-        if (!addressMismatch && !SKIP_PHOTOS && !loc.image_url?.includes('r2.dev')) {
+        if (!SKIP_PHOTOS && !loc.image_url?.includes('r2.dev')) {
             const photoRefs = (details.photos || []).slice(0, 10)
             if (photoRefs.length > 0) {
                 const r2Urls = []

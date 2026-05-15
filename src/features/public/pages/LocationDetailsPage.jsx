@@ -270,9 +270,12 @@ const LocationDetailsPage = () => {
     const allPhotos = useMemo(() => {
         const main = location?.image_url || location?.image || ''
         const gallery = Array.isArray(location?.photos) ? location.photos.filter(Boolean) : []
-        const combined = main ? [main, ...gallery.filter(u => u !== main)] : gallery
-        return combined.length > 0 ? combined : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
-    }, [location?.image_url, location?.image, location?.photos])
+        const googlePhotos = Array.isArray(location?.google_photos) ? location.google_photos.filter(Boolean) : []
+        // Merge all sources, deduplicate
+        const all = [...(main ? [main] : []), ...gallery, ...googlePhotos]
+        const unique = [...new Set(all)]
+        return unique.length > 0 ? unique : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
+    }, [location?.image_url, location?.image, location?.photos, location?.google_photos])
 
     useEffect(() => {
         if (location?.id) {
@@ -1096,7 +1099,7 @@ const LocationDetailsPage = () => {
             {/* ── Hero Image (full-bleed from top of viewport) ───────────────────── */}
             <div className="relative h-[55vh] md:h-[62vh] w-full overflow-hidden">
                 <LocationImage
-                    src={location.image_url || location.image}
+                    src={allPhotos[0]}
                     alt={location.title}
                     width={1200}
                     priority={true}

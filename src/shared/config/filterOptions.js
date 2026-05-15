@@ -239,6 +239,7 @@ export const ESTABLISHMENT_TYPES = [
     { id: 'coffee',      label: 'Coffee',     labelRu: 'Кофе',         labelPl: 'Kawa',         labelUa: 'Кава',          icon: '☕' },
     { id: 'pastry',      label: 'Pastry',     labelRu: 'Кондитерская', labelPl: 'Cukiernia',    labelUa: 'Кондитерська',  icon: '🍰' },
     { id: 'fine dining', label: 'Fine Dining',labelRu: 'Fine Dining',  labelPl: 'Fine Dining',  labelUa: 'Fine Dining',   icon: '🎩' },
+    { id: 'bistro',      label: 'Bistro',     labelRu: 'Бистро',       labelPl: 'Bistro',       labelUa: 'Бістро',        icon: '🍴' },
 ]
 
 /** Compact public-facing subset used by the Suggest-a-Place wizard. */
@@ -248,6 +249,7 @@ export const CATEGORIES_PUBLIC = [
     { id: 'bar',        label: 'Bar',        emoji: '🍺' },
     { id: 'restobar',   label: 'Restobar',   emoji: '🍹' },
     { id: 'bakery',     label: 'Bakery',     emoji: '🥐' },
+    { id: 'bistro',     label: 'Bistro',     emoji: '🍴' },
     { id: 'other',      label: 'Other',      emoji: '📍' },
 ]
 
@@ -269,6 +271,7 @@ export const ESTABLISHMENT_TYPE_NAMES = new Set([
     'wine bar', 'винный бар',
     'pastry', 'кондитерская', 'pastry shop',
     'fine dining',
+    'bistro', 'бистро',
     'store', 'shop',
     'other',
 ])

@@ -40,7 +40,7 @@ export function MainLayout() {
                 <DesktopSidebar />
 
                 <div className="flex-1 flex flex-col md:ml-[72px] min-w-0">
-                    {!isLocationDetail && !isAIGuide && <UniversalHeader />}
+                    {!isLocationDetail && <UniversalHeader />}
                     <main
                         className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24 md:pb-6'}`}
                     >

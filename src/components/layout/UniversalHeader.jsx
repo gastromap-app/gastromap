@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal, LogOut } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Moon, Sun, ShieldCheck, Download, PlusCircle, Sparkles, ChevronLeft, ChevronRight, MoreHorizontal, LogOut, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
@@ -16,9 +16,12 @@ export function UniversalHeader() {
     const { user: authUser, logout } = useAuthStore()
     const { isInstallable, installPWA } = usePWA()
     const { isHeaderScrolled: storeIsScrolled } = useUIStore()
+    const location = useLocation()
+    const navigate = useNavigate()
     const user = authUser || null
     const isAdmin = authUser?.role === 'admin'
     const isDark = theme === 'dark'
+    const isAIGuide = location.pathname === '/ai-guide'
 
     const [localIsScrolled, setLocalIsScrolled] = useState(false)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -76,11 +79,38 @@ export function UniversalHeader() {
                         exit={{ y: -10, opacity: 0 }}
                         className="flex justify-between items-center w-full h-10"
                     >
-                            {/* Logo Capsule */}
-                            <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/[0.04] border-white/[0.06]' : 'bg-white/80 border-slate-200/80 shadow-sm'}`}>
-                                <div className="w-7 h-7 bg-[hsl(217,91%,60%)] rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
-                                <span className={`font-bold text-xs md:text-sm tracking-tight ${textStyle}`}>GastroMap</span>
-                            </Link>
+                            {/* Logo Capsule — flips to Back button on AI Guide page */}
+                            <div className="relative" style={{ perspective: '600px' }}>
+                                <AnimatePresence mode="wait" initial={false}>
+                                    {isAIGuide ? (
+                                        <motion.button
+                                            key="back-btn"
+                                            initial={{ rotateY: -90, opacity: 0 }}
+                                            animate={{ rotateY: 0, opacity: 1 }}
+                                            exit={{ rotateY: 90, opacity: 0 }}
+                                            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                            onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/dashboard')}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border active:scale-95 transition-transform ${isDark ? 'bg-white/[0.04] border-white/[0.06] text-white' : 'bg-white/80 border-slate-200/80 text-gray-900 shadow-sm'}`}
+                                        >
+                                            <ArrowLeft size={18} />
+                                            <span className={`font-bold text-xs tracking-tight ${textStyle}`}>{t('common.back', 'Back')}</span>
+                                        </motion.button>
+                                    ) : (
+                                        <motion.div
+                                            key="logo"
+                                            initial={{ rotateY: 90, opacity: 0 }}
+                                            animate={{ rotateY: 0, opacity: 1 }}
+                                            exit={{ rotateY: -90, opacity: 0 }}
+                                            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        >
+                                            <Link to="/dashboard" className={`flex items-center gap-2 hover:scale-105 transition-all px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/[0.04] border-white/[0.06]' : 'bg-white/80 border-slate-200/80 shadow-sm'}`}>
+                                                <div className="w-7 h-7 bg-[hsl(217,91%,60%)] rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-inner">G</div>
+                                                <span className={`font-bold text-xs md:text-sm tracking-tight ${textStyle}`}>GastroMap</span>
+                                            </Link>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 md:gap-3">

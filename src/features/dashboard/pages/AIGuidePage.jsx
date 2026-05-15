@@ -1,14 +1,12 @@
 import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sparkles } from 'lucide-react'
 import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/GastroAIChat'
 import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useUIStore } from '@/shared/store/useUIStore'
 import { useTheme } from '@/hooks/useTheme'
-import { useTranslation } from 'react-i18next'
 
-const HEADER_HEIGHT = 'calc(56px + env(safe-area-inset-top))'
+const HEADER_OFFSET = 'calc(56px + env(safe-area-inset-top))'
 
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
@@ -83,15 +81,6 @@ const AIGuidePage = () => {
         navigate(`/location/${locationId}`, { state: { from: 'chat' } })
     }, [navigate, setLastScrollY])
 
-    const handleBack = () => {
-        // Go back if there's history, otherwise to dashboard
-        if (window.history.length > 1) {
-            navigate(-1)
-        } else {
-            navigate('/dashboard')
-        }
-    }
-
     return (
         <>
             {/* Background fill — prevents black gap on iOS Safari */}
@@ -106,39 +95,8 @@ const AIGuidePage = () => {
                     overscrollBehavior: 'none',
                 }}
             >
-                {/* Custom chat header with back button (mobile only) */}
-                <header
-                    className="md:hidden flex-shrink-0 flex items-center px-3 z-50 relative"
-                    style={{
-                        paddingTop: 'env(safe-area-inset-top)',
-                        height: HEADER_HEIGHT,
-                    }}
-                >
-                    <button
-                        onClick={handleBack}
-                        aria-label={t('common.back', 'Back')}
-                        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all active:scale-95 ${
-                            isDark
-                                ? 'bg-white/[0.06] hover:bg-white/[0.10] text-white border border-white/10'
-                                : 'bg-white/80 hover:bg-white text-gray-900 border border-slate-200 shadow-sm'
-                        }`}
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div className="flex items-center gap-2 ml-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center">
-                            <Sparkles size={16} className="text-blue-500" />
-                        </div>
-                        <div>
-                            <h1 className={`text-sm font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {t('ai.chat_button', 'GastroGuide AI')}
-                            </h1>
-                            <p className={`text-[10px] leading-tight ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                                {t('ai.subtitle', 'Your dining assistant')}
-                            </p>
-                        </div>
-                    </div>
-                </header>
+                {/* Header spacer — UniversalHeader is shown globally */}
+                {/* (flip animation for back button is handled in UniversalHeader) */}
 
                 {/* Aurora while typing */}
                 {isTyping && (
@@ -161,8 +119,8 @@ const AIGuidePage = () => {
                     data-lenis-prevent
                     className="relative z-10 flex-1 overflow-y-auto overscroll-contain"
                 >
-                    {/* Desktop spacer for global header */}
-                    <div className="hidden md:block w-full flex-shrink-0" style={{ height: 'calc(90px + env(safe-area-inset-top))' }} />
+                    {/* Spacer for UniversalHeader */}
+                    <div className="w-full flex-shrink-0" style={{ height: HEADER_OFFSET }} />
 
                     <div className="max-w-7xl mx-auto w-full px-4 md:px-8">
                         <ChatInterface

@@ -23,9 +23,26 @@ export function BottomNav() {
         }
         vv.addEventListener('resize', update)
         vv.addEventListener('scroll', update)
+
+        // Fallback: detect focus on input/textarea elements
+        const onFocusIn = (e) => {
+            const tag = e.target?.tagName?.toLowerCase()
+            if (tag === 'input' || tag === 'textarea') {
+                // Small delay to let visualViewport update
+                setTimeout(update, 100)
+            }
+        }
+        const onFocusOut = () => {
+            setTimeout(update, 100)
+        }
+        document.addEventListener('focusin', onFocusIn)
+        document.addEventListener('focusout', onFocusOut)
+
         return () => {
             vv.removeEventListener('resize', update)
             vv.removeEventListener('scroll', update)
+            document.removeEventListener('focusin', onFocusIn)
+            document.removeEventListener('focusout', onFocusOut)
         }
     }, [])
 
@@ -40,8 +57,8 @@ export function BottomNav() {
     return (
         <div
             className={cn(
-                "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none transition-opacity duration-150",
-                keyboardOpen && "opacity-0 pointer-events-none"
+                "fixed left-0 right-0 z-[70] px-4 md:hidden pointer-events-none transition-all duration-200",
+                keyboardOpen && "opacity-0 pointer-events-none translate-y-full"
             )}
             style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
         >

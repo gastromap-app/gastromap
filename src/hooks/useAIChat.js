@@ -8,9 +8,12 @@ import { getUserReviews } from '@/shared/api/reviews.api'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
+import { getOrCreateSession } from '@/shared/api/chat-history.api'
 import { summarizeSession } from '@/shared/api/ai/summarize-session'
+import { useChatSync } from '@/shared/hooks/useChatSync'
+import { useChatHydration } from '@/shared/hooks/useChatHydration'
 import { useUserGeo } from '@/shared/hooks/useUserGeo'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { log as safeLog, warn as safeWarn } from '@/shared/lib/safe-console.js'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { getUserLocationHistory } from '@/shared/api/user.api'
@@ -66,40 +69,46 @@ export function useAIChat() {
     // hasAIAccess: always true — all requests go through server-side proxy
     const hasAIAccess = true
 
-    // Fetch chat history on mount or when user changes
-    useEffect(() => {
-        let mounted = true;
-        if (user?.id) {
-            // Isolation check: if the local storage belongs to another user (or no user), clear it immediately
-            const state = useAIChatStore.getState();
-            if (state.userId !== user.id) {
-                safeLog('[AI Guide] User mismatch, clearing history for isolation');
-                clearHistory();
-                // Stamp it immediately so the next check passes
-                useAIChatStore.setState({ userId: user.id });
-            }
+    // ── Sync integration (non-blocking) ─────────────────────────────────────
+    const { syncStatus, pendingCount, isOnline, persistMessage, flushQueue } = useChatSync()
 
-            fetchChatHistory(user.id).then(history => {
-                if (mounted) {
-                    if (history?.sessionId) {
-                        const currentMessages = useAIChatStore.getState().messages;
-                        // Overwrite if local is empty or we have a different session
-                        if (currentMessages.length === 0 || useAIChatStore.getState().sessionId !== history.sessionId) {
-                            loadHistory(history.sessionId, history.messages, user.id);
-                        }
-                    } else {
-                        // If no history found on server, ensure store is stamped with current user
-                        useAIChatStore.setState({ userId: user.id });
-                    }
-                }
-            }).catch(err => console.error('Failed to load chat history', err));
-        } else if (!user) {
-            // If logged out, clear history
-            clearHistory();
+    // Hydrate chat history from server on mount (handles user isolation + merge)
+    useChatHydration(user?.id || null, { flushQueue })
+
+    // Track sessionId for sync persistence
+    const syncSessionRef = useRef(null)
+
+    // Get or create a session for the current user on mount
+    useEffect(() => {
+        if (!user?.id) {
+            syncSessionRef.current = null
+            return
         }
-        return () => { mounted = false };
+        // Use existing sessionId from store if available
+        const storeSessionId = useAIChatStore.getState().sessionId
+        if (storeSessionId) {
+            syncSessionRef.current = storeSessionId
+            return
+        }
+        // Otherwise get/create from server
+        getOrCreateSession(user.id).then((session) => {
+            if (session?.id) {
+                syncSessionRef.current = session.id
+                setSessionId(session.id)
+            }
+        }).catch((err) => {
+            safeWarn('[useAIChat] Failed to get/create session for sync:', err)
+        })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, loadHistory, clearHistory]);
+    }, [user?.id])
+
+    // Clear history when user logs out
+    useEffect(() => {
+        if (!user) {
+            clearHistory()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user])
 
 const MAX_CHAT_INPUT_LENGTH = 3000
 
@@ -112,18 +121,22 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         setTyping(true)
 
         // DB Persistence: Ensure session and save user message
-        let currentSessionId = useAIChatStore.getState().sessionId;
+        let currentSessionId = useAIChatStore.getState().sessionId || syncSessionRef.current;
         if (user?.id && !currentSessionId) {
             const session = await createChatSession(user.id);
             if (session) {
                 setSessionId(session.id);
                 currentSessionId = session.id;
+                syncSessionRef.current = session.id;
                 // Ensure userId is stamped in the store for isolation
                 useAIChatStore.setState({ userId: user.id });
             }
         }
         if (user?.id && currentSessionId) {
+            // Legacy persistence (existing behavior)
             saveChatMessage(currentSessionId, user.id, userMsg);
+            // Sync persistence (non-blocking, fire-and-forget)
+            persistMessage(currentSessionId, user.id, userMsg).catch(() => {});
         }
 
         // Build conversation history for multi-turn context (rolling window of last 10 turns)
@@ -249,6 +262,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                             })
                             if (user?.id && currentSessionId && finalMsg) {
                                 saveChatMessage(currentSessionId, user.id, finalMsg)
+                                persistMessage(currentSessionId, user.id, finalMsg).catch(() => {})
                             }
                         } else {
                             updateLastMessage('assistant', t('ai.geo_failed_with_tip'))
@@ -275,6 +289,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 
                 if (user?.id && currentSessionId && finalMsg) {
                     saveChatMessage(currentSessionId, user.id, finalMsg);
+                    persistMessage(currentSessionId, user.id, finalMsg).catch(() => {});
                 }
             } else {
                 // ── Local engine fallback (no API key, no proxy — dev only) ──
@@ -286,6 +301,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 })
                 if (user?.id && currentSessionId && finalMsg) {
                     saveChatMessage(currentSessionId, user.id, finalMsg);
+                    persistMessage(currentSessionId, user.id, finalMsg).catch(() => {});
                 }
             }
 
@@ -316,7 +332,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         } finally {
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, requestGeo, t])
+    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, requestGeo, t, persistMessage])
 
     return {
         messages,
@@ -327,5 +343,9 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         clearHistory,
         geoStatus: status,
         requestGeo,
+        // Sync status (non-blocking)
+        syncStatus,
+        pendingCount,
+        isOnline,
     }
 }

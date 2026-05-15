@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChefHat, MoveUp, Sparkles, MapPin } from 'lucide-react'
+import { ChefHat, MoveUp, Sparkles, MapPin, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAIChat } from '@/hooks/useAIChat'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useTheme } from '@/hooks/useTheme'
 import LazyImage from '@/components/ui/LazyImage'
+import { useAIChatStore } from '@/shared/store/useAIChatStore'
+import { fetchOlderMessages } from '@/shared/api/chat.api'
 
 /**
  * Format chat message text with basic markdown support:
@@ -36,8 +38,8 @@ function formatChatMessage(text) {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export const useGastroAI = () => {
-    const { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo } = useAIChat()
-    return { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo }
+    const { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo, syncStatus, pendingCount, isOnline } = useAIChat()
+    return { messages, isTyping, sendMessage, clearHistory, geoStatus, requestGeo, syncStatus, pendingCount, isOnline }
 }
 
 // ─── Modern typing indicator ──────────────────────────────────────────────────
@@ -174,6 +176,43 @@ export function ChatInterface({
     // Internal scroll ref — only used when no external scrollContainerRef
     const internalScrollRef = useRef(null)
 
+    // ── Infinite scroll / Load older messages ────────────────────────────────
+    const [loadingOlder, setLoadingOlder] = useState(false)
+    const [hasMoreMessages, setHasMoreMessages] = useState(true)
+
+    const handleLoadOlder = useCallback(async () => {
+        const sessionId = useAIChatStore.getState().sessionId
+        if (!sessionId || loadingOlder || !hasMoreMessages) return
+
+        // Find the oldest message timestamp
+        const currentMessages = useAIChatStore.getState().messages
+        if (currentMessages.length === 0) return
+
+        const oldestTimestamp = currentMessages[0]?.timestamp
+        if (!oldestTimestamp) return
+
+        setLoadingOlder(true)
+        try {
+            const olderMessages = await fetchOlderMessages(sessionId, {
+                before: new Date(oldestTimestamp).toISOString(),
+                limit: 30,
+            })
+
+            if (!olderMessages || olderMessages.length === 0) {
+                setHasMoreMessages(false)
+            } else {
+                // Prepend older messages to the store
+                useAIChatStore.setState((state) => ({
+                    messages: [...olderMessages, ...state.messages],
+                }))
+            }
+        } catch (err) {
+            console.error('[ChatInterface] Failed to load older messages:', err)
+        } finally {
+            setLoadingOlder(false)
+        }
+    }, [loadingOlder, hasMoreMessages])
+
     // Scroll to bottom whenever messages change or typing starts/stops
     useEffect(() => {
         if (!autoScroll) return
@@ -284,6 +323,32 @@ export function ChatInterface({
                             </button>
                         ))}
                     </motion.div>
+                </div>
+            )}
+
+            {/* Load older messages button */}
+            {messages.length > 0 && hasMoreMessages && (
+                <div className="flex justify-center py-2">
+                    <button
+                        onClick={handleLoadOlder}
+                        disabled={loadingOlder}
+                        className={`flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border transition-all ${
+                            transparent
+                                ? isDark
+                                    ? 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
+                                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                                : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                        {loadingOlder ? (
+                            <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Loading...
+                            </>
+                        ) : (
+                            'Load older messages'
+                        )}
+                    </button>
                 </div>
             )}
 

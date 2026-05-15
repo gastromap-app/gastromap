@@ -58,14 +58,15 @@ function estimateMessagesSize(messages) {
 /**
  * Trim messages to stay under a byte limit, keeping the most recent.
  * @param {ChatMessage[]} messages
- * @param {number} maxBytes
+ * @param {number} maxBytes — maximum allowed byte size (default 524288 = 512KB)
+ * @param {number} minCount — minimum messages to retain regardless of size (default 10)
  * @returns {ChatMessage[]}
  */
-function trimByByteSize(messages, maxBytes) {
+function trimByByteSize(messages, maxBytes = 524288, minCount = 10) {
     if (!Array.isArray(messages) || messages.length === 0) return messages
     let trimmed = messages
-    while (estimateMessagesSize(trimmed) > maxBytes && trimmed.length > 10) {
-        // Remove oldest message, but keep at least 10 for context
+    while (estimateMessagesSize(trimmed) > maxBytes && trimmed.length > minCount) {
+        // Remove oldest message, but keep at least minCount for context
         trimmed = trimmed.slice(1)
     }
     return trimmed

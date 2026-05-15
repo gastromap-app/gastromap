@@ -37,7 +37,7 @@ export const supabase = config.supabase.isConfigured
             // to respond (cold start) and not blocking the UI too long.
             fetch: (url, options = {}) => {
                 const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), 10000)
+                const timeoutId = setTimeout(() => controller.abort(), 20000)
                 return fetch(url, {
                     ...options,
                     signal: controller.signal,

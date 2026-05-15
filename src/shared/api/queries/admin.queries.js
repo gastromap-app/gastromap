@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './queryKeys'
+import { adminQueryOptions } from '@/shared/config/queryClient'
 
 // ─── Admin Dashboard Stats ──────────────────────────────────────────────────
 
@@ -10,7 +11,7 @@ export function useAdminStats() {
             const { getAdminStats } = await import('../admin.api')
             return getAdminStats()
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -21,7 +22,7 @@ export function useRecentLocations(limit = 5) {
             const { getRecentLocations } = await import('../admin.api')
             return getRecentLocations(limit)
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -32,7 +33,7 @@ export function useRecentActivity(limit = 10) {
             const { getRecentActivity } = await import('../admin.api')
             return getRecentActivity(limit)
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -45,7 +46,7 @@ export function useProfiles() {
             const { getProfiles } = await import('../admin.api')
             return getProfiles()
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -79,7 +80,7 @@ export function useUserDetails(userId) {
             return getUserDetails(userId)
         },
         enabled: !!userId,
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -104,7 +105,7 @@ export function usePendingReviews() {
             const { getPendingReviews } = await import('../admin.api')
             return getPendingReviews()
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -131,7 +132,7 @@ export function usePendingLocations() {
             const { getPendingLocations } = await import('../admin.api')
             return getPendingLocations()
         }, 
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 
@@ -197,7 +198,7 @@ export function useCategoryStats() {
             const { getCategoryStats } = await import('../admin.api')
             return getCategoryStats()
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -209,7 +210,7 @@ export function useTopLocations(limit = 5) {
             const { getTopLocations } = await import('../admin.api')
             return getTopLocations(limit)
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -221,7 +222,7 @@ export function useEngagementStats() {
             const { getDetailedEngagement } = await import('../admin.api')
             return getDetailedEngagement()
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -234,7 +235,7 @@ export function usePaymentStats() {
             const stats = await getAdminStats()
             return stats?.payments || {}
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -246,7 +247,7 @@ export function useCityStats() {
             const { getCityStats } = await import('../admin.api')
             return getCityStats()
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -258,7 +259,7 @@ export function useReviewsTimeline(days = 30) {
             const { getReviewsTimeline } = await import('../admin.api')
             return getReviewsTimeline(days)
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -270,7 +271,7 @@ export function useUserGrowth(days = 30) {
             const { getUserGrowth } = await import('../admin.api')
             return getUserGrowth(days)
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
         refetchOnMount: true,
     })
 }
@@ -284,7 +285,7 @@ export function useFeedback() {
             const { getFeedback } = await import('../admin.api')
             return getFeedback()
         },
-        staleTime: 30_000,
+        ...adminQueryOptions,
     })
 }
 

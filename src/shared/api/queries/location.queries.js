@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './queryKeys'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { adminQueryOptions } from '@/shared/config/queryClient'
 
 // ─── Location Queries ──────────────────────────────────────────────────────
 
@@ -25,16 +26,16 @@ export function useLocations(filters = {}) {
  */
 export function useAdminLocationsQuery(filters = {}) {
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+    const isLoading = useAuthStore(s => s.isLoading)
     return useQuery({
-        queryKey: queryKeys.locations.filtered({ ...filters, admin: true }),
+        queryKey: ['admin', 'locations', filters],
         queryFn: async () => {
             const { getLocations } = await import('../locations.api')
             return getLocations(filters)
         },
-        staleTime: 30_000,
-        refetchOnWindowFocus: true,
-        // Don't fetch until user is authenticated — prevents empty results from RLS
-        enabled: isAuthenticated,
+        ...adminQueryOptions,
+        // Don't fetch until auth is fully resolved (not just authenticated)
+        enabled: isAuthenticated && !isLoading,
     })
 }
 

@@ -27,13 +27,19 @@ export const queryClient = new QueryClient({
                 if (error?.status === 401 || error?.status === 403 || error?.code === 'NOT_AUTH') return false
                 // Don't retry validation errors (400)
                 if (error?.status === 400) return false
-                // Don't retry AbortError more than once (timeout — retrying immediately will likely timeout again)
+                // Rate limited (429) — retry with longer delay, max 2 times
+                if (error?.status === 429) return failureCount < 2
+                // Don't retry AbortError more than once (timeout)
                 if (error?.name === 'AbortError' && failureCount >= 1) return false
                 // Retry network/timeout errors up to 3 times
                 return failureCount < 3
             },
-            // Short delays: 1s → 2s → 3s (not exponential — Supabase just needs a moment)
-            retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 3000),
+            retryDelay: (attemptIndex, error) => {
+                // Rate limited — back off significantly (5s, 10s)
+                if (error?.status === 429) return Math.min(5000 * (attemptIndex + 1), 15000)
+                // Default: 1s → 2s → 3s
+                return Math.min(1000 * (attemptIndex + 1), 3000)
+            },
             staleTime: 5 * 60 * 1000, // 5 min
             gcTime: 10 * 60 * 1000,
             // On error, keep showing stale data instead of empty state
@@ -52,8 +58,28 @@ export const queryClient = new QueryClient({
  * Usage: useQuery({ queryKey: [...], queryFn: ..., ...adminQueryOptions })
  */
 export const adminQueryOptions = {
-    staleTime: 0,              // always stale — refetch on every mount
-    gcTime: 30 * 1000,         // don't keep admin data in memory long
-    refetchOnWindowFocus: true, // refresh when admin switches tabs
+    staleTime: 30_000,         // 30s — fresh enough for admin, avoids hammering DB
+    gcTime: 60 * 1000,         // 1 min — keep admin data in memory between tab switches
+    refetchOnWindowFocus: false, // Don't refetch on tab switch (causes timeouts)
     refetchOnMount: true,      // always fetch when component mounts
+    retry: (failureCount, error) => {
+        // Don't retry auth errors
+        if (error?.status === 401 || error?.status === 403) return false
+        // Don't retry validation errors
+        if (error?.status === 400) return false
+        // Rate limited — wait longer, retry twice
+        if (error?.status === 429) return failureCount < 2
+        // Timeout — retry once with longer delay
+        if (error?.name === 'AbortError') return failureCount < 1
+        // Other errors — retry twice
+        return failureCount < 2
+    },
+    retryDelay: (attemptIndex, error) => {
+        // Rate limited — wait 5s before retry
+        if (error?.status === 429) return 5000
+        // Timeout — wait 3s
+        if (error?.name === 'AbortError') return 3000
+        // Default: 2s, 4s
+        return Math.min(2000 * (attemptIndex + 1), 5000)
+    },
 }

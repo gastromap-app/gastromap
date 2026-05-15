@@ -2,17 +2,15 @@ import { QueryClient, MutationCache } from '@tanstack/react-query'
 
 /**
  * Single QueryClient instance for the entire app.
- * Configured for Realtime caching:
- * - staleTime: 5 min — avoids redundant network requests on mount/focus
- * - RealtimeSubscriber invalidates cache automatically when DB changes
- * - refetchOnWindowFocus: true (fetches fresh data if 5 min passed or cache invalidated)
- * - gcTime: 10 min — keeps data in cache between route changes
- * - networkMode: 'always' — don't pause queries when offline (let them fail fast)
+ * Optimized for Supabase free tier (throttling, cold starts):
+ * - Aggressive retry: 3 attempts with short delays
+ * - staleTime: 5 min — avoids redundant network requests
+ * - refetchOnReconnect: true — auto-retry when network comes back
+ * - networkMode: 'always' — don't pause queries when offline
  */
 export const queryClient = new QueryClient({
     mutationCache: new MutationCache({
         onError: (error, _variables, _context, mutation) => {
-            // Only show global error if the mutation doesn't have its own onError
             if (!mutation.options.onError) {
                 console.error('[Global Mutation Error]', error?.message || error)
             }
@@ -22,24 +20,26 @@ export const queryClient = new QueryClient({
         queries: {
             refetchOnWindowFocus: true,
             refetchOnMount: true,
-            networkMode: 'always', // Don't pause queries when navigator.onLine is false
+            refetchOnReconnect: true, // Auto-retry when network reconnects
+            networkMode: 'always',
             retry: (failureCount, error) => {
                 // Don't retry auth errors (401/403) — they'll always fail
-                if (error?.status === 401 || error?.status === 403 || error?.code === 'NOT_AUTH') return 0
+                if (error?.status === 401 || error?.status === 403 || error?.code === 'NOT_AUTH') return false
                 // Don't retry validation errors (400)
-                if (error?.status === 400) return 0
-                // Retry network/timeout errors up to 2 times
-                return failureCount < 2
+                if (error?.status === 400) return false
+                // Retry network/timeout errors up to 3 times
+                return failureCount < 3
             },
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+            // Short delays: 1s → 2s → 3s (not exponential — Supabase just needs a moment)
+            retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 3000),
             staleTime: 5 * 60 * 1000, // 5 min
             gcTime: 10 * 60 * 1000,
             // On error, keep showing stale data instead of empty state
-            // This prevents the "skeleton forever" issue on flaky networks
             placeholderData: (previousData) => previousData,
         },
         mutations: {
-            retry: 0,
+            retry: 1, // Retry mutations once (covers timeout on save)
+            retryDelay: 2000,
             networkMode: 'always',
         },
     },

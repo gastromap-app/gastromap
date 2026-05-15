@@ -280,6 +280,21 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data: { session } } = await supabase.auth.getSession()
     const isAuthenticated = !!session
 
+    // For anon users: use server API endpoint (bypasses RLS, no cold-start issues)
+    if (!isAuthenticated && !adminMode) {
+        try {
+            const resp = await fetch(`/api/locations/${id}`)
+            if (resp.ok) {
+                const data = await resp.json()
+                return normalise(data)
+            }
+            // If server API fails, fall through to direct Supabase query
+        } catch (e) {
+            // Network error — fall through to direct query
+            safeWarn('[locations.api] Server API fallback failed, trying direct:', e.message)
+        }
+    }
+
     // Column selection: anon users get minimal safe columns.
     // Authenticated users get all columns (they have full SELECT grant via RLS).
     // Using '*' for authenticated avoids 400 errors from non-existent columns.

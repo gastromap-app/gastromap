@@ -6,12 +6,14 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 
-export function BottomNav() {
+export function BottomNav({ hide = false }) {
     const location = useLocation()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
     const [keyboardOpen, setKeyboardOpen] = useState(false)
+
+    if (hide) return null
 
     // Bulletproof keyboard detection:
     // On mobile, if a text input is focused → keyboard is open. Period.

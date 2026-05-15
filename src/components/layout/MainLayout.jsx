@@ -40,14 +40,14 @@ export function MainLayout() {
                 <DesktopSidebar />
 
                 <div className="flex-1 flex flex-col md:ml-[72px] min-w-0">
-                    {!isLocationDetail && <UniversalHeader />}
+                    {!isLocationDetail && !isAIGuide && <UniversalHeader />}
                     <main
                         className={`flex-1 relative transition-all duration-300 ${isFullScreen ? '' : 'pb-24 md:pb-6'}`}
                     >
                         {/* Map page uses fixed inset-0 and renders above this container */}
                         <Outlet />
                     </main>
-                    <BottomNav />
+                    <BottomNav hide={isAIGuide} />
 
                     {/* AI Chat Pill Button — center-bottom glass pill, desktop only */}
                     {!isAIGuide && (

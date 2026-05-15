@@ -107,7 +107,7 @@ const AIGuidePage = () => {
     return (
         <div
             ref={containerRef}
-            className={`fixed inset-0 md:left-[72px] flex flex-col overflow-hidden ${isDark ? 'bg-[#06080a]' : 'bg-[#f8fafc]'}`}
+            className="fixed inset-0 md:left-[72px] flex flex-col overflow-hidden"
             style={{
                 height: '100dvh',
                 top: 0,

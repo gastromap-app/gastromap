@@ -5,13 +5,15 @@ import { useGastroAI, ChatInterface, ChatInputBar } from '@/shared/components/Ga
 import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useUIStore } from '@/shared/store/useUIStore'
 
-// BottomNav: height=64px, bottom=calc(12px + env(safe-area-inset-bottom))
-// Input bar sits just above it with extra breathing room
-const INPUT_BOTTOM_DEFAULT = 'calc(68px + env(safe-area-inset-bottom, 12px))'
-// Physical padding for manual scrolling — ensures last message sits 15px above input
-const SCROLL_PADDING_BOTTOM = 'calc(150px + env(safe-area-inset-bottom, 12px))'
+// BottomNav: height=64px, bottom=max(12px, env(safe-area-inset-bottom))
+// Total nav footprint from screen bottom: ~76px
+// Input bar sits above it with 12px breathing room
+// Using calc with env() for safe-area-aware positioning
+const INPUT_BOTTOM_DEFAULT = 'calc(88px + env(safe-area-inset-bottom, 0px))'
+// Physical padding for manual scrolling — ensures last message sits above input
+const SCROLL_PADDING_BOTTOM = 'calc(160px + env(safe-area-inset-bottom, 0px))'
 // Logical offset for scrollIntoView — must be slightly larger than padding
-const SCROLL_SNAP_BOTTOM = 'calc(158px + env(safe-area-inset-bottom, 12px))'
+const SCROLL_SNAP_BOTTOM = 'calc(168px + env(safe-area-inset-bottom, 0px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 /**
@@ -58,15 +60,15 @@ const AIGuidePage = () => {
     const { keyboardOpen, bottomOffset } = useKeyboardOffset()
 
     // Compute input bar bottom position:
-    // - Keyboard closed: above BottomNav (68px + safe area)
-    // - Keyboard open: 10px above keyboard (nav is hidden behind keyboard)
+    // - Keyboard closed: above BottomNav with 12px gap (88px + safe area)
+    // - Keyboard open: flush above keyboard (nav is hidden)
     const inputBottom = keyboardOpen
-        ? `${bottomOffset + 10}px`
+        ? `${bottomOffset + 8}px`
         : INPUT_BOTTOM_DEFAULT
 
     // Adjust scroll padding when keyboard is open
     const scrollPadding = keyboardOpen
-        ? `${bottomOffset + 80}px`
+        ? `${bottomOffset + 72}px`
         : SCROLL_PADDING_BOTTOM
 
     // INSTANT scroll to bottom when messages first appear — runs BEFORE first paint
@@ -132,7 +134,7 @@ const AIGuidePage = () => {
     }
 
     return (
-        <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent overflow-hidden">
+        <div className="fixed inset-0 md:left-[72px] flex flex-col bg-transparent overflow-hidden" style={{ height: '100dvh' }}>
             {/* Aurora while typing */}
             {isTyping && (
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">

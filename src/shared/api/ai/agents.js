@@ -31,6 +31,12 @@ function cleanModelOutput(text) {
         .replace(/\{\s*"name"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:[\s\S]*?\}/g, '')
         // Strip legacy {"matches":[...]} blobs
         .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
+        // Remove [PERSON_NAME] and similar bracketed placeholders
+        .replace(/\[PERSON_NAME\]/gi, '')
+        .replace(/\[USER_NAME\]/gi, '')
+        .replace(/\[NAME\]/gi, '')
+        // Clean up double spaces left after removal
+        .replace(/  +/g, ' ')
         .trim()
 }
 

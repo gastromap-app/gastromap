@@ -13,8 +13,6 @@ export function BottomNav({ hide = false }) {
     const { t } = useTranslation()
     const [keyboardOpen, setKeyboardOpen] = useState(false)
 
-    if (hide) return null
-
     // Bulletproof keyboard detection:
     // On mobile, if a text input is focused → keyboard is open. Period.
     // visualViewport is unreliable on iOS Safari for repeated focus events.
@@ -49,6 +47,9 @@ export function BottomNav({ hide = false }) {
             document.removeEventListener('focusout', onFocusOut, true)
         }
     }, [])
+
+    // Early return AFTER all hooks (rules of hooks)
+    if (hide) return null
 
     const navItems = [
         { icon: Home,        label: t('nav.overview'), path: '/dashboard' },

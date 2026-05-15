@@ -316,7 +316,7 @@ const ProfilePage = () => {
             </AnimatePresence>
 
             {/* Profile Header - Left-aligned */}
-            <div className="pt-24 md:pt-10 px-5 flex items-center gap-4">
+            <div className="px-5 flex items-center gap-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6.5rem)' }}>
                 <div className="relative flex-shrink-0">
                     <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/20">
                         {user.name.charAt(0)}

@@ -115,21 +115,21 @@ const ManifestoSection = ({ isDark }) => {
 
                     <motion.div variants={itemVariants} className="space-y-4 md:space-y-6">
                         <p className={`text-[1.125rem] md:text-[1.375rem] leading-relaxed font-normal italic font-serif ${
-                            isDark ? 'text-t-secondary' : 'text-slate-600'
+                            isDark ? 'text-t-secondary' : 'text-slate-900'
                         }`}>
                             "{t('manifesto.creator_story')}"
                         </p>
                         
                         <motion.a 
-                            href="https://instagram.com/Alikovit" 
+                            href="https://instagram.com/Gastromap.app" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className={`group flex items-center gap-4 py-1 transition-opacity ${
-                                isDark ? 'text-t-secondary hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                            className={`group flex items-center gap-2.5 py-1 transition-opacity ${
+                                isDark ? 'text-t-secondary hover:text-white' : 'text-slate-900 hover:text-slate-900'
                             }`}
                         >
-                            <Instagram size={18} className="group-hover:text-blue-500 transition-colors" />
-                            <span className="text-[1.125rem] font-bold tracking-tight">@Alikovit</span>
+                            <Instagram size={18} className="text-[#E1306C]" />
+                            <span className={`text-[1.125rem] font-medium tracking-tight ${isDark ? '' : 'text-gray-900'}`}>@Gastromap.app</span>
                             <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                         </motion.a>
                     </motion.div>
@@ -159,7 +159,7 @@ const ManifestoSection = ({ isDark }) => {
                             className={`h-12 md:h-16 px-6 md:px-8 rounded-xl md:rounded-2xl font-black text-sm md:text-base flex items-center justify-center gap-3 transition-all cursor-pointer w-full sm:w-auto ${
                                 isDark 
                                     ? 'bg-white text-black' 
-                                    : 'bg-slate-950 text-white shadow-md shadow-slate-200'
+                                    : 'bg-slate-950 text-white'
                             }`}
                         >
                             {t('manifesto.add_place')}

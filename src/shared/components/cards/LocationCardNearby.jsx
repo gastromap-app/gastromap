@@ -24,7 +24,7 @@ export function LocationCardNearby({
             className={`flex-shrink-0 ${width} group text-left surface overflow-hidden transition-all duration-300 active:scale-[0.98] [@media(hover:hover)]:hover:surface-elevated [@media(hover:hover)]:hover:-translate-y-1 ${className}`}
         >
             {/* Image */}
-            <div className="relative h-[120px] w-full overflow-hidden rounded-t-[20px]">
+            <div className="relative h-[120px] w-full overflow-hidden rounded-t-xl md:rounded-t-[20px]">
                 <LazyImage
                     src={image}
                     alt={location.title}
@@ -44,7 +44,7 @@ export function LocationCardNearby({
             </div>
 
             {/* Content */}
-            <div className="p-4">
+            <div className="p-2.5 md:p-4">
                 <h4 className="text-[0.8125rem] font-semibold leading-tight truncate text-t-primary group-hover:text-blue-500 transition-colors tracking-[-0.012em]">
                     {location.title}
                 </h4>

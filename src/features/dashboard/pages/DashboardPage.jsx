@@ -81,7 +81,7 @@ const FooterDisclaimer = ({ isDark }) => {
     const { t } = useTranslation()
     return (
         <div className="mt-12 mb-8 px-4 text-center">
-            <p className={`text-[10px] leading-relaxed opacity-50 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{t('dashboard.test_mode_disclaimer')}</p>
+            <p className={`text-[10px] leading-relaxed ${isDark ? 'text-gray-400 opacity-50' : 'text-gray-900 opacity-70'}`}>{t('dashboard.test_mode_disclaimer')}</p>
         </div>
     )
 }

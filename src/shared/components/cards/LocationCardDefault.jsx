@@ -30,7 +30,7 @@ export function LocationCardDefault({
             className={`group cursor-pointer surface overflow-hidden transition-all duration-300 active:scale-[0.98] [@media(hover:hover)]:hover:surface-elevated [@media(hover:hover)]:hover:-translate-y-1 ${className}`}
         >
             {/* Image */}
-            <div className={`relative ${imageHeight} overflow-hidden rounded-t-[28px]`}>
+            <div className={`relative ${imageHeight} overflow-hidden rounded-t-xl md:rounded-t-[28px]`}>
                 <LazyImage
                     src={image}
                     alt={location.title}
@@ -62,7 +62,7 @@ export function LocationCardDefault({
             </div>
 
             {/* Content */}
-            <div className="p-5">
+            <div className="p-2.5 md:p-5">
                 <h3 className="text-[1.0625rem] font-semibold leading-[1.3] text-t-primary group-hover:text-blue-500 transition-colors tracking-[-0.012em]">
                     {location.title}
                 </h3>

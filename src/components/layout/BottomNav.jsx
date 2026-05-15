@@ -71,7 +71,7 @@ export function BottomNav() {
                                 {isActive && (
                                     <motion.div
                                         layoutId="navActivePill"
-                                        className="absolute inset-x-1 inset-y-2 bg-blue-600/15 dark:bg-blue-500/20 rounded-[18px]"
+                                        className="absolute inset-x-1 inset-y-2 bg-[#4d98bd]/15 dark:bg-blue-500/20 rounded-[18px]"
                                         transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
                                     />
                                 )}
@@ -90,7 +90,7 @@ export function BottomNav() {
                                             className={cn(
                                                 "w-[19px] h-[19px] transition-all duration-200",
                                                 isActive
-                                                    ? "text-blue-600 dark:text-blue-400 scale-110"
+                                                    ? "text-[#4d98bd] dark:text-blue-400 scale-110"
                                                     : "text-slate-500 dark:text-gray-500",
                                                 item.path === '/ai-guide' && !isActive && "text-blue-500/80 dark:text-blue-400/80"
                                             )}
@@ -103,7 +103,7 @@ export function BottomNav() {
                                     className={cn(
                                         "relative z-10 text-[10px] font-medium tracking-wide transition-colors duration-200 leading-none",
                                         isActive
-                                            ? "text-blue-600 dark:text-blue-400"
+                                            ? "text-[#4d98bd] dark:text-blue-400"
                                             : "text-t-tertiary"
                                     )}
                                 >

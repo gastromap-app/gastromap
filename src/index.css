@@ -171,15 +171,10 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Light-theme ambient gradient canvas — soft blue-tinted radial blooms.
-     Dark theme is intentionally untouched and keeps its solid bg-background. */
-  html:not([data-theme='dark']) body {
+  /* Animated blob-gradient background is handled by AuroraBackground component.
+     Body keeps a simple fallback color for pages outside the layout. */
+  body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 70% 30%, #EAF2FF 0%, transparent 40%),
-      radial-gradient(circle at 20% 80%, #DCE8FF 0%, transparent 50%),
-      linear-gradient(135deg, #FFFFFF 0%, #EAF2FF 100%);
-    background-attachment: fixed;
   }
 
   /* Tighter display typography fallback for bare <h1>-<h6> without scale class.
@@ -211,22 +206,22 @@
 
   /* Premium Surface — card backgrounds */
   .surface {
-    @apply bg-white rounded-[28px] border border-slate-100;
+    @apply bg-white rounded-xl md:rounded-[28px] border border-slate-100;
     box-shadow: var(--shadow-card);
   }
 
   [data-theme='dark'] .surface {
-    @apply bg-[hsl(220,20%,6%)] rounded-[28px] border border-white/[0.06] shadow-none;
+    @apply bg-[hsl(220,20%,6%)] rounded-xl md:rounded-[28px] border border-white/[0.06] shadow-none;
   }
 
   /* Premium Elevated — hovered/selected cards */
   .surface-elevated {
-    @apply bg-white rounded-[28px] border border-slate-100;
+    @apply bg-white rounded-xl md:rounded-[28px] border border-slate-100;
     box-shadow: var(--shadow-card-hover);
   }
 
   [data-theme='dark'] .surface-elevated {
-    @apply bg-[hsl(220,20%,9%)] rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
+    @apply bg-[hsl(220,20%,9%)] rounded-xl md:rounded-[28px] border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)];
   }
 
   /* Light-theme helper — subtle resting shadow for cards on tinted canvas */
@@ -316,6 +311,69 @@
     .text-eyebrow-muted {
       font-size: 0.75rem;
     }
+  }
+}
+
+/* ─── Animated Aurora Blob Keyframes ─────────────────────────────────────── */
+/* Soft morphing drift for SVG background blobs (Linear.app / Vercel style) */
+
+.aurora-blob-1 {
+  animation: aurora-drift-1 20s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+.aurora-blob-2 {
+  animation: aurora-drift-2 25s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+.aurora-blob-3 {
+  animation: aurora-drift-3 22s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes aurora-drift-1 {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(60px, 40px) scale(1.1) rotate(3deg);
+  }
+  66% {
+    transform: translate(-30px, 70px) scale(0.95) rotate(-2deg);
+  }
+  100% {
+    transform: translate(40px, -20px) scale(1.05) rotate(1deg);
+  }
+}
+
+@keyframes aurora-drift-2 {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(-50px, 30px) scale(1.08) rotate(-2deg);
+  }
+  66% {
+    transform: translate(40px, -40px) scale(0.92) rotate(3deg);
+  }
+  100% {
+    transform: translate(-20px, 50px) scale(1.03) rotate(-1deg);
+  }
+}
+
+@keyframes aurora-drift-3 {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.12) rotate(2deg);
+  }
+  66% {
+    transform: translate(-60px, -20px) scale(0.9) rotate(-3deg);
+  }
+  100% {
+    transform: translate(20px, 30px) scale(1.07) rotate(1deg);
   }
 }
 

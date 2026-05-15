@@ -315,28 +315,28 @@ const ProfilePage = () => {
                 )}
             </AnimatePresence>
 
-            {/* Profile Header - Compact */}
-            <div className="pt-24 md:pt-10 px-6 flex flex-col items-center text-center">
-                <div className="relative mb-4">
-                    <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-2xl shadow-blue-500/30">
+            {/* Profile Header - Left-aligned */}
+            <div className="pt-24 md:pt-10 px-5 flex items-center gap-4">
+                <div className="relative flex-shrink-0">
+                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/20">
                         {user.name.charAt(0)}
                     </div>
-                    <div className={`absolute -bottom-1 -right-1 bg-yellow-400 p-1.5 rounded-full text-white shadow-lg border-[3px] ${isDark ? 'border-[#0F1115]' : 'border-white'}`}>
-                        <Award size={14} />
+                    <div className={`absolute -bottom-1 -right-1 bg-yellow-400 p-1 rounded-full text-white shadow-md border-2 ${isDark ? 'border-[#0F1115]' : 'border-white'}`}>
+                        <Award size={12} />
                     </div>
                 </div>
-                <h1 className={`text-2xl font-black mb-1 ${textStyle}`}>{user.name}</h1>
-                <p className={`text-sm font-medium ${subTextStyle}`}>{user.email}</p>
-
-                <div className="flex flex-wrap justify-center gap-2 mt-4">
-                    {user?.role === 'admin' && (
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1 ${isDark ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`}>
-                            <ShieldCheck size={10} />Admin
-                        </span>
-                    )}
-                    {user?.role !== 'admin' && (
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>Member</span>
-                    )}
+                <div className="min-w-0">
+                    <h1 className={`text-xl font-bold tracking-tight truncate ${textStyle}`}>{user.name}</h1>
+                    <p className={`text-sm font-medium mt-0.5 truncate ${subTextStyle}`}>{user.email}</p>
+                    <div className="mt-2">
+                        {user?.role === 'admin' ? (
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isDark ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`}>
+                                <ShieldCheck size={10} />Admin
+                            </span>
+                        ) : (
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>Member</span>
+                        )}
+                    </div>
                 </div>
             </div>
 

@@ -268,17 +268,18 @@ const LocationDetailsPage = () => {
     const [currentSlide, setCurrentSlide] = useState(0)
     const [touchStart, setTouchStart] = useState(0)
 
-    // Combine all photos: google_photos first (fast Google CDN), then R2 main image
+    // Combine all photos: gallery (google_photos via normalise) first for instant CDN load, then R2
     const allPhotos = useMemo(() => {
         const main = location?.image_url || location?.image || ''
         const gallery = Array.isArray(location?.photos) ? location.photos.filter(Boolean) : []
-        const googlePhotos = Array.isArray(location?.google_photos) ? location.google_photos.filter(Boolean) : []
-        // Priority: google_photos (fast CDN) → R2 main image → gallery
-        // For hero: first google photo loads instantly, R2 may have cold start
-        const all = [...googlePhotos, ...(main ? [main] : []), ...gallery]
-        const unique = [...new Set(all)]
-        return unique.length > 0 ? unique : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
-    }, [location?.image_url, location?.image, location?.photos, location?.google_photos])
+        // After normalise(), google_photos is mapped to 'photos' field
+        // Gallery contains google CDN URLs (fast) — put them first
+        // R2 main image may have cold start — put after gallery
+        const all = gallery.length > 0
+            ? [...gallery, ...(main && !gallery.includes(main) ? [main] : [])]
+            : (main ? [main] : [])
+        return all.length > 0 ? all : ['https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800']
+    }, [location?.image_url, location?.image, location?.photos])
 
     useEffect(() => {
         if (location?.id) {

@@ -14,7 +14,6 @@ const AIGuidePage = () => {
     const { setHeaderScrolled } = useUIStore()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
-    const { t } = useTranslation()
     const shouldReduceMotion = useReducedMotion()
     const navigate = useNavigate()
     const scrollRef = useRef(null)

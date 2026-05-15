@@ -120,11 +120,15 @@ export function LocationImage({
     }, [priority, rawSrc])
 
     // Сброс состояния при смене src или googlePlaceId
+    const prevSrcRef = useRef(src)
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoaded(false)
-        setError(false)
-        setUseOriginal(false)
+        // Only reset if src actually changed to a different value
+        if (prevSrcRef.current !== src) {
+            setLoaded(false)
+            setError(false)
+            setUseOriginal(false)
+            prevSrcRef.current = src
+        }
     }, [src, googlePlaceId])
 
     function handleError() {

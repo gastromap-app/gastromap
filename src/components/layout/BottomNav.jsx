@@ -13,83 +13,38 @@ export function BottomNav() {
     const { t } = useTranslation()
     const [keyboardOpen, setKeyboardOpen] = useState(false)
 
-    // Cross-browser keyboard detection (Safari iOS, Chrome iOS, Chrome Android, Samsung Browser)
+    // Bulletproof keyboard detection:
+    // On mobile, if a text input is focused → keyboard is open. Period.
+    // visualViewport is unreliable on iOS Safari for repeated focus events.
     useEffect(() => {
-        // Strategy 1: visualViewport API (best, supported iOS 13+, Chrome 62+)
-        const vv = window.visualViewport
-        let rafId = null
-        let focusedElement = null
+        const isMobile = window.innerWidth < 768 && ('ontouchstart' in window)
+        if (!isMobile) return
 
-        const checkKeyboard = () => {
-            let isOpen = false
-
-            if (vv) {
-                // visualViewport.height shrinks when keyboard opens
-                // offsetTop accounts for Safari's URL bar
-                const kbHeight = window.innerHeight - vv.height - vv.offsetTop
-                isOpen = kbHeight > 100
-            } else {
-                // Strategy 2: Fallback for older browsers — compare window heights
-                // On Android Chrome, window.innerHeight shrinks when keyboard opens
-                const initialHeight = window.screen.height * 0.7
-                isOpen = window.innerHeight < initialHeight
-            }
-
-            // Strategy 3: If visualViewport says no keyboard but an input is focused,
-            // use a heuristic — on mobile, focused input almost always means keyboard
-            if (!isOpen && focusedElement) {
-                const tag = focusedElement.tagName?.toLowerCase()
-                const type = focusedElement.type?.toLowerCase()
-                const isTextInput = (tag === 'input' && !['checkbox', 'radio', 'submit', 'button', 'file', 'hidden', 'range'].includes(type)) || tag === 'textarea'
-                if (isTextInput && window.innerWidth < 768) {
-                    // Double-check with a slight delay — visualViewport may not have updated yet
-                    // Don't force isOpen here, let the delayed re-check handle it
-                }
-            }
-
-            setKeyboardOpen(isOpen)
+        const isTextInput = (el) => {
+            if (!el) return false
+            const tag = el.tagName?.toLowerCase()
+            const type = el.type?.toLowerCase() || ''
+            if (tag === 'textarea') return true
+            if (tag === 'input' && !['checkbox', 'radio', 'submit', 'button', 'file', 'hidden', 'range', 'color'].includes(type)) return true
+            if (el.contentEditable === 'true') return true
+            return false
         }
 
-        // Throttled check using rAF to avoid layout thrashing
-        const scheduleCheck = () => {
-            if (rafId) cancelAnimationFrame(rafId)
-            rafId = requestAnimationFrame(checkKeyboard)
-        }
-
-        // visualViewport events
-        if (vv) {
-            vv.addEventListener('resize', scheduleCheck)
-            vv.addEventListener('scroll', scheduleCheck)
-        }
-
-        // Window resize fallback (Android Chrome shrinks window on keyboard)
-        window.addEventListener('resize', scheduleCheck)
-
-        // Focus tracking — critical for Safari iOS which may not fire visualViewport resize
         const onFocusIn = (e) => {
-            focusedElement = e.target
-            // Delay to allow keyboard animation to complete and viewport to update
-            setTimeout(scheduleCheck, 150)
-            setTimeout(scheduleCheck, 350) // Second check for slow keyboards
+            if (isTextInput(e.target)) setKeyboardOpen(true)
         }
         const onFocusOut = (e) => {
-            focusedElement = null
-            // Delay to allow keyboard dismiss animation
-            setTimeout(scheduleCheck, 100)
-            setTimeout(scheduleCheck, 300)
+            // Delay to handle focus moving between inputs (don't flash nav)
+            setTimeout(() => {
+                if (!isTextInput(document.activeElement)) setKeyboardOpen(false)
+            }, 80)
         }
-        document.addEventListener('focusin', onFocusIn)
-        document.addEventListener('focusout', onFocusOut)
 
+        document.addEventListener('focusin', onFocusIn, true)
+        document.addEventListener('focusout', onFocusOut, true)
         return () => {
-            if (rafId) cancelAnimationFrame(rafId)
-            if (vv) {
-                vv.removeEventListener('resize', scheduleCheck)
-                vv.removeEventListener('scroll', scheduleCheck)
-            }
-            window.removeEventListener('resize', scheduleCheck)
-            document.removeEventListener('focusin', onFocusIn)
-            document.removeEventListener('focusout', onFocusOut)
+            document.removeEventListener('focusin', onFocusIn, true)
+            document.removeEventListener('focusout', onFocusOut, true)
         }
     }, [])
 

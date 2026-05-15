@@ -7,13 +7,12 @@ import { useUIStore } from '@/shared/store/useUIStore'
 
 // BottomNav: height=64px, bottom=max(12px, env(safe-area-inset-bottom))
 // Total nav footprint from screen bottom: ~76px
-// Input bar sits above it with 12px breathing room
-// Using calc with env() for safe-area-aware positioning
-const INPUT_BOTTOM_DEFAULT = 'calc(88px + env(safe-area-inset-bottom, 0px))'
+// Input bar sits just above it with 2px breathing room
+const INPUT_BOTTOM_DEFAULT = 'calc(78px + env(safe-area-inset-bottom, 0px))'
 // Physical padding for manual scrolling — ensures last message sits above input
-const SCROLL_PADDING_BOTTOM = 'calc(160px + env(safe-area-inset-bottom, 0px))'
+const SCROLL_PADDING_BOTTOM = 'calc(150px + env(safe-area-inset-bottom, 0px))'
 // Logical offset for scrollIntoView — must be slightly larger than padding
-const SCROLL_SNAP_BOTTOM = 'calc(168px + env(safe-area-inset-bottom, 0px))'
+const SCROLL_SNAP_BOTTOM = 'calc(158px + env(safe-area-inset-bottom, 0px))'
 const HEADER_OFFSET = 'calc(90px + env(safe-area-inset-top))'
 
 /**

@@ -103,11 +103,11 @@ function VisitedStats({ count, isDark }) {
         <div className={`flex items-center gap-4 p-4 rounded-2xl mb-6 ${
             isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100'
         }`}>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <CheckCircle size={22} className="text-white" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                <CheckCircle size={18} className="text-white" />
             </div>
             <div>
-                <p className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <p className={`text-[15px] font-semibold tracking-[-0.01em] ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {t(count === 1 ? 'visited.count_one' : 'visited.count_other', { count })}
                 </p>
             </div>

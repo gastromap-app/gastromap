@@ -69,11 +69,12 @@ const LocationDetailsPage = () => {
     // Always fetch full location data from Supabase for detail page.
     // Store cache only has ANON_COLS (limited columns for list view).
     // Detail page needs full data: tags, insider_tip, must_try, kg_*, etc.
-    const { data: locationQuery, isLoading: queryLoading } = useLocationQuery(id)
+    const { data: locationQuery, isLoading: queryLoading, isFetching: queryFetching } = useLocationQuery(id)
 
     // Prefer full query result over store cache (which has limited columns)
     const location = locationQuery ?? locationFromStore ?? null
-    const isPageLoading = !locationFromStore && (storeIsLoading || queryLoading)
+    // Show loading while any data source is still fetching
+    const isPageLoading = !location && (storeIsLoading || queryLoading || queryFetching)
 
     // Also trigger store.initialize() if store is empty and we have no location yet
     useEffect(() => {

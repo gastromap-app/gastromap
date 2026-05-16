@@ -172,7 +172,7 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
             </div>
 
             {/* ─── Desktop: Table view ─── */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden lg:block">
             <table className="table table-xs">
                 <thead>
                     <tr className="text-[10px] uppercase tracking-wider">

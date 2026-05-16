@@ -183,7 +183,15 @@ const AdminLocationsPage = () => {
                                 <button
                                     onClick={() => {
                                         if (confirm(t('admin.bulk_reindex_confirm'))) {
-                                            bulkReindexMutation.mutate({ limit: 50, onlyMissing: true })
+                                            setToast({ message: '🧠 AI Reindex started — processing up to 50 locations...', type: 'info' })
+                                            bulkReindexMutation.mutate({ limit: 50, onlyMissing: true }, {
+                                                onSuccess: (result) => {
+                                                    setToast({ message: `✅ AI Reindex complete: ${result?.count || 0} locations processed`, type: 'success' })
+                                                },
+                                                onError: (err) => {
+                                                    setToast({ message: `❌ AI Reindex failed: ${err.message}`, type: 'error' })
+                                                }
+                                            })
                                         }
                                     }}
                                     disabled={bulkReindexMutation.isPending}
@@ -199,8 +207,16 @@ const AdminLocationsPage = () => {
                             <div className="relative group">
                                 <button
                                     onClick={() => {
-                                        const mode = confirm(t('admin.bulk_embedding_confirm'))
-                                        bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty: mode })
+                                        const onlyEmpty = confirm(t('admin.bulk_embedding_confirm'))
+                                        setToast({ message: '🔮 Embedding generation started — processing up to 50 locations...', type: 'info' })
+                                        bulkEmbeddingMutation.mutate({ limit: 50, onlyEmpty }, {
+                                            onSuccess: (result) => {
+                                                setToast({ message: `✅ Embeddings complete: ${result?.count || 0}/${result?.total || 0} locations processed`, type: 'success' })
+                                            },
+                                            onError: (err) => {
+                                                setToast({ message: `❌ Embedding failed: ${err.message}`, type: 'error' })
+                                            }
+                                        })
                                     }}
                                     disabled={bulkEmbeddingMutation.isPending}
                                     className={cn(adminBtnSecondary, "disabled:opacity-40")}

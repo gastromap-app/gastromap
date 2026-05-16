@@ -220,6 +220,18 @@ function FlyToFocus({ focus }) {
             animate: true,
             duration: 1.2,
         })
+        // After fly animation completes, find and open the marker popup
+        const openPopupTimer = setTimeout(() => {
+            map.eachLayer(layer => {
+                if (layer.getLatLng && layer.openPopup) {
+                    const pos = layer.getLatLng()
+                    if (Math.abs(pos.lat - focus.lat) < 0.0001 && Math.abs(pos.lng - focus.lng) < 0.0001) {
+                        layer.openPopup()
+                    }
+                }
+            })
+        }, 1400) // slightly after flyTo duration (1.2s)
+        return () => clearTimeout(openPopupTimer)
     }, [focus, map])
     return null
 }

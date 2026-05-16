@@ -65,6 +65,21 @@ function cityMatch(loc, cityQuery) {
     return matched
 }
 
+/**
+ * Build a flat AI-readable summary from a location's kg_profile (R15.1–R15.4).
+ * Returns null when kg_profile is absent/empty so the field can be omitted.
+ * Max 280 chars.
+ */
+function buildAiSummary(kgProfile) {
+    if (!kgProfile || typeof kgProfile !== 'object') return null
+    const parts = []
+    if (kgProfile.atmosphere?.length) parts.push(`Atmosphere: ${kgProfile.atmosphere.slice(0, 3).join(', ')}`)
+    if (kgProfile.best_dishes?.length) parts.push(`Try: ${kgProfile.best_dishes.slice(0, 4).join(', ')}`)
+    if (kgProfile.occasion_tags?.length) parts.push(`Best for: ${kgProfile.occasion_tags.slice(0, 3).join(', ')}`)
+    const summary = parts.join('; ')
+    return summary ? summary.slice(0, 280) : null
+}
+
 /** Map a raw DB / store row to the rich format the AI understands. */
 function mapLocation(l) {
     // Handle vibes join result: vibes: [{ vibe: { name: 'Cozy' } }] -> ['Cozy']
@@ -100,6 +115,7 @@ function mapLocation(l) {
         kg_ingredients: l.kg_ingredients ?? [],
         kg_allergens:   l.kg_allergens   ?? [],
         kg_profile:     l.kg_profile     ?? null,
+        ai_summary:     buildAiSummary(l.kg_profile) ?? undefined,
         opening_hours:  l.opening_hours ?? null,
         amenities:      l.amenities ?? [],
         dietary:        l.dietary_options ?? l.dietary ?? [],
@@ -339,6 +355,10 @@ export async function executeTool(name, args, ctx = {}) {
         const effectiveCuisines = (cuisine_types?.length) ? cuisine_types : (userPrefs?.favoriteCuisines || [])
         const effectivePrices = (price_range?.length) ? price_range : (userPrefs?.priceRange || [])
         
+        // Dietary soft filter (R11.4) — from context if available
+        const dietaryFromCtx = ctx?.dietary || []
+        const effectiveDietary = (dietary_options?.length) ? dietary_options : dietaryFromCtx
+
         // Atmosphere and features as additional context (if applicable)
         const _preferredAtmosphere = userPrefs?.atmospherePreference || null
         const _preferredFeatures = userPrefs?.features || []
@@ -371,7 +391,7 @@ export async function executeTool(name, args, ctx = {}) {
                 if (michelin)            pool = pool.filter(l => l.michelin_stars > 0 || l.michelin_bib)
 
                 // Apply advanced text filters (amenities, dietary, etc.)
-                pool = applyTextFilters(pool, { amenities, best_for, dietary_options, tags, cuisine_types })
+                pool = applyTextFilters(pool, { amenities, best_for, dietary_options: effectiveDietary, tags, cuisine_types })
             }
         }
 
@@ -402,7 +422,7 @@ export async function executeTool(name, args, ctx = {}) {
             }
 
             // Tier 2: Client-side text filters (diacritics-safe via norm())
-            pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options })
+            pool = applyTextFilters(pool, { city, category, cuisine_types, tags, amenities, best_for, dietary_options: effectiveDietary })
 
             // If keyword exists but hybrid failed, do a literal fallback
             if (keyword) {
@@ -434,6 +454,13 @@ export async function executeTool(name, args, ctx = {}) {
         const results = poolResults.slice(0, limit).map(mapLocation)
         
         console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
+
+        // Persist shown locations to session_locations (R3.1)
+        if (ctx?.sessionId && ctx?.userId && results.length) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, results, ctx.userId).catch(() => {})
+            }).catch(() => {})
+        }
 
         // Return object format for better extensibility
         return {
@@ -540,6 +567,13 @@ export async function executeTool(name, args, ctx = {}) {
 
         console.log(`[ai.tools] ✅ Nearby search complete. Found ${pool.length} matches. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
 
+        // Persist shown locations to session_locations (R3.1)
+        if (ctx?.sessionId && ctx?.userId && results.length) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, results, ctx.userId).catch(() => {})
+            }).catch(() => {})
+        }
+
         return {
             results,
             culinaryContext,
@@ -570,6 +604,13 @@ export async function executeTool(name, args, ctx = {}) {
 
         if (!loc) return { error: `Location ${location_id} not found` }
 
+        // Persist shown location to session_locations (R3.1)
+        if (ctx?.sessionId && ctx?.userId) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, [{ id: loc.id }], ctx.userId).catch(() => {})
+            }).catch(() => {})
+        }
+
         return {
             ...mapLocation(loc),
             phone:       loc.phone ?? null,
@@ -590,39 +631,51 @@ export async function executeTool(name, args, ctx = {}) {
 
         const dimensions = Array.isArray(args.dimensions) ? args.dimensions : []
 
-        // Hydrate each id (store first, then DB).
-        let activeLocations = locations
-
-        const items = []
-        for (const id of ids) {
-            let loc = activeLocations.find(l => String(l.id) === String(id))
-            if (!loc && supabase) {
-                try {
-                    const { data } = await supabase
-                        .from('locations')
-                        .select('*')
-                        .eq('id', id)
-                        .single()
-                    loc = data
-                } catch {
-                    loc = null
-                }
-            }
-            if (loc) items.push(mapLocation(loc))
+        // Batch fetch from Supabase (R12.1)
+        let dbItems = []
+        if (supabase) {
+            try {
+                const { data } = await supabase.from('locations').select('*').in('id', ids)
+                dbItems = data || []
+            } catch { dbItems = [] }
         }
+
+        // Also check in-memory locations for any not found in DB
+        const dbIds = new Set(dbItems.map(d => String(d.id)))
+        const fromMemory = locations.filter(l => ids.includes(String(l.id)) && !dbIds.has(String(l.id)))
+        const allFound = [...dbItems, ...fromMemory]
+
+        // Resolve missing against session_locations (R3.4)
+        const foundIds = new Set(allFound.map(l => String(l.id)))
+        const notFound = ids.filter(id => !foundIds.has(id))
+
+        // Preserve input order (R12.4)
+        const items = ids
+            .map(id => allFound.find(l => String(l.id) === id))
+            .filter(Boolean)
+            .map(mapLocation)
 
         if (items.length < 2) {
             return {
                 error: 'Could not find enough locations to compare',
                 requested: ids,
                 found: items.length,
+                not_found: notFound,
             }
+        }
+
+        // Persist shown IDs into session_locations (R3.1)
+        if (ctx?.sessionId && ctx?.userId && items.length) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, items, ctx.userId).catch(() => {})
+            }).catch(() => {})
         }
 
         return {
             compared: items.length,
             dimensions,
             items,
+            not_found: notFound,
         }
     }
 

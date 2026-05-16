@@ -130,11 +130,12 @@ export async function runAgentPass(messages, ctx = {}) {
     let adminCascade = []
     let adminTemp = 0.7
     let adminMaxTokens = 1024
+    let cfg = null
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
         // Ensure Supabase config is loaded (no-op if already loaded)
         await useAppConfigStore.getState().loadFromDB()
-        const cfg = useAppConfigStore.getState()
+        cfg = useAppConfigStore.getState()
         adminCascade = cfg.aiModelCascade || []
         adminTemp = cfg.aiGuideTemp ?? 0.7
         adminMaxTokens = cfg.aiGuideMaxTokens ?? 1024
@@ -142,6 +143,41 @@ export async function runAgentPass(messages, ctx = {}) {
 
     // Use admin cascade if set, otherwise fall back to MODEL_CASCADE
     const cascade = adminCascade.length > 0 ? adminCascade : MODEL_CASCADE
+
+    // ── V2 Guardrails (gated behind feature flag) ────────────────────────────
+    const useV2 = cfg?.aiBotImprovementsV2 ?? false
+    let queryClassification = null
+
+    if (useV2) {
+        // Extract user text from the last user message
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+        const userText = lastUserMsg?.content || ''
+
+        // Stage 1: Input Guardrail
+        const { classifyQuery } = await import('./guardrails/input.js')
+        queryClassification = classifyQuery(userText, { threshold: cfg.guardThreshold ?? 0.6 })
+
+        console.log('[Agent] Stage 1 classification:', { kind: queryClassification.kind, confidence: queryClassification.confidence })
+
+        if (queryClassification.kind === 'off_topic') {
+            const { recordGuardrailEvent } = await import('./guardrails/audit.js')
+            const turnId = `turn_${Date.now()}`
+            await recordGuardrailEvent({
+                stage: 'input', verdict: 'rejected', turnId,
+                reason: queryClassification.reason,
+                userId: ctx?.userId, sessionId: ctx?.sessionId,
+            })
+            // Return polite refusal without calling LLM/tools
+            return {
+                text: "I'm GastroGuide — I specialize in helping you discover great food spots! I can't help with that topic, but I'd love to help you find an amazing restaurant, café, or bar. What are you in the mood for?",
+                usedLocations: [],
+                attachments: [],
+                modelUsed: 'guardrail',
+                toolCalls: [],
+                timing: { startMs: startTime, toolExecutionMs: 0, totalMs: Date.now() - startTime },
+            }
+        }
+    }
 
     // Tracked tool calls for enhanced metadata
     const trackedToolCalls = []
@@ -165,7 +201,7 @@ export async function runAgentPass(messages, ctx = {}) {
     // ── Path A: Native OpenAI tool_calls ────────────────────────────────────
     if (finishReason === 'tool_calls' && assistantMsg.tool_calls?.length) {
         return runToolCalls(assistantMsg.tool_calls, assistantMsg, messages, ctx, modelUsed, 'native', {
-            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, useV2,
         })
     }
 
@@ -173,13 +209,47 @@ export async function runAgentPass(messages, ctx = {}) {
     const xmlCalls = parseXmlToolCalls(assistantMsg.content)
     if (xmlCalls.length) {
         return runToolCalls(xmlCalls, assistantMsg, messages, ctx, modelUsed, 'xml', {
-            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade,
+            startTime, trackedToolCalls, adminTemp, adminMaxTokens, cascade, useV2,
         })
     }
 
     // ── Path C: No tool calls — return text directly ─────────────────────────
     // Strip any stray XML/JSON artifacts the model might have left in the text
     const cleanText = cleanModelOutput(assistantMsg.content)
+
+    // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
+    if (useV2 && cleanText) {
+        const { validateResponse } = await import('./guardrails/output.js')
+        const { getSessionLocations } = await import('./session-locations.js')
+        const sessionLocs = ctx?.sessionId ? await getSessionLocations(ctx.sessionId) : []
+        const allowedLocs = [] // Path C has no tool-fetched locations
+        const sessionLocsFormatted = sessionLocs.map(sl => ({ id: sl.id, title: sl.title || '' }))
+        const { sanitizedText, redactions } = validateResponse(cleanText, allowedLocs, sessionLocsFormatted)
+
+        if (redactions.length) {
+            const { recordGuardrailEvent } = await import('./guardrails/audit.js')
+            await recordGuardrailEvent({
+                stage: 'output', verdict: 'modified',
+                turnId: `turn_${Date.now()}`,
+                reason: `Redacted ${redactions.length} items`,
+                payload: { redactions: redactions.map(r => ({ kind: r.kind, original: r.original })) },
+                userId: ctx?.userId, sessionId: ctx?.sessionId,
+            })
+        }
+
+        return {
+            text: sanitizedText,
+            usedLocations: [],
+            attachments: [],
+            modelUsed,
+            toolCalls: trackedToolCalls,
+            timing: {
+                startMs: startTime,
+                toolExecutionMs: 0,
+                totalMs: Date.now() - startTime,
+            },
+        }
+    }
 
     return {
         text: cleanText,
@@ -206,7 +276,7 @@ export async function runAgentPass(messages, ctx = {}) {
  * @param {'native'|'xml'} mode - Whether we're handling native or XML tool calls
  */
 async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, mode, meta = {}) {
-    const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 1024, cascade } = meta
+    const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 1024, cascade, useV2 = false } = meta
     const locations = ctx?.locations || []
     const toolResults = []
     let usedLocations = []
@@ -327,6 +397,40 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     // Clean the final response — some models still emit XML/JSON artifacts
     // even when tools are disabled (withTools: false)
     const finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+
+    // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
+    if (useV2 && finalContent) {
+        const { validateResponse } = await import('./guardrails/output.js')
+        const { getSessionLocations } = await import('./session-locations.js')
+        const sessionLocs = ctx?.sessionId ? await getSessionLocations(ctx.sessionId) : []
+        const allowedLocs = usedLocations.map(l => ({ id: l.id, title: l.title || l.name }))
+        const sessionLocsFormatted = sessionLocs.map(sl => ({ id: sl.id, title: sl.title || '' }))
+        const { sanitizedText, redactions } = validateResponse(finalContent, allowedLocs, sessionLocsFormatted)
+
+        if (redactions.length) {
+            const { recordGuardrailEvent } = await import('./guardrails/audit.js')
+            await recordGuardrailEvent({
+                stage: 'output', verdict: 'modified',
+                turnId: `turn_${Date.now()}`,
+                reason: `Redacted ${redactions.length} items`,
+                payload: { redactions: redactions.map(r => ({ kind: r.kind, original: r.original })) },
+                userId: ctx?.userId, sessionId: ctx?.sessionId,
+            })
+        }
+
+        return {
+            text: sanitizedText,
+            usedLocations,
+            attachments: usedLocations,
+            modelUsed,
+            toolCalls: trackedToolCalls,
+            timing: {
+                startMs: startTime,
+                toolExecutionMs: toolTime,
+                totalMs: Date.now() - startTime,
+            },
+        }
+    }
 
     return {
         text: finalContent,

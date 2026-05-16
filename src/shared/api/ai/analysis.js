@@ -22,7 +22,7 @@ import { runAgentPass } from './agents'
 
 /**
  * Analyze a user query and return a GastroGuide response.
- * Uses OpenRouter when VITE_OPENROUTER_API_KEY is set, else local engine.
+ * Uses proxy when useProxy is true, else local engine.
  *
  * @param {string} message - User query
  * @param {{ preferences?: Object, history?: Array, locations?: Array, userData?: Object }} [context]
@@ -33,7 +33,7 @@ export async function analyzeQuery(message, context = {}) {
 
     const intent = detectIntent(message)
 
-    if (getActiveAIConfig().apiKey) {
+    if (getActiveAIConfig().useProxy === true) {
         try {
             const historyMessages = (context.history ?? [])
                 .slice(-10)
@@ -83,8 +83,10 @@ export async function analyzeQuery(message, context = {}) {
             }
         } catch (err) {
             if (err.status === 401) throw new ApiError('Invalid OpenRouter API key. Check VITE_OPENROUTER_API_KEY.', 401, 'AUTH_ERROR')
-            console.warn('[GastroAI] OpenRouter error, falling back to local engine:', err.message)
+            console.warn('[GastroAI] analyzeQuery: proxy unavailable, falling back to local engine:', err.message)
         }
+    } else {
+        console.log('[GastroAI] analyzeQuery: useProxy=false, using local engine')
     }
 
     // Local fallback — pass live locations from context or store

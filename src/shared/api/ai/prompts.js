@@ -89,11 +89,9 @@ async function _buildPrompt({
         return _buildLegacyPrompt({ userPrefs, query, agentType, userData, recentMessages, overridePrompt, appCfg })
     }
 
-    // ─── V2: Persona + Operational Rules + Dynamic Context ───────────────────
-    const persona = overridePrompt ?? (agentType === 'guide'
-        ? (appCfg.aiGuideSystemPrompt || DEFAULT_GUIDE_PROMPT)
-        : (appCfg.aiAssistantSystemPrompt || DEFAULT_ASSISTANT_PROMPT))
-
+    // ─── V2: OPERATIONAL_RULES is the SOLE source of truth ─────────────────
+    // When v2 is ON, the admin System Prompts field is IGNORED.
+    // The bot uses only OPERATIONAL_RULES + dynamic context.
     const operationalRules = getOperationalRules()
 
     // Build Guest Insight from personalContext (only for personal queries)
@@ -108,10 +106,8 @@ async function _buildPrompt({
     const cappedMessages = (recentMessages || []).slice(-10)
     const recentCtx = buildRecentContext(cappedMessages)
 
-    // Compose final prompt: Persona + "\n\n" + Operational_Rules + dynamic_context (R7.1)
-    return `${persona}
-
-${operationalRules}
+    // Compose final prompt: OPERATIONAL_RULES + dynamic_context (no admin prompt)
+    return `${operationalRules}
 ${summarySection}
 # INTERNAL GUEST CONTEXT (FOR YOUR EYES ONLY)
 ${guestInsight || 'No specific profile data available yet. Be curious and observant.'}

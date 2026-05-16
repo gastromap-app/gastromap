@@ -210,10 +210,12 @@ const InfoModal = ({ onClose }) => (
 
             <div className="p-8 overflow-y-auto custom-scrollbar space-y-5">
                 {[
-                    { icon: Database, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '1. База Знаний (Ontology)', text: 'Кулинарная энциклопедия со связями: Кухни (Итальянская) → Блюда (Паста) → Ингредиенты (Базилик). Приложение понимает контекст еды.' },
-                    { icon: Sparkles, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10', title: '2. Искусственный Интеллект', text: 'AI наполняет базу "семенами" знаний — автоматически генерирует блюда, описания и теги по мировым кулинарным стандартам.' },
-                    { icon: RefreshCw, color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10', title: '3. Синхронизация (Mapping)', text: 'Рестораны привязываются к базе знаний. Если ресторан подаёт пиццу — он становится частью "Итальянской кухни" автоматически.' },
-                    { icon: Search, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '4. Семантический поиск', text: 'Пользователи ищут не по именам, а по смыслу: "хочу что-то острое", "веганская Азия". Система находит рестораны через связи в графе.' },
+                    { icon: Database, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '1. Knowledge Base (Ontology)', text: 'A culinary encyclopedia with connections: Cuisines (Italian) → Dishes (Pasta Carbonara) → Ingredients (Guanciale, Pecorino). The app understands food context through these relationships.' },
+                    { icon: Sparkles, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10', title: '2. KG AI Agent (Chat)', text: 'Write a request like "add Polish cuisine with dishes" → AI generates structured entries (cuisines, dishes, ingredients). You preview and select which to save. Uses OpenRouter models.' },
+                    { icon: RefreshCw, color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10', title: '3. Enrichment Agent (Auto-fill)', text: 'Scans all cuisines for empty fields (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) and fills them via AI. Shows "System Optimized" when all cuisines are complete.' },
+                    { icon: Search, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '4. Bulk Sync (KG → Locations)', text: 'Matches KG entries against location text (title, description, tags, what_to_try). Writes matches to kg_cuisines, kg_dishes, kg_ingredients columns on each location. This is how tags appear on location cards.' },
+                    { icon: Globe, color: 'text-sky-600 bg-sky-50 dark:bg-sky-500/10', title: '5. AI Bot Uses KG', text: 'When a user asks the bot about food, it queries KG for context: "Spanish food" → paella, tapas, saffron. "Gluten-free" → safe cuisines/dishes. This enriches bot answers with real culinary knowledge.' },
+                    { icon: Zap, color: 'text-rose-600 bg-rose-50 dark:bg-rose-500/10', title: '6. Spoonacular Enricher', text: 'Import dishes & ingredients from the external Spoonacular food database (150 free requests/day). Requires VITE_SPOONACULAR_API_KEY in Vercel env vars.' },
                 ].map(({ icon: Icon, color, title, text }) => (
                     <div key={title} className="flex gap-4">
                         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', color)}>
@@ -229,10 +231,13 @@ const InfoModal = ({ onClose }) => (
                 <div className="p-5 bg-slate-50 dark:bg-[hsl(220,20%,6%)] rounded-2xl border border-slate-100 dark:border-white/[0.06]">
                     <div className="flex items-center gap-2 mb-2">
                         <Zap size={16} className="text-yellow-500" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">Pro Tip</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">Workflow</span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">
-                        Используйте <strong className="text-slate-700 dark:text-[hsl(220,10%,55%)]">Seed Engine</strong> для инициализации новых регионов. После добавления данных нажмите <strong className="text-slate-700 dark:text-[hsl(220,10%,55%)]">Sync Graph</strong> — это обновит теги всех ресторанов и сделает поиск точнее.
+                        <strong className="text-slate-700 dark:text-slate-300">Step 1:</strong> Add cuisines/dishes/ingredients via KG AI Agent or manually.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Step 2:</strong> Run Enrichment Agent to auto-fill empty fields on cuisines.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Step 3:</strong> Click <strong>Bulk Sync</strong> — this scans all locations and writes kg_cuisines/kg_dishes/kg_ingredients tags.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Result:</strong> Location cards show cuisine tags, filters work dynamically, and the AI bot has culinary context for answers.
                     </p>
                 </div>
             </div>

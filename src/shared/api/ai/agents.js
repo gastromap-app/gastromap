@@ -424,6 +424,15 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         cascade,
     })
     const finalData = await finalRes.json()
+    
+    console.log('[Agent] 2nd call response:', {
+        hasChoices: !!finalData.choices?.length,
+        contentLength: finalData.choices?.[0]?.message?.content?.length || 0,
+        model: finalData._model_used,
+        finishReason: finalData.choices?.[0]?.finish_reason,
+        contentPreview: finalData.choices?.[0]?.message?.content?.slice(0, 100),
+    })
+    
     // Clean the final response — some models still emit XML/JSON artifacts
     // even when tools are disabled (withTools: false)
     let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')

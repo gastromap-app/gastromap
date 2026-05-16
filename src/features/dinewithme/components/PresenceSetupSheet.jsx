@@ -41,7 +41,7 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
     const { goVisible, isGoingVisible } = useDiningPresence()
     const [isDeleting, setIsDeleting] = useState(false)
 
-    const { data: locationsResult = [], isLoading: isLoadingLocations } = useLocations()
+    const { data: locationsResult = [], isLoading: isLoadingLocations } = useLocations({ limit: 500 })
     const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
 
     // Form state

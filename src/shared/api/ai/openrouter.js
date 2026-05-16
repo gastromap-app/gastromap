@@ -52,7 +52,7 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
     for (const url of urls) {
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 15000)
+            const timeoutId = setTimeout(() => controller.abort(), 30000)
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

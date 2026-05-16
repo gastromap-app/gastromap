@@ -156,6 +156,8 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
         if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
 
         try {
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s per model max
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {
@@ -165,7 +167,9 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(body),
+                signal: controller.signal,
             })
+            clearTimeout(timeoutId)
 
             // If 401 (invalid key) or 429 (rate limited) — try fallback key
             if ((response.status === 401 || response.status === 429) && currentKeyIdx < keys.length - 1) {
@@ -182,18 +186,38 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
                 continue
             }
 
+            // Any 5xx error → try next model (don't return error to client)
+            if (response.status >= 500) {
+                lastError = { error: { message: `${response.status} on ${currentModel}` } }
+                console.warn(`[ai/chat] ${response.status} on ${currentModel}, trying next model...`)
+                await new Promise(r => setTimeout(r, 300))
+                continue
+            }
+
             const data = await response.json()
             if (data.error && (data.error.code === 429 || data.error.type === 'rate_limit')) {
                 lastError = data
                 continue
             }
 
+            // If model returned an error in the body (not HTTP error) → try next
+            if (data.error && !data.choices?.length) {
+                lastError = data
+                console.warn(`[ai/chat] Model error on ${currentModel}:`, data.error.message || data.error)
+                continue
+            }
+
             data._model_used = currentModel
-            return res.status(response.ok ? 200 : response.status).json(data)
+            return res.status(200).json(data)
 
         } catch (err) {
             lastError = { error: { message: err.message } }
-            console.warn(`[ai/chat] Error on ${currentModel}:`, err.message)
+            if (err.name === 'AbortError') {
+                console.warn(`[ai/chat] Timeout on ${currentModel} (8s), trying next...`)
+            } else {
+                console.warn(`[ai/chat] Error on ${currentModel}:`, err.message)
+            }
+            // Always continue to next model on any error
         }
     }
 

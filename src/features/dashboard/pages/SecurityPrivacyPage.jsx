@@ -98,8 +98,8 @@ const SecurityPrivacyPage = () => {
                 </motion.div>
             )}
             <div
-                className="sticky top-0 z-20 backdrop-blur-xl px-4 sm:px-6 mb-8 flex items-center gap-3"
-                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)', paddingBottom: '0.75rem' }}
+                className="sticky top-[56px] md:top-0 z-20 backdrop-blur-xl px-4 sm:px-6 mb-8 flex items-center gap-3"
+                style={{ paddingTop: '1rem', paddingBottom: '0.75rem' }}
             >
                 <button onClick={() => navigate('/profile')}
                     className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}>

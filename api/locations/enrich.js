@@ -383,6 +383,10 @@ async function handleFreshnessCheck(body) {
         return { success: false, error: 'Invalid request: missing required field "locationIds"', code: 'INVALID_REQUEST', _status: 400 }
     }
 
+    if (locationIds.length > 20) {
+        return { success: false, error: 'Maximum 20 locations per freshness check', code: 'LIMIT_EXCEEDED', _status: 400 }
+    }
+
     const results = []
     const freshnessFields = 'business_status,formatted_address,opening_hours,geometry,photos'
 

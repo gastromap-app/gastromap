@@ -359,12 +359,6 @@ export async function executeTool(name, args, ctx = {}) {
                 // Hydrate semantic results with full data from the store to ensure
                 // the AI has access to all metadata (kg_profile, insider_tips, etc.)
                 let activeLocations = locations
-                if (!activeLocations?.length) {
-                    try {
-                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                        activeLocations = useLocationsStore.getState().locations
-                    } catch { activeLocations = [] }
-                }
 
                 pool = semanticResults.map(sr => {
                     const full = activeLocations.find(l => l.id === sr.id)
@@ -399,14 +393,6 @@ export async function executeTool(name, args, ctx = {}) {
             } else {
                 // Tier 3 Fallback: in-memory Zustand store
                 let activeLocations = locations
-                if (!activeLocations?.length) {
-                    try {
-                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                        activeLocations = useLocationsStore.getState().locations
-                    } catch (e) {
-                        console.warn('[ai.tools] Could not load store:', e.message)
-                    }
-                }
                 pool = [...(activeLocations || [])]
 
                 // Apply SQL-equivalent filters in memory when DB is unavailable
@@ -503,12 +489,6 @@ export async function executeTool(name, args, ctx = {}) {
         if (rpcRows?.length) {
             // Hydrate with full store rows when available for richer LLM context.
             let activeLocations = locations
-            if (!activeLocations?.length) {
-                try {
-                    const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                    activeLocations = useLocationsStore.getState().locations
-                } catch { activeLocations = [] }
-            }
             const hydrated = rpcRows.map(row => {
                 const full = activeLocations.find(l => l.id === row.id)
                 return full
@@ -520,12 +500,6 @@ export async function executeTool(name, args, ctx = {}) {
 
         // JS Haversine fallback — needed until the migration runs against the DB.
         let activeLocations = locations
-        if (!activeLocations?.length) {
-            try {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                activeLocations = useLocationsStore.getState().locations
-            } catch { activeLocations = [] }
-        }
 
         let pool = (activeLocations || []).filter(l => {
             const lat = l.lat ?? l.latitude
@@ -594,13 +568,6 @@ export async function executeTool(name, args, ctx = {}) {
             }
         }
 
-        if (!loc) {
-            try {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                loc = useLocationsStore.getState().locations.find(l => String(l.id) === String(location_id))
-            } catch { /* intentionally empty */ }
-        }
-
         if (!loc) return { error: `Location ${location_id} not found` }
 
         return {
@@ -625,12 +592,6 @@ export async function executeTool(name, args, ctx = {}) {
 
         // Hydrate each id (store first, then DB).
         let activeLocations = locations
-        if (!activeLocations?.length) {
-            try {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                activeLocations = useLocationsStore.getState().locations
-            } catch { activeLocations = [] }
-        }
 
         const items = []
         for (const id of ids) {

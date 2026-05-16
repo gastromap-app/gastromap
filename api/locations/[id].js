@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { applyRateLimit } from '../_shared/rate-limit.js'
+import { setCorsHeaders } from '../_shared/cors.js'
 
 /**
  * GET /api/locations/:id
@@ -6,9 +8,14 @@ import { createClient } from '@supabase/supabase-js'
  * Uses service role to bypass RLS (no auth needed for approved locations).
  */
 export default async function handler(req, res) {
+    setCorsHeaders(req, res)
+    if (req.method === 'OPTIONS') return res.status(200).end()
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' })
     }
+
+    if (applyRateLimit(req, res, 'location-detail', { maxRequests: 30, windowMs: 60000 })) return
 
     const { id } = req.query
 

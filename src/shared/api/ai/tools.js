@@ -161,7 +161,11 @@ async function _applyFilters(query, { city, category, cuisine, price_range, min_
         query = query.ilike('city', `%${cityPattern}%`)
     }
     if (category) query = query.ilike('category', `%${category}%`)
-    if (cuisine) query = query.or(`cuisine.ilike.%${cuisine}%,kg_cuisines.cs.{${cuisine}}`)
+    if (cuisine) {
+        // Split multi-word cuisine ("Italian pizza" → try "Italian" first)
+        const cuisineWord = cuisine.split(/\s+/)[0] // Take first word as primary cuisine
+        query = query.or(`cuisine.ilike.%${cuisineWord}%,cuisine_types.cs.{${cuisineWord}},kg_cuisines.cs.{${cuisineWord}}`)
+    }
     return query
 }
 
@@ -218,9 +222,12 @@ function applyTextFilters(locations, { city, category, cuisine_types, tags, amen
         results = results.filter(l => {
             const locCuisines = (l.cuisine_types || []).map(norm)
             const locTags = [...(l.tags || []), ...(l.kg_cuisines || [])].map(norm)
+            const allLoc = [...locCuisines, ...locTags]
             return cuisine_types.some(c => {
                 const cl = norm(c)
-                return locCuisines.some(lc => lc.includes(cl)) || locTags.some(t => t.includes(cl))
+                // Check both directions + split multi-word ("italian pizza" → check "italian" and "pizza")
+                const words = cl.split(/\s+/)
+                return allLoc.some(lc => lc.includes(cl) || cl.includes(lc) || words.some(w => w.length > 3 && lc.includes(w)))
             })
         })
     }

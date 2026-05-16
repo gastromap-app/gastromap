@@ -11,7 +11,7 @@
  *   // Auto-request on mount (optional):
  *   const { city } = useUserGeo({ autoRequest: true })
  */
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { trackUserLocation } from '@/shared/api/user.api'
@@ -83,6 +83,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
     const setError = useGeoStore(state => state.setError)
     const setVisitData = useGeoStore(state => state.setVisitData)
     const { user } = useAuthStore()
+    const [source, setSource] = useState(null) // 'gps' | 'ip' | null
 
     const requestGeo = useCallback(async () => {
         if (status === 'loading' || status === 'granted') return
@@ -115,11 +116,30 @@ export function useUserGeo({ autoRequest = false } = {}) {
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     const { latitude, longitude } = position.coords
+                    // Treat non-finite coordinates as unavailable — trigger IP fallback
+                    if (!isFinite(latitude) || !isFinite(longitude)) {
+                        try {
+                            const ipGeo = await fetchGeoByIP()
+                            setSource('ip')
+                            await finalizeLocation(ipGeo.lat, ipGeo.lng, {
+                                city: ipGeo.city,
+                                country: ipGeo.country,
+                                address: ipGeo.address,
+                            })
+                        } catch {
+                            const msg = 'Unable to determine your location. Please check your connection or enable location access.'
+                            setError(msg)
+                            setStatus('denied')
+                        }
+                        return
+                    }
                     try {
                         const location = await reverseGeocode(latitude, longitude)
+                        setSource('gps')
                         await finalizeLocation(latitude, longitude, location)
                     } catch {
                         // Reverse geocoding failed but coords are valid
+                        setSource('gps')
                         await finalizeLocation(latitude, longitude, {
                             city: 'Unknown',
                             country: null,
@@ -131,6 +151,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
                     // Browser geolocation failed — try IP fallback
                     try {
                         const ipGeo = await fetchGeoByIP()
+                        setSource('ip')
                         await finalizeLocation(ipGeo.lat, ipGeo.lng, {
                             city: ipGeo.city,
                             country: ipGeo.country,
@@ -152,6 +173,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
             // No browser geolocation support — try IP fallback immediately
             try {
                 const ipGeo = await fetchGeoByIP()
+                setSource('ip')
                 await finalizeLocation(ipGeo.lat, ipGeo.lng, {
                     city: ipGeo.city,
                     country: ipGeo.country,
@@ -179,6 +201,7 @@ export function useUserGeo({ autoRequest = false } = {}) {
         address,
         status,
         error,
+        source,
         isLoading: status === 'loading',
         isGranted: status === 'granted',
         isDenied: status === 'denied',

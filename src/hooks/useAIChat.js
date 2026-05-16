@@ -4,7 +4,7 @@ import { useAIChatStore } from '@/shared/store/useAIChatStore'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
-import { getUserReviews } from '@/shared/api/reviews.api'
+
 import { useLocations } from '@/shared/api/queries/location.queries'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
@@ -143,23 +143,11 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         // Build conversation history for multi-turn context (rolling window of last 10 turns)
         // (history variable removed — context.history uses messages.slice(-10) directly)
 
-        // Fetch user reviews and location history for deep personalization if authenticated
-        let userExperience = []
+        // Fetch location history for deep personalization if authenticated
         let locationHistory = []
         if (user?.id) {
             try {
-                // Run in parallel for speed
-                const [reviews, history] = await Promise.all([
-                    getUserReviews(user.id).catch(() => []),
-                    getUserLocationHistory(user.id).catch(() => [])
-                ])
-                
-                userExperience = reviews.map(r => ({
-                    location: r.locations?.title,
-                    rating: r.rating,
-                    text: r.review_text?.slice(0, 100) // Keep it concise for prompt
-                }))
-
+                const history = await getUserLocationHistory(user.id).catch(() => [])
                 locationHistory = history.map(h => ({
                     city: h.city,
                     country: h.country,
@@ -180,8 +168,8 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 .filter(l => favoriteIds.includes(l.id))
                 .map(l => l.title),
             recentInterests: prefs.frequentSearches || [],
-            userExperience,
-            locationHistory, // New: injected into the prompt via buildSystemPrompt
+            locationHistory, // Injected into the prompt via buildSystemPrompt
+            dietaryRestrictions: prefs.dietaryRestrictions || [],
             foodieDNA: prefs.foodieDNA || '',
             atmospherePreference: prefs.atmospherePreference || '',
             features: prefs.features || '',
@@ -202,6 +190,8 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 lng: useGeoStore.getState().lng || null,
             },
             userId: user?.id || null,
+            sessionId: currentSessionId,
+            dietary: prefs.dietaryRestrictions || [],
         }
 
         try {

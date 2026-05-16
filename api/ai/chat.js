@@ -25,58 +25,7 @@ const MODEL_CASCADE = [
     'nousresearch/hermes-3-llama-3.1-405b:free', // XML tool calls
 ]
 
-// Keywords that trigger semantic search enrichment
-const FOOD_KEYWORDS = [
-    'restaurant', 'cafe', 'bar', 'eat', 'food', 'dinner', 'lunch', 'breakfast',
-    'coffee', 'cuisine', 'dish', 'menu', 'bistro', 'tavern', 'pub',
-    'ресторан', 'кафе', 'бар', 'еда', 'ужин', 'обед', 'завтрак',
-    'кофе', 'кухня', 'блюдо', 'restauracja', 'kawiarnia', 'jedzenie',
-    'recommend', 'suggest', 'find', 'where', 'best', 'top', 'near',
-    'найди', 'посоветуй', 'где', 'лучший', 'хочу', 'miejsce',
-]
-
-function hasLocationIntent(messages) {
-    const lastMessages = messages.slice(-3).map(m => (m.content || '').toLowerCase())
-    const text = lastMessages.join(' ')
-    return FOOD_KEYWORDS.some(kw => text.includes(kw))
-}
-
-async function getSemanticContext(messages, baseUrl) {
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-    if (!lastUserMsg) return null
-
-    const query = typeof lastUserMsg.content === 'string'
-        ? lastUserMsg.content
-        : lastUserMsg.content?.map?.(c => c.text || '').join(' ') || ''
-
-    if (!query.trim()) return null
-
-    try {
-        const res = await fetch(`${baseUrl}/api/ai/semantic-search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, limit: 5, threshold: 0.3 }),
-        })
-        if (!res.ok) return null
-        const data = await res.json()
-        if (!data.results?.length) return null
-
-        const formatted = data.results.map((loc, i) => {
-            const tags = loc.tags?.slice(0, 4).join(', ') || ''
-            const vibe = loc.vibe?.slice(0, 2).join(', ') || ''
-            return `${i + 1}. **${loc.title}** — ${loc.category}, ${loc.city}\n` +
-                   `   Rating: ${loc.rating || 'N/A'} | Price: ${loc.price_level || 'N/A'} | Cuisine: ${loc.cuisine || 'N/A'}\n` +
-                   `   ${loc.description?.slice(0, 120) || ''}\n` +
-                   `   Tags: ${tags}${vibe ? ' | Vibe: ' + vibe : ''}`
-        }).join('\n\n')
-
-        return `## Relevant locations from GastroMap database (semantic search):\n\n${formatted}\n\n` +
-               `Use these real locations when recommending. Always mention the name and city.`
-    } catch (e) {
-        console.error('[chat] semantic search failed:', e.message)
-        return null
-    }
-}
+// Keywords and RAG functions removed — client-side search_locations tool handles all retrieval
 
 export default async function handler(req, res) {
     setCorsHeaders(req, res)
@@ -108,27 +57,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'messages array is required' })
         }
 
-        // RAG enrichment: inject semantic search results into system context
-        if (!_skip_rag && hasLocationIntent(messages)) {
-            const protocol = req.headers['x-forwarded-proto'] || 'https'
-            const host = req.headers['host'] || 'gastromap-five.vercel.app'
-            const baseUrl = `${protocol}://${host}`
-
-            const context = await getSemanticContext(messages, baseUrl)
-            if (context) {
-                const sysIdx = messages.findIndex(m => m.role === 'system')
-                if (sysIdx >= 0) {
-                    messages = messages.map((m, i) =>
-                        i === sysIdx
-                            ? { ...m, content: m.content + '\n\n' + context }
-                            : m
-                    )
-                } else {
-                    messages = [{ role: 'system', content: context }, ...messages]
-                }
-                console.log('[chat] RAG context injected from semantic search')
-            }
-        }
+        // _skip_rag is now a no-op — server-side RAG removed; client-side tools handle retrieval
 
         // Cap max_tokens at 4096 for all chat modes
         const cappedMaxTokens = Math.min(max_tokens || 1024, 4096)

@@ -587,6 +587,10 @@ const AdminAIPage = () => {
     const [assistantMaxTokens, setAssistantMaxTokens] = useState(appConfig.aiAssistantMaxTokens ?? 1024)
     const [guideTone, setGuideTone] = useState(appConfig.aiGuideTone ?? 'friendly')
 
+    // ── AI Bot v2 Feature Flag
+    const [botV2Enabled, setBotV2Enabled] = useState(appConfig.aiBotImprovementsV2 ?? false)
+    const [guardThreshold, setGuardThreshold] = useState(appConfig.guardThreshold ?? 0.6)
+
     // ── Live Prompt Preview
     const [previewPrompt, setPreviewPrompt] = useState('')
     const [showPreview, setShowPreview] = useState(false)
@@ -659,6 +663,8 @@ const AdminAIPage = () => {
                 aiGuideMaxTokens: guideMaxTokens,
                 aiAssistantMaxTokens: assistantMaxTokens,
                 aiGuideTone: guideTone,
+                aiBotImprovementsV2: botV2Enabled,
+                guardThreshold: guardThreshold,
             })
             console.log('[AdminAI] updateSettings returned:', result)
             if (result?.ok === false) {
@@ -1245,6 +1251,55 @@ const AdminAIPage = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+            </CollapsibleSection>
+
+            {/* 7b. AI Bot v2 Feature Flag */}
+            <CollapsibleSection title="AI Bot v2 (Guardrails & Smart Context)" icon={Shield} iconColor="text-emerald-500" defaultOpen={false}>
+                <div className="p-6 space-y-4">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                        Enables the new AI orchestration layer: 2-stage guardrails (off-topic rejection + output validation), context-aware personalization, expanded Knowledge Graph search, embedding cache, and session memory.
+                    </p>
+                    <div className="flex items-center justify-between p-4 bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
+                        <div>
+                            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Enable AI Bot v2</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">When off, the bot uses the legacy pipeline (no guardrails, no smart context)</p>
+                        </div>
+                        <button
+                            onClick={() => setBotV2Enabled(!botV2Enabled)}
+                            className={cn(
+                                'relative w-12 h-7 rounded-full transition-colors duration-200',
+                                botV2Enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-[hsl(220,20%,20%)]'
+                            )}
+                            aria-label={botV2Enabled ? 'Disable AI Bot v2' : 'Enable AI Bot v2'}
+                        >
+                            <span className={cn(
+                                'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200',
+                                botV2Enabled && 'translate-x-5'
+                            )} />
+                        </button>
+                    </div>
+                    {botV2Enabled && (
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Thermometer size={14} className="text-amber-500" />
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Guardrail Confidence Threshold</h3>
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <input
+                                    type="range"
+                                    min="0.3"
+                                    max="0.9"
+                                    step="0.05"
+                                    value={guardThreshold}
+                                    onChange={(e) => setGuardThreshold(parseFloat(e.target.value))}
+                                    className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                                />
+                                <span className="text-sm font-bold text-amber-600 dark:text-amber-400 w-10 text-right">{guardThreshold}</span>
+                            </div>
+                            <p className="text-xs text-slate-400">Lower = more queries treated as "personal" (safer). Higher = more queries classified as "factual" (faster, less context loaded).</p>
+                        </div>
+                    )}
                 </div>
             </CollapsibleSection>
 

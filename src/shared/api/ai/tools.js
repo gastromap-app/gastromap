@@ -26,6 +26,7 @@ import { supabase } from '../client.js'
 import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { getAIContextForQuery } from '../knowledge-graph.api.js'
 import { calculateDistance } from '@/lib/geo.js'
+import { normalizeCityName } from '@/utils/normalizeCityName'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -334,11 +335,16 @@ export async function executeTool(name, args, ctx = {}) {
 
     // ── search_locations ────────────────────────────────────────────────────
     if (name === 'search_locations') {
-        const {
+        let {
             city, cuisine_types, tags, price_range, category,
             amenities, best_for, dietary_options, min_rating,
             keyword, michelin, limit = 5, sort_by,
         } = args
+
+        // Normalize city name: "Краков"/"Кракове"/"Kraków" → "Krakow"
+        if (city) {
+            city = normalizeCityName(city) || city
+        }
 
         console.log(`[ai.tools] 🔎 Executing search_locations:`, {
             city, category, keyword,

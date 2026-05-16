@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import { supabase } from '@/shared/api/client'
 import { useNotificationStore } from '@/shared/store/useNotificationStore'
-import { getNotificationHistory } from '@/shared/api/notifications.api'
+import { getNotificationHistory, markAllNotificationsRead } from '@/shared/api/notifications.api'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
 /**
@@ -28,6 +28,7 @@ export function useAdminNotifications() {
                     id: n.id,
                     text: n.title + (n.body ? `: ${n.body}` : ''),
                     time: formatTimeAgo(n.created_at),
+                    read: !!n.read,
                     unread: !n.read,
                     type: n.type,
                 }))
@@ -88,6 +89,8 @@ export function useAdminNotifications() {
 
     const markAllRead = useCallback(() => {
         useNotificationStore.getState().markAllAsRead()
+        // Persist to Supabase (fire-and-forget)
+        markAllNotificationsRead().catch(() => {})
     }, [])
 
     return { notifications, unreadCount, markAllRead }

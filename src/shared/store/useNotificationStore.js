@@ -34,7 +34,7 @@ export const useNotificationStore = create(
 
             setNotifications: (notifications) => set({ 
                 notifications,
-                unreadCount: notifications.filter(n => !n.read).length
+                unreadCount: notifications.filter(n => n.unread || !n.read).length
             }),
             
             togglePreference: (id) => set((state) => ({
@@ -48,28 +48,28 @@ export const useNotificationStore = create(
 
             addNotification: (notification) => set((state) => {
                 const newNotifications = [
-                    { id: Date.now(), timestamp: new Date().toISOString(), read: false, ...notification },
+                    { id: Date.now(), timestamp: new Date().toISOString(), read: false, unread: true, ...notification },
                     ...state.notifications
                 ].slice(0, 50)
                 
                 return {
                     notifications: newNotifications,
-                    unreadCount: newNotifications.filter(n => !n.read).length
+                    unreadCount: newNotifications.filter(n => n.unread || !n.read).length
                 }
             }),
 
             markAsRead: (id) => set((state) => {
                 const newNotifications = state.notifications.map(n => 
-                    n.id === id ? { ...n, read: true } : n
+                    n.id === id ? { ...n, read: true, unread: false } : n
                 )
                 return {
                     notifications: newNotifications,
-                    unreadCount: newNotifications.filter(n => !n.read).length
+                    unreadCount: newNotifications.filter(n => n.unread || !n.read).length
                 }
             }),
 
             markAllAsRead: () => set((state) => ({
-                notifications: state.notifications.map(n => ({ ...n, read: true })),
+                notifications: state.notifications.map(n => ({ ...n, read: true, unread: false })),
                 unreadCount: 0
             })),
 

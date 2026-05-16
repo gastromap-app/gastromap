@@ -488,7 +488,7 @@ const AdminLocationsPage = () => {
             {/* Toast Notifications */}
             <AnimatePresence>
                 {toast && (
-                    <div className="fixed bottom-6 right-6 z-[9999]">
+                    <div className="fixed bottom-24 md:bottom-6 left-4 right-4 md:left-auto md:right-6 z-[9999]">
                         <div 
                             className={cn(
                                 "flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-bottom-5",

@@ -52,10 +52,10 @@ export const useAdminLocations = () => {
     const [currentPage, setCurrentPage] = useState(1)
     const PAGE_SIZE = 20
 
-    // Auto-hide toast
+    // Auto-hide toast (but keep 'info' type visible while mutations are pending)
     useEffect(() => {
-        if (toast) {
-            const timer = setTimeout(() => setToast(null), 4000)
+        if (toast && toast.type !== 'info') {
+            const timer = setTimeout(() => setToast(null), 5000)
             return () => clearTimeout(timer)
         }
     }, [toast])

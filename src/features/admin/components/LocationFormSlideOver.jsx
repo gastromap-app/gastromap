@@ -927,11 +927,11 @@ const LocationFormSlideOver = ({
                                                                     )}
                                                                 </div>
 
-                                                                <div className="absolute inset-0 bg-black/60 opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
+                                                                <div className="absolute inset-0 bg-black/60 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
                                                                     <button
                                                                         onClick={() => set('image', url)}
                                                                         className={cn(
-                                                                            "p-2.5 rounded-card text-white transition-all transform group-hover:scale-100 scale-90",
+                                                                            "p-2.5 rounded-card text-white transition-all",
                                                                             formData.image === url ? "bg-primary shadow-xl shadow-primary/40" : "bg-white/20 hover:bg-white/40"
                                                                         )}
                                                                         title={t('admin.locations.form.cover_badge')}
@@ -940,7 +940,7 @@ const LocationFormSlideOver = ({
                                                                     </button>
                                                                     <button
                                                                         onClick={() => removePhoto(idx)}
-                                                                        className="p-2.5 rounded-card bg-destructive/80 hover:bg-destructive text-white shadow-xl shadow-destructive/20 transform group-hover:scale-100 scale-90 transition-all"
+                                                                        className="p-2.5 rounded-card bg-destructive/80 hover:bg-destructive text-white shadow-xl shadow-destructive/20 transition-all"
                                                                     >
                                                                         <Trash2 size={16} />
                                                                     </button>

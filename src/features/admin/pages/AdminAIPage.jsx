@@ -787,6 +787,7 @@ const AdminAIPage = () => {
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Active Agents</h2>
                 </div>
                 <div className="p-6">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">Control which AI agents are active. GastroGuide handles user-facing chat; GastroAssistant powers background search and personalization.</p>
                     <div className="grid md:grid-cols-2 gap-6">
                         <AgentCard
                             name="GastroGuide"
@@ -861,7 +862,7 @@ const AdminAIPage = () => {
                 </div>
                 <div className="p-6">
                     <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">
-                        This list defines all models available to the app. Add via Scanner or manual entry, reorder with arrows, disable to skip in fallback chain, or remove with ✕. Primary &amp; Fallback below pick from this list.
+                        Your model library. Add models via Scanner or manual ID entry. The order defines the fallback chain — if model #1 fails (rate-limited), the system tries #2, then #3, etc. Primary &amp; Fallback below select from this list.
                     </p>
                     <div className="space-y-2">
                         {cascadeModels.map((modelId, index) => {
@@ -1043,6 +1044,7 @@ const AdminAIPage = () => {
                     <span className="ml-auto text-[10px] text-slate-400">From cascade list above</span>
                 </div>
                 <div className="p-6 space-y-6">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">Primary is tried first for every request. Fallback is used only when Primary returns an error. Both must be in the Cascade list above.</p>
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Primary Model */}
                         <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-3 sm:p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
@@ -1146,6 +1148,7 @@ const AdminAIPage = () => {
             {/* 7. Generation Settings */}
             <CollapsibleSection title="Generation Settings" icon={Sliders} iconColor="text-emerald-500" defaultOpen={false}>
                 <div className="p-6 space-y-6">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">Fine-tune how the AI generates responses. Temperature controls creativity (higher = more varied answers). Max Tokens limits response length. Tone sets the personality style.</p>
                     {/* Temperature */}
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
@@ -1605,8 +1608,8 @@ const AdminAIPage = () => {
             {/* 9. Tool Definitions Viewer */}
             <CollapsibleSection title="Tool Definitions" icon={Wrench} iconColor="text-indigo-500" defaultOpen={false}>
                 <div className="p-6 space-y-4">
-                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
-                        Tools the AI can call during conversations. These are sent with each request to enable function calling.
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">
+                        Read-only view of the tools (functions) the AI can call during a conversation. These define what the bot can search for and how it queries the database.
                     </p>
                     {TOOLS.map((tool) => (
                         <ToolCard key={tool.function.name} tool={tool} />
@@ -1621,6 +1624,7 @@ const AdminAIPage = () => {
                     <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Test Model</h2>
                 </div>
                 <div className="p-6">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">Send a test message to the AI to verify it responds correctly. Use 'Full Pipeline' mode to test the complete flow including tool calls and search.</p>
                     <div className="flex flex-wrap gap-3 mb-4">
                         <select
                             value={testModel}

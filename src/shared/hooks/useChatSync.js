@@ -110,7 +110,7 @@ export function useChatSync() {
       user_id: userId,
       role: normalized.role,
       content: normalized.content,
-      timestamp: new Date(normalized.timestamp).toISOString(),
+      created_at: new Date(normalized.timestamp || normalized.created_at || Date.now()).toISOString(),
     }
 
     // Extended columns (added by 20260501_gastroguide_memory_v2 migration).
@@ -159,7 +159,7 @@ export function useChatSync() {
             user_id: payload.user_id,
             role: payload.role,
             content: payload.content,
-            timestamp: payload.timestamp,
+            created_at: payload.created_at,
           }
           const { error: retryError } = await supabase
             .from('chat_messages')

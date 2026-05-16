@@ -102,6 +102,8 @@ export function useChatSync() {
     const normalized = normalizeMessage(message)
 
     // Build the payload for Supabase
+    // Only include columns that exist in the table schema.
+    // Core columns (always present since table creation):
     const payload = {
       id: normalized.id,
       session_id: sessionId,
@@ -109,14 +111,19 @@ export function useChatSync() {
       role: normalized.role,
       content: normalized.content,
       timestamp: new Date(normalized.timestamp).toISOString(),
-      metadata: normalized.metadata || {},
-      attachments: normalized.attachments || [],
-      tool_calls: normalized.toolCalls || null,
-      tool_call_id: normalized.toolCallId || null,
-      intent: normalized.intent || null,
-      language: normalized.language || null,
-      mentioned_location_ids: normalized.mentionedLocationIds || [],
     }
+
+    // Extended columns (added by 20260501_gastroguide_memory_v2 migration).
+    // Include them only if they have values — Supabase will ignore unknown
+    // columns gracefully if the migration hasn't run yet (the upsert will
+    // succeed with just the core columns).
+    if (normalized.metadata && Object.keys(normalized.metadata).length > 0) payload.metadata = normalized.metadata
+    if (normalized.attachments?.length > 0) payload.attachments = normalized.attachments
+    if (normalized.toolCalls) payload.tool_calls = normalized.toolCalls
+    if (normalized.toolCallId) payload.tool_call_id = normalized.toolCallId
+    if (normalized.intent) payload.intent = normalized.intent
+    if (normalized.language) payload.language = normalized.language
+    if (normalized.mentionedLocationIds?.length > 0) payload.mentioned_location_ids = normalized.mentionedLocationIds
 
     // Validate message before persistence
     const validation = validateMessage({
@@ -143,6 +150,24 @@ export function useChatSync() {
         .upsert([payload], { onConflict: 'id' })
 
       if (error) {
+        // If 400 (schema mismatch — extended columns not yet migrated),
+        // retry with only core columns
+        if (error.code === '42703' || error.message?.includes('column') || error.code === 'PGRST204') {
+          const corePayload = {
+            id: payload.id,
+            session_id: payload.session_id,
+            user_id: payload.user_id,
+            role: payload.role,
+            content: payload.content,
+            timestamp: payload.timestamp,
+          }
+          const { error: retryError } = await supabase
+            .from('chat_messages')
+            .upsert([corePayload], { onConflict: 'id' })
+
+          if (!retryError) return { synced: true, queued: false }
+        }
+
         // Write failed — enqueue for retry
         queue.enqueue({ sessionId, userId, payload })
         setPendingCount(queue.size)

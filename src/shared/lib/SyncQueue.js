@@ -146,6 +146,22 @@ export class SyncQueue {
           this.dequeue(ids);
           synced += ids.length;
         } else {
+          // If schema mismatch (columns don't exist), retry with core columns only
+          if (error.code === '42703' || error.message?.includes('column')) {
+            const corePayloads = payloads.map(p => ({
+              id: p.id, session_id: p.session_id, user_id: p.user_id,
+              role: p.role, content: p.content, timestamp: p.timestamp,
+            }))
+            const { error: retryError } = await supabase
+              .from('chat_messages')
+              .upsert(corePayloads, { onConflict: 'id' })
+            if (!retryError) {
+              const ids = batch.map((item) => item.id);
+              this.dequeue(ids);
+              synced += ids.length;
+              continue;
+            }
+          }
           for (const item of batch) {
             this.incrementRetry(item.id);
           }

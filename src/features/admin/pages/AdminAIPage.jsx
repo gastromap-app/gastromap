@@ -620,22 +620,29 @@ const AdminAIPage = () => {
         return [...FREE_MODELS, ...extraModels]
     })()
 
-    const handleSave = () => {
+    const handleSaveModels = () => {
         appConfig.updateSettings({
-            aiGuideActive: agentActive.guide,
-            aiAssistantActive: agentActive.assistant,
             aiPrimaryModel: primaryModel,
             aiFallbackModel: fallbackModel,
-            aiGuideSystemPrompt: guidePrompt,
-            aiAssistantSystemPrompt: assistantPrompt,
-            aiKGAgentSystemPrompt: kgAgentPrompt,
-            braveSearchApiKey: braveApiKey,
             aiModelCascade: cascadeModels.filter(m => cascadeEnabled.has(m)),
             aiGuideTemp: guideTemp,
             aiAssistantTemp: assistantTemp,
             aiGuideMaxTokens: guideMaxTokens,
             aiAssistantMaxTokens: assistantMaxTokens,
             aiGuideTone: guideTone,
+        })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2500)
+    }
+
+    const handleSavePrompts = () => {
+        appConfig.updateSettings({
+            aiGuideActive: agentActive.guide,
+            aiAssistantActive: agentActive.assistant,
+            aiGuideSystemPrompt: guidePrompt,
+            aiAssistantSystemPrompt: assistantPrompt,
+            aiKGAgentSystemPrompt: kgAgentPrompt,
+            braveSearchApiKey: braveApiKey,
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
@@ -1155,6 +1162,17 @@ const AdminAIPage = () => {
                 </div>
             </CollapsibleSection>
 
+            {/* Save Models & Generation Settings Button */}
+            <div className="flex justify-end">
+                <button 
+                    onClick={handleSaveModels}
+                    className={cn(adminBtnPrimary, "h-12 px-8 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all")}
+                >
+                    <Save size={16} />
+                    <span>{saved ? '✓ Saved!' : 'Save Model Settings'}</span>
+                </button>
+            </div>
+
             {/* 8. System Prompts (with Live Preview) */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
@@ -1584,7 +1602,7 @@ const AdminAIPage = () => {
 
                     <div className="flex flex-col items-end gap-3">
                         <button 
-                            onClick={handleSave} 
+                            onClick={handleSavePrompts} 
                             className={cn(adminBtnPrimary, "h-14 px-10 min-w-[240px] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all")}
                         >
                             <Save size={18} /> Save Parameters

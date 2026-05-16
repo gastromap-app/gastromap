@@ -405,7 +405,13 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     const finalData = await finalRes.json()
     // Clean the final response — some models still emit XML/JSON artifacts
     // even when tools are disabled (withTools: false)
-    const finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+    let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+
+    // If model returned empty text but we have locations, generate a minimal response
+    if (!finalContent && usedLocations.length > 0) {
+        const names = usedLocations.slice(0, 5).map(l => `**${l.title || l.name}**`).join(', ')
+        finalContent = `Here are some places I found: ${names}`
+    }
 
     // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
     if (useV2 && finalContent) {

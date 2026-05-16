@@ -376,14 +376,16 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         : lastUserMsg?.content && /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(lastUserMsg.content) ? 'Polish'
         : null
 
+    // Build a response instruction that reminds the model to write a proper answer
+    const responseInstruction = `Now write a warm, expert response recommending these places to the user. For each place: bold the name, write 2-3 sentences about why it fits their request. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Do NOT call any tools. Do NOT output JSON.`
+
     let finalMessages
     if (mode === 'native') {
         finalMessages = [
             ...messages,
             assistantMsg,   // assistant message that contained tool_calls
             ...toolResults, // tool result messages
-            // Language reminder for native mode (some models forget after tool results)
-            ...(userLangHint ? [{ role: 'user', content: `[System note: respond in ${userLangHint}]` }] : []),
+            { role: 'user', content: responseInstruction },
         ]
     } else {
         // XML mode: strip the raw XML from the assistant turn, then inject results
@@ -392,6 +394,7 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
             ...messages,
             ...(cleanedContent ? [{ role: 'assistant', content: cleanedContent }] : []),
             ...toolResults,
+            { role: 'user', content: responseInstruction },
         ]
     }
 

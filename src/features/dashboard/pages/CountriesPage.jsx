@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { MapPin, ChevronRight, Search, Home, AlertCircle, Globe } from 'lucide-react'
 import { LazyImage } from '@/components/ui/LazyImage'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { useGeoCovers } from '@/shared/api/queries'
 import { CityCardSkeleton } from '@/components/ui/Skeleton'
 import { useTranslation } from 'react-i18next'
@@ -116,8 +116,8 @@ const CountriesPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const locations = useLocationsStore(state => state.locations)
-    const isLoading = useLocationsStore(state => state.isLoading)
+    const { data: locationsResult = [], isLoading } = useLocations()
+    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
 
     // Geo cover images from DB (admin-uploaded)
     const { data: geoCoversData = [] } = useGeoCovers('country')

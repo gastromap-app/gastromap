@@ -8,6 +8,7 @@ export const queryKeys = {
         all: ['locations'],
         filtered: (filters) => ['locations', 'filtered', filters],
         detail: (id) => ['locations', 'detail', id],
+        inBounds: (bounds, filters) => ['locations', 'bounds', bounds, filters],
         nearby: (coords) => ['locations', 'nearby', coords],
         pending: ['pending-locations'],
         recent: (limit) => ['recent-locations', limit],

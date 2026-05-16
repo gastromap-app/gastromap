@@ -171,20 +171,13 @@ export function useUpdateLocationStatusMutation() {
             qc.invalidateQueries({ queryKey: queryKeys.locations.top(5) })
             qc.invalidateQueries({ queryKey: queryKeys.admin.cityStats })
             
-            // Sync to Zustand store if approved
-            if (status === 'approved' || status === 'active') {
-                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                    import('../locations.api').then(({ normalise }) => {
-                        const loc = normalise(data)
-                        if (loc) useLocationsStore.getState().addLocation(loc)
-                    })
-                })
-            }
-            // Always sync rejected/hidden status to user-facing store
-            if (status === 'rejected' || status === 'hidden') {
-                import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                    useLocationsStore.getState().deleteLocation(id)
-                })
+            // Optimistic detail update for the status change (R5.1).
+            // No Zustand store sync needed (R5.2) — React Query cache is the
+            // single source of truth; Realtime will propagate to other clients.
+            if (data) {
+                qc.setQueryData(queryKeys.locations.detail(id), (prev) =>
+                    prev ? { ...prev, status } : prev
+                )
             }
         },
     })

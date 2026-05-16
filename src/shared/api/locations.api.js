@@ -148,7 +148,7 @@ function normalise(row) {
 
 // ─── Read ──────────────────────────────────────────────────────────────────
 
-export async function getLocations(filters = {}) {
+export async function getLocations(filters = {}, { isAuthed = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocations(filters)
 
     const { 
@@ -180,11 +180,13 @@ export async function getLocations(filters = {}) {
     // always come from authenticated users who have full SELECT.
     // Authenticated user columns: use '*' to avoid 400 errors from non-existent columns.
     // Anon users get minimal columns for the list view (includes google_photos for thumbnails).
+    // Column selection driven by injected isAuthed (R3.4)
     const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at'
+    const selectCols = (bypassStatus || isAuthed) ? '*' : ANON_COLS
 
     let q = supabase
         .from('locations')
-        .select(bypassStatus ? '*' : ANON_COLS, { count: 'exact' })
+        .select(selectCols, { count: 'exact' })
 
     // ─── Bounding Box Filter (High Performance) ──────────────────────────
     if (bounds) {
@@ -272,43 +274,18 @@ export async function getLocations(filters = {}) {
     }
 }
 
-export async function getLocation(id, { adminMode = false } = {}) {
+export async function getLocation(id, { isAuthed = false, adminMode = false } = {}) {
     if (!USE_SUPABASE) return _mockGetLocation(id)
 
-    // Check auth status with timeout — getSession() can hang on cold start
-    let isAuthenticated = false
-    try {
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 3000))
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-        isAuthenticated = !!session
-    } catch {
-        // Auth check failed — proceed as anon
-        isAuthenticated = false
-    }
+    // Widen ANON_COLS for detail page (Q2 recommendation) — includes fields
+    // that the existing /api/locations/[id] endpoint already exposes publicly.
+    const DETAIL_ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at,opening_hours,phone,website,tags,vibe,must_try,insider_tip,booking_url'
 
-    // For anon users: use server API endpoint (bypasses RLS, no cold-start issues)
-    if (!isAuthenticated && !adminMode) {
-        try {
-            const resp = await fetch(`/api/locations/${id}`)
-            if (resp.ok) {
-                const data = await resp.json()
-                return normalise(data)
-            }
-            // If server API fails, fall through to direct Supabase query
-        } catch (e) {
-            // Network error — fall through to direct query
-            safeWarn('[locations.api] Server API fallback failed, trying direct:', e.message)
-        }
-    }
+    const selectCols = (adminMode || isAuthed) ? '*' : DETAIL_ANON_COLS
 
-    // Column selection: anon users get minimal safe columns.
-    // Authenticated users get all columns (they have full SELECT grant via RLS).
-    // Using '*' for authenticated avoids 400 errors from non-existent columns.
-    const ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at'
-
-    const selectCols = adminMode || isAuthenticated ? '*' : ANON_COLS
-
+    // Authed or admin: direct Supabase query with full columns.
+    // Anon: direct Supabase query with DETAIL_ANON_COLS; fall back to
+    // /api/locations/[id] only on RLS error (R9.3).
     let q = supabase
         .from('locations')
         .select(selectCols)
@@ -323,11 +300,45 @@ export async function getLocation(id, { adminMode = false } = {}) {
     const { data, error } = await q.single()
 
     if (error) {
+        // For anon users: if RLS blocks the query, fall back to the public
+        // server endpoint (R9.3). Do NOT add a new serverless function (R13.8).
+        if (!isAuthed && !adminMode && (
+            error.code === 'PGRST301' ||
+            error.message?.includes('permission') ||
+            error.message?.includes('denied') ||
+            String(error.code).startsWith('4')
+        )) {
+            try {
+                const resp = await fetch(`/api/locations/${id}`)
+                if (resp.ok) {
+                    const fallbackData = await resp.json()
+                    return normalise(fallbackData)
+                }
+            } catch (e) {
+                safeWarn('[locations.api] Server API fallback failed:', e.message)
+            }
+        }
         safeError('[locations.api] ❌ Supabase query FAILED:', error.message, error)
         throw new ApiError(error.message, 500, error.code)
     }
 
     return normalise(data)
+}
+
+// ─── Bounds Query ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch locations within a map viewport bounding box.
+ * Thin wrapper over getLocations that ensures the bounds shape and a higher
+ * default limit suitable for clustered-marker rendering (R8.1, R8.2).
+ *
+ * @param {{ sw: { lat: number, lng: number }, ne: { lat: number, lng: number } }} bounds
+ * @param {object} filters - Additional filters (category, price_range, etc.)
+ * @param {{ isAuthed?: boolean }} [opts] - Auth context injected from useSession (R3.4)
+ * @returns {Promise<{ data: Array, total: number, hasMore: boolean }>}
+ */
+export async function getLocationsInBounds(bounds, filters = {}, { isAuthed = false } = {}) {
+    return getLocations({ ...filters, bounds, limit: filters.limit ?? 500 }, { isAuthed })
 }
 
 // ─── Create with Auto-Translation ──────────────────────────────────────────
@@ -429,12 +440,10 @@ export async function updateLocation(id, updates, enableTranslation = null) {
     const row = _toRow(updates)
     console.log('[locations.api] updateLocation START:', id, 'keys:', Object.keys(row), 'payload size:', JSON.stringify(row).length)
     
-    // Timeout safety: if Supabase hangs (network stall, huge payload), reject after 20s
-    const savePromise = _smartSave('locations', id, row)
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new ApiError('Save timed out after 30s. Check network or payload size.', 408, 'TIMEOUT')), 30000)
-    )
-    const { data: updated, error } = await Promise.race([savePromise, timeoutPromise])
+    // No application-level timeout wrapper (R5.5, R13.2). The Supabase client
+    // already enforces a 20-second transport AbortController timeout (client.js).
+    // React Query's mutation error path surfaces timeouts to the user (R5.4).
+    const { data: updated, error } = await _smartSave('locations', id, row)
 
     if (error) {
         console.error('[locations.api] updateLocation ERROR:', error)

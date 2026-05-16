@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useGeoStore } from '@/shared/store/useGeoStore'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { 
     ESTABLISHMENT_TYPES, 
     ESTABLISHMENT_TYPE_NAMES,
@@ -29,6 +31,12 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     // Cuisine list from KG (falls back to static filterOptions while loading)
     const { options: cuisineOptions } = useCuisineOptions() // eslint-disable-line no-unused-vars
 
+    // URL-driven filter state — single source of truth for the modal's
+    // applied filters (Phase 2 — task 2.5 expanded scope). The modal still
+    // keeps its own transient `selected*` local state so the user can dial
+    // in a filter set before clicking Apply; only `handleApply` writes the
+    // result back to the URL via `setFilters`.
+    const { filters, setFilters, resetFilters } = useLocationFilters()
 
     // ── Local filter state ──────────────────────────────────────────────────
     const [selectedCategory, setSelectedCategory] = useState('all')
@@ -42,7 +50,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
 
     // Request geolocation when radius filter is activated
     const handleRadiusChange = useCallback((newRadius) => {
-        const { setUserLocation } = useLocationsStore.getState()
+        const { setUserLocation } = useGeoStore.getState()
         if (newRadius > 0 && !geoGranted) {
             if (!navigator.geolocation) {
                 setGeoError(t('filter.geo_unsupported'))
@@ -64,19 +72,23 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
         }
     }, [geoGranted, t])
 
-    // Sync local state with store on open
+    // Sync local state with the URL-driven filters when the modal opens.
+    // `activeBestTime` is NOT part of the canonical `LocationFilters` URL
+    // surface (design Section 3.2 lists 11 fields, best-time is not among
+    // them) — it stays as transient modal-only state and does not survive
+    // a page reload. This matches the pre-migration UX, where best-time
+    // was never persisted to the URL either.
     useEffect(() => {
         if (isOpen) {
-            const store = useLocationsStore.getState()
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSelectedCategory(store.activeCategory === 'All' ? 'all' : store.activeCategory)
-            setSelectedRating(store.minRating)
-            setSelectedPriceLevels(store.activePriceLevels || [])
-            setSelectedFeatures(store.activeVibes || [])
-            setSelectedBestTime(store.activeBestTime)
-            setRadius(store.radius || 0)
+            setSelectedCategory(filters.categories.length > 0 ? filters.categories[0] : 'all')
+            setSelectedRating(filters.minRating)
+            setSelectedPriceLevels(filters.priceLevels)
+            setSelectedFeatures(filters.vibes)
+            setSelectedBestTime(null)
+            setRadius(filters.radius || 0)
         }
-    }, [isOpen])
+    }, [isOpen, filters])
 
 // Normalize string for comparison: lowercase + remove accents
 function normalizeForCompare(str) {
@@ -87,7 +99,8 @@ function normalizeForCompare(str) {
     // Automatically reflects any new cuisine added via KG enrichment.
     // Filters out establishment types (e.g. 'Cafe', 'Bar') that may have been
     // incorrectly stored in cuisine fields — those belong in `category` only.
-    const locations = useLocationsStore(s => s.locations)
+    const { data: locationsResult = [] } = useLocations()
+    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
     const dynamicCuisines = useMemo(() => {
         const cuisineSet = new Set()
         locations.forEach(loc => {
@@ -112,6 +125,8 @@ function normalizeForCompare(str) {
         selectedRating != null,
         selectedPriceLevels.length > 0,
         selectedFeatures.length > 0,
+        selectedBestTime != null,
+        radius > 0,
     ].filter(Boolean).length
 
     const togglePriceLevel = (level) => {
@@ -127,15 +142,15 @@ function normalizeForCompare(str) {
     }
 
     const handleApply = () => {
-        const { applyFilters } = useLocationsStore.getState()
-        
-        applyFilters({
-            activeCategories: selectedCategory === 'all' ? [] : [selectedCategory],
+        // Write the modal's pending filter selection out to the URL via
+        // `useLocationFilters().setFilters()`. `activeBestTime` is local-
+        // only (not URL-tracked); it's cleared on the next modal open.
+        setFilters({
+            categories: selectedCategory === 'all' ? [] : [selectedCategory],
             minRating: selectedRating,
-            activePriceLevels: selectedPriceLevels,
-            activeVibes: selectedFeatures,
-            activeBestTime: selectedBestTime,
-            radius: radius
+            priceLevels: selectedPriceLevels,
+            vibes: selectedFeatures,
+            radius,
         })
         onClose()
     }
@@ -147,7 +162,7 @@ function normalizeForCompare(str) {
         setSelectedFeatures([])
         setSelectedBestTime(null)
         setRadius(0)
-        useLocationsStore.getState().resetFilters()
+        resetFilters()
         onClose()
     }
 

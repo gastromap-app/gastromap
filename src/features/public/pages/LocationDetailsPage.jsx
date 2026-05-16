@@ -15,8 +15,7 @@ import {
 import { getDisplayRating } from '@/utils/ratingUtils'
 import { formatOpeningHours } from '@/utils/formatOpeningHours'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { MOCK_LOCATIONS } from '@/mocks/locations'
+
 import { PageTransition } from '@/components/ui/PageTransition'
 import { translate } from '@/utils/translation'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
@@ -57,27 +56,14 @@ const LocationDetailsPage = () => {
     const isPreview = !isAuthenticated
     const canScanMenu = user?.role === 'admin' || user?.role === 'moderator'
 
-    // Find location: try store first (instant if already loaded), then Supabase query
-    // Use String() coercion — URL params are always strings, DB ids may be numbers
-    const storeLocations = useLocationsStore(s => s.locations)
-    const storeIsLoading = useLocationsStore(s => s.isLoading)
-    // FIX: Only use MOCK_LOCATIONS in development — never in production
-    const locationFromStore = storeLocations.find(loc => String(loc.id) === id)
-        ?? (import.meta.env.DEV ? MOCK_LOCATIONS.find(loc => String(loc.id) === id) : null)
-        ?? null
-
-    // Always fetch full location data from Supabase for detail page.
-    // Store cache only has ANON_COLS (limited columns for list view).
-    // Detail page needs full data: tags, insider_tip, must_try, kg_*, etc.
+    // React Query is the sole data source for location details (R9.1).
+    // No Zustand store fallback — the query handles caching and SWR.
     const { data: locationQuery, isLoading: queryLoading, isFetching: queryFetching } = useLocationQuery(id)
 
-    // Prefer full query result over store cache (which has limited columns)
-    const location = locationQuery ?? locationFromStore ?? null
-    // Show loading while any data source is still fetching
-    const isPageLoading = !location && (storeIsLoading || queryLoading || queryFetching)
+    const location = locationQuery ?? null
+    const isPageLoading = !location && (queryLoading || queryFetching)
 
-    // FIX: Removed unnecessary full store initialization from detail page.
-    // The detail page doesn't need the full store — useLocationQuery fetches the single location needed.
+    // useLocationQuery fetches the single location needed for this detail page.
 
     // PERF: Increment view count on load (fire-and-forget, never blocks rendering)
     useEffect(() => {

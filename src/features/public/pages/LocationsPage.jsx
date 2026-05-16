@@ -14,8 +14,8 @@ import { useTheme } from '@/hooks/useTheme'
 import FavoriteButton from '@/components/ui/FavoriteButton'
 // eslint-disable-next-line no-restricted-imports
 import FilterModal from '@/features/dashboard/components/FilterModal'
-import { useShallow } from 'zustand/react/shallow'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useGeoStore } from '@/shared/store/useGeoStore'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
 import { useInfiniteLocations } from '@/shared/api/queries/location.queries'
 // eslint-disable-next-line no-restricted-imports
 import { SmartSearchBar } from '@/features/dashboard/components/SmartSearchBar'
@@ -28,6 +28,7 @@ import { LocationCardMobileSkeleton, LocationCardDesktopSkeleton } from '@/compo
 import { ESTABLISHMENT_TYPES } from '@/shared/config/filterOptions'
 
 import { useUIStore } from '@/shared/store/useUIStore'
+import { useUserGeo } from '@/shared/hooks/useUserGeo'
 
 // ─── Category config from canonical filterOptions ─────────────────────────
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
@@ -364,7 +365,7 @@ function ErrorState({ isDark }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 function EmptyState({ query, isDark }) {
-    const resetFilters = useLocationsStore(s => s.resetFilters)
+    const { resetFilters } = useLocationFilters()
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -397,25 +398,49 @@ const LocationsPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
 
-    // Store state values (search is LOCAL to SmartSearchBar — not synced to store)
+    // URL-driven filter state (Phase 2 — task 2.5).
+    // The URL is the single source of truth for filter parameters via
+    // `useLocationFilters()`. The previous Zustand reads have been removed.
+    const { filters, setFilter, resetFilters } = useLocationFilters()
     const {
-        activeCategories,
-        activeCategory,
+        categories: activeCategories,
         sortBy,
         minRating,
-        activePriceLevels,
-    } = useLocationsStore(useShallow(s => ({
-        activeCategories: s.activeCategories,
-        activeCategory: s.activeCategory,
-        sortBy: s.sortBy,
-        minRating: s.minRating,
-        activePriceLevels: s.activePriceLevels,
-    })))
+        priceLevels: activePriceLevels,
+        vibes: activeVibes,
+        radius,
+        isOpenNow,
+    } = filters
+    // Keep `activeCategory` as the first sorted category for backward-compat
+    // with the existing `useInfiniteLocations` API (legacy single-category
+    // signature). Once the API accepts arrays natively, this can collapse
+    // back to `activeCategories`.
+    const activeCategory = activeCategories.length > 0 ? activeCategories[0] : 'All'
+    const setSortBy = (next) => setFilter('sortBy', next)
 
-    // Store actions (stable)
-    const setSortBy = useLocationsStore(s => s.setSortBy)
-    const resetFilters = useLocationsStore(s => s.resetFilters)
-    const activeFiltersCount = useLocationsStore(s => s.getActiveFiltersCount())
+    // Auto-request browser geolocation when the page loads with `?radius=N`
+    // in the URL — the radius filter is only meaningful when we know where
+    // the user is. The hook reads/writes `useGeoStore` so the result is
+    // shared with every other consumer (Dashboard's nearby section, etc.).
+    const { lat: geoLat, lng: geoLng } = useUserGeo({ autoRequest: radius > 0 })
+    useEffect(() => {
+        if (geoLat && geoLng) {
+            useGeoStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
+        }
+    }, [geoLat, geoLng])
+
+    // Mirror the previous `useLocationsStore.getActiveFiltersCount()` logic
+    // against the canonical URL-driven filter shape. City / country are route
+    // context (path segments), NOT user-applied filters, so they are NOT
+    // counted here — same as the legacy store.
+    const activeFiltersCount =
+        (activeCategories.length > 0 ? 1 : 0) +
+        (sortBy !== 'google_rating' ? 1 : 0) +
+        (minRating != null ? 1 : 0) +
+        (activePriceLevels.length > 0 ? 1 : 0) +
+        (activeVibes.length > 0 ? 1 : 0) +
+        (radius > 0 ? 1 : 0) +
+        (isOpenNow ? 1 : 0)
 
     // Local search input — purely for the search bar, does NOT affect page list
     const [localSearch, setLocalSearch] = useState(() => {
@@ -423,23 +448,21 @@ const LocationsPage = () => {
         return params.get('q') || ''
     })
 
-    // Sync sortBy from URL query param on mount
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search)
-        const sort = params.get('sort')
-        if (sort && sort !== sortBy) {
-            setSortBy(sort)
-        }
-    }, [setSortBy, sortBy])
-
-    // Note: filters are NOT reset on unmount — they persist in the global store.
-    // Users can clear them via the "Reset" button in the filter modal or the
-    // active-filters badge. Dashboard "See All" calls resetFilters() before
-    // navigating here, providing a clean entry point.
+    // Note: filters are NOT reset on unmount — they live in the URL and persist
+    // across navigation. Users can clear them via the "Reset" button in the
+    // filter modal, the active-filters badge, or the EmptyState clear button.
+    // Dashboard "See All" calls `resetLocationFilters()` before navigating
+    // here, providing a clean entry point.
 
     // Fetch city-scoped locations with infinite scroll — search query is NOT passed
     // here so the page always shows all locations for the city. Search is handled
     // independently by SmartSearchBar (server-side FTS in dropdown).
+    //
+    // `radius` and `isOpenNow` are intentionally NOT passed to the API today —
+    // the back-end filters by category / price / minRating / vibe / sortBy
+    // server-side, and radius/isOpenNow are applied client-side via the
+    // `applyAllFilters` fallback below. They are still part of the canonical
+    // URL filter shape so `useLocationFilters` keeps the URL stable.
     const {
         data: infiniteData,
         isPending: isQueryPending,
@@ -447,36 +470,50 @@ const LocationsPage = () => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage
-    } = useInfiniteLocations({ city, country, category: activeCategory !== 'All' ? activeCategory : null, price_range: activePriceLevels, minRating, sortBy, limit: 24 })
+    } = useInfiniteLocations({
+        city,
+        country,
+        category: activeCategory !== 'All' ? activeCategory : null,
+        price_range: activePriceLevels,
+        minRating,
+        vibe: activeVibes,
+        sortBy,
+        limit: 24,
+    })
 
-    // Flatten pages into a single array for rendering
-    // FALLBACK: If infinite query is still loading, use store data filtered by city/country
-    const storeLocations = useLocationsStore(s => s.locations)
+    // Flatten pages into a single array for rendering.
+    // Phase 3 (R7.3, R13.6): Zustand store fallback deleted — content is
+    // rendered exclusively from `useInfiniteLocations`.
+    // `userLocation` is needed by `applyAllFilters` for radius/distance
+    // filtering and sorting. It now lives in `useGeoStore` (Phase 5 task 5.3).
+    const userLocation = useGeoStore(s => s.userLocation)
     const localFilteredLocations = useMemo(() => {
         const items = infiniteData?.pages?.flatMap(page => page.data) || []
-        
-        // If no server data yet but store has data, use store as fallback
-        // FIX: Filter store fallback by current city/country to avoid showing wrong-city data
-        const sourceItems = items.length > 0 ? items : storeLocations.filter(l => {
-            if (city && !l.city?.toLowerCase().includes(city.toLowerCase())) return false
-            if (country && !l.country?.toLowerCase().includes(country.toLowerCase())) return false
+        if (items.length === 0) return []
+
+        // Deduplicate by id (infinite pages may overlap on refetch)
+        const seen = new Set()
+        const deduped = items.filter(l => {
+            if (seen.has(l.id)) return false
+            seen.add(l.id)
             return true
         })
-        
+
+        // Client-side post-filtering for radius/isOpenNow (not server-filterable)
         const filters = {
             activeCategories,
             activeCity: city,
             activeCountry: country,
             activePriceLevels,
+            activeVibes,
             minRating,
             sortBy,
+            radius,
+            isOpenNow,
+            userLocation,
         }
-        if (typeof applyAllFilters !== 'function') {
-            console.warn('[LocationsPage] applyAllFilters is not ready yet')
-            return sourceItems
-        }
-        return applyAllFilters(sourceItems, filters)
-    }, [infiniteData, storeLocations, activeCategories, city, country, activePriceLevels, minRating, sortBy])
+        return applyAllFilters(deduped, filters)
+    }, [infiniteData, activeCategories, city, country, activePriceLevels, activeVibes, minRating, sortBy, radius, isOpenNow, userLocation])
 
     // Show loading skeleton only if query is pending AND no fallback data available
     const isLoading = isQueryPending && localFilteredLocations.length === 0

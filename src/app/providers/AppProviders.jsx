@@ -5,6 +5,7 @@ import { queryClient } from '@/shared/config/queryClient'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import SmoothScroll from '@/components/ui/smooth-scroll'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
+import { startLocationsRealtime } from '@/shared/api/locationsRealtime'
 
 /**
  * AppProviders — top-level context tree.
@@ -30,11 +31,25 @@ function AppConfigBootstrap() {
     return null
 }
 
+/**
+ * Mounts the singleton Supabase Realtime → React Query bridge once at the
+ * QueryClientProvider level. Replaces the legacy useLocationsStore.subscribeToRealtime.
+ * Phase 4 task 4.4.
+ */
+function RealtimeBootstrap() {
+    useEffect(() => {
+        const cleanup = startLocationsRealtime(queryClient)
+        return cleanup
+    }, [])
+    return null
+}
+
 export const AppProviders = ({ children, includeRouter = true }) => {
     const content = (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
                 <AppConfigBootstrap />
+                <RealtimeBootstrap />
                 <SmoothScroll>
                     {children}
                 </SmoothScroll>

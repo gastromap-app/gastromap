@@ -10,7 +10,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, useInView, useMotionValue, useAnimationFrame } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
 import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
@@ -239,9 +239,9 @@ function TrendingRow({ location, index, isDark, navigate }) {
 const DashboardPageV2 = () => {
     const { t: _t } = useTranslation()
     const { user } = useAuthStore()
-    const locations = useLocationsStore(state => state.locations)
-    const filteredLocations = useLocationsStore(state => state.filteredLocations)
-    const _isLoading = useLocationsStore(state => state.isLoading)
+    const { data: locationsResult = [], isLoading: _isLoading, refetch: refetchLocations } = useLocations()
+    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
+    const filteredLocations = locations // Phase 3: filtering is URL-driven, no separate filteredLocations
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -265,7 +265,7 @@ const DashboardPageV2 = () => {
     ), [cityCoversData])
 
     // Pull to refresh
-    const handleRefresh = async () => { await useLocationsStore.getState().reinitialize() }
+    const handleRefresh = async () => { await refetchLocations() }
     const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
 
     // Greeting

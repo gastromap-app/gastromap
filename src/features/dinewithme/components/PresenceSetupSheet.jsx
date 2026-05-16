@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, Minus, Plus, Eye, EyeOff, Loader2, MapPin, Trash2, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { useDiningPresence } from '../hooks/useDiningPresence'
 
 const STATUSES = ['looking', 'eating', 'heading_to']
@@ -41,16 +41,8 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
     const { goVisible, isGoingVisible } = useDiningPresence()
     const [isDeleting, setIsDeleting] = useState(false)
 
-    const locations = useLocationsStore(state => state.locations)
-    const isLoadingLocations = useLocationsStore(state => state.isLoading)
-    const fetchLocations = useLocationsStore(state => state.initialize)
-
-    // Fetch locations if store is empty when sheet opens
-    React.useEffect(() => {
-        if (isOpen && locations.length === 0 && !isLoadingLocations) {
-            fetchLocations()
-        }
-    }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+    const { data: locationsResult = [], isLoading: isLoadingLocations } = useLocations()
+    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
 
     // Form state
     const [venueSearch, setVenueSearch] = useState('')

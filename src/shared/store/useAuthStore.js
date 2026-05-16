@@ -27,6 +27,7 @@ export const useAuthStore = create(
 
             // ─── Actions ─────────────────────────────────────────────────
 
+            // Note: the 3-s rescue timeout was removed in task 1.4. Auth gate determinism is now owned by useSession() in src/shared/auth/useSession.js (R13.4, R3.6).
             initAuth: () => {
                 // Guard: unsubscribe existing listener before creating a new one.
                 // Prevents duplicate onAuthStateChange callbacks when App
@@ -38,20 +39,11 @@ export const useAuthStore = create(
 
                 set({ isLoading: true })
 
-                const timeout = setTimeout(() => {
-                    if (get().isLoading) {
-                        console.warn('[auth] initAuth timed out — clearing stale state')
-                        set({ isLoading: false })
-                    }
-                }, 3000)
-
                 const unsubscribe = subscribeToAuthChanges(
                     ({ user, token }) => {
-                        clearTimeout(timeout)
                         set({ user, token, isAuthenticated: true, isLoading: false })
                     },
                     () => {
-                        clearTimeout(timeout)
                         set({ user: null, token: null, isAuthenticated: false, isLoading: false })
                     }
                 )

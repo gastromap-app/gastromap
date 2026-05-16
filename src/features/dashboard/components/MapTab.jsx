@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -7,7 +7,10 @@ import { useTheme } from '@/hooks/useTheme'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Star, LocateFixed, Navigation, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useGeoStore } from '@/shared/store/useGeoStore'
+import { useLocationsInBounds } from '@/shared/api/queries/location.queries'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
+import { useUIStore } from '@/shared/store/useUIStore'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import LocationImage from '@/components/ui/LocationImage'
 import { DineModeToggle } from '@/features/dinewithme/components/DineModeToggle'
@@ -82,38 +85,59 @@ function makeMarkerIcon(loc) {
     })
 }
 
-// ─── Map Events Handler ──────────────────────────────────────────────────
-// FIX: Replaced useMapEvents with manual map.on/off to avoid handler
-// accumulation. useMapEvents receives a new handler object on every render,
-// but map.off(newHandler) cannot remove the OLD handler (different reference),
-// causing multiple moveend listeners to pile up and trigger cascading
-// setState calls → "Maximum update depth exceeded".
-function MapBoundsHandler() {
+// ─── Map Bounds Tracker ──────────────────────────────────────────────────
+// Emits the initial viewport bounds IMMEDIATELY on mount (no 600 ms wait
+// for the first fetch — fixes the cold-start delay), then debounces
+// subsequent `moveend` events by 600 ms (R8.2, R13.7). Filter changes
+// trigger immediate refetch via queryKey change in the parent (R8.3).
+function MapBoundsTracker({ onBoundsChange }) {
     const map = useMap()
-    const fetchInBounds = useLocationsStore(state => state.fetchInBounds)
-    const setBounds = useLocationsStore(state => state.setBounds)
-    const lastFetchRef = useRef(0)
+    const lastUpdateRef = useRef(0)
+    const timerRef = useRef(null)
+
+    // Emit initial bounds on mount so the first fetch starts without
+    // waiting for the user to pan/zoom (cold-start fix).
+    useEffect(() => {
+        const b = map.getBounds()
+        if (b) {
+            const initialBounds = {
+                sw: { lat: b.getSouthWest().lat, lng: b.getSouthWest().lng },
+                ne: { lat: b.getNorthEast().lat, lng: b.getNorthEast().lng },
+            }
+            lastUpdateRef.current = Date.now()
+            onBoundsChange(initialBounds)
+        }
+    }, [map, onBoundsChange])
 
     useEffect(() => {
         const handleMoveEnd = () => {
             const b = map.getBounds()
             const bounds = {
                 sw: { lat: b.getSouthWest().lat, lng: b.getSouthWest().lng },
-                ne: { lat: b.getNorthEast().lat, lng: b.getNorthEast().lng }
+                ne: { lat: b.getNorthEast().lat, lng: b.getNorthEast().lng },
             }
-            setBounds(bounds)
 
-            // Debounce: skip fetch if less than 300ms since last one
+            // 600ms debounce on viewport changes (R8.2, R13.7)
+            clearTimeout(timerRef.current)
             const now = Date.now()
-            if (now - lastFetchRef.current > 600) {
-                lastFetchRef.current = now
-                fetchInBounds(bounds)
+            const elapsed = now - lastUpdateRef.current
+            if (elapsed >= 600) {
+                lastUpdateRef.current = now
+                onBoundsChange(bounds)
+            } else {
+                timerRef.current = setTimeout(() => {
+                    lastUpdateRef.current = Date.now()
+                    onBoundsChange(bounds)
+                }, 600 - elapsed)
             }
         }
 
         map.on('moveend', handleMoveEnd)
-        return () => map.off('moveend', handleMoveEnd)
-    }, [map, fetchInBounds, setBounds])
+        return () => {
+            map.off('moveend', handleMoveEnd)
+            clearTimeout(timerRef.current)
+        }
+    }, [map, onBoundsChange])
 
     return null
 }
@@ -121,7 +145,7 @@ function MapBoundsHandler() {
 // ─── Locate Me Control ───────────────────────────────────────────────────
 function LocateMeButton() {
     const map = useMap()
-    const updateUserLocation = useLocationsStore(state => state.updateUserLocation)
+    const updateUserLocation = useGeoStore(state => state.updateUserLocation)
     const [isLocating, setIsLocating] = React.useState(false)
     const { t } = useTranslation()
 
@@ -200,37 +224,74 @@ function FlyToFocus({ focus }) {
     return null
 }
 
-// ─── Module-level cache of the last map pose so that navigating to a details
-// page and pressing Back returns the user to the exact same view. The cache
-// survives MapPage/MapTab unmount because it lives outside React. ──────────
-let lastMapPose = null
 function MapPoseMemory() {
     const map = useMap()
+    const lastMapPose = useUIStore(s => s.lastMapPose)
+    const setLastMapPose = useUIStore(s => s.setLastMapPose)
+
     // Restore on mount (if we have a remembered pose)
     useEffect(() => {
         if (lastMapPose) {
             map.setView([lastMapPose.lat, lastMapPose.lng], lastMapPose.zoom, { animate: false })
         }
-    }, [map])
+    }, [map]) // eslint-disable-line react-hooks/exhaustive-deps
+
     // Keep track of latest view — stable handler, no useMapEvents
     useEffect(() => {
         const handleMoveEnd = () => {
             const c = map.getCenter()
-            lastMapPose = { lat: c.lat, lng: c.lng, zoom: map.getZoom() }
+            setLastMapPose({ lat: c.lat, lng: c.lng, zoom: map.getZoom() })
         }
         map.on('moveend', handleMoveEnd)
         return () => map.off('moveend', handleMoveEnd)
-    }, [map])
+    }, [map, setLastMapPose])
+
     return null
 }
 
 const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
-    const locations = useLocationsStore(state => state.mapMarkers)
-    const userLocation = useLocationsStore(state => state.userLocation)
+    const userLocation = useGeoStore(state => state.userLocation)
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [searchParams] = useSearchParams()
     const { user } = useAuthStore()
+
+    // ── React Query: bounds-based marker fetching ──────────────────────
+    const { asAPIFilters } = useLocationFilters()
+    const apiFilters = useMemo(() => asAPIFilters(), [asAPIFilters])
+
+    // Debounced bounds state — updated by MapBoundsTracker child (R8.2, R13.7)
+    const [bounds, setBounds] = useState(null)
+    const handleBoundsChange = useCallback((newBounds) => {
+        setBounds(newBounds)
+    }, [])
+
+    // React Query hook — fetches markers for the current viewport + filters.
+    // Filter changes (apiFilters) trigger immediate refetch via queryKey change
+    // without the 600ms debounce (R8.3).
+    const markersQuery = useLocationsInBounds(bounds, apiFilters)
+    const { data: markersResult, isPending, isFetching } = markersQuery
+
+    // ── Sticky-locations fallback (R14.1: stale-while-revalidate, no flicker) ──
+    // While a new bounds query is in flight (pan/zoom triggered new queryKey),
+    // keep the previous markers visible so they don't blink off-screen. When
+    // the new result arrives we adopt it — including legitimate empty arrays.
+    const lastLocationsRef = useRef([])
+    const locations = useMemo(() => {
+        const next = markersResult?.data ?? markersResult ?? null
+        // We have a fresh result (success or empty) — adopt it as the new truth.
+        if (Array.isArray(next)) {
+            lastLocationsRef.current = next
+            return next
+        }
+        // Otherwise the query is still in flight (no data yet) — keep showing
+        // last known good list to avoid flicker. Only happens during the
+        // first fetch or rapid pan/zoom.
+        if (isPending || isFetching) {
+            return lastLocationsRef.current
+        }
+        return []
+    }, [markersResult, isPending, isFetching])
 
     // ── Dine With Me: only admin/moderator ─────────────────────────────
     const dineAllowed = user?.role === 'admin' || user?.role === 'moderator'
@@ -321,7 +382,7 @@ const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
                     }
                 />
 
-                <MapBoundsHandler />
+                <MapBoundsTracker onBoundsChange={handleBoundsChange} />
                 <MapPoseMemory />
                 <LocateMeButton />
                 <FlyToFocus focus={focusLocation} />

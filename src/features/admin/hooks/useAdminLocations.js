@@ -14,6 +14,7 @@ import {
 import { applyAllFilters } from '@/shared/utils/locationFilters'
 import { exportLocationsToCSV } from '@/shared/utils/importExportUtils'
 import { getMissingDataIndicators } from '../components/enrichment/MissingDataBadge'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
 
 /**
  * Custom hook for Admin Locations page business logic
@@ -21,22 +22,20 @@ import { getMissingDataIndicators } from '../components/enrichment/MissingDataBa
  */
 export const useAdminLocations = () => {
     const { t } = useTranslation()
-    const [searchQuery, setSearchQuery] = useState('')
+    const [localSearchQuery, setLocalSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     
-    // Advanced Filters (Synchronized with Dashboard)
-    const [activeCategory, setActiveCategory] = useState('All')
-    const [activePriceLevels, setActivePriceLevels] = useState([])
-    const [minRating, setMinRating] = useState(null)
-    const [activeVibes, setActiveVibes] = useState([])
-    const [sortBy, setSortBy] = useState('newest')
-    const [activeCity, setActiveCity] = useState('All')
-    const [activeCountry, setActiveCountry] = useState('All')
+    // URL-driven filters via useLocationFilters (Phase 2 migration)
+    const { filters: locationFilters, setFilter, setFilters, resetFilters: resetLocationFilters } = useLocationFilters({ adminScope: true })
 
-    // Reset city when country changes
-    useEffect(() => {
-        setActiveCity('All')
-    }, [activeCountry])
+    // Derive filter values from the URL-driven hook for use in applyAllFilters
+    const activeCategory = locationFilters.categories.length > 0 ? locationFilters.categories[0] : 'All'
+    const activePriceLevels = locationFilters.priceLevels
+    const minRating = locationFilters.minRating
+    const activeVibes = locationFilters.vibes
+    const sortBy = locationFilters.sortBy || 'newest'
+    const activeCity = locationFilters.city || 'All'
+    const activeCountry = locationFilters.country || 'All'
 
     const [selectedLocation, setSelectedLocation] = useState(null)
     const [isSlideOverOpen, setIsSlideOverOpen] = useState(false)
@@ -660,7 +659,7 @@ export const useAdminLocations = () => {
 
     const filteredLocations = applyAllFilters(locationsList, {
         activeCategory,
-        searchQuery,
+        searchQuery: localSearchQuery,
         activePriceLevels,
         minRating,
         activeVibes,
@@ -692,7 +691,7 @@ export const useAdminLocations = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, statusFilter, activeCategory, activePriceLevels, minRating, activeVibes, sortBy, activeCity, activeCountry])
+    }, [localSearchQuery, statusFilter, activeCategory, activePriceLevels, minRating, activeVibes, sortBy, activeCity, activeCountry])
 
     const addImageUrl = (url) => {
         if (!url) return
@@ -722,22 +721,23 @@ export const useAdminLocations = () => {
         // State
         statusFilter,
         setStatusFilter,
-        searchQuery,
-        setSearchQuery,
+        searchQuery: localSearchQuery,
+        setSearchQuery: setLocalSearchQuery,
         activeCategory,
-        setActiveCategory,
+        setActiveCategory: (cat) => setFilter('categories', cat === 'All' ? [] : [cat]),
         activePriceLevels,
-        setActivePriceLevels,
+        setActivePriceLevels: (levels) => setFilter('priceLevels', levels),
         minRating,
-        setMinRating,
+        setMinRating: (r) => setFilter('minRating', r),
         activeVibes,
-        setActiveVibes,
+        setActiveVibes: (v) => setFilter('vibes', v),
         sortBy,
-        setSortBy,
+        setSortBy: (s) => setFilter('sortBy', s),
         activeCity,
-        setActiveCity,
+        setActiveCity: (c) => setFilter('city', c === 'All' ? null : c),
         activeCountry,
-        setActiveCountry,
+        setActiveCountry: (c) => setFilter('country', c === 'All' ? null : c),
+        resetLocationFilters,
         selectedLocation,
         setSelectedLocation,
         isSlideOverOpen,

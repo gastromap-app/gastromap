@@ -1,5 +1,4 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { config } from '@/shared/config/env'
@@ -59,7 +58,6 @@ export function useInfiniteLocations(city, country, pageSize = 20) {
 }
 
 export function useLocationsQuery(city, country) {
-    const setLocations = useLocationsStore((s) => s.setLocations)
     const USE_SUPABASE = config.supabase.isConfigured
 
     const query = useQuery({
@@ -128,18 +126,6 @@ export function useLocationsQuery(city, country) {
         enabled: true,
         retry: 1,
     })
-
-    useEffect(() => {
-        if (query.data) {
-            // REGRESSION FIX: only update global store when fetching ALL locations (no city/country filter)
-            // City-scoped queries (city + country) must NOT overwrite the global store —
-            // this caused the dashboard to show only city-filtered data after navigating back.
-            // DrillDownExplorer filters from the global store client-side instead.
-            if (!city && !country) {
-                setLocations(query.data)
-            }
-        }
-    }, [query.data, city, country, setLocations])
 
     return query
 }

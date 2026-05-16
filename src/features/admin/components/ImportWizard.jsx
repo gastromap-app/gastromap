@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useCreateLocationMutation } from '@/shared/api/queries/location.queries'
 
 const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
     const { t } = useTranslation()
@@ -21,7 +21,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
     const [enrichmentEnabled, setEnrichmentEnabled] = useState(true)
     const [importProgress, setImportProgress] = useState(0)
     const fileInputRef = useRef(null)
-    const addLocation = useLocationsStore(state => state.addLocation)
+    const createLocation = useCreateLocationMutation()
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0]
@@ -96,7 +96,7 @@ const ImportWizard = ({ isOpen, onClose, onImportComplete }) => {
                 const row = fullData[i]
                 const locationData = processImportedRow(row)
                 
-                await addLocation(locationData)
+                await createLocation.mutateAsync(locationData)
                 successCount++
                 setImportProgress(Math.round(((i + 1) / fullData.length) * 100))
             } catch (err) {

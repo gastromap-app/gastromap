@@ -3,7 +3,7 @@ import { useClickOutside } from '@/hooks/useClickOutside'
 import LocationImage from '@/components/ui/LocationImage'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MapPin, Star, X, Loader2 } from 'lucide-react'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/hooks/useTheme'
 
@@ -24,6 +24,17 @@ import { useTheme } from '@/hooks/useTheme'
 export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Search…', className = '', showFilter = true, city, country, onSelectLocation }) {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
+
+    // URL-driven filter count (replaces deleted useLocationsStore.getActiveFiltersCount)
+    const { filters: _filters } = useLocationFilters()
+    const activeFiltersCount =
+        ((_filters.categories?.length || 0) > 0 ? 1 : 0) +
+        (_filters.sortBy && _filters.sortBy !== 'google_rating' ? 1 : 0) +
+        (_filters.minRating != null ? 1 : 0) +
+        ((_filters.priceLevels?.length || 0) > 0 ? 1 : 0) +
+        ((_filters.vibes?.length || 0) > 0 ? 1 : 0) +
+        ((_filters.radius || 0) > 0 ? 1 : 0) +
+        (_filters.isOpenNow ? 1 : 0)
     const navigate = useNavigate()
     const [open, setOpen] = useState(false)
     const [focused, setFocused] = useState(false)
@@ -158,9 +169,9 @@ export function SmartSearchBar({ value, onChange, onFilter, placeholder = 'Searc
                     </svg>
                     
                     {/* Active filters badge */}
-                    {useLocationsStore.getState().getActiveFiltersCount() > 0 && (
+                    {activeFiltersCount > 0 && (
                         <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-black animate-in fade-in zoom-in duration-300">
-                            {useLocationsStore.getState().getActiveFiltersCount()}
+                            {activeFiltersCount}
                         </span>
                     )}
                 </button>

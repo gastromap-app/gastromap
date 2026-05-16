@@ -3,7 +3,6 @@ import MapTab from '../components/MapTab'
 import { SmartSearchBar } from '../components/SmartSearchBar'
 import FilterModal from '../components/FilterModal'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
 import { useTranslation } from 'react-i18next'
 import { Coffee, Utensils, Wine, Star, Users } from 'lucide-react'
 import { useAllDiners } from '@/features/dinewithme/hooks/useAllDiners'
@@ -29,8 +28,7 @@ const MapPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const activeCategory = useLocationsStore(state => state.activeCategory)
-    const setCategory = useLocationsStore(state => state.setCategory)
+    const [activeCategory, setCategory] = useState('All')
     // Local search — NOT synced to store. SmartSearchBar dropdown uses server
     // FTS globally (no city/country scope) so users can find any location in
     // the database. Map markers are NOT filtered by this input.

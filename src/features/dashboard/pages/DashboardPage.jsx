@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
-import { useGeoCovers, useUserPreferences } from '@/shared/api/queries'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
+import { useGeoCovers, useUserPreferences, useLocations } from '@/shared/api/queries'
 import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
 import { useNavigate } from 'react-router-dom'
@@ -89,9 +89,11 @@ const FooterDisclaimer = ({ isDark }) => {
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
-    const locations = useLocationsStore(state => state.locations)
-    const filteredLocations = useLocationsStore(state => state.filteredLocations)
-    const isLoading = useLocationsStore(state => state.isLoading)
+    const { resetFilters: resetLocationFilters, asAPIFilters } = useLocationFilters()
+    const locationsQuery = useLocations(asAPIFilters())
+    const locations = locationsQuery.data?.data ?? locationsQuery.data ?? []
+    const filteredLocations = locations // React Query result is already server-filtered
+    const isLoading = locationsQuery.isPending && locations.length === 0
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()
     const { theme } = useTheme()
@@ -125,14 +127,14 @@ const DashboardPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
 
     useEffect(() => {
-        if (geoLat && geoLng) useLocationsStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
+        if (geoLat && geoLng) useGeoStore.getState().setUserLocation({ lat: geoLat, lng: geoLng })
     }, [geoLat, geoLng])
 
 
 
     // Pull-to-refresh
     const handleRefresh = async () => {
-        await useLocationsStore.getState().reinitialize()
+        await locationsQuery.refetch()
     }
     const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
 
@@ -194,7 +196,10 @@ const DashboardPage = () => {
     }, [currentCity, t])
     const [activeTab, setActiveTab] = useState('all')
     const handleSelectCountry = useCallback((country) => {
-        useLocationsStore.getState().setCountry(country.name)
+        // Country/city live in the route segments under /explore/:country —
+        // useLocationFilters() initialises country from useParams() on the
+        // explore route. We don't pre-write country to the URL here because
+        // we are about to navigate to /explore/:country.
         navigate(`/explore/${country.slug}`)
     }, [navigate])
     const recommended = useMemo(() => {
@@ -310,9 +315,13 @@ const DashboardPage = () => {
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
-                                useLocationsStore.getState().resetFilters()
-                                useLocationsStore.getState().setRadius(1)
-                                navigate(buildExploreUrl())
+                                // Reset filters on the dashboard URL, then bake
+                                // radius=1 into the destination URL so that
+                                // useLocationFilters on /explore picks it up.
+                                resetLocationFilters()
+                                const url = buildExploreUrl()
+                                const join = url.includes('?') ? '&' : '?'
+                                navigate(`${url}${join}radius=1`)
                             }}
                             isDark={isDark}
                         />
@@ -359,7 +368,7 @@ const DashboardPage = () => {
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl()) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl()) }}
                             isDark={isDark}
                         />
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
@@ -398,7 +407,7 @@ const DashboardPage = () => {
                                 : t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
                             onSeeAll={() => {
-                                useLocationsStore.getState().resetFilters()
+                                resetLocationFilters()
                                 navigate(buildExploreUrl('recommended'))
                             }}
                             isDark={isDark}
@@ -445,7 +454,7 @@ const DashboardPage = () => {
                                 : t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
                             onSeeAll={() => {
-                                useLocationsStore.getState().resetFilters()
+                                resetLocationFilters()
                                 navigate(buildExploreUrl('trending'))
                             }}
                             isDark={isDark}
@@ -473,9 +482,10 @@ const DashboardPage = () => {
                                 title={t('dashboard.open_now')}
                                 subtitle={t('dashboard.currently_serving')}
                                 onSeeAll={() => {
-                                    useLocationsStore.getState().resetFilters()
-                                    useLocationsStore.getState().setIsOpenNow(true)
-                                    navigate(buildExploreUrl())
+                                    resetLocationFilters()
+                                    const url = buildExploreUrl()
+                                    const join = url.includes('?') ? '&' : '?'
+                                    navigate(`${url}${join}open=1`)
                                 }}
                                 isDark={isDark}
                             />
@@ -552,6 +562,7 @@ const DashboardPage = () => {
                     visitCount={visitCount || 0}
                     currentCity={currentCity || 'Unknown'}
                     buildExploreUrl={buildExploreUrl}
+                    resetLocationFilters={resetLocationFilters}
                 />
             </div>
         </PageTransition>
@@ -567,7 +578,8 @@ const DesktopDashboard = ({
     requestGeo, nearbyLocations, countries, handleSelectCountry,
     recommended, trending, openNowLocations, navigate, t,
     visitCount: _visitCount = 0, currentCity = 'Unknown',
-    buildExploreUrl
+    buildExploreUrl,
+    resetLocationFilters,
 }) => {
     const itemVariants = {
         hidden:  { opacity: 0, y: 20 },
@@ -634,9 +646,13 @@ const DesktopDashboard = ({
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
-                                useLocationsStore.getState().resetFilters()
-                                useLocationsStore.getState().setRadius(1)
-                                navigate(buildExploreUrl())
+                                // Reset filters on the dashboard URL, then bake
+                                // radius=1 into the destination URL so that
+                                // useLocationFilters on /explore picks it up.
+                                resetLocationFilters()
+                                const url = buildExploreUrl()
+                                const join = url.includes('?') ? '&' : '?'
+                                navigate(`${url}${join}radius=1`)
                             }}
                             isDark={isDark}
                         />
@@ -685,7 +701,7 @@ const DesktopDashboard = ({
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl()) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl()) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
@@ -729,7 +745,7 @@ const DesktopDashboard = ({
                                 ? t('dashboard.recommended_in_city', { city: currentCity }) || `Top Picks in ${currentCity}`
                                 : t('dashboard.recommended')}
                             subtitle={t('dashboard.perfect_spots')}
-                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl('recommended')) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl('recommended')) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -746,7 +762,7 @@ const DesktopDashboard = ({
                                 ? t('dashboard.trending_in_city', { city: currentCity }) || `Trending in ${currentCity}`
                                 : t('dashboard.trending')}
                             subtitle={t('dashboard.hot_spots')}
-                            onSeeAll={() => { useLocationsStore.getState().resetFilters(); navigate(buildExploreUrl('trending')) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl('trending')) }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -763,9 +779,10 @@ const DesktopDashboard = ({
                                 title={t('dashboard.open_now')}
                                 subtitle={t('dashboard.currently_serving')}
                                 onSeeAll={() => {
-                                    useLocationsStore.getState().resetFilters()
-                                    useLocationsStore.getState().setIsOpenNow(true)
-                                    navigate(buildExploreUrl())
+                                    resetLocationFilters()
+                                    const url = buildExploreUrl()
+                                    const join = url.includes('?') ? '&' : '?'
+                                    navigate(`${url}${join}open=1`)
                                 }}
                                 isDark={isDark}
                             />

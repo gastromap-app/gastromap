@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Coffee, Wine, Utensils, Star, Sparkles } from 'lucide-react'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocationFilters } from '@/shared/filters/useLocationFilters'
 import { useTranslation } from 'react-i18next'
 
 const QUICK_FILTERS = [
@@ -13,11 +13,14 @@ const QUICK_FILTERS = [
 
 const CategoryFilters = ({ isDark }) => {
     const { t } = useTranslation()
-    const activeCategories = useLocationsStore(state => state.activeCategories)
-    const toggleCategory = useLocationsStore(state => state.toggleCategory)
+    const { filters, setFilter } = useLocationFilters()
+    const activeCategories = filters.categories
 
     const handleToggle = (id) => {
-        toggleCategory(id)
+        const next = activeCategories.includes(id)
+            ? activeCategories.filter(c => c !== id)
+            : [...activeCategories, id]
+        setFilter('categories', next)
     }
 
     const container = {

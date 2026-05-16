@@ -5,7 +5,7 @@ import { useUserPrefsStore } from '@/shared/store/useUserPrefsStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { getUserReviews } from '@/shared/api/reviews.api'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
 import { getOrCreateSession } from '@/shared/api/chat-history.api'
@@ -60,7 +60,8 @@ export function useAIChat() {
 
     const { prefs } = useUserPrefsStore()
     const { favoriteIds } = useFavoritesStore()
-    const locations = useLocationsStore(state => state.locations)
+    const { data: locationsResult = [] } = useLocations()
+    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
     const { user } = useAuthStore()
     // Request geo silently on chat mount — shared with the Map component via GeoStore
     const { city: userCity, country: userCountry, requestGeo, status } = useUserGeo({ autoRequest: true })

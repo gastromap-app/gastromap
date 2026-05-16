@@ -43,7 +43,9 @@ const CITY_OVERRIDES = {
     'kyyiv':        'Kyiv',        // Київ translit
     'kiev':         'Kyiv',        // legacy Russian name
     'lviv':         'Lviv',
-    'lvov':         'Lviv',        // Russian name
+    'lvov':         'Lviv',        // Russian name (Latin transliteration)
+    'львов':        'Lviv',        // Russian Cyrillic (Львов)
+    'львів':        'Lviv',        // Ukrainian Cyrillic (Львів)
     'odesa':        'Odesa',
     'odessa':       'Odesa',       // Russian spelling
     'kharkiv':      'Kharkiv',

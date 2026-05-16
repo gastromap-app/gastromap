@@ -30,7 +30,7 @@ function getCachedGeo() {
 
 const cached = getCachedGeo()
 
-export const useGeoStore = create((set) => ({
+export const useGeoStore = create((set, get) => ({
     // Coordinates
     lat: cached?.lat ?? null,
     lng: cached?.lng ?? null,
@@ -63,8 +63,32 @@ export const useGeoStore = create((set) => ({
 
     setVisitData: ({ visitCount, lastVisitedAt }) => set({ visitCount, lastVisitedAt }),
 
+    // ─── User precise location (for radius filter + map center) ──────────────
+    userLocation: null, // { lat, lng }
+    setUserLocation: (userLocation) => set({ userLocation }),
+    updateUserLocation: async () => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation not supported'))
+                return
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude
+                    const lng = pos.coords.longitude
+                    get().setUserLocation({ lat, lng })
+                    resolve({ lat, lng })
+                },
+                (err) => {
+                    reject(err)
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            )
+        })
+    },
+
     reset: () => {
         localStorage.removeItem(CACHE_KEY)
-        set({ lat: null, lng: null, city: null, country: null, address: null, status: 'idle', error: null })
+        set({ lat: null, lng: null, city: null, country: null, address: null, status: 'idle', error: null, userLocation: null })
     },
 }))

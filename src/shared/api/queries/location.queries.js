@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './queryKeys'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useSession } from '@/shared/auth/useSession'
 import { adminQueryOptions } from '@/shared/config/queryClient'
 
 // ─── Location Queries ──────────────────────────────────────────────────────
@@ -10,14 +11,17 @@ import { adminQueryOptions } from '@/shared/config/queryClient'
  * @param {import('../locations.api').LocationFilters} filters
  */
 export function useLocations(filters = {}) {
+    const { status, isAuthed } = useSession()
     return useQuery({
         queryKey: queryKeys.locations.filtered(filters),
         queryFn: async () => {
             const { getLocations } = await import('../locations.api')
-            return getLocations(filters)
+            return getLocations(filters, { isAuthed })
         },
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
+        // Wait for auth to resolve (anon-OK; no isAuthed requirement).
+        enabled: status !== 'pending',
     })
 }
 
@@ -25,17 +29,16 @@ export function useLocations(filters = {}) {
  * Admin-only: Fetch locations with fresh data (includes pending/rejected).
  */
 export function useAdminLocationsQuery(filters = {}) {
-    const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-    const isLoading = useAuthStore(s => s.isLoading)
+    const { status, isAuthed } = useSession()
     return useQuery({
         queryKey: ['admin', 'locations', filters],
         queryFn: async () => {
             const { getLocations } = await import('../locations.api')
-            return getLocations(filters)
+            return getLocations(filters, { isAuthed })
         },
         ...adminQueryOptions,
         // Don't fetch until auth is fully resolved (not just authenticated)
-        enabled: isAuthenticated && !isLoading,
+        enabled: status !== 'pending' && isAuthed,
     })
 }
 
@@ -44,19 +47,18 @@ export function useAdminLocationsQuery(filters = {}) {
  */
 export function useInfiniteLocations(filters = {}) {
     const pageSize = filters.limit || 10
-    const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-    const isAuthLoading = useAuthStore(s => s.isLoading)
+    const { status, isAuthed } = useSession()
     return useInfiniteQuery({
         queryKey: [...queryKeys.locations.filtered(filters), 'infinite'],
         queryFn: async ({ pageParam = 0 }) => {
             const { getLocations } = await import('../locations.api')
-            return getLocations({ ...filters, limit: pageSize, offset: pageParam })
+            return getLocations({ ...filters, limit: pageSize, offset: pageParam }, { isAuthed })
         },
         getNextPageParam: (lastPage, pages) =>
             lastPage.hasMore ? pages.length * pageSize : undefined,
         initialPageParam: 0,
         // Wait for auth to resolve before fetching (prevents RLS issues)
-        enabled: !isAuthLoading,
+        enabled: status !== 'pending',
         // Cache for 2 minutes — prevents refetch on every navigation
         staleTime: 2 * 60 * 1000,
         // Keep data in cache for 5 minutes between route changes
@@ -68,13 +70,14 @@ export function useInfiniteLocations(filters = {}) {
  * Fetch a single location by ID.
  */
 export function useLocation(id) {
+    const { status, isAuthed } = useSession()
     return useQuery({
         queryKey: queryKeys.locations.detail(id),
         queryFn: async () => {
             const { getLocationById } = await import('../locations.api')
-            return getLocationById(id)
+            return getLocationById(id, { isAuthed })
         },
-        enabled: Boolean(id),
+        enabled: Boolean(id) && status !== 'pending',
     })
 }
 
@@ -106,6 +109,37 @@ export function useLocationsNearby(coords, radiusKm = 2) {
     })
 }
 
+/**
+ * Fetch locations within a map viewport bounding box.
+ * Used by MapTab to render clustered markers for the current viewport.
+ * Debouncing of bounds changes is the caller's responsibility (600ms in MapTab).
+ *
+ * @param {{ sw: { lat: number, lng: number }, ne: { lat: number, lng: number } } | null} bounds
+ * @param {object} filters - Canonical filter object from useLocationFilters().asAPIFilters()
+ */
+export function useLocationsInBounds(bounds, filters = {}) {
+    const { status, isAuthed } = useSession()
+
+    // Round bounds to 4 decimal places (≈ 11m) so micro-pan within a tile
+    // reuses the cache instead of creating a new query entry (R8.5).
+    const roundedBounds = bounds ? {
+        sw: { lat: Math.round(bounds.sw.lat * 10000) / 10000, lng: Math.round(bounds.sw.lng * 10000) / 10000 },
+        ne: { lat: Math.round(bounds.ne.lat * 10000) / 10000, lng: Math.round(bounds.ne.lng * 10000) / 10000 },
+    } : null
+
+    return useQuery({
+        queryKey: queryKeys.locations.inBounds(roundedBounds, filters),
+        queryFn: async () => {
+            const { getLocationsInBounds } = await import('../locations.api')
+            return getLocationsInBounds(roundedBounds, filters, { isAuthed })
+        },
+        enabled: status !== 'pending' && Boolean(roundedBounds),
+        staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
+        refetchOnWindowFocus: false,
+    })
+}
+
 // ─── Location Mutations ────────────────────────────────────────────────────
 
 export function useCreateLocationMutation() {
@@ -117,19 +151,9 @@ export function useCreateLocationMutation() {
         },
         onSuccess: (data) => {
             console.log('[location.queries] useCreateLocationMutation SUCCESS:', data)
+            // Invalidate all location list queries — React Query refetches them.
+            // No Zustand store sync needed (R5.2).
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
-            // Sync to Zustand store
-            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                import('../locations.api').then(({ normalise }) => {
-                    try {
-                        const loc = normalise(data)
-                        console.log('[location.queries] Normalized created loc:', loc)
-                        if (loc) useLocationsStore.getState().addLocation(loc)
-                    } catch (err) {
-                        console.error('[location.queries] Normalization failed for created loc:', err)
-                    }
-                })
-            }).catch(err => console.error('[location.queries] Store/API import failed:', err))
         },
     })
 }
@@ -143,20 +167,16 @@ export function useUpdateLocationMutation() {
         },
         onSuccess: (data, { id }) => {
             console.log('[location.queries] useUpdateLocationMutation SUCCESS:', id, data)
+            // Optimistic detail update + invalidate lists (R5.1).
+            // No Zustand store sync needed (R5.2).
+            if (data) {
+                qc.setQueryData(queryKeys.locations.detail(id), (prev) =>
+                    prev ? { ...prev, ...data } : data
+                )
+            }
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: queryKeys.locations.detail(id) })
-            // Sync to Zustand store
-            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                import('../locations.api').then(({ normalise }) => {
-                    try {
-                        const loc = normalise(data)
-                        console.log('[location.queries] Normalized updated loc:', loc)
-                        if (loc) useLocationsStore.getState().updateLocation(id, loc)
-                    } catch (err) {
-                        console.error('[location.queries] Normalization failed for updated loc:', err)
-                    }
-                })
-            }).catch(err => console.error('[location.queries] Store/API import failed:', err))
+            qc.invalidateQueries({ queryKey: queryKeys.admin.stats })
         },
     })
 }
@@ -169,13 +189,12 @@ export function useDeleteLocationMutation() {
             return deleteLocation(id)
         },
         onSuccess: (_data, id) => {
+            // Remove detail entry + invalidate lists (R5.1).
+            // No Zustand store sync needed (R5.2).
+            qc.removeQueries({ queryKey: queryKeys.locations.detail(id) })
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
             qc.invalidateQueries({ queryKey: ['favorites'] })
             qc.invalidateQueries({ queryKey: queryKeys.admin.stats })
-            // Sync to Zustand store
-            import('@/shared/store/useLocationsStore').then(({ useLocationsStore }) => {
-                useLocationsStore.getState().deleteLocation(id)
-            })
         },
     })
 }

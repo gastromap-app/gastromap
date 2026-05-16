@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
-import { useLocationsStore } from '@/shared/store/useLocationsStore'
+import { useLocations } from '@/shared/api/queries/location.queries'
 import { useUserFavoritesWithLocations, useRemoveFavoriteMutation } from '@/shared/api/queries'
 
 /**
@@ -23,10 +23,10 @@ export function useSavedLocations() {
     const { data: dbFavorites = [], isLoading, isError, refetch } = useUserFavoritesWithLocations(user?.id)
     const removeMut = useRemoveFavoriteMutation()
 
-    // Guest path: localStorage + locations store hydration
+    // Guest path: localStorage + React Query locations hydration
     const { favoriteIds: localIds, toggleFavorite: localToggle } = useFavoritesStore()
-    const allLocations = useLocationsStore((s) => s.locations)
-    const isStoreLoading = useLocationsStore((s) => s.isLoading)
+    const { data: allLocationsResult = [], isLoading: isLocationsLoading } = useLocations()
+    const allLocations = Array.isArray(allLocationsResult) ? allLocationsResult : (allLocationsResult?.data ?? [])
 
     const localFavorites = useMemo(() => {
         if (user?.id) return []
@@ -48,7 +48,7 @@ export function useSavedLocations() {
 
     return {
         favorites,
-        isLoading: user?.id ? isLoading : isStoreLoading,
+        isLoading: user?.id ? isLoading : isLocationsLoading,
         isError: user?.id ? isError : false,
         refetch,
         remove,

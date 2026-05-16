@@ -137,32 +137,49 @@ const AdminDashboardPage = () => {
             const aiConfig = getActiveAIConfig()
             newHealth.ai = aiConfig.isConfigured ? 'ok' : aiConfig.useProxy ? 'warning' : 'error'
 
-            // R2 Storage — try real API, fallback to estimate
-            try {
-                const storageRes = await fetch('/api/locations/enrich', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'storage-stats' }),
-                })
-                if (storageRes.ok) {
-                    const stats = await storageRes.json()
-                    setR2Stats(stats)
-                    newHealth.r2Detail = `${stats.usedMB < 1024 ? stats.usedMB + ' MB' : stats.usedGB + ' GB'} / ${stats.limitGB} GB`
-                    newHealth.r2 = stats.percentUsed > 80 ? 'warning' : 'ok'
-                } else {
-                    // Fallback: estimate from location count
-                    const locCount = adminStats?.locations?.total || 0
-                    const estimatedMB = Math.round(locCount * 0.8) // ~800KB avg per location (main + gallery)
-                    setR2Stats({ usedMB: estimatedMB, usedGB: Math.round(estimatedMB / 1024 * 100) / 100, objectCount: locCount * 5, limitGB: 10, percentUsed: Math.round(estimatedMB / 10240 * 100 * 10) / 10, isEstimate: true })
-                    newHealth.r2Detail = `~${estimatedMB} MB / 10 GB (est.)`
-                    newHealth.r2 = 'ok'
-                }
-            } catch {
+            // R2 Storage — try real API, fallback to estimate.
+            //
+            // The `/api/locations/enrich` endpoint is a Vercel serverless function
+            // that exists ONLY in production. `vite dev` does not boot the
+            // serverless runtime, so the call deterministically 404s locally and
+            // floods the console. Skip the attempt entirely on `import.meta.env.DEV`
+            // and use the local-count estimate fallback. On production the call
+            // proceeds as before.
+            const useR2EstimateFallback = () => {
                 const locCount = adminStats?.locations?.total || 0
-                const estimatedMB = Math.round(locCount * 0.8)
-                setR2Stats({ usedMB: estimatedMB, usedGB: Math.round(estimatedMB / 1024 * 100) / 100, objectCount: locCount * 5, limitGB: 10, percentUsed: Math.round(estimatedMB / 10240 * 100 * 10) / 10, isEstimate: true })
+                const estimatedMB = Math.round(locCount * 0.8) // ~800KB avg per location (main + gallery)
+                setR2Stats({
+                    usedMB: estimatedMB,
+                    usedGB: Math.round(estimatedMB / 1024 * 100) / 100,
+                    objectCount: locCount * 5,
+                    limitGB: 10,
+                    percentUsed: Math.round(estimatedMB / 10240 * 100 * 10) / 10,
+                    isEstimate: true,
+                })
                 newHealth.r2Detail = `~${estimatedMB} MB / 10 GB (est.)`
                 newHealth.r2 = 'ok'
+            }
+
+            if (import.meta.env.DEV) {
+                useR2EstimateFallback()
+            } else {
+                try {
+                    const storageRes = await fetch('/api/locations/enrich', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'storage-stats' }),
+                    })
+                    if (storageRes.ok) {
+                        const stats = await storageRes.json()
+                        setR2Stats(stats)
+                        newHealth.r2Detail = `${stats.usedMB < 1024 ? stats.usedMB + ' MB' : stats.usedGB + ' GB'} / ${stats.limitGB} GB`
+                        newHealth.r2 = stats.percentUsed > 80 ? 'warning' : 'ok'
+                    } else {
+                        useR2EstimateFallback()
+                    }
+                } catch {
+                    useR2EstimateFallback()
+                }
             }
 
             setHealth(newHealth)

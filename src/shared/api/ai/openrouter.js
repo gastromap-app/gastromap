@@ -37,7 +37,12 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
     }
     if (temperature != null) body.temperature = temperature
     if (stream) body.stream = true
-    if (cascade) body._cascade = cascade
+    // Pass cascade from admin config so server uses it instead of hardcoded list
+    if (cascade?.length) body._cascade = cascade
+    // If model is not a free model (no :free suffix), use direct mode to skip cascade
+    if (preferredModel && !preferredModel.endsWith(':free')) {
+        body._direct_model = true
+    }
 
     // Try proxy endpoints (no Authorization header — key is server-side)
     const proxyUrl = config.ai?.proxyUrl || '/api/ai/chat'
@@ -47,7 +52,7 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
     for (const url of urls) {
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 20000)
+            const timeoutId = setTimeout(() => controller.abort(), 15000)
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -58,10 +63,15 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
             if (res.ok || res.status < 500) {
                 return { response: res, modelUsed: preferredModel }
             }
+            // Log 5xx for debugging
+            console.warn(`[fetchOpenRouter] ${url} returned ${res.status}`)
         } catch (err) {
-            if (err.name === 'AbortError') continue
+            if (err.name === 'AbortError') {
+                console.warn(`[fetchOpenRouter] ${url} timed out`)
+                continue
+            }
             console.warn(`[fetchOpenRouter] ${url} failed:`, err.message)
         }
     }
-    throw new Error('All AI proxy endpoints failed')
+    throw new Error('All AI proxy endpoints failed (503). Check that OPENROUTER_API_KEY is configured on the server and the model has available credits.')
 }

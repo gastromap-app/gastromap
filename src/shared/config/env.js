@@ -34,11 +34,10 @@ export const config = {
         maxStorageBytes: 512 * 1024, // ~500KB cap for persisted chat history (IndexedDB)
         maxResponseTokens: 1024,
         /**
-         * Primary proxy: Supabase Edge Function (lower latency, no cold starts).
-         * Fallback: Vercel Function (kept for compatibility).
+         * Primary proxy: Vercel Function (reliable, always deployed).
+         * Supabase Edge Function can be added later if deployed.
          */
-        proxyUrl: `${SUPABASE_FUNCTIONS_URL}/ai-chat`,
-        proxyUrlFallback: '/api/ai/chat',
+        proxyUrl: '/api/ai/chat',
         semanticSearchUrl: `${SUPABASE_FUNCTIONS_URL}/semantic-search`,
         semanticSearchFallback: '/api/ai/semantic-search',
         get isConfigured() {

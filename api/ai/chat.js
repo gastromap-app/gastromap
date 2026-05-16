@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
 
     try {
-        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag } = req.body
+        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag, _cascade } = req.body
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'messages array is required' })
@@ -149,11 +149,13 @@ export default async function handler(req, res) {
         }
 
         // ── Cascade mode ──────────────────────────────────────────────────────
-        let startIdx = MODEL_CASCADE.indexOf(model)
+        // Use client-provided cascade (from admin config) if available, otherwise server default
+        const activeCascade = (Array.isArray(_cascade) && _cascade.length > 0) ? _cascade : MODEL_CASCADE
+        let startIdx = activeCascade.indexOf(model)
         if (startIdx === -1) {
-            return runCascade([model, ...MODEL_CASCADE], 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
+            return runCascade([model, ...activeCascade], 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
         }
-        return runCascade(MODEL_CASCADE, startIdx, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
+        return runCascade(activeCascade, startIdx, { ...req.body, messages, max_tokens: cappedMaxTokens }, [apiKey, apiKeyFallback].filter(Boolean), res)
 
     } catch (error) {
         console.error('[ai/chat proxy] Error:', error.message)

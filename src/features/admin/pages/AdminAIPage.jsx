@@ -598,8 +598,27 @@ const AdminAIPage = () => {
 
     const toggleAgent = (key) => setAgentActive(prev => ({ ...prev, [key]: !prev[key] }))
 
-    const getPrimaryInfo = () => FREE_MODELS.find(m => m.id === primaryModel) ?? FREE_MODELS[0]
-    const getFallbackInfo = () => FREE_MODELS.find(m => m.id === fallbackModel) ?? FREE_MODELS[1]
+    const getPrimaryInfo = () => FREE_MODELS.find(m => m.id === primaryModel) ?? { name: modelDisplayName(primaryModel), badge: 'Custom', badgeColor: 'bg-slate-100 dark:bg-white/5 text-slate-500', description: primaryModel, context: '—', languages: '—', toolUse: false }
+    const getFallbackInfo = () => FREE_MODELS.find(m => m.id === fallbackModel) ?? { name: modelDisplayName(fallbackModel), badge: 'Custom', badgeColor: 'bg-slate-100 dark:bg-white/5 text-slate-500', description: fallbackModel, context: '—', languages: '—', toolUse: false }
+
+    // Unified model list for Primary/Fallback pickers — includes FREE_MODELS + any cascade models not in FREE_MODELS
+    const allPickerModels = (() => {
+        const freeIds = new Set(FREE_MODELS.map(m => m.id))
+        const extraModels = cascadeModels
+            .filter(id => !freeIds.has(id))
+            .map(id => ({
+                id,
+                name: modelDisplayName(id),
+                badge: 'Cascade',
+                badgeColor: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400',
+                description: id,
+                context: '—',
+                languages: '—',
+                toolUse: false,
+                provider: '',
+            }))
+        return [...FREE_MODELS, ...extraModels]
+    })()
 
     const handleSave = () => {
         appConfig.updateSettings({
@@ -796,7 +815,7 @@ const AdminAIPage = () => {
                             </div>
                             {showPrimaryPicker ? (
                                 <div className="space-y-2 sm:space-y-3 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
-                                    {FREE_MODELS.map((model) => (
+                                    {allPickerModels.map((model) => (
                                         <ModelCard
                                             key={model.id}
                                             model={model}
@@ -841,7 +860,7 @@ const AdminAIPage = () => {
                             </div>
                             {showFallbackPicker ? (
                                 <div className="space-y-2 sm:space-y-3 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
-                                    {FREE_MODELS.map((model) => (
+                                    {allPickerModels.map((model) => (
                                         <ModelCard
                                             key={model.id}
                                             model={model}
@@ -946,6 +965,16 @@ const AdminAIPage = () => {
                                             aria-label={enabled ? 'Disable model' : 'Enable model'}
                                         >
                                             {enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setCascadeModels(prev => prev.filter(id => id !== modelId))
+                                                setCascadeEnabled(prev => { const next = new Set(prev); next.delete(modelId); return next })
+                                            }}
+                                            className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                                            aria-label="Remove from cascade"
+                                        >
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 </div>

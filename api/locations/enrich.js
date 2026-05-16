@@ -13,6 +13,7 @@
 
 import { setCorsHeaders } from '../_shared/cors.js'
 import { applyRateLimit } from '../_shared/rate-limit.js'
+import { verifyAdmin } from '../_shared/auth.js'
 import { normalizeCity, normalizeDiacritics } from '../_shared/normalize.js'
 import { createClient } from '@supabase/supabase-js'
 import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
@@ -718,6 +719,12 @@ export default async function handler(req, res) {
     // Rate limit: 20 req / 60s per IP
     if (applyRateLimit(req, res, 'locations-enrich', { maxRequests: 20, windowMs: 60000 })) {
         return // applyRateLimit already sent 429 response
+    }
+
+    // Admin authentication — verify JWT and admin role
+    const { error: authError, status: authStatus } = await verifyAdmin(req)
+    if (authError) {
+        return res.status(authStatus).json({ error: authError })
     }
 
     try {

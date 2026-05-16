@@ -164,9 +164,16 @@ const AdminDashboardPage = () => {
                 useR2EstimateFallback()
             } else {
                 try {
+                    // Get auth token for admin endpoint
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const token = session?.access_token
+
                     const storageRes = await fetch('/api/locations/enrich', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                        },
                         body: JSON.stringify({ action: 'storage-stats' }),
                     })
                     if (storageRes.ok) {

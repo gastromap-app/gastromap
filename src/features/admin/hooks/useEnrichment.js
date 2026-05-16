@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { supabase } from '@/shared/api/client'
 
 /**
  * Custom hook for location enrichment workflow.
@@ -15,9 +16,16 @@ export function useEnrichment() {
     const [progress, setProgress] = useState(null) // { current, total } for batch operations
 
     const callApi = useCallback(async (body) => {
+        // Get current session token for admin auth
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+
         const response = await fetch('/api/locations/enrich', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify(body),
         })
         const data = await response.json()

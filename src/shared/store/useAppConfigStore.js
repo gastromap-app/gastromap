@@ -154,7 +154,7 @@ export const useAppConfigStore = create(
             name: 'app-config-storage',
             // Exclude internal fields and sensitive keys from localStorage
             partialize: (state) => {
-                const EXCLUDED = ['_supabaseLoaded', 'loadFromDB', 'updateSettings', 'setAppStatus', 'aiApiKey']
+                const EXCLUDED = ['_supabaseLoaded', 'loadFromDB', 'updateSettings', 'setAppStatus', 'aiApiKey', 'braveSearchApiKey']
                 return Object.fromEntries(
                     Object.entries(state).filter(([k]) => !EXCLUDED.includes(k))
                 )

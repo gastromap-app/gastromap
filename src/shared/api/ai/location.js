@@ -8,6 +8,7 @@
 import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
 
 import { getActiveAIConfig } from '../ai-config.api'
+import { supabase } from '@/shared/api/client'
 import { fetchOpenRouter } from './openrouter'
 import { robustParseJSON } from './utils'
 
@@ -134,9 +135,16 @@ export async function extractLocationData(query) {
             ? window.location.origin
             : 'https://gastromap-five.vercel.app'
 
+        // Get auth token for admin endpoint
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+
         const res = await fetch(`${baseUrl}/api/locations/enrich`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ action: 'places-search', query: query.trim() }),
         })
 

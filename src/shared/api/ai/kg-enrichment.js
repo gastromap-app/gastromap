@@ -14,8 +14,6 @@
  */
 
 import { supabase } from '@/shared/api/client'
-import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
-import { config } from '@/shared/config/env'
 
 // ─── Prompt ──────────────────────────────────────────────────────────────────
 
@@ -98,19 +96,16 @@ function buildLocationContext(loc) {
 }
 
 /**
- * Call OpenRouter LLM to generate kg_profile for a location.
+ * Call OpenRouter LLM via server proxy to generate kg_profile for a location.
  */
-async function callAI(locationContext, apiKey) {
+async function callAI(locationContext) {
     let lastErr = null
 
     for (const model of MODELS) {
         try {
-            const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const resp = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://gastromap.app',
-                    'X-Title': 'GastroMap KG',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -121,6 +116,8 @@ async function callAI(locationContext, apiKey) {
                     ],
                     max_tokens: 1200,
                     temperature: 0.3,
+                    _direct_model: true,
+                    _skip_rag: true,
                 }),
             })
 
@@ -168,13 +165,7 @@ async function callAI(locationContext, apiKey) {
  * @param {string}  options.apiKey — override API key
  * @returns {Promise<{ id, title, kg_profile, model }>}
  */
-export async function enrichLocationKGProfile(locationOrId, { force = false, apiKey = null } = {}) {
-    // Resolve API key
-    if (!apiKey) {
-        const appCfg = useAppConfigStore.getState()
-        apiKey = appCfg.aiApiKey || config.ai?.openRouterKey
-    }
-    if (!apiKey) throw new Error('No API key configured')
+export async function enrichLocationKGProfile(locationOrId, { force = false } = {}) {
     if (!supabase) throw new Error('Supabase not available')
 
     // Fetch location if only ID given
@@ -198,7 +189,7 @@ export async function enrichLocationKGProfile(locationOrId, { force = false, api
 
     // Build context and call AI
     const context = buildLocationContext(loc)
-    const { profile, model } = await callAI(context, apiKey)
+    const { profile, model } = await callAI(context)
 
     // Save to DB
     const { error: upErr } = await supabase
@@ -224,7 +215,7 @@ export async function enrichLocationKGProfile(locationOrId, { force = false, api
  * @param {Function} options.onProgress — callback(done, total, result)
  * @returns {Promise<{ enriched: number, skipped: number, failed: number }>}
  */
-export async function enrichAllLocationsKGProfile({ force = false, onProgress = null, apiKey = null } = {}) {
+export async function enrichAllLocationsKGProfile({ force = false, onProgress = null } = {}) {
     if (!supabase) throw new Error('Supabase not available')
 
     const { data: locations, error } = await supabase
@@ -240,7 +231,7 @@ export async function enrichAllLocationsKGProfile({ force = false, onProgress = 
     for (let i = 0; i < locations.length; i++) {
         const loc = locations[i]
         try {
-            const result = await enrichLocationKGProfile(loc, { force, apiKey })
+            const result = await enrichLocationKGProfile(loc, { force })
             if (result.skipped) {
                 skipped++
             } else {

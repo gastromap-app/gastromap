@@ -14,6 +14,7 @@
  */
 
 import { config } from '@/shared/config/env'
+import { supabase } from '@/shared/api/client'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 // ─── 🔍 KG Agent Debugger ─────────────────────────────────────────────────────
@@ -158,9 +159,16 @@ const KGDebug = (() => {
 export async function searchBrave(query, apiKey, count = 5) {
     if (!apiKey || !apiKey.trim()) return null
     try {
+        // Get auth token for admin endpoint
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+
         const resp = await fetch('/api/locations/enrich', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ action: 'brave-search', query, count }),
         })
         if (!resp.ok) return null

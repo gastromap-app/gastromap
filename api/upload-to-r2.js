@@ -16,6 +16,7 @@
 
 import { setCorsHeaders } from './_shared/cors.js'
 import { applyRateLimit } from './_shared/rate-limit.js'
+import { verifyAdmin } from './_shared/auth.js'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import sharp from 'sharp'
 import Busboy from 'busboy'
@@ -116,6 +117,12 @@ export default async function handler(req, res) {
     // Rate limit: 30 req / 60s per IP
     if (applyRateLimit(req, res, 'upload-to-r2', { maxRequests: 30, windowMs: 60000 })) {
         return // applyRateLimit already sent 429 response
+    }
+
+    // Admin authentication — verify JWT and admin role
+    const { error: authError, status: authStatus } = await verifyAdmin(req)
+    if (authError) {
+        return res.status(authStatus).json({ error: authError })
     }
 
     try {

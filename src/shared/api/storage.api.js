@@ -1,4 +1,4 @@
-import { ApiError } from './client'
+import { ApiError, supabase } from './client'
 
 /**
  * Maximum dimensions and quality for uploaded images.
@@ -117,10 +117,17 @@ export async function uploadFile(file, bucket = 'locations', folder = 'general',
             const controller = new AbortController()
             const timeoutId = setTimeout(() => controller.abort(), 20000)
 
+            // Get auth token for admin endpoint
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
             const response = await fetch('/api/upload-to-r2', {
                 method: 'POST',
                 body: formData,
                 signal: controller.signal,
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
             })
 
             clearTimeout(timeoutId)

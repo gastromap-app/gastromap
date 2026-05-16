@@ -477,17 +477,17 @@ const AdminAIPage = () => {
     // ── Model Cascade Editor
     const [cascadeModels, setCascadeModels] = useState(() => {
         const saved = appConfig.aiModelCascade
-        const paidIds = PAID_MODELS.map(m => m.id)
         if (saved?.length > 0) {
-            // Merge: keep saved order + append any new paid models not already in the list
-            const missing = paidIds.filter(id => !saved.includes(id))
-            return [...saved, ...missing]
+            // Use saved cascade as-is — don't re-add removed models
+            return saved
         }
+        // First time: use defaults + paid models
+        const paidIds = PAID_MODELS.map(m => m.id)
         return [...MODEL_CASCADE, ...paidIds]
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
         const saved = appConfig.aiModelCascade
-        // Only free models enabled by default; paid models must be enabled manually
+        // All saved models are enabled (save only persists enabled ones)
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 

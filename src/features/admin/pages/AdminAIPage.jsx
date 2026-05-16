@@ -480,8 +480,8 @@ const AdminAIPage = () => {
         if (saved?.length > 0) {
             return saved
         }
-        const paidIds = PAID_MODELS.map(m => m.id)
-        return [...MODEL_CASCADE, ...paidIds]
+        // First-time fallback: use MODEL_CASCADE from constants (no auto-adding paid models)
+        return [...MODEL_CASCADE]
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
         const saved = appConfig.aiModelCascade
@@ -1251,10 +1251,7 @@ const AdminAIPage = () => {
                     </div>
                 )}
                 <button
-                    onClick={() => {
-                        console.log('🔴 SAVE BUTTON CLICKED')
-                        handleSaveModels()
-                    }}
+                    onClick={handleSaveModels}
                     className={cn(adminBtnPrimary, "h-12 px-8 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all")}
                 >
                     <Save size={16} />

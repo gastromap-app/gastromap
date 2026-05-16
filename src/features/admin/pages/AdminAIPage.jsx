@@ -1345,16 +1345,19 @@ const AdminAIPage = () => {
                                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">GastroGuide</h3>
                                         <span className={cn(
                                             "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
-                                            isGuideDefault 
-                                                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                                                : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                            botV2Enabled
+                                                ? "bg-slate-100 dark:bg-slate-500/20 text-slate-500 dark:text-slate-400"
+                                                : isGuideDefault 
+                                                    ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                                    : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
                                         )}>
-                                            {isGuideDefault ? 'System Default' : 'Custom Override'}
+                                            {botV2Enabled ? 'Disabled (v2 active)' : isGuideDefault ? 'System Default' : 'Custom Override'}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500">User-facing dining assistant</p>
                                 </div>
                             </div>
+                            {!botV2Enabled && (
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handlePreview}
@@ -1379,7 +1382,19 @@ const AdminAIPage = () => {
                                     Reset
                                 </button>
                             </div>
+                            )}
                         </div>
+                        {botV2Enabled ? (
+                            <div className="p-4 bg-slate-100 dark:bg-[hsl(220,20%,9%)]/50 rounded-xl border border-slate-200 dark:border-white/[0.08] text-center">
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                                    🔒 Поле инструкций отключено — активен режим AI Bot v2
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Бот использует встроенные Operational Rules. Чтобы использовать свои инструкции, сначала выключите v2 в секции выше.
+                                </p>
+                            </div>
+                        ) : (
+                        <>
                         <textarea
                             value={guidePrompt}
                             onChange={(e) => setGuidePrompt(e.target.value)}
@@ -1405,6 +1420,8 @@ const AdminAIPage = () => {
                                 <span className="text-[10px] text-amber-500 font-medium">⚠️ Custom override active</span>
                             )}
                         </div>
+                        </>
+                        )}
                     </div>
 
                     {/* GastroAssistant Prompt */}

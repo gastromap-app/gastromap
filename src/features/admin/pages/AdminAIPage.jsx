@@ -497,6 +497,18 @@ const AdminAIPage = () => {
         }
     }, [appConfig.aiModelCascade])
 
+    // Auto-correct Primary/Fallback if they no longer exist in the cascade list
+    useEffect(() => {
+        if (cascadeModels.length === 0) return
+        if (!cascadeModels.includes(primaryModel)) {
+            setPrimaryModel(cascadeModels[0])
+        }
+        if (!cascadeModels.includes(fallbackModel)) {
+            setFallbackModel(cascadeModels[cascadeModels.length > 1 ? 1 : 0])
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cascadeModels])
+
     // ── Model Scanner (OpenRouter)
     const [showModelScanner, setShowModelScanner] = useState(false)
     const [availableModels, setAvailableModels] = useState([])
@@ -607,28 +619,30 @@ const AdminAIPage = () => {
     const getPrimaryInfo = () => FREE_MODELS.find(m => m.id === primaryModel) ?? { name: modelDisplayName(primaryModel), badge: 'Custom', badgeColor: 'bg-slate-100 dark:bg-white/5 text-slate-500', description: primaryModel, context: '—', languages: '—', toolUse: false }
     const getFallbackInfo = () => FREE_MODELS.find(m => m.id === fallbackModel) ?? { name: modelDisplayName(fallbackModel), badge: 'Custom', badgeColor: 'bg-slate-100 dark:bg-white/5 text-slate-500', description: fallbackModel, context: '—', languages: '—', toolUse: false }
 
-    // Unified model list for Primary/Fallback pickers — includes FREE_MODELS + any cascade models not in FREE_MODELS
+    // Unified model list for Primary/Fallback pickers — derived from the
+    // user-edited cascade list (single source of truth). Falls back to FREE_MODELS
+    // metadata when the model is a known free one, otherwise builds a placeholder.
     const allPickerModels = (() => {
-        const freeIds = new Set(FREE_MODELS.map(m => m.id))
-        const extraModels = cascadeModels
-            .filter(id => !freeIds.has(id))
-            .map(id => ({
-                id,
-                name: modelDisplayName(id),
-                badge: 'Cascade',
-                badgeColor: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400',
-                description: id,
-                context: '—',
-                languages: '—',
-                toolUse: false,
-                provider: '',
-            }))
-        return [...FREE_MODELS, ...extraModels]
+        const freeMap = new Map(FREE_MODELS.map(m => [m.id, m]))
+        return cascadeModels.map(id => freeMap.get(id) ?? ({
+            id,
+            name: modelDisplayName(id),
+            badge: 'Cascade',
+            badgeColor: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400',
+            description: id,
+            context: '—',
+            languages: '—',
+            toolUse: false,
+            provider: '',
+        }))
     })()
 
+    const [saveError, setSaveError] = useState(null)
+
     const handleSaveModels = async () => {
+        setSaveError(null)
         // Save ALL models in the cascade list
-        await appConfig.updateSettings({
+        const result = await appConfig.updateSettings({
             aiPrimaryModel: primaryModel,
             aiFallbackModel: fallbackModel,
             aiModelCascade: cascadeModels,
@@ -638,12 +652,17 @@ const AdminAIPage = () => {
             aiAssistantMaxTokens: assistantMaxTokens,
             aiGuideTone: guideTone,
         })
+        if (result?.ok === false) {
+            setSaveError('Failed to save to Supabase. Check console — likely RLS / auth issue. Changes are NOT persisted.')
+            return
+        }
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
     }
 
     const handleSavePrompts = async () => {
-        await appConfig.updateSettings({
+        setSaveError(null)
+        const result = await appConfig.updateSettings({
             aiGuideActive: agentActive.guide,
             aiAssistantActive: agentActive.assistant,
             aiGuideSystemPrompt: guidePrompt,
@@ -651,6 +670,10 @@ const AdminAIPage = () => {
             aiKGAgentSystemPrompt: kgAgentPrompt,
             braveSearchApiKey: braveApiKey,
         })
+        if (result?.ok === false) {
+            setSaveError('Failed to save to Supabase. Check console.')
+            return
+        }
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
     }
@@ -807,11 +830,198 @@ const AdminAIPage = () => {
                 </div>
             </CollapsibleSection>
 
-            {/* 4. AI Models */}
+            {/* 4. Model Cascade Editor — SOURCE OF TRUTH for available models.
+                  Primary/Fallback pickers below select from this list. */}
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
+                    <GitBranch size={16} className="text-amber-500" />
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Model Cascade Editor</h2>
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        Source of truth
+                    </span>
+                </div>
+                <div className="p-6">
+                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">
+                        This list defines all models available to the app. Add via Scanner or manual entry, reorder with arrows, disable to skip in fallback chain, or remove with ✕. Primary &amp; Fallback below pick from this list.
+                    </p>
+                    <div className="space-y-2">
+                        {cascadeModels.map((modelId, index) => {
+                            const enabled = cascadeEnabled.has(modelId)
+                            const paidModel = PAID_MODELS.find(m => m.id === modelId)
+                            return (
+                                <div
+                                    key={modelId}
+                                    className={cn(
+                                        'flex items-center gap-3 p-3 rounded-xl border transition-all',
+                                        enabled
+                                            ? 'bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border-slate-100 dark:border-white/[0.04]'
+                                            : 'bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/10 border-slate-200/50 dark:border-white/[0.02] opacity-50'
+                                    )}
+                                >
+                                    <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex-shrink-0">
+                                        {index + 1}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className={cn(
+                                            'text-sm font-mono truncate block',
+                                            enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[hsl(220,10%,55%)]'
+                                        )}>
+                                            {modelDisplayName(modelId)}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-mono truncate block">{modelId}</span>
+                                        {paidModel && (
+                                            <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
+                                                💰 PAID · {paidModel.input} in / {paidModel.output} out · {paidModel.note}
+                                            </span>
+                                        )}
+                                        {(primaryModel === modelId || fallbackModel === modelId) && (
+                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                                {primaryModel === modelId ? '★ Primary' : '↻ Fallback'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <button
+                                            onClick={() => moveCascade(index, -1)}
+                                            disabled={index === 0}
+                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                            aria-label="Move up"
+                                        >
+                                            <ArrowUp size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => moveCascade(index, 1)}
+                                            disabled={index === cascadeModels.length - 1}
+                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                            aria-label="Move down"
+                                        >
+                                            <ArrowDown size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => toggleCascadeModel(modelId)}
+                                            className={cn(
+                                                'p-1.5 rounded-lg transition-all',
+                                                enabled
+                                                    ? 'text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
+                                                    : 'text-slate-300 dark:text-[hsl(220,10%,55%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)]'
+                                            )}
+                                            aria-label={enabled ? 'Disable model' : 'Enable model'}
+                                        >
+                                            {enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const next = cascadeModels.filter(id => id !== modelId)
+                                                setCascadeModels(next)
+                                                setCascadeEnabled(prev => { const ns = new Set(prev); ns.delete(modelId); return ns })
+                                                // If removed model was primary/fallback, reassign to first available
+                                                if (primaryModel === modelId && next.length > 0) setPrimaryModel(next[0])
+                                                if (fallbackModel === modelId && next.length > 0) setFallbackModel(next[next.length > 1 ? 1 : 0])
+                                            }}
+                                            disabled={cascadeModels.length <= 1}
+                                            className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                            aria-label="Remove from cascade"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                        {cascadeModels.length === 0 && (
+                            <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-white/[0.08] rounded-xl">
+                                No models yet. Add one below or use the Scanner.
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-3">
+                        {cascadeModels.filter(m => cascadeEnabled.has(m)).length} of {cascadeModels.length} models enabled in cascade
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
+                        <button
+                            onClick={scanModels}
+                            disabled={scanLoading}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors disabled:opacity-50 shrink-0"
+                        >
+                            {scanLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                            {scanLoading ? 'Scanning...' : 'Scan OpenRouter Models'}
+                        </button>
+                        {/* Manual model ID input */}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <input
+                                type="text"
+                                placeholder="Add model ID (e.g. google/gemini-2.5-flash-lite)"
+                                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && e.target.value.trim()) {
+                                        const id = e.target.value.trim()
+                                        if (!cascadeModels.includes(id)) {
+                                            setCascadeModels(prev => [...prev, id])
+                                            setCascadeEnabled(prev => { const next = new Set(prev); next.add(id); return next })
+                                        }
+                                        e.target.value = ''
+                                    }
+                                }}
+                            />
+                            <span className="text-[10px] text-slate-400 shrink-0">Enter ↵</span>
+                        </div>
+                    </div>
+
+                    {/* Model Scanner Modal — rendered via portal to escape transform context */}
+                    {showModelScanner && typeof document !== 'undefined' && createPortal(
+                        <AnimatePresence>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModelScanner(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]" />
+                            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed inset-0 z-[210] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+                                <div className="w-full max-w-[600px] max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] flex flex-col overflow-hidden pointer-events-auto">
+                                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Available Free Models</h3>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{availableModels.length} free models found • {availableModels.filter(m => m.hasToolCalling).length} with tool calling</p>
+                                    </div>
+                                    <button onClick={() => setShowModelScanner(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1.5">
+                                    {availableModels.map(model => (
+                                        <label key={model.id} className={cn("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", selectedNewModels.has(model.id) ? "border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10" : "border-slate-100 dark:border-white/[0.06] hover:border-slate-200 dark:hover:border-white/[0.1]")}>
+                                            <input type="checkbox" checked={selectedNewModels.has(model.id)} onChange={() => setSelectedNewModels(prev => { const next = new Set(prev); next.has(model.id) ? next.delete(model.id) : next.add(model.id); return next })} className="w-4 h-4 rounded accent-indigo-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{model.name || model.id}</div>
+                                                <div className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate">{model.id}</div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                                {model.hasToolCalling && (
+                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[8px] sm:text-[9px] font-bold uppercase">Tools</span>
+                                                )}
+                                                {model.contextLength && (
+                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 text-[8px] sm:text-[9px] font-bold">{Math.round(model.contextLength / 1000)}K</span>
+                                                )}
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                                    <span className="text-xs text-slate-500">{selectedNewModels.size} selected</span>
+                                    <button onClick={addSelectedModels} disabled={selectedNewModels.size === 0} className="px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/20">
+                                        Add to Cascade ({selectedNewModels.size})
+                                    </button>
+                                </div>
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>,
+                        document.body
+                    )}
+                </div>
+            </div>
+
+            {/* 5. Primary & Fallback Models — picked from cascade above */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[28px] lg:rounded-[32px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center gap-2">
                     <Cpu size={16} className="text-indigo-500" />
-                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">AI Models (OpenRouter)</h2>
+                    <h2 className="font-semibold text-sm text-slate-900 dark:text-white">Primary &amp; Fallback Models</h2>
+                    <span className="ml-auto text-[10px] text-slate-400">From cascade list above</span>
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -913,169 +1123,6 @@ const AdminAIPage = () => {
                     </div>
                 </div>
             </div>
-
-            {/* 5. Model Cascade Editor */}
-            <CollapsibleSection title="Model Cascade Editor" icon={GitBranch} iconColor="text-amber-500" defaultOpen={false}>
-                <div className="p-6">
-                    <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] mb-4">
-                        Drag models up/down to set the fallback order. Disable models to skip them in the cascade.
-                        The primary model is always tried first; this list is used only when it fails.
-                    </p>
-                    <div className="space-y-2">
-                        {cascadeModels.map((modelId, index) => {
-                            const enabled = cascadeEnabled.has(modelId)
-                            const paidModel = PAID_MODELS.find(m => m.id === modelId)
-                            return (
-                                <div
-                                    key={modelId}
-                                    className={cn(
-                                        'flex items-center gap-3 p-3 rounded-xl border transition-all',
-                                        enabled
-                                            ? 'bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 border-slate-100 dark:border-white/[0.04]'
-                                            : 'bg-slate-100/50 dark:bg-[hsl(220,20%,9%)]/10 border-slate-200/50 dark:border-white/[0.02] opacity-50'
-                                    )}
-                                >
-                                    <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex-shrink-0">
-                                        {index + 1}
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <span className={cn(
-                                            'text-sm font-mono truncate block',
-                                            enabled ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[hsl(220,10%,55%)]'
-                                        )}>
-                                            {modelDisplayName(modelId)}
-                                        </span>
-                                        {paidModel && (
-                                            <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
-                                                💰 PAID · {paidModel.input} in / {paidModel.output} out · {paidModel.note}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                        <button
-                                            onClick={() => moveCascade(index, -1)}
-                                            disabled={index === 0}
-                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                            aria-label="Move up"
-                                        >
-                                            <ArrowUp size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => moveCascade(index, 1)}
-                                            disabled={index === cascadeModels.length - 1}
-                                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)] text-slate-400 hover:text-slate-600 dark:hover:text-[hsl(220,20%,90%)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                            aria-label="Move down"
-                                        >
-                                            <ArrowDown size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => toggleCascadeModel(modelId)}
-                                            className={cn(
-                                                'p-1.5 rounded-lg transition-all',
-                                                enabled
-                                                    ? 'text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
-                                                    : 'text-slate-300 dark:text-[hsl(220,10%,55%)] hover:bg-slate-200 dark:hover:bg-[hsl(220,20%,15%)]'
-                                            )}
-                                            aria-label={enabled ? 'Disable model' : 'Enable model'}
-                                        >
-                                            {enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setCascadeModels(prev => prev.filter(id => id !== modelId))
-                                                setCascadeEnabled(prev => { const next = new Set(prev); next.delete(modelId); return next })
-                                            }}
-                                            className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
-                                            aria-label="Remove from cascade"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                    <p className="text-xs text-slate-400 mt-3">
-                        {cascadeModels.filter(m => cascadeEnabled.has(m)).length} of {cascadeModels.length} models enabled in cascade
-                    </p>
-
-                    <div className="flex items-center gap-3 mt-4">
-                        <button
-                            onClick={scanModels}
-                            disabled={scanLoading}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
-                        >
-                            {scanLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-                            {scanLoading ? 'Scanning...' : 'Scan OpenRouter Models'}
-                        </button>
-                        {/* Manual model ID input */}
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <input
-                                type="text"
-                                placeholder="Add model ID (e.g. google/gemini-2.5-flash-lite)"
-                                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && e.target.value.trim()) {
-                                        const id = e.target.value.trim()
-                                        if (!cascadeModels.includes(id)) {
-                                            setCascadeModels(prev => [...prev, id])
-                                            setCascadeEnabled(prev => { const next = new Set(prev); next.add(id); return next })
-                                        }
-                                        e.target.value = ''
-                                    }
-                                }}
-                            />
-                            <span className="text-[10px] text-slate-400 shrink-0">Enter ↵</span>
-                        </div>
-                    </div>
-
-                    {/* Model Scanner Modal — rendered via portal to escape transform context */}
-                    {showModelScanner && typeof document !== 'undefined' && createPortal(
-                        <AnimatePresence>
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModelScanner(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]" />
-                            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed inset-0 z-[210] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
-                                <div className="w-full max-w-[600px] max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] flex flex-col overflow-hidden pointer-events-auto">
-                                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Available Free Models</h3>
-                                        <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{availableModels.length} free models found • {availableModels.filter(m => m.hasToolCalling).length} with tool calling</p>
-                                    </div>
-                                    <button onClick={() => setShowModelScanner(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 min-w-[44px] min-h-[44px] flex items-center justify-center">
-                                        <X size={18} />
-                                    </button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1.5">
-                                    {availableModels.map(model => (
-                                        <label key={model.id} className={cn("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", selectedNewModels.has(model.id) ? "border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10" : "border-slate-100 dark:border-white/[0.06] hover:border-slate-200 dark:hover:border-white/[0.1]")}>
-                                            <input type="checkbox" checked={selectedNewModels.has(model.id)} onChange={() => setSelectedNewModels(prev => { const next = new Set(prev); next.has(model.id) ? next.delete(model.id) : next.add(model.id); return next })} className="w-4 h-4 rounded accent-indigo-500 shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{model.name || model.id}</div>
-                                                <div className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate">{model.id}</div>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                                                {model.hasToolCalling && (
-                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[8px] sm:text-[9px] font-bold uppercase">Tools</span>
-                                                )}
-                                                {model.contextLength && (
-                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 text-[8px] sm:text-[9px] font-bold">{Math.round(model.contextLength / 1000)}K</span>
-                                                )}
-                                            </div>
-                                        </label>
-                                    ))}
-                                </div>
-                                <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                                    <span className="text-xs text-slate-500">{selectedNewModels.size} selected</span>
-                                    <button onClick={addSelectedModels} disabled={selectedNewModels.size === 0} className="px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/20">
-                                        Add to Cascade ({selectedNewModels.size})
-                                    </button>
-                                </div>
-                                </div>
-                            </motion.div>
-                        </AnimatePresence>,
-                        document.body
-                    )}
-                </div>
-            </CollapsibleSection>
 
             {/* 7. Generation Settings */}
             <CollapsibleSection title="Generation Settings" icon={Sliders} iconColor="text-emerald-500" defaultOpen={false}>
@@ -1189,8 +1236,14 @@ const AdminAIPage = () => {
             </CollapsibleSection>
 
             {/* Save Models & Generation Settings Button */}
-            <div className="flex justify-end">
-                <button 
+            <div className="flex flex-col items-end gap-3">
+                {saveError && (
+                    <div className="w-full p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+                        <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                        <span>{saveError}</span>
+                    </div>
+                )}
+                <button
                     onClick={handleSaveModels}
                     className={cn(adminBtnPrimary, "h-12 px-8 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all")}
                 >

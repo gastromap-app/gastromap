@@ -68,17 +68,23 @@ async function loadFromSupabase() {
     }
 }
 
-/** Persist AI config fields to Supabase (upsert). */
+/** Persist AI config fields to Supabase (upsert). Returns true on success. */
 async function saveToSupabase(aiFields) {
     try {
-        await supabase
+        const { error, status } = await supabase
             .from('app_settings')
             .upsert(
                 { key: 'ai_config', value: aiFields, updated_at: new Date().toISOString() },
                 { onConflict: 'key' }
             )
+        if (error) {
+            console.error('[AppConfig] Supabase save failed:', { code: error.code, message: error.message, status })
+            return false
+        }
+        return true
     } catch (err) {
-        console.warn('[AppConfig] Failed to save to Supabase:', err.message)
+        console.error('[AppConfig] Supabase save threw:', err?.message || err)
+        return false
     }
 }
 
@@ -108,6 +114,7 @@ export const useAppConfigStore = create(
             /**
              * updateSettings — update state + persist AI fields to Supabase.
              * Non-AI fields (appName, appStatus…) are still localStorage-only.
+             * Returns { ok: boolean } so callers can react to save failures.
              */
             updateSettings: async (settings) => {
                 set((state) => ({ ...state, ...settings }))
@@ -115,8 +122,10 @@ export const useAppConfigStore = create(
                 // Determine which AI fields changed
                 const updated = Object.keys(settings).filter(k => AI_FIELDS.includes(k))
                 if (updated.length > 0) {
-                    await saveToSupabase(pickAIFields({ ...get(), ...settings }))
+                    const ok = await saveToSupabase(pickAIFields({ ...get(), ...settings }))
+                    return { ok }
                 }
+                return { ok: true }
             },
 
             setAppStatus: (status) => set({ appStatus: status }),

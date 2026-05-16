@@ -377,23 +377,36 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         : null
 
     // Build a response instruction that reminds the model to write a proper answer
-    const responseInstruction = `Now write a warm, expert response recommending these places to the user. For each place: bold the name, write 2-3 sentences about why it fits their request. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Do NOT call any tools. Do NOT output JSON.`
+    // Also include a COMPACT summary of results (not full JSON) to reduce tokens
+    const compactResults = usedLocations.slice(0, 5).map((l, i) => {
+        const parts = [`${i + 1}. ${l.title || l.name}`]
+        if (l.category) parts.push(l.category)
+        if (l.city) parts.push(l.city)
+        if (l.google_rating || l.rating) parts.push(`⭐${l.google_rating || l.rating}`)
+        if (l.price_range) parts.push(l.price_range)
+        if (l.ai_summary) parts.push(l.ai_summary)
+        else if (l.description) parts.push(l.description?.slice(0, 120))
+        if (l.vibe?.length) parts.push(`Vibe: ${l.vibe.slice(0, 3).join(', ')}`)
+        if (l.insider_tip) parts.push(`Tip: ${l.insider_tip.slice(0, 80)}`)
+        return parts.join(' | ')
+    }).join('\n')
+
+    const responseInstruction = usedLocations.length > 0
+        ? `Here are the search results:\n${compactResults}\n\nNow write a warm, expert recommendation for the user. For each place: **bold the name**, write 2-3 sentences about why it fits their request. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Be like a knowledgeable friend, not a search engine.`
+        : `No places found matching the criteria. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Suggest the user try a different search (broader category, different city, wider radius).`
 
     let finalMessages
     if (mode === 'native') {
+        // Compact mode: don't send full tool JSON to the model for the response.
+        // Instead, send only the compact summary in responseInstruction.
         finalMessages = [
             ...messages,
-            assistantMsg,   // assistant message that contained tool_calls
-            ...toolResults, // tool result messages
             { role: 'user', content: responseInstruction },
         ]
     } else {
-        // XML mode: strip the raw XML from the assistant turn, then inject results
-        const cleanedContent = (assistantMsg.content ?? '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').trim()
+        // XML mode: same compact approach
         finalMessages = [
             ...messages,
-            ...(cleanedContent ? [{ role: 'assistant', content: cleanedContent }] : []),
-            ...toolResults,
             { role: 'user', content: responseInstruction },
         ]
     }

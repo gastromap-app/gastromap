@@ -8,6 +8,7 @@ import { useLocations } from '@/shared/api/queries/location.queries'
 import { useGeoCovers } from '@/shared/api/queries'
 import { CityCardSkeleton } from '@/components/ui/Skeleton'
 import { useTranslation } from 'react-i18next'
+import { formatLocationCount } from '@/shared/utils/formatLocationCount'
 
 // ─── Country Images Fallback ──────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ function CountryCard({ country, navigate, desktop = false }) {
                     <div className="flex items-center gap-1.5 mt-2 text-white/90">
                         <MapPin size={desktop ? 16 : 14} className="text-blue-400" />
                         <span className={`font-bold ${desktop ? 'text-sm' : 'text-[13px]'}`}>
-                            {country.count} {country.count === 1 ? 'location' : 'locations'}
+                            {formatLocationCount(country.count)} {country.count === 1 ? 'location' : 'locations'}
                         </span>
                     </div>
                 )}
@@ -83,7 +84,7 @@ function CountryCard({ country, navigate, desktop = false }) {
             {/* Badge with location count */}
             {!isComingSoon && (
                 <div className={`absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ${desktop ? 'hidden' : ''}`}>
-                    {country.count}
+                    {formatLocationCount(country.count)}
                 </div>
             )}
         </motion.button>

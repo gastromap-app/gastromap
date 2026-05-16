@@ -6,6 +6,7 @@ import { useLocationFilters } from '@/shared/filters/useLocationFilters'
 import { useGeoCovers, useUserPreferences, useLocations } from '@/shared/api/queries'
 import { isCurrentlyOpen } from '@/utils/formatOpeningHours'
 import { normalizeCityName, normalizeCountryName } from '@/utils/normalizeCityName'
+import { formatLocationCount } from '@/shared/utils/formatLocationCount'
 import { useNavigate } from 'react-router-dom'
 import { 
     Search, MapPin, TrendingUp, Star, Clock, Heart, 
@@ -121,6 +122,12 @@ const DashboardPage = () => {
     const { data: geoCoversData = [] } = useGeoCovers('country')
     const dbCoverMap = Object.fromEntries(geoCoversData.map(c => [c.slug, c.image_url]))
 
+    // City visibility — exclude hidden/coming-soon cities from country counts (matches CountriesPage logic)
+    const { data: cityCoversData = [] } = useGeoCovers('city')
+    const excludedCitySlugs = useMemo(() => new Set(
+        cityCoversData.filter(c => c.is_visible === false || c.is_coming_soon === true).map(c => c.slug)
+    ), [cityCoversData])
+
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     // Local search — NOT synced to store. SmartSearchBar dropdown uses server
     // FTS independently; card lists on the page are unaffected by typing.
@@ -146,6 +153,11 @@ const DashboardPage = () => {
         locations.forEach(loc => {
             const raw = loc.country ?? ''
             if (!raw) return
+
+            // Skip locations in hidden or coming-soon cities (matches CountriesPage logic)
+            const citySlug = (loc.city || '').toLowerCase().replace(/\s+/g, '-')
+            if (excludedCitySlugs.has(citySlug)) return
+
             const slug = raw.toLowerCase().replace(/\s+/g, '-')
             const name = raw.charAt(0).toUpperCase() + raw.slice(1)
             if (!countryMap[slug]) countryMap[slug] = { name, slug, count: 0, newCount: 0 }
@@ -159,7 +171,7 @@ const DashboardPage = () => {
             ...c,
             image: dbCoverMap[c.slug] ?? COUNTRY_IMAGES[c.slug] ?? COUNTRY_IMAGES.poland,
         }))
-    }, [locations, dbCoverMap])
+    }, [locations, dbCoverMap, excludedCitySlugs])
 
     const nearbyLocations = useMemo(() => {
         if (!geoLat || !geoLng) return []
@@ -392,7 +404,7 @@ const DashboardPage = () => {
                                     )}
                                     <div className="absolute bottom-3.5 left-4">
                                         <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
-                                        <span className="text-[11px] text-white/70 font-medium">{country.count} locations</span>
+                                        <span className="text-[11px] text-white/70 font-medium">{formatLocationCount(country.count)} locations</span>
                                     </div>
                                 </button>
                             ))}
@@ -730,7 +742,7 @@ const DesktopDashboard = ({
                                         </h4>
                                         <div className="flex items-center gap-2 text-white/70 text-[0.6875rem] font-bold uppercase tracking-[0.14em]">
                                             <MapPin size={12} className="text-blue-500" />
-                                            <span>{country.count} locations</span>
+                                            <span>{formatLocationCount(country.count)} locations</span>
                                         </div>
                                     </div>
                                 </button>

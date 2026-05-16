@@ -126,7 +126,7 @@ const ProfileEditPage = () => {
                     <h3 className={`text-[11px] font-black uppercase tracking-widest ml-2 mb-2 ${subTextStyle}`}>{t('profile_edit.basic_info')}</h3>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.full_name')}</label>
+                        <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-2 ${textStyle}`}>{t('profile_edit.full_name')}</label>
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
                             <input
@@ -140,7 +140,7 @@ const ProfileEditPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.email')}</label>
+                        <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-2 ${textStyle}`}>{t('profile_edit.email')}</label>
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
                             <input
@@ -155,7 +155,7 @@ const ProfileEditPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className={`text-[10px] font-bold uppercase tracking-tight ml-2 ${subTextStyle}`}>{t('profile_edit.bio')}</label>
+                        <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-2 ${textStyle}`}>{t('profile_edit.bio')}</label>
                         <textarea
                             value={formData.bio}
                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}

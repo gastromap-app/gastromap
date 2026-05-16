@@ -27,7 +27,7 @@ const LanguageSettingsPage = () => {
     ]
 
     const textStyle = isDark ? "text-white" : "text-gray-900"
-    const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
+    const subTextStyle = isDark ? "text-gray-500 dark:text-gray-400" : "text-gray-500"
 
     return (
         <div className="w-full min-h-[100dvh] relative z-10 pb-32">

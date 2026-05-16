@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { queryClient } from '@/shared/config/queryClient'
 
 /**
  * useStorageQuota — monitor browser storage usage (Cache + IndexedDB).
@@ -40,29 +41,32 @@ export function useStorageQuota() {
 
     const clearCache = useCallback(async () => {
         try {
-            // 1. Clear all Workbox caches
+            // 1. Clear all Service Worker / Workbox caches
             if ('caches' in window) {
                 const keys = await caches.keys()
                 await Promise.all(keys.map(k => caches.delete(k)))
             }
-            // 2. Clear IndexedDB (Zustand persist stores)
-            // We keep auth-storage so user stays logged in
-            const storesToClear = [
-                'ai-chat-storage',
-                'favorites-storage',
-                'user-prefs-storage',
-                'app-config-storage',
-                'gastromap-notifications-storage',
-            ]
-            storesToClear.forEach(name => {
-                try { localStorage.removeItem(name) } catch { /* ignore */ }
-            })
-            // 3. Unregister Service Worker so it re-registers fresh
+            // 2. Clear React Query cache
+            queryClient.clear()
+            // 3. Clear localStorage (except auth data)
+            const authKeys = ['sb-auth-token', 'supabase.auth.token', 'auth-storage']
+            const keysToKeep = []
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (authKeys.some(ak => key?.includes(ak))) {
+                    keysToKeep.push({ key, value: localStorage.getItem(key) })
+                }
+            }
+            localStorage.clear()
+            keysToKeep.forEach(({ key, value }) => localStorage.setItem(key, value))
+            // 4. Unregister Service Worker so it re-registers fresh
             if ('serviceWorker' in navigator) {
                 const regs = await navigator.serviceWorker.getRegistrations()
                 await Promise.all(regs.map(r => r.unregister()))
             }
-            // 4. Reload to pick up fresh state
+            // 5. Brief delay so caller can show success toast before reload
+            await new Promise(resolve => setTimeout(resolve, 800))
+            // 6. Reload to pick up fresh state
             window.location.reload()
         } catch (err) {
             console.error('[StorageQuota] Clear cache failed:', err)

@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, Shield, Eye, Smartphone, LogOut, ChevronRight, UserX, Trash2, HardDrive, Monitor, Globe, Clock, MapPin } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useStorageQuota } from '@/hooks/useStorageQuota'
+import { supabase } from '@/shared/api/client'
 
 const SecurityPrivacyPage = () => {
     const { theme } = useTheme()
@@ -34,6 +35,16 @@ const SecurityPrivacyPage = () => {
 
     // ── Login Activity (derived from current session + browser info) ──
     const [showSessions, setShowSessions] = useState(false)
+    const [sessionStart, setSessionStart] = useState(null)
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => {
+            if (data?.session?.created_at) {
+                setSessionStart(data.session.created_at)
+            }
+        })
+    }, [])
+
     const getDeviceInfo = () => {
         const ua = navigator.userAgent
         let device = 'Unknown Device'
@@ -51,12 +62,13 @@ const SecurityPrivacyPage = () => {
     }
     const { device, browser } = getDeviceInfo()
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const sessionTime = user?.createdAt
-        ? new Date(user.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const sessionTime = sessionStart
+        ? new Date(sessionStart).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
         : 'Current session'
 
     const handleClearCache = async () => {
         try {
+            showToast('Clearing cache…')
             await clearCache()
         } catch {
             showToast('Failed to clear cache. Please try again.')
@@ -173,8 +185,8 @@ const SecurityPrivacyPage = () => {
                                         <div className="flex items-center gap-3">
                                             <MapPin size={16} className={`shrink-0 ${isDark ? 'text-rose-400' : 'text-rose-600'}`} />
                                             <div className="min-w-0">
-                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>Approximate</div>
-                                                <div className={`text-[11px] ${subTextStyle}`}>Location (derived from timezone)</div>
+                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>{timezone.split('/').pop().replace(/_/g, ' ')}</div>
+                                                <div className={`text-[11px] ${subTextStyle}`}>Approximate location (based on timezone)</div>
                                             </div>
                                         </div>
                                     </div>

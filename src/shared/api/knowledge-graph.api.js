@@ -840,25 +840,46 @@ export async function getAIContextForQuery(query, opts = {}) {
 async function _searchDishes(query, limit = 5) {
     if (!query?.trim() || !supabase) return []
     try {
-        const { data } = await supabase.from('dishes').select('name').ilike('name', `%${query}%`).limit(limit)
-        return (data || []).map(d => ({ name: d.name, cuisines: [] }))
+        // dishes table has: name, description, category, cuisine_id, tags
+        const { data, error } = await supabase
+            .from('dishes')
+            .select('name, description, category, cuisine_id, cuisines(name)')
+            .ilike('name', `%${query}%`)
+            .limit(limit)
+        if (error) {
+            // Fallback: select without join if cuisines relation fails
+            const { data: fallback } = await supabase.from('dishes').select('name, category').ilike('name', `%${query}%`).limit(limit)
+            return (fallback || []).map(d => ({ name: d.name, category: d.category, cuisines: [] }))
+        }
+        return (data || []).map(d => ({ name: d.name, category: d.category, cuisines: d.cuisines ? [d.cuisines.name] : [] }))
     } catch { return [] }
 }
 
 async function _searchIngredients(query, limit = 3) {
     if (!query?.trim() || !supabase) return []
     try {
-        const { data } = await supabase.from('ingredients').select('name').ilike('name', `%${query}%`).limit(limit)
-        return (data || []).map(i => ({ name: i.name, cuisines: [], dishes: [] }))
+        // ingredients table has: name, category, description, seasonal, tags
+        const { data, error } = await supabase
+            .from('ingredients')
+            .select('name, category')
+            .ilike('name', `%${query}%`)
+            .limit(limit)
+        if (error) return []
+        return (data || []).map(i => ({ name: i.name, category: i.category, cuisines: [], dishes: [] }))
     } catch { return [] }
 }
 
 async function _searchAllergens(query, limit = 3) {
     if (!query?.trim() || !supabase) return []
     try {
-        // allergens table may not have these columns yet — just search by name
-        const { data } = await supabase.from('allergens').select('name').ilike('name', `%${query}%`).limit(limit)
-        return (data || []).map(a => ({ name: a.name, free_of_cuisines: [], common_in_cuisines: [] }))
+        // allergens table has: name, description, severity
+        const { data, error } = await supabase
+            .from('allergens')
+            .select('name, description, severity')
+            .ilike('name', `%${query}%`)
+            .limit(limit)
+        if (error) return []
+        return (data || []).map(a => ({ name: a.name, severity: a.severity, free_of_cuisines: [], common_in_cuisines: [] }))
     } catch { return [] }
 }
 

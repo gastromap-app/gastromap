@@ -1,4 +1,4 @@
-import { supabase } from '../../client.js'
+import { supabase } from '@/shared/api/client'
 
 // Simple LRU cache
 class LRUCache {

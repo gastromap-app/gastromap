@@ -771,27 +771,94 @@ async function textSearchCuisines(query, limit = 5) {
 }
 
 /**
- * Get cuisine context for AI - enriches AI responses with culinary knowledge
+ * Get cuisine context for AI - enriches AI responses with culinary knowledge.
+ * Searches across cuisines, dishes, ingredients, and allergens.
+ * Always returns an object (never null) — R5.6
  */
-export async function getAIContextForQuery(query) {
+export async function getAIContextForQuery(query, opts = {}) {
+    const maxPayloadChars = opts.maxPayloadChars || 4000
+    
     try {
-        const cuisines = await searchCuisinesSemantic(query, 3)
-        
-        if (cuisines.length === 0) return null
+        // Search across all entity types in parallel
+        const [cuisines, dishes, ingredients, allergens] = await Promise.all([
+            searchCuisinesSemantic(query, 3).catch(() => []),
+            _searchDishes(query, 5),
+            _searchIngredients(query, 3),
+            _searchAllergens(query, 3),
+        ])
 
-        return {
+        const result = {
             relevantCuisines: cuisines.map(c => ({
                 name: c.name,
-                typical_dishes: c.typical_dishes,
-                key_ingredients: c.key_ingredients,
-                flavor_profile: c.flavor_profile,
+                typical_dishes: c.typical_dishes || [],
+                key_ingredients: c.key_ingredients || [],
+                allergens: c.common_allergens || [],
+                flavor_profile: c.flavor_profile || [],
             })),
-            contextNote: `Based on your query, relevant culinary traditions include: ${cuisines.map(c => c.name).join(', ')}.`,
+            relevantDishes: dishes.map(d => ({
+                name: d.name,
+                cuisines: d.cuisines || [],
+            })),
+            relevantIngredients: ingredients.map(i => ({
+                name: i.name,
+                cuisines: i.cuisines || [],
+                dishes: i.dishes || [],
+            })),
+            relevantAllergens: allergens.map(a => ({
+                name: a.name,
+                freeOf: a.free_of_cuisines || [],
+                contains: a.common_in_cuisines || [],
+            })),
+            contextNote: '',
         }
+
+        // Build context note
+        const parts = []
+        if (cuisines.length) parts.push(`Cuisines: ${cuisines.map(c => c.name).join(', ')}`)
+        if (dishes.length) parts.push(`Dishes: ${dishes.map(d => d.name).join(', ')}`)
+        if (ingredients.length) parts.push(`Ingredients: ${ingredients.map(i => i.name).join(', ')}`)
+        if (allergens.length) parts.push(`Allergens: ${allergens.map(a => a.name).join(', ')}`)
+        result.contextNote = parts.length ? `Relevant culinary context: ${parts.join('; ')}.` : ''
+
+        // Cap payload size (R5.5)
+        const serialized = JSON.stringify(result)
+        if (serialized.length > maxPayloadChars) {
+            // Trim arrays progressively
+            result.relevantCuisines = result.relevantCuisines.slice(0, 2)
+            result.relevantDishes = result.relevantDishes.slice(0, 3)
+            result.relevantIngredients = result.relevantIngredients.slice(0, 2)
+            result.relevantAllergens = result.relevantAllergens.slice(0, 2)
+        }
+
+        return result
     } catch (err) {
-        safeWarn('[KnowledgeGraph] getAIContext error:', err.message)
-        return null
+        safeWarn('[KnowledgeGraph] getAIContextForQuery error:', err?.message)
+        return { relevantCuisines: [], relevantDishes: [], relevantIngredients: [], relevantAllergens: [], contextNote: '' }
     }
+}
+
+async function _searchDishes(query, limit = 5) {
+    if (!query?.trim() || !supabase) return []
+    try {
+        const { data } = await supabase.from('dishes').select('name, cuisines').ilike('name', `%${query}%`).limit(limit)
+        return data || []
+    } catch { return [] }
+}
+
+async function _searchIngredients(query, limit = 3) {
+    if (!query?.trim() || !supabase) return []
+    try {
+        const { data } = await supabase.from('ingredients').select('name, cuisines, dishes').ilike('name', `%${query}%`).limit(limit)
+        return data || []
+    } catch { return [] }
+}
+
+async function _searchAllergens(query, limit = 3) {
+    if (!query?.trim() || !supabase) return []
+    try {
+        const { data } = await supabase.from('allergens').select('name, free_of_cuisines, common_in_cuisines').ilike('name', `%${query}%`).limit(limit)
+        return data || []
+    } catch { return [] }
 }
 
 // ─── Statistics ─────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/shared/api/client'
+import { getOrComputeEmbedding } from './embedding-cache.js'
 
 /**
  * Generate an embedding vector for the given text via the server proxy.
@@ -42,8 +43,9 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
     if (!queryText?.trim() || !supabase) return []
 
     try {
-        // Try to generate embedding for hybrid search
-        const queryEmbedding = await generateEmbedding(queryText)
+        // Try to generate embedding for hybrid search (via cache)
+        const { embedding: queryEmbedding, source: embSource } = await getOrComputeEmbedding(queryText)
+        console.log(`[ai.search] embedding source: ${embSource}`)
 
         if (queryEmbedding) {
             // Full hybrid: vector + FTS via RRF

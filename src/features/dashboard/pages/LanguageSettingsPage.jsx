@@ -30,19 +30,22 @@ const LanguageSettingsPage = () => {
     const subTextStyle = isDark ? "text-gray-400" : "text-gray-500"
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
+        <div className="w-full min-h-[100dvh] relative z-10 pb-32">
             {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
+            <div
+                className="sticky top-0 z-20 backdrop-blur-xl px-4 sm:px-6 mb-8 flex items-center gap-3"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)', paddingBottom: '0.75rem' }}
+            >
                 <button
                     onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>{t('language_settings.title')}</h1>
+                <h1 className={`text-xl sm:text-2xl font-black truncate ${textStyle}`}>{t('language_settings.title')}</h1>
             </div>
 
-            <div className="px-5 space-y-8">
+            <div className="px-4 sm:px-5 space-y-8">
                 {/* Language Section */}
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>{t('language_settings.app_language_title')}</h3>

@@ -90,27 +90,30 @@ const SecurityPrivacyPage = () => {
     ]
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
+        <div className="w-full min-h-[100dvh] relative z-10 pb-32">
             {toastMsg && (
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
                     className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-xl">
                     {toastMsg}
                 </motion.div>
             )}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
+            <div
+                className="sticky top-0 z-20 backdrop-blur-xl px-4 sm:px-6 mb-8 flex items-center gap-3"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)', paddingBottom: '0.75rem' }}
+            >
                 <button onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}>
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}>
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Security & Privacy</h1>
+                <h1 className={`text-xl sm:text-2xl font-black truncate ${textStyle}`}>Security & Privacy</h1>
             </div>
-            <div className="px-5 space-y-8">
+            <div className="px-4 sm:px-5 space-y-8">
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Security</h3>
                     <div className={`rounded-[32px] overflow-hidden border ${cardBg}`}>
                         {securityItems.map((item, idx) => (
                             <button key={idx} onClick={item.action}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== securityItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}>
+                                className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors ${itemHover} ${idx !== securityItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
                                         <item.icon size={20} />
@@ -123,8 +126,10 @@ const SecurityPrivacyPage = () => {
                                 {item.badge ? (
                                     <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-500'}`}>{item.badge}</span>
                                 ) : item.toggle ? (
-                                    <div className={`w-12 h-6 rounded-full relative transition-colors ${profileVisibility === 'Private' ? 'bg-emerald-500' : (isDark ? 'bg-white/10' : 'bg-gray-200')}`}>
-                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${profileVisibility === 'Private' ? 'left-7' : 'left-1'}`} />
+                                    <div className={`min-w-[44px] min-h-[44px] flex items-center justify-center`}>
+                                        <div className={`w-12 h-6 rounded-full relative transition-colors ${profileVisibility === 'Private' ? 'bg-emerald-500' : (isDark ? 'bg-white/10' : 'bg-gray-200')}`}>
+                                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${profileVisibility === 'Private' ? 'left-7' : 'left-1'}`} />
+                                        </div>
                                     </div>
                                 ) : (
                                     <ChevronRight size={18} className="opacity-30" />
@@ -141,34 +146,34 @@ const SecurityPrivacyPage = () => {
                                 exit={{ opacity: 0, height: 0 }}
                                 className="overflow-hidden"
                             >
-                                <div className={`mt-3 rounded-[24px] border p-5 space-y-4 ${cardBg}`}>
+                                <div className={`mt-3 rounded-[24px] border p-4 sm:p-5 space-y-4 ${cardBg}`}>
                                     <div className={`text-[13px] font-bold ${textStyle} mb-1`}>Current Session</div>
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3">
-                                            <Monitor size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
-                                            <div>
-                                                <div className={`text-[13px] font-bold ${textStyle}`}>{device} · {browser}</div>
+                                            <Monitor size={16} className={`shrink-0 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                                            <div className="min-w-0">
+                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>{device} · {browser}</div>
                                                 <div className={`text-[11px] ${subTextStyle}`}>Device & Browser</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <Clock size={16} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
-                                            <div>
-                                                <div className={`text-[13px] font-bold ${textStyle}`}>{sessionTime}</div>
+                                            <Clock size={16} className={`shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+                                            <div className="min-w-0">
+                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>{sessionTime}</div>
                                                 <div className={`text-[11px] ${subTextStyle}`}>Session started</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <Globe size={16} className={isDark ? 'text-emerald-400' : 'text-emerald-600'} />
-                                            <div>
-                                                <div className={`text-[13px] font-bold ${textStyle}`}>{timezone}</div>
+                                            <Globe size={16} className={`shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                            <div className="min-w-0">
+                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>{timezone}</div>
                                                 <div className={`text-[11px] ${subTextStyle}`}>Timezone</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <MapPin size={16} className={isDark ? 'text-rose-400' : 'text-rose-600'} />
-                                            <div>
-                                                <div className={`text-[13px] font-bold ${textStyle}`}>Approximate</div>
+                                            <MapPin size={16} className={`shrink-0 ${isDark ? 'text-rose-400' : 'text-rose-600'}`} />
+                                            <div className="min-w-0">
+                                                <div className={`text-[13px] font-bold truncate ${textStyle}`}>Approximate</div>
                                                 <div className={`text-[11px] ${subTextStyle}`}>Location (derived from timezone)</div>
                                             </div>
                                         </div>
@@ -183,7 +188,7 @@ const SecurityPrivacyPage = () => {
                     <div className={`rounded-[32px] overflow-hidden border ${cardBg}`}>
                         {privacyItems.map((item, idx) => (
                             <button key={idx} onClick={item.action}
-                                className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${idx !== privacyItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}>
+                                className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors ${itemHover} ${idx !== privacyItems.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-gray-50') : ''}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
                                         <item.icon size={20} />
@@ -204,12 +209,12 @@ const SecurityPrivacyPage = () => {
                 <div>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest px-2 mb-3 ${subTextStyle}`}>Storage</h3>
                     <div className={`rounded-[32px] overflow-hidden border ${cardBg}`}>
-                        <div className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover}`}>
+                        <div className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors ${itemHover}`}>
                             <div className="flex items-center gap-4">
                                 <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
                                     <HardDrive size={20} />
                                 </div>
-                                <div className="text-left flex-1">
+                                <div className="text-left flex-1 min-w-0">
                                     <div className={`text-[15px] font-bold ${textStyle}`}>App Cache</div>
                                     <div className={`text-[12px] ${subTextStyle}`}>
                                         {formatBytes(usage)} used of {formatBytes(quota)}
@@ -225,7 +230,7 @@ const SecurityPrivacyPage = () => {
                             </div>
                         </div>
                         <button onClick={handleClearCache}
-                            className={`w-full flex items-center justify-between p-5 transition-colors ${itemHover} ${isDark ? 'border-t border-white/5' : 'border-t border-gray-50'}`}>
+                            className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors ${itemHover} ${isDark ? 'border-t border-white/5' : 'border-t border-gray-50'}`}>
                             <div className="flex items-center gap-4">
                                 <div className={`p-2 rounded-xl ${isDark ? 'bg-white/5 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
                                     <Trash2 size={20} />
@@ -240,7 +245,7 @@ const SecurityPrivacyPage = () => {
                     </div>
                 </div>
                 <button onClick={handleLogout}
-                    className={`w-full flex items-center justify-between p-5 rounded-[32px] border transition-colors ${isDark ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10 text-red-400' : 'bg-red-50 border-red-100 hover:bg-red-100 text-red-600'}`}>
+                    className={`w-full flex items-center justify-between p-4 sm:p-5 rounded-[32px] border transition-colors ${isDark ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10 text-red-400' : 'bg-red-50 border-red-100 hover:bg-red-100 text-red-600'}`}>
                     <div className="flex items-center gap-4">
                         <div className={`p-2 rounded-xl ${isDark ? 'bg-red-500/10' : 'bg-red-100'}`}><LogOut size={20} /></div>
                         <span className="text-[15px] font-bold">Sign Out</span>

@@ -410,7 +410,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem;
+    min-height: 52px;
+    padding: 14px 20px;
     transition: all 150ms ease;
     cursor: pointer;
 }
@@ -711,4 +712,21 @@
   0% { rotate: 0deg; opacity: 0; }
   50% { opacity: 0.4; }
   100% { rotate: 360deg; opacity: 0; }
+}
+
+/* ─── Mobile Profile Responsive Utilities ────────────────────────────────── */
+
+/* Safe-area bottom margin — used on action buttons near bottom of page */
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Horizontal scroll container for tags/chips on mobile — no visible scrollbar */
+.tags-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tags-scroll::-webkit-scrollbar {
+  display: none;
 }

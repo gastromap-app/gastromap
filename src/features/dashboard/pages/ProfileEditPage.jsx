@@ -93,16 +93,19 @@ const ProfileEditPage = () => {
 
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
+        <div className="w-full min-h-[100dvh] relative z-10 pb-32">
             {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
+            <div
+                className="sticky top-0 z-20 px-4 sm:px-6 mb-6 flex items-center gap-3 backdrop-blur-xl"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)', paddingBottom: '0.75rem' }}
+            >
                 <button
                     onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`p-2.5 rounded-xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>{t('profile_edit.title')}</h1>
+                <h1 className={`text-xl sm:text-2xl font-black truncate ${textStyle}`}>{t('profile_edit.title')}</h1>
             </div>
 
             {loadingPrefs ? (
@@ -110,16 +113,16 @@ const ProfileEditPage = () => {
                     <div className={`text-sm font-bold ${subTextStyle}`}>Loading preferences...</div>
                 </div>
             ) : (
-            <div className="px-5 space-y-6">
+            <div className="px-4 sm:px-5 space-y-6 max-w-lg mx-auto w-full">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl sm:rounded-[40px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl">
                         {formData.name.charAt(0)}
                     </div>
                 </div>
 
                 {/* Basic Info */}
-                <div className={`p-6 rounded-[32px] border ${cardBg} space-y-5`}>
+                <div className={`p-4 sm:p-6 rounded-3xl sm:rounded-[32px] border ${cardBg} space-y-5`}>
                     <h3 className={`text-[11px] font-black uppercase tracking-widest ml-2 mb-2 ${subTextStyle}`}>{t('profile_edit.basic_info')}</h3>
 
                     <div className="space-y-2">
@@ -163,7 +166,7 @@ const ProfileEditPage = () => {
                 </div>
 
                 {/* Taste Profile Editor */}
-                <div className={`p-6 rounded-[32px] border ${cardBg} space-y-8`}>
+                <div className={`p-4 sm:p-6 rounded-3xl sm:rounded-[32px] border ${cardBg} space-y-8`}>
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                             <Sparkles size={16} className="text-yellow-500" />
@@ -203,7 +206,7 @@ const ProfileEditPage = () => {
                         />
                         <div className="flex flex-wrap gap-2">
                             {formData.preferences?.longTerm?.favoriteCuisines?.map(c => (
-                                <span key={c} className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-2">
+                                <span key={c} className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-2">
                                     {c}
                                     <button onClick={() => setFormData({
                                         ...formData,
@@ -250,7 +253,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
+                                        className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-indigo-500 text-white border-indigo-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {v.label}
                                     </button>
@@ -282,7 +285,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-rose-500 text-white border-rose-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
+                                        className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-rose-500 text-white border-rose-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {d}
                                     </button>
@@ -311,7 +314,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-black transition-all border ${isSelected ? 'bg-amber-500 text-white border-amber-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
+                                        className={`w-12 h-12 min-h-[44px] rounded-xl flex items-center justify-center font-black transition-all border ${isSelected ? 'bg-amber-500 text-white border-amber-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {p}
                                     </button>
@@ -386,7 +389,7 @@ const ProfileEditPage = () => {
                                                 } 
                                             })
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-emerald-500 text-white border-emerald-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
+                                        className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-emerald-500 text-white border-emerald-400' : isDark ? 'bg-white/5 text-white/40 border-white/10 hover:border-white/20' : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-gray-300'}`}
                                     >
                                         {f}
                                     </button>

@@ -22,23 +22,26 @@ const DeleteDataPage = () => {
     }
 
     return (
-        <div className="w-full min-h-screen relative z-10 pb-32">
+        <div className="w-full min-h-[100dvh] relative z-10 pb-32">
             {/* Header */}
-            <div className="pt-24 px-6 mb-8 flex items-center gap-4">
+            <div
+                className="sticky top-0 z-20 backdrop-blur-xl px-4 sm:px-6 mb-8 flex items-center gap-3"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)', paddingBottom: '0.75rem' }}
+            >
                 <button
                     onClick={() => navigate('/profile')}
-                    className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className={`text-2xl font-black ${textStyle}`}>Delete My Data</h1>
+                <h1 className={`text-xl sm:text-2xl font-black truncate ${textStyle}`}>Delete My Data</h1>
             </div>
 
             <div className="px-5">
                 {step === 1 && (
                     <div className="space-y-6">
-                        <div className={`p-8 rounded-[40px] border ${cardBg} text-center`}>
-                            <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <div className={`p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border ${cardBg} text-center`}>
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
                                 <AlertTriangle size={40} />
                             </div>
                             <h2 className={`text-xl font-black mb-3 ${textStyle}`}>This action is permanent</h2>
@@ -63,17 +66,17 @@ const DeleteDataPage = () => {
 
                 {step === 2 && (
                     <div className="space-y-6 text-center">
-                        <div className={`p-8 rounded-[40px] border ${cardBg}`}>
+                        <div className={`p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border ${cardBg}`}>
                             <h2 className={`text-xl font-black mb-3 ${textStyle}`}>Confirm Deletion</h2>
                             <p className={`text-sm mb-8 ${subTextStyle}`}>Please type "DELETE" below to confirm that you want to permanently remove your account.</p>
                             <input
                                 type="text"
-                                className={`w-full p-4 rounded-2xl text-center text-lg font-black outline-none border mb-6 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                                className={`w-full p-4 rounded-2xl text-center text-base sm:text-lg font-black outline-none border mb-6 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                                 placeholder="TYPE HERE"
                             />
-                            <div className="flex gap-3">
-                                <button onClick={() => setStep(1)} className={`flex-1 py-4 rounded-2xl font-bold ${isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-700'}`}>Cancel</button>
-                                <button onClick={handleConfirm} className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-bold">Delete Now</button>
+                            <div className="flex flex-col-reverse sm:flex-row gap-3">
+                                <button onClick={() => setStep(1)} className={`flex-1 py-4 min-h-[48px] rounded-2xl font-bold ${isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-700'}`}>Cancel</button>
+                                <button onClick={handleConfirm} className="flex-1 py-4 min-h-[48px] rounded-2xl bg-red-500 text-white font-bold">Delete Now</button>
                             </div>
                         </div>
                     </div>

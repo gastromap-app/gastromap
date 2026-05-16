@@ -388,8 +388,8 @@ const ProfilePage = () => {
                                         }`}>
                                         {item.isApproved ? <CheckCircle2 size={18} /> : <Clock size={18} />}
                                     </div>
-                                    <div>
-                                        <h4 className={`text-sm font-bold ${textStyle}`}>{item.name}</h4>
+                                    <div className="min-w-0">
+                                        <h4 className={`text-sm font-bold truncate ${textStyle}`}>{item.name}</h4>
                                         <p className={`text-xs font-medium ${subTextStyle}`}>{item.date}</p>
                                     </div>
                                 </div>
@@ -435,7 +435,7 @@ const ProfilePage = () => {
                         <div className="space-y-2">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.cuisines_label')}</label>
                             {prefs.favoriteCuisines?.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 tags-scroll">
                                     {prefs.favoriteCuisines.map(c => (
                                         <span key={c} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
                                             {c}
@@ -475,7 +475,7 @@ const ProfilePage = () => {
                         <div className="space-y-2">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.vibes_label') || 'Vibe Tags'}</label>
                             {prefs.vibePreference?.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 tags-scroll">
                                     {prefs.vibePreference.map(v => (
                                         <span key={v} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}`}>
                                             {v}
@@ -491,7 +491,7 @@ const ProfilePage = () => {
                         <div className="space-y-2">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.features_label') || 'Important Features'}</label>
                             {prefs.features?.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 tags-scroll">
                                     {prefs.features.map(f => (
                                         <span key={f} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
                                             {f}
@@ -507,7 +507,7 @@ const ProfilePage = () => {
                         <div className="space-y-2">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.budget_label') || 'Budget'}</label>
                             {prefs.priceRange?.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 tags-scroll">
                                     {prefs.priceRange.map(p => (
                                         <span key={p} className={`px-3 py-1.5 rounded-full text-xs font-black border ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-100 text-amber-600'}`}>
                                             {p}
@@ -523,7 +523,7 @@ const ProfilePage = () => {
                         <div className="space-y-2">
                             <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ml-1 ${textStyle}`}>{t('profile.dietary_label') || 'Dietary & Allergens'}</label>
                             {prefs.dietaryRestrictions?.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 tags-scroll">
                                     {prefs.dietaryRestrictions.map(a => (
                                         <span key={a} className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
                                             {a}
@@ -635,7 +635,7 @@ const ProfilePage = () => {
                                         navigate(item.link);
                                     }}
                                     disabled={item.disabled}
-                                    className={`w-full flex items-center justify-between p-4 transition-colors ${item.disabled ? 'opacity-60 cursor-not-allowed' : ''} ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : (item.disabled ? '' : itemHover)} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
+                                    className={`w-full flex items-center justify-between p-4 min-h-[48px] transition-colors ${item.disabled ? 'opacity-60 cursor-not-allowed' : ''} ${item.highlight ? (isDark ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50') : (item.disabled ? '' : itemHover)} ${idx !== group.items.length - 1 ? (isDark ? 'border-b border-white/5' : 'border-b border-slate-200/50') : ''}`}
                                 >
                                     <div className="flex items-center gap-3.5">
                                         <div className={`p-2 rounded-xl ${item.highlight ? (isDark ? 'bg-indigo-500/15 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-600')}`}>

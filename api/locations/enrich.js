@@ -184,46 +184,61 @@ async function handleEnrich(body) {
     // 3. Build search query
     const primaryQuery = `${location.title} ${location.address || ''}`.trim()
     const fallbackQuery = `${location.title} ${normalizeCity(location.city) || location.city || ''} ${location.country || ''}`.trim()
+    // Third fallback: address + city (handles cases where title doesn't match Google)
+    const addressQuery = location.address ? `${location.address} ${location.city || ''}`.trim() : null
 
-    // 4. Call Google Places Text Search
-    let placeId = null
+    // 4. Call Google Places Text Search (skip if we already have a place_id)
+    let placeId = location.google_place_id || null
     let businessStatus = null
 
-    try {
-        const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(primaryQuery)}&language=en&key=${GOOGLE_API_KEY}`
-        const searchResp = await fetchWithTimeout(searchUrl, 10000)
-        const searchData = await searchResp.json()
+    if (!placeId) {
+        try {
+            const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(primaryQuery)}&language=en&key=${GOOGLE_API_KEY}`
+            const searchResp = await fetchWithTimeout(searchUrl, 10000)
+            const searchData = await searchResp.json()
 
-        if (searchData.status === 'REQUEST_DENIED') {
-            return { success: false, error: 'Google Places API access denied. Check API key configuration.', code: 'GOOGLE_API_DENIED', _status: 502 }
-        }
-
-        if (searchData.results && searchData.results.length > 0) {
-            placeId = searchData.results[0].place_id
-            businessStatus = searchData.results[0].business_status || null
-        } else {
-            // 5. Retry with fallback query
-            trackApiCall()
-            const fallbackUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(fallbackQuery)}&language=en&key=${GOOGLE_API_KEY}`
-            const fallbackResp = await fetchWithTimeout(fallbackUrl, 10000)
-            const fallbackData = await fallbackResp.json()
-
-            if (fallbackData.status === 'REQUEST_DENIED') {
+            if (searchData.status === 'REQUEST_DENIED') {
                 return { success: false, error: 'Google Places API access denied. Check API key configuration.', code: 'GOOGLE_API_DENIED', _status: 502 }
             }
 
-            if (fallbackData.results && fallbackData.results.length > 0) {
-                placeId = fallbackData.results[0].place_id
-                businessStatus = fallbackData.results[0].business_status || null
-            }
-        }
+            if (searchData.results && searchData.results.length > 0) {
+                placeId = searchData.results[0].place_id
+                businessStatus = searchData.results[0].business_status || null
+            } else {
+                // 5a. Retry with fallback query (title + city + country)
+                trackApiCall()
+                const fallbackUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(fallbackQuery)}&language=en&key=${GOOGLE_API_KEY}`
+                const fallbackResp = await fetchWithTimeout(fallbackUrl, 10000)
+                const fallbackData = await fallbackResp.json()
 
-        trackApiCall() // Track the text search call
-    } catch (err) {
-        if (err.name === 'AbortError') {
-            return { success: false, error: 'Enrichment request timed out. Try again.', code: 'TIMEOUT', _status: 504 }
+                if (fallbackData.status === 'REQUEST_DENIED') {
+                    return { success: false, error: 'Google Places API access denied. Check API key configuration.', code: 'GOOGLE_API_DENIED', _status: 502 }
+                }
+
+                if (fallbackData.results && fallbackData.results.length > 0) {
+                    placeId = fallbackData.results[0].place_id
+                    businessStatus = fallbackData.results[0].business_status || null
+                } else if (addressQuery) {
+                    // 5b. Third attempt: search by address only (handles name mismatch)
+                    trackApiCall()
+                    const addrUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(addressQuery)}&language=en&key=${GOOGLE_API_KEY}`
+                    const addrResp = await fetchWithTimeout(addrUrl, 10000)
+                    const addrData = await addrResp.json()
+
+                    if (addrData.results && addrData.results.length > 0) {
+                        placeId = addrData.results[0].place_id
+                        businessStatus = addrData.results[0].business_status || null
+                    }
+                }
+            }
+
+            trackApiCall() // Track the text search call
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                return { success: false, error: 'Enrichment request timed out. Try again.', code: 'TIMEOUT', _status: 504 }
+            }
+            throw err
         }
-        throw err
     }
 
     // No results found

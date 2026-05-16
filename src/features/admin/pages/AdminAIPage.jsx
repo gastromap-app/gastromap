@@ -478,18 +478,24 @@ const AdminAIPage = () => {
     const [cascadeModels, setCascadeModels] = useState(() => {
         const saved = appConfig.aiModelCascade
         if (saved?.length > 0) {
-            // Use saved cascade as-is — don't re-add removed models
             return saved
         }
-        // First time: use defaults + paid models
         const paidIds = PAID_MODELS.map(m => m.id)
         return [...MODEL_CASCADE, ...paidIds]
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
         const saved = appConfig.aiModelCascade
-        // All saved models are enabled (save only persists enabled ones)
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
+
+    // Sync cascade state when appConfig loads from Supabase (may happen after initial render)
+    useEffect(() => {
+        const saved = appConfig.aiModelCascade
+        if (saved?.length > 0) {
+            setCascadeModels(saved)
+            setCascadeEnabled(new Set(saved))
+        }
+    }, [appConfig.aiModelCascade])
 
     // ── Model Scanner (OpenRouter)
     const [showModelScanner, setShowModelScanner] = useState(false)
@@ -620,11 +626,12 @@ const AdminAIPage = () => {
         return [...FREE_MODELS, ...extraModels]
     })()
 
-    const handleSaveModels = () => {
-        appConfig.updateSettings({
+    const handleSaveModels = async () => {
+        // Save ALL models in the cascade list
+        await appConfig.updateSettings({
             aiPrimaryModel: primaryModel,
             aiFallbackModel: fallbackModel,
-            aiModelCascade: cascadeModels.filter(m => cascadeEnabled.has(m)),
+            aiModelCascade: cascadeModels,
             aiGuideTemp: guideTemp,
             aiAssistantTemp: assistantTemp,
             aiGuideMaxTokens: guideMaxTokens,
@@ -635,8 +642,8 @@ const AdminAIPage = () => {
         setTimeout(() => setSaved(false), 2500)
     }
 
-    const handleSavePrompts = () => {
-        appConfig.updateSettings({
+    const handleSavePrompts = async () => {
+        await appConfig.updateSettings({
             aiGuideActive: agentActive.guide,
             aiAssistantActive: agentActive.assistant,
             aiGuideSystemPrompt: guidePrompt,

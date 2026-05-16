@@ -462,9 +462,20 @@ export async function executeTool(name, args, ctx = {}) {
             kgContextPromise
         ])
 
-        const results = poolResults.slice(0, limit).map(mapLocation)
+        let results = poolResults.slice(0, limit).map(mapLocation)
         
-        console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches, returning top ${results.length}. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
+        // AUTO-RETRY: If 0 results with narrow filters, retry with just city + category
+        if (results.length === 0 && city && (tags?.length || price_range?.length || amenities?.length || best_for?.length || keyword)) {
+            console.log(`[ai.tools] ⚠️ 0 results with narrow filters, retrying with just city=${city} category=${category || 'any'}...`)
+            const broadRows = await querySupabase({ city, category: category || null, sort_by: 'rating' })
+            if (broadRows?.length) {
+                const broadPool = applyTextFilters(broadRows, { city })
+                results = broadPool.slice(0, limit).map(mapLocation)
+                console.log(`[ai.tools] ✅ Broad retry found ${broadPool.length} matches, returning top ${results.length}`)
+            }
+        }
+        
+        console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches (narrow), returning ${results.length}. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
 
         // Persist shown locations to session_locations (R3.1)
         if (ctx?.sessionId && ctx?.userId && results.length) {

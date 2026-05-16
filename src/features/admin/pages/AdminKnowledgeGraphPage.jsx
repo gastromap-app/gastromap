@@ -1033,6 +1033,19 @@ const AdminKnowledgeGraphPage = () => {
                 ))}
             </div>
 
+            {/* ── How it works ── */}
+            <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.03] p-5">
+                <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">
+                    <strong>How Knowledge Graph works:</strong> The KG is a culinary ontology connecting Cuisines → Dishes → Ingredients. 
+                    The AI bot uses it to understand food context (e.g. "Spanish food" → paella, tapas, saffron). 
+                    <strong>Tabs</strong> let you browse/edit entities manually. 
+                    <strong>Bulk Sync</strong> links KG data to your locations. 
+                    <strong>KG AI Agent</strong> generates new entries via chat. 
+                    <strong>Enrichment Agent</strong> auto-fills empty fields on existing cuisines. 
+                    <strong>Spoonacular</strong> imports from an external food database (requires API key).
+                </p>
+            </div>
+
             {/* ── Error UI ── */}
             {combinedError && (
                 <motion.div
@@ -1063,50 +1076,65 @@ const AdminKnowledgeGraphPage = () => {
             )}
 
             {/* ── AI Agent ── */}
-            <KGAIAgent
-                cuisines={cuisines}
-                dishes={dishes}
-                ingredients={ingredients}
-                onSaved={handleAgentSave}
-                onBatchComplete={handleBatchComplete}
-            />
+            <div className="space-y-2">
+                <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
+                    💬 <strong>KG AI Agent</strong> — Chat-based interface. Write a request like "add Italian cuisine with its dishes" and the AI generates structured KG entries (cuisines, dishes, ingredients). You preview and select which to save.
+                </p>
+                <KGAIAgent
+                    cuisines={cuisines}
+                    dishes={dishes}
+                    ingredients={ingredients}
+                    onSaved={handleAgentSave}
+                    onBatchComplete={handleBatchComplete}
+                />
+            </div>
 
             {/* ── KG Enrichment ── */}
-            <KGEnrichmentAgent
-                cuisines={cuisines}
-                onEnriched={handleCuisineEnriched}
-            />
+            <div className="space-y-2">
+                <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
+                    ⚡ <strong>Enrichment Agent</strong> — Automatically scans all cuisines for empty fields (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) and fills them via AI. Shows "System Optimized" when all cuisines are fully enriched.
+                </p>
+                <KGEnrichmentAgent
+                    cuisines={cuisines}
+                    onEnriched={handleCuisineEnriched}
+                />
+            </div>
 
             {/* ── Spoonacular ── */}
-            <SpoonacularEnricher
-                existingDishes={dishes}
-                existingIngredients={ingredients}
-                onImport={(type, data) => {
-                    if (type === 'dish') {
-                        // Check if dish already exists — if so, offer missing ingredients only
-                        const existingDish = dishes.find(d =>
-                            d.name?.toLowerCase().trim() === data.name?.toLowerCase().trim()
-                        )
-                        if (existingDish) {
-                            const existingIngNames = new Set(ingredients.map(i => i.name?.toLowerCase().trim()))
-                            const dishIngNames = new Set((existingDish.ingredients || []).map(n => n?.toLowerCase().trim()))
-                            const incomingIngs = (data.ingredients || []).filter(ing =>
-                                !existingIngNames.has(ing?.toLowerCase?.().trim()) &&
-                                !dishIngNames.has(ing?.toLowerCase?.().trim())
+            <div className="space-y-2">
+                <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
+                    🍽️ <strong>Spoonacular Enricher</strong> — Import dishes & ingredients from the external Spoonacular food database. Requires API key (VITE_SPOONACULAR_API_KEY in Vercel env vars). Free tier: 150 requests/day.
+                </p>
+                <SpoonacularEnricher
+                    existingDishes={dishes}
+                    existingIngredients={ingredients}
+                    onImport={(type, data) => {
+                        if (type === 'dish') {
+                            // Check if dish already exists — if so, offer missing ingredients only
+                            const existingDish = dishes.find(d =>
+                                d.name?.toLowerCase().trim() === data.name?.toLowerCase().trim()
                             )
-                            if (incomingIngs.length > 0) {
-                                showToast(`Dish exists. ${incomingIngs.length} new ingredient(s) ready to add`, 'info')
-                                incomingIngs.forEach(ingName => handleSaveIngredient({ name: ingName }))
+                            if (existingDish) {
+                                const existingIngNames = new Set(ingredients.map(i => i.name?.toLowerCase().trim()))
+                                const dishIngNames = new Set((existingDish.ingredients || []).map(n => n?.toLowerCase().trim()))
+                                const incomingIngs = (data.ingredients || []).filter(ing =>
+                                    !existingIngNames.has(ing?.toLowerCase?.().trim()) &&
+                                    !dishIngNames.has(ing?.toLowerCase?.().trim())
+                                )
+                                if (incomingIngs.length > 0) {
+                                    showToast(`Dish exists. ${incomingIngs.length} new ingredient(s) ready to add`, 'info')
+                                    incomingIngs.forEach(ingName => handleSaveIngredient({ name: ingName }))
+                                } else {
+                                    showToast(`"${data.name}" and all its ingredients already exist in KG`, 'info')
+                                }
                             } else {
-                                showToast(`"${data.name}" and all its ingredients already exist in KG`, 'info')
+                                handleSaveDish(data)
                             }
-                        } else {
-                            handleSaveDish(data)
                         }
-                    }
-                    if (type === 'ingredient') handleSaveIngredient(data)
-                }}
-            />
+                        if (type === 'ingredient') handleSaveIngredient(data)
+                    }}
+                />
+            </div>
 
             {/* ── Main list card ── */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm overflow-hidden flex flex-col">

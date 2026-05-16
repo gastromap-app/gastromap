@@ -52,6 +52,7 @@ export default function AdminModerationPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedItem, setSelectedItem] = useState(null)
     const [revisionNote, setRevisionNote] = useState('')
+    const [rejectionReason, setRejectionReason] = useState('')
     const [toast, setToast] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const PAGE_SIZE = 20
@@ -122,6 +123,33 @@ export default function AdminModerationPage() {
         } catch (error) {
             console.error('Revision request error:', error)
             showToast('Ошибка при отправке запроса. Попробуйте снова.', 'error')
+        }
+    }
+
+    const handleReject = async (item) => {
+        if (!rejectionReason.trim()) return;
+        try {
+            if (item.queueType === 'review') {
+                await updateReviewStatus.mutateAsync({
+                    reviewId: item.id,
+                    status: 'rejected',
+                    comment: rejectionReason
+                })
+            } else {
+                await updateLocationStatus.mutateAsync({
+                    id: item.id,
+                    status: 'rejected',
+                    moderationNote: rejectionReason,
+                    source: item.source,
+                    itemData: item
+                })
+            }
+            setSelectedItem(null)
+            setRejectionReason('')
+            showToast(`${item.queueType === 'review' ? 'Отзыв' : 'Заведение'} отклонено.`, 'success')
+        } catch (error) {
+            console.error('Rejection error:', error)
+            showToast('Ошибка при отклонении. Попробуйте снова.', 'error')
         }
     }
 
@@ -523,9 +551,31 @@ export default function AdminModerationPage() {
                                                 <button
                                                     onClick={() => handleRequestRevision(selectedItem)}
                                                     disabled={!revisionNote.trim()}
-                                                    className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="px-4 py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     Отправить на доработку
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Action Area: Reject */}
+                                    {selectedItem.status === 'PENDING_MODERATION' && (
+                                        <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+                                            <label className="text-sm font-bold text-rose-600 dark:text-rose-400">Отклонить</label>
+                                            <textarea
+                                                value={rejectionReason}
+                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                                className="w-full p-3 bg-white dark:bg-[hsl(220,20%,6%)] border border-rose-200 dark:border-rose-500/20 rounded-xl resize-none h-24 text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+                                                placeholder="Укажите причину отказа (например: 'Заведение не существует', 'Дубликат', 'Не соответствует тематике')..."
+                                            />
+                                            <div className="flex justify-end">
+                                                <button
+                                                    onClick={() => handleReject(selectedItem)}
+                                                    disabled={!rejectionReason.trim()}
+                                                    className="px-4 py-2 bg-rose-500 text-white hover:bg-rose-600 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-500/20"
+                                                >
+                                                    Отклонить
                                                 </button>
                                             </div>
                                         </div>

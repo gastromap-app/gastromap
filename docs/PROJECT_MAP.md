@@ -77,11 +77,13 @@ src/
 **Client**: `src/shared/api/ai.api.js`
 - Каскад 8 free OpenRouter моделей (при 429 → следующая)
 - Tool-use: `search_locations()`, `get_location_details()`
-- Инструменты выполняются клиентски против Zustand store
+- Инструменты выполняются клиентски через Supabase queries и semantic search (не через Zustand store)
 
-**Server proxy**: `api/ai/chat.js` (Vercel serverless)
+**Server proxy**: `api/ai/chat.js` (Vercel serverless) — primary and only proxy. No Supabase Edge Function for AI.
 - Использует `OPENROUTER_API_KEY` (server-side, без VITE_)
 - Свой каскад моделей (порядок отличается от client)
+- Paid models: `_direct_model` mode (skip cascade)
+- Admin cascade config (`_cascade`) respected by server
 
 **Fallback**: `src/services/gastroIntelligence.js`
 - Локальный scoring когда нет API ключа
@@ -90,11 +92,11 @@ src/
 
 ## ⚡ Zustand Stores
 
+> **Обновлено 2026-05-16:** Server data (locations, etc.) is managed exclusively by React Query. Zustand stores only hold UI state.
+
 | Store | Persist | Данные |
 |-------|---------|--------|
 | `useAuthStore` | ✅ | user, token, isAuthenticated |
-| `useLocationsStore` | ❌ | Локации, фильтры |
-| `useFavoritesStore` | ❌ | Избранные |
 | `useAppConfigStore` | ✅ | AI конфиг, runtime overrides |
 | `useNotificationStore` | ❌ | Уведомления |
 

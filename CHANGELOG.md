@@ -7,6 +7,29 @@
 
 ## ✅ Журнал изменений (Лог)
 
+### [2026-05-16] — Data Loading Architecture Complete + AI Pipeline Fix
+
+**Architecture (BREAKING):**
+- **useLocationsStore DELETED** — React Query is now the single source of truth for all server state
+- **useLocationFilters()** — URL-driven filter state (survives refresh, shareable)
+- **useSession()** — Single auth gate replacing multiple isAuthLoading checks
+- **locationsRealtime.js** — Supabase Realtime → React Query cache sync
+- **DataSection** wrapper — 8-second skeleton ceiling + error/retry UI
+- Workaround timeouts removed (30s Promise.race, 3s getSession race, 3s rescue)
+
+**AI Chat Pipeline:**
+- Fixed: proxyUrl pointed to non-existent Supabase Edge Function (always 503)
+- Fixed: Paid models now use _direct_model mode (skip cascade)
+- Fixed: Admin cascade config (_cascade) now respected by server
+- Fixed: Language reminder in XML-mode tool results (bot responds in user's language)
+- Fixed: usedLocations uses tool results directly (not empty store lookup)
+- Fixed: loadFromDB() awaited before reading admin maxTokens
+
+**Notifications:**
+- Fixed: markAllAsRead now sets both read:true AND unread:false (UI field mismatch)
+- Fixed: Persists to Supabase via markAllNotificationsRead()
+- Outside-click-to-close confirmed working
+
 ### [2026-02-01] — Архитектурный Рефакторинг и Импорт данных
 **Архитектура и Масштабируемость:**
 - **FSD-lite**: Проект переведен на модульную структуру.

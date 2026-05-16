@@ -1206,6 +1206,10 @@ Proxies AI requests to OpenRouter so the API key stays server-side. Implements c
 
 The proxy iterates through models on these status codes: `429`, `500`, `502`, `503`, `400`, `404`. Other errors (like `401` for invalid API key) return immediately without retrying.
 
+**Special Fields (2026-05-16):**
+- `_direct_model` (boolean): Auto-set for paid models. When `true`, skips cascade and uses the requested model directly.
+- `_cascade` (array of model strings): When provided from admin config, the server uses this custom cascade order instead of the default.
+
 ---
 
 ## Mock Data Fallbacks
@@ -1328,11 +1332,13 @@ Delays are disabled in production (`config.app.isDev === false`).
 
 ### Data Flow
 
+> **Note (2026-05-16):** React Query is the ONLY cache for server data. No Zustand store for locations. `useLocationsStore` has been deleted.
+
 ```
 Component
     |
     v
-React Query Hook (queries.js)
+React Query Hook (queries.js)  ← single source of truth for all server state
     |
     v
 API Function (*.api.js)
@@ -1350,13 +1356,13 @@ User Query
     v
 analyzeQuery() / analyzeQueryStream()
     |
-    +-- API Key configured? --yes--> OpenRouter (Tool Use)
-    |                                    |
-    |                                    v
-    |                            executeTool() (local)
-    |                                    |
-    |                                    v
-    |                            Zustand Store (useLocationsStore)
+    +-- API Key configured? --yes--> /api/ai/chat (Vercel proxy) --> OpenRouter (Tool Use)
+    |                                                                      |
+    |                                                                      v
+    |                                                              executeTool() (local)
+    |                                                                      |
+    |                                                                      v
+    |                                                              Supabase queries + semantic search (pgvector)
     |
     +-- no ---------------------> Local Scoring Engine (gastroIntelligence)
 ```

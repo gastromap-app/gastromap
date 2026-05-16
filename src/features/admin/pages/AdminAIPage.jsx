@@ -641,23 +641,30 @@ const AdminAIPage = () => {
 
     const handleSaveModels = async () => {
         setSaveError(null)
-        // Save ALL models in the cascade list
-        const result = await appConfig.updateSettings({
-            aiPrimaryModel: primaryModel,
-            aiFallbackModel: fallbackModel,
-            aiModelCascade: cascadeModels,
-            aiGuideTemp: guideTemp,
-            aiAssistantTemp: assistantTemp,
-            aiGuideMaxTokens: guideMaxTokens,
-            aiAssistantMaxTokens: assistantMaxTokens,
-            aiGuideTone: guideTone,
-        })
-        if (result?.ok === false) {
-            setSaveError('Failed to save to Supabase. Check console — likely RLS / auth issue. Changes are NOT persisted.')
-            return
+        console.log('[AdminAI] handleSaveModels called. Cascade:', cascadeModels.length, 'models. Primary:', primaryModel)
+        try {
+            // Save ALL models in the cascade list
+            const result = await appConfig.updateSettings({
+                aiPrimaryModel: primaryModel,
+                aiFallbackModel: fallbackModel,
+                aiModelCascade: cascadeModels,
+                aiGuideTemp: guideTemp,
+                aiAssistantTemp: assistantTemp,
+                aiGuideMaxTokens: guideMaxTokens,
+                aiAssistantMaxTokens: assistantMaxTokens,
+                aiGuideTone: guideTone,
+            })
+            console.log('[AdminAI] updateSettings returned:', result)
+            if (result?.ok === false) {
+                setSaveError('Failed to save to Supabase. Check console — likely RLS / auth issue. Changes are NOT persisted.')
+                return
+            }
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2500)
+        } catch (err) {
+            console.error('[AdminAI] handleSaveModels error:', err)
+            setSaveError('Error: ' + (err?.message || String(err)))
         }
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
     }
 
     const handleSavePrompts = async () => {
@@ -1244,7 +1251,10 @@ const AdminAIPage = () => {
                     </div>
                 )}
                 <button
-                    onClick={handleSaveModels}
+                    onClick={() => {
+                        console.log('🔴 SAVE BUTTON CLICKED')
+                        handleSaveModels()
+                    }}
                     className={cn(adminBtnPrimary, "h-12 px-8 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all")}
                 >
                     <Save size={16} />

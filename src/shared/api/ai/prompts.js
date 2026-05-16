@@ -91,34 +91,36 @@ async function _buildPrompt({
 
     // ─── V2: OPERATIONAL_RULES is the SOLE source of truth ─────────────────
     // When v2 is ON, the admin System Prompts field is IGNORED.
-    // The bot uses only OPERATIONAL_RULES + dynamic context.
+    // The bot uses only OPERATIONAL_RULES + compact dynamic context.
     const operationalRules = getOperationalRules()
 
-    // Build Guest Insight from personalContext (only for personal queries)
-    const guestInsight = _buildGuestInsight(userPrefs, userData, personalContext)
-
-    // Session Summary (R9.3)
-    const summarySection = personalContext?.sessionSummary
-        ? `\n# Conversation summary so far:\n${personalContext.sessionSummary}\n`
-        : ''
-
-    // Recent context — 10-message rolling window cap (R2.4)
+    // Build dynamic context — only include fields that have data
+    const dynamicCtx = {}
+    
+    // User location (from GPS/IP/query)
+    if (userData?.userCity) dynamicCtx.user_city = userData.userCity
+    if (userData?.userCountry) dynamicCtx.user_country = userData.userCountry
+    
+    // User preferences (only if filled)
+    if (userPrefs?.favoriteCuisines?.length) dynamicCtx.favorite_cuisines = userPrefs.favoriteCuisines
+    if (userPrefs?.dietaryRestrictions?.length) dynamicCtx.dietary = userPrefs.dietaryRestrictions
+    if (userData?.foodieDNA) dynamicCtx.foodie_dna = userData.foodieDNA
+    
+    // Time context (helps with meal-appropriate suggestions)
+    const hour = new Date().getHours()
+    dynamicCtx.time_context = hour < 11 ? 'morning/breakfast' : hour < 15 ? 'lunch' : hour < 18 ? 'afternoon' : 'evening/dinner'
+    
+    // Recently shown locations (for follow-up references)
     const cappedMessages = (recentMessages || []).slice(-10)
     const recentCtx = buildRecentContext(cappedMessages)
+    if (recentCtx) dynamicCtx.recently_discussed = recentCtx
 
-    // Compose final prompt: OPERATIONAL_RULES + dynamic_context (no admin prompt)
-    return `${operationalRules}
-${summarySection}
-# INTERNAL GUEST CONTEXT (FOR YOUR EYES ONLY)
-${guestInsight || 'No specific profile data available yet. Be curious and observant.'}
-${recentCtx ? `\n${recentCtx}\n` : ''}
+    // Compose final prompt: rules + dynamic context (compact)
+    const contextBlock = Object.keys(dynamicCtx).length > 0
+        ? `\n\n[CONTEXT]\n${JSON.stringify(dynamicCtx)}`
+        : ''
 
-# THE CONSCIOUS PARTNER PHILOSOPHY (CRITICAL)
-- ROLE: You are an expert Gastro Guide and a conscious partner in the user's culinary journey.
-- NO ROBOTIC PHRASES: NEVER say "Based on your Foodie DNA", "According to your preferences", "I've analyzed your profile".
-- Be "Osoznanny" (Conscious): If the user's current request contradicts their profile, prioritize the CURRENT request.
-- YOUR TONE: An elegant, well-traveled local expert who knows the "soul" of establishments.
-- NEVER USE PLACEHOLDERS: Never write [PERSON_NAME], [USER_NAME], or any bracketed placeholder.`
+    return `${operationalRules}${contextBlock}`
 }
 
 /**

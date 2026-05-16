@@ -5,7 +5,7 @@ import {
     Save, Play, Pause, RefreshCw, Sliders, Brain,
     CheckCircle2, ChevronDown, ChevronUp, Send,
     Loader2, AlertCircle, Eye, EyeOff, Star, Globe, Cpu,
-    FileText, RotateCcw, Search, Key,
+    FileText, RotateCcw, Search, Key, X,
     Database, GitBranch, Thermometer, Hash, ArrowUp, ArrowDown,
     ToggleLeft, ToggleRight, Copy, Code, Clock, Wrench, Activity,
     Layers, UserCheck
@@ -491,6 +491,12 @@ const AdminAIPage = () => {
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 
+    // ── Model Scanner (OpenRouter)
+    const [showModelScanner, setShowModelScanner] = useState(false)
+    const [availableModels, setAvailableModels] = useState([])
+    const [scanLoading, setScanLoading] = useState(false)
+    const [selectedNewModels, setSelectedNewModels] = useState(new Set())
+
     const moveCascade = (index, direction) => {
         const newArr = [...cascadeModels]
         const swapIdx = index + direction
@@ -506,6 +512,48 @@ const AdminAIPage = () => {
             else next.add(modelId)
             return next
         })
+    }
+
+    const scanModels = async () => {
+        setScanLoading(true)
+        try {
+            const resp = await fetch('https://openrouter.ai/api/v1/models')
+            const data = await resp.json()
+            const models = (data.data || [])
+                .filter(m => {
+                    const isFree = m.pricing?.prompt === '0' && m.pricing?.completion === '0'
+                    const notInCascade = !cascadeModels.includes(m.id)
+                    return isFree && notInCascade
+                })
+                .map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    contextLength: m.context_length,
+                    hasToolCalling: m.supported_parameters?.includes('tools') || m.supported_parameters?.includes('tool_choice'),
+                }))
+                .sort((a, b) => {
+                    if (a.hasToolCalling !== b.hasToolCalling) return b.hasToolCalling ? 1 : -1
+                    return (b.contextLength || 0) - (a.contextLength || 0)
+                })
+            setAvailableModels(models)
+            setShowModelScanner(true)
+        } catch (err) {
+            console.error('Failed to scan models:', err)
+        } finally {
+            setScanLoading(false)
+        }
+    }
+
+    const addSelectedModels = () => {
+        const newModels = [...selectedNewModels]
+        setCascadeModels(prev => [...prev, ...newModels])
+        setCascadeEnabled(prev => {
+            const next = new Set(prev)
+            newModels.forEach(id => next.add(id))
+            return next
+        })
+        setSelectedNewModels(new Set())
+        setShowModelScanner(false)
     }
 
     // ── Generation Settings
@@ -907,6 +955,62 @@ const AdminAIPage = () => {
                     <p className="text-xs text-slate-400 mt-3">
                         {cascadeModels.filter(m => cascadeEnabled.has(m)).length} of {cascadeModels.length} models enabled in cascade
                     </p>
+
+                    <div className="flex items-center gap-3 mt-4">
+                        <button
+                            onClick={scanModels}
+                            disabled={scanLoading}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+                        >
+                            {scanLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                            {scanLoading ? 'Scanning...' : 'Scan OpenRouter Models'}
+                        </button>
+                    </div>
+
+                    {/* Model Scanner Modal */}
+                    <AnimatePresence>
+                        {showModelScanner && (
+                            <>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModelScanner(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]" />
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] z-[210] flex flex-col overflow-hidden">
+                                    <div className="p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-base font-black text-slate-900 dark:text-white">Available Free Models</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">{availableModels.length} free models found • {availableModels.filter(m => m.hasToolCalling).length} with tool calling</p>
+                                        </div>
+                                        <button onClick={() => setShowModelScanner(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400">
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
+                                        {availableModels.map(model => (
+                                            <label key={model.id} className={cn("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all", selectedNewModels.has(model.id) ? "border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10" : "border-slate-100 dark:border-white/[0.06] hover:border-slate-200 dark:hover:border-white/[0.1]")}>
+                                                <input type="checkbox" checked={selectedNewModels.has(model.id)} onChange={() => setSelectedNewModels(prev => { const next = new Set(prev); next.has(model.id) ? next.delete(model.id) : next.add(model.id); return next })} className="w-4 h-4 rounded accent-indigo-500" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{model.name || model.id}</div>
+                                                    <div className="text-[10px] text-slate-400 font-mono truncate">{model.id}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    {model.hasToolCalling && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold uppercase">Tools</span>
+                                                    )}
+                                                    {model.contextLength && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 text-[9px] font-bold">{Math.round(model.contextLength / 1000)}K</span>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div className="p-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                                        <span className="text-xs text-slate-500">{selectedNewModels.size} selected</span>
+                                        <button onClick={addSelectedModels} disabled={selectedNewModels.size === 0} className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/20">
+                                            Add to Cascade ({selectedNewModels.size})
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                 </div>
             </CollapsibleSection>
 

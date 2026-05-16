@@ -277,34 +277,33 @@ const ModelCard = ({ model, selected, onSelect, disabled }) => (
         onClick={() => !disabled && onSelect(model.id)}
         aria-label={`Select ${model.name}`}
         className={cn(
-            'w-full text-left p-4 rounded-2xl border transition-all duration-200',
+            'w-full text-left p-3 sm:p-4 rounded-2xl border transition-all duration-200',
             selected
                 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 shadow-md shadow-indigo-500/10'
                 : 'border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,9%)]/50 hover:border-slate-300 dark:hover:border-slate-600',
             disabled && 'opacity-50 cursor-not-allowed'
         )}
     >
-        <div className="flex items-start justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div className={cn(
                     'w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all',
                     selected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-white/[0.08]'
                 )}>
                     {selected && <div className="w-1.5 h-1.5 bg-white rounded-full m-auto mt-[1px]" />}
                 </div>
-                <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{model.name}</span>
-                <span className="text-[10px] text-slate-400 dark:text-[hsl(220,10%,55%)] flex-shrink-0">{model.provider}</span>
+                <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">{model.name}</span>
             </div>
-            <span className={cn('text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0', model.badgeColor)}>
+            <span className={cn('text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0', model.badgeColor)}>
                 {model.badge}
             </span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-3 pl-6">{model.description}</p>
-        <div className="flex gap-3 pl-6">
-            <span className="flex items-center gap-1 text-[10px] text-slate-400">
+        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed mb-2 sm:mb-3 pl-6 line-clamp-2">{model.description}</p>
+        <div className="flex flex-wrap gap-2 sm:gap-3 pl-6">
+            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-slate-400">
                 <Cpu size={10} /> {model.context}
             </span>
-            <span className="flex items-center gap-1 text-[10px] text-slate-400">
+            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-slate-400">
                 <Globe size={10} /> {model.languages}
             </span>
             {model.toolUse && (
@@ -784,9 +783,9 @@ const AdminAIPage = () => {
                 <div className="p-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Primary Model */}
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Primary Model</h3>
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-3 sm:p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Primary Model</h3>
                                 <button
                                     onClick={() => setShowPrimaryPicker(!showPrimaryPicker)}
                                     className="text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1 hover:underline"
@@ -796,7 +795,7 @@ const AdminAIPage = () => {
                                 </button>
                             </div>
                             {showPrimaryPicker ? (
-                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                <div className="space-y-2 sm:space-y-3 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
                                     {FREE_MODELS.map((model) => (
                                         <ModelCard
                                             key={model.id}
@@ -829,9 +828,9 @@ const AdminAIPage = () => {
                         </div>
 
                         {/* Fallback Model */}
-                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Fallback Model</h3>
+                        <div className="bg-slate-50/70 dark:bg-[hsl(220,20%,9%)]/30 p-3 sm:p-5 rounded-2xl border border-slate-100 dark:border-white/[0.04]">
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Fallback Model</h3>
                                 <button
                                     onClick={() => setShowFallbackPicker(!showFallbackPicker)}
                                     className="text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1 hover:underline"
@@ -841,7 +840,7 @@ const AdminAIPage = () => {
                                 </button>
                             </div>
                             {showFallbackPicker ? (
-                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                <div className="space-y-2 sm:space-y-3 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
                                     {FREE_MODELS.map((model) => (
                                         <ModelCard
                                             key={model.id}

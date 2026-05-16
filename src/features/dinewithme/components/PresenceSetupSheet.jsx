@@ -17,8 +17,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, Minus, Plus, Eye, EyeOff, Loader2, MapPin, Trash2, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
-import { useLocations } from '@/shared/api/queries/location.queries'
 import { useDiningPresence } from '../hooks/useDiningPresence'
+import { supabase } from '@/shared/api/client'
 
 const STATUSES = ['looking', 'eating', 'heading_to']
 
@@ -41,8 +41,10 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
     const { goVisible, isGoingVisible } = useDiningPresence()
     const [isDeleting, setIsDeleting] = useState(false)
 
-    const { data: locationsResult = [], isLoading: isLoadingLocations } = useLocations({ limit: 500 })
-    const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
+    // Server-side venue search — queries Supabase directly when 3+ chars typed
+    const [venueResults, setVenueResults] = useState([])
+    const [isSearching, setIsSearching] = useState(false)
+    const searchTimeoutRef = React.useRef(null)
 
     // Form state
     const [venueSearch, setVenueSearch] = useState('')
@@ -54,17 +56,40 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
     const [contactInfo, setContactInfo] = useState('')
     const [visibility, setVisibility] = useState('everyone')
 
-    // Venue search results
-    const venueResults = useMemo(() => {
-        if (!venueSearch.trim()) return []
-        const q = venueSearch.toLowerCase()
-        return locations
-            .filter(loc =>
-                (loc.title || loc.name || '').toLowerCase().includes(q)
-                && loc.lat && loc.lng
-            )
-            .slice(0, 8)
-    }, [venueSearch, locations])
+    // Debounced server search — triggers after 3+ chars with 300ms debounce
+    const handleVenueSearch = useCallback((query) => {
+        setVenueSearch(query)
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+
+        if (!query.trim() || query.trim().length < 3) {
+            setVenueResults([])
+            return
+        }
+
+        setIsSearching(true)
+        searchTimeoutRef.current = setTimeout(async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('locations')
+                    .select('id, title, city, lat, lng, image_url, category')
+                    .ilike('title', `%${query.trim()}%`)
+                    .in('status', ['approved', 'active'])
+                    .not('lat', 'is', null)
+                    .not('lng', 'is', null)
+                    .limit(8)
+
+                if (!error && data) {
+                    setVenueResults(data)
+                } else {
+                    setVenueResults([])
+                }
+            } catch {
+                setVenueResults([])
+            } finally {
+                setIsSearching(false)
+            }
+        }, 300)
+    }, [])
 
     const canSubmit = selectedVenue && status
 
@@ -217,7 +242,7 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
                                         <input
                                             type="text"
                                             value={venueSearch}
-                                            onChange={e => setVenueSearch(e.target.value)}
+                                            onChange={e => handleVenueSearch(e.target.value)}
                                             placeholder={t('dine.venue_placeholder')}
                                             className={`${inputCls} pl-10`}
                                         />
@@ -254,16 +279,16 @@ export function PresenceSetupSheet({ isOpen, onClose, existingPresence, onDelete
                                     )}
 
                                     {/* No results hint */}
-                                    {venueSearch.trim() && venueResults.length === 0 && !isLoadingLocations && (
+                                    {venueSearch.trim().length >= 3 && venueResults.length === 0 && !isSearching && (
                                         <p className={`mt-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                                             {t('dine.venue_no_results', 'No venues found. Try a different name.')}
                                         </p>
                                     )}
 
                                     {/* Loading hint */}
-                                    {isLoadingLocations && venueSearch.trim() && (
+                                    {isSearching && venueSearch.trim().length >= 3 && (
                                         <p className={`mt-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                            {t('dine.venue_loading', 'Loading venues...')}
+                                            {t('dine.venue_loading', 'Searching venues...')}
                                         </p>
                                     )}
                                 </>

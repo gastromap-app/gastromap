@@ -15,7 +15,7 @@ const DAILY_LIMIT = 1000
  * Manages the enrichment workflow: field selection → fetch → diff review → apply.
  * Styled as a slide-over panel matching the existing LocationFormSlideOver pattern.
  */
-export default function EnrichmentPanel({ location, onClose, onApplyChanges }) {
+export default function EnrichmentPanel({ location, onClose, onApplyChanges, queueInfo, onNext, onSkip }) {
     const {
         enrichmentState,
         diff,
@@ -137,9 +137,16 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges }) {
                             <Sparkles size={18} className="text-primary" strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-sm font-semibold text-t-primary truncate">
-                                Enrich: {location.title || 'Untitled'}
-                            </h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-semibold text-t-primary truncate">
+                                    Enrich: {location.title || 'Untitled'}
+                                </h2>
+                                {queueInfo && (
+                                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+                                        {queueInfo.current}/{queueInfo.total}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex items-center gap-3 mt-1">
                                 <QuotaIndicator
                                     quotaRemaining={quotaRemaining}
@@ -277,6 +284,24 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges }) {
                                     <RefreshCw size={12} />
                                     Start Over
                                 </button>
+
+                                {/* Queue navigation buttons */}
+                                {onNext && (
+                                    <div className="flex gap-2 pt-4 border-t border-border">
+                                        <button
+                                            onClick={onSkip}
+                                            className="flex-1 py-3 rounded-xl text-xs font-bold text-t-tertiary bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+                                        >
+                                            Skip
+                                        </button>
+                                        <button
+                                            onClick={onNext}
+                                            className="flex-1 py-3 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm"
+                                        >
+                                            Next →
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
 

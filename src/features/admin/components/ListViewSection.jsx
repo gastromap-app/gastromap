@@ -8,7 +8,7 @@ import { MissingDataBadge } from './enrichment'
  * ListViewSection — DaisyUI-style table for admin locations list.
  * Supports bulk selection with action bar.
  */
-const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onBulkDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation, onEnrichLocation }) => {
+const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete, onBulkDelete, onApprove, onReject, onToggleVisibility, openActionMenuId, onToggleActionMenu, bulkReindexMutation, bulkEmbeddingMutation, onEnrichLocation, onBulkEnrich }) => {
     const { t } = useTranslation()
     const [selectedIds, setSelectedIds] = useState(new Set())
     const menuRef = useRef(null)
@@ -110,6 +110,9 @@ const ListViewSection = ({ filteredLocations, viewMode, onEditLocation, onDelete
                         <button onClick={handleBulkHide} className="btn btn-ghost btn-sm sm:btn-xs text-[11px] sm:text-[10px] gap-1.5"><EyeOff size={13} /> Hide</button>
                         <button onClick={handleBulkReindex} className="btn btn-ghost btn-sm sm:btn-xs text-[11px] sm:text-[10px] gap-1.5"><Sparkles size={13} /> AI</button>
                         <button onClick={handleBulkEmbeddings} className="btn btn-ghost btn-sm sm:btn-xs text-[11px] sm:text-[10px] gap-1.5">⬡ Embed</button>
+                        {onBulkEnrich && (
+                            <button onClick={() => { onBulkEnrich(filteredLocations.filter(loc => selectedIds.has(loc.id))); clearSelection() }} className="btn btn-ghost btn-sm sm:btn-xs text-[11px] sm:text-[10px] gap-1.5 text-primary"><Wand2 size={13} /> Enrich ({selectedIds.size})</button>
+                        )}
                         <button onClick={handleBulkDelete} className="btn btn-ghost btn-sm sm:btn-xs text-[11px] sm:text-[10px] gap-1.5 text-error"><Trash2 size={13} /> Delete</button>
                         <button onClick={clearSelection} className="btn btn-ghost btn-sm sm:btn-xs"><X size={14} /></button>
                     </div>

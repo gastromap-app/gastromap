@@ -98,6 +98,41 @@ const AdminLocationsPage = () => {
     } = hook
 
     const [enrichLocation, setEnrichLocation] = useState(null)
+    const [enrichQueue, setEnrichQueue] = useState([])
+    const [enrichQueueIndex, setEnrichQueueIndex] = useState(0)
+
+    const handleBulkEnrich = (selectedLocations) => {
+        if (!selectedLocations.length) return
+        setEnrichQueue(selectedLocations)
+        setEnrichQueueIndex(0)
+        setEnrichLocation(selectedLocations[0])
+    }
+
+    const handleEnrichNext = () => {
+        const nextIdx = enrichQueueIndex + 1
+        if (nextIdx < enrichQueue.length) {
+            setEnrichQueueIndex(nextIdx)
+            setEnrichLocation(enrichQueue[nextIdx])
+        } else {
+            // Queue complete
+            const count = enrichQueue.length
+            setEnrichQueue([])
+            setEnrichQueueIndex(0)
+            setEnrichLocation(null)
+            setToast({ message: `✅ Bulk enrich complete: ${count} locations reviewed`, type: 'success' })
+        }
+    }
+
+    const handleEnrichSkip = () => {
+        handleEnrichNext()
+    }
+
+    // Show progress toast during bulk enrich
+    useEffect(() => {
+        if (enrichQueue.length > 1 && enrichLocation) {
+            setToast({ message: `🔍 Enriching ${enrichQueueIndex + 1}/${enrichQueue.length}: ${enrichLocation.title}`, type: 'info' })
+        }
+    }, [enrichQueueIndex, enrichQueue.length, enrichLocation?.title])
 
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -352,6 +387,7 @@ const AdminLocationsPage = () => {
                             bulkReindexMutation={bulkReindexMutation}
                             bulkEmbeddingMutation={bulkEmbeddingMutation}
                             onEnrichLocation={setEnrichLocation}
+                            onBulkEnrich={handleBulkEnrich}
                         />
                     ) : viewMode === 'map' ? (
                         <div className="flex-1 relative min-h-[500px]">
@@ -476,10 +512,19 @@ const AdminLocationsPage = () => {
                 {enrichLocation && (
                     <EnrichmentPanel
                         location={enrichLocation}
-                        onClose={() => setEnrichLocation(null)}
+                        onClose={() => {
+                            if (enrichQueue.length > 0) {
+                                handleEnrichNext()
+                            } else {
+                                setEnrichLocation(null)
+                            }
+                        }}
                         onApplyChanges={(updates) => {
                             updateLocMutation.mutate({ id: enrichLocation.id, updates })
                         }}
+                        queueInfo={enrichQueue.length > 1 ? { current: enrichQueueIndex + 1, total: enrichQueue.length } : null}
+                        onNext={enrichQueue.length > 1 ? handleEnrichNext : null}
+                        onSkip={enrichQueue.length > 1 ? handleEnrichSkip : null}
                     />
                 )}
             </AnimatePresence>

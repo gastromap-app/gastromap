@@ -7,6 +7,7 @@ import {
 import { cn } from '@/lib/utils'
 import AdminPageHeader from '../components/AdminPageHeader'
 import { usePendingReviews, usePendingLocations, useUpdateReviewStatusMutation, useUpdateLocationStatusMutation, useFeedback, useUpdateFeedbackStatusMutation } from '@/shared/api/queries'
+import { sendNotificationToUser } from '@/shared/api/notifications.api'
 
 export default function AdminModerationPage() {
     const { data: pendingReviews = [], isLoading: _loadingReviews } = usePendingReviews()
@@ -91,6 +92,19 @@ export default function AdminModerationPage() {
                     itemData: item
                 })
             }
+
+            // Send in-app notification to the author
+            const authorId = item.user_id || item.created_by
+            if (authorId) {
+                sendNotificationToUser({
+                    userId: authorId,
+                    type: 'location_approved',
+                    title: 'Your location has been approved! 🎉',
+                    body: `Congratulations! "${item.name}" is now live on GastroMap. Thank you for your contribution — together we make the world of gastronomy better!`,
+                    data: { locationId: item.id, locationName: item.name, city: item.city },
+                }).catch(() => {}) // fire-and-forget
+            }
+
             setSelectedItem(null)
             showToast(`${item.queueType === 'review' ? 'Отзыв' : 'Заведение'} успешно одобрено!`, 'success')
         } catch (error) {
@@ -144,6 +158,19 @@ export default function AdminModerationPage() {
                     itemData: item
                 })
             }
+
+            // Send in-app notification to the author
+            const authorId = item.user_id || item.created_by
+            if (authorId) {
+                sendNotificationToUser({
+                    userId: authorId,
+                    type: 'location_rejected',
+                    title: 'Location not approved',
+                    body: `Unfortunately, "${item.name}" was not approved. Reason: "${rejectionReason}". Don't be discouraged — we appreciate every contribution. Together, as a community, we make the world better!`,
+                    data: { locationId: item.id, locationName: item.name, reason: rejectionReason },
+                }).catch(() => {}) // fire-and-forget
+            }
+
             setSelectedItem(null)
             setRejectionReason('')
             showToast(`${item.queueType === 'review' ? 'Отзыв' : 'Заведение'} отклонено.`, 'success')

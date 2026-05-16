@@ -210,12 +210,12 @@ const InfoModal = ({ onClose }) => (
 
             <div className="p-8 overflow-y-auto custom-scrollbar space-y-5">
                 {[
-                    { icon: Database, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '1. Knowledge Base (Ontology)', text: 'A culinary encyclopedia with connections: Cuisines (Italian) → Dishes (Pasta Carbonara) → Ingredients (Guanciale, Pecorino). The app understands food context through these relationships.' },
-                    { icon: Sparkles, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10', title: '2. KG AI Agent (Chat)', text: 'Write a request like "add Polish cuisine with dishes" → AI generates structured entries (cuisines, dishes, ingredients). You preview and select which to save. Uses OpenRouter models.' },
-                    { icon: RefreshCw, color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10', title: '3. Enrichment Agent (Auto-fill)', text: 'Scans all cuisines for empty fields (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) and fills them via AI. Shows "System Optimized" when all cuisines are complete.' },
-                    { icon: Search, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '4. Bulk Sync (KG → Locations)', text: 'Matches KG entries against location text (title, description, tags, what_to_try). Writes matches to kg_cuisines, kg_dishes, kg_ingredients columns on each location. This is how tags appear on location cards.' },
-                    { icon: Globe, color: 'text-sky-600 bg-sky-50 dark:bg-sky-500/10', title: '5. AI Bot Uses KG', text: 'When a user asks the bot about food, it queries KG for context: "Spanish food" → paella, tapas, saffron. "Gluten-free" → safe cuisines/dishes. This enriches bot answers with real culinary knowledge.' },
-                    { icon: Zap, color: 'text-rose-600 bg-rose-50 dark:bg-rose-500/10', title: '6. Spoonacular Enricher', text: 'Import dishes & ingredients from the external Spoonacular food database (150 free requests/day). Requires VITE_SPOONACULAR_API_KEY in Vercel env vars.' },
+                    { icon: Database, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '1. База Знаний (Онтология)', text: 'Кулинарная энциклопедия со связями: Кухни (Итальянская) → Блюда (Паста Карбонара) → Ингредиенты (Гуанчиале, Пекорино). Приложение понимает контекст еды через эти связи.' },
+                    { icon: Sparkles, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10', title: '2. KG AI Агент (Чат)', text: 'Напиши запрос вроде "добавь польскую кухню с блюдами" → AI сгенерирует структурированные записи (кухни, блюда, ингредиенты). Ты просматриваешь и выбираешь что сохранить. Использует модели OpenRouter.' },
+                    { icon: RefreshCw, color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10', title: '3. Enrichment Агент (Автозаполнение)', text: 'Сканирует все кухни на пустые поля (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) и заполняет их через AI. Показывает "System Optimized" когда все кухни полностью заполнены.' },
+                    { icon: Search, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10', title: '4. Bulk Sync (KG → Локации)', text: 'Сопоставляет записи KG с текстом локаций (название, описание, теги, what_to_try). Записывает совпадения в колонки kg_cuisines, kg_dishes, kg_ingredients на каждой локации. Так теги появляются на карточках.' },
+                    { icon: Globe, color: 'text-sky-600 bg-sky-50 dark:bg-sky-500/10', title: '5. AI Бот использует KG', text: 'Когда пользователь спрашивает бота о еде, тот запрашивает KG для контекста: "Испанская кухня" → паэлья, тапас, шафран. "Без глютена" → безопасные кухни/блюда. Это обогащает ответы бота реальными кулинарными знаниями.' },
+                    { icon: Zap, color: 'text-rose-600 bg-rose-50 dark:bg-rose-500/10', title: '6. Spoonacular Enricher', text: 'Импорт блюд и ингредиентов из внешней базы данных Spoonacular (150 бесплатных запросов/день). Требует ключ VITE_SPOONACULAR_API_KEY в переменных окружения Vercel.' },
                 ].map(({ icon: Icon, color, title, text }) => (
                     <div key={title} className="flex gap-4">
                         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', color)}>
@@ -231,13 +231,13 @@ const InfoModal = ({ onClose }) => (
                 <div className="p-5 bg-slate-50 dark:bg-[hsl(220,20%,6%)] rounded-2xl border border-slate-100 dark:border-white/[0.06]">
                     <div className="flex items-center gap-2 mb-2">
                         <Zap size={16} className="text-yellow-500" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">Workflow</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">Порядок работы</span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">
-                        <strong className="text-slate-700 dark:text-slate-300">Step 1:</strong> Add cuisines/dishes/ingredients via KG AI Agent or manually.<br/>
-                        <strong className="text-slate-700 dark:text-slate-300">Step 2:</strong> Run Enrichment Agent to auto-fill empty fields on cuisines.<br/>
-                        <strong className="text-slate-700 dark:text-slate-300">Step 3:</strong> Click <strong>Bulk Sync</strong> — this scans all locations and writes kg_cuisines/kg_dishes/kg_ingredients tags.<br/>
-                        <strong className="text-slate-700 dark:text-slate-300">Result:</strong> Location cards show cuisine tags, filters work dynamically, and the AI bot has culinary context for answers.
+                        <strong className="text-slate-700 dark:text-slate-300">Шаг 1:</strong> Добавь кухни/блюда/ингредиенты через KG AI Агент или вручную.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Шаг 2:</strong> Запусти Enrichment Агент для автозаполнения пустых полей у кухонь.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Шаг 3:</strong> Нажми <strong>Bulk Sync</strong> — система просканирует все локации и запишет теги kg_cuisines/kg_dishes/kg_ingredients.<br/>
+                        <strong className="text-slate-700 dark:text-slate-300">Результат:</strong> На карточках локаций появляются теги кухонь, фильтры работают динамически, а AI бот имеет кулинарный контекст для ответов.
                     </p>
                 </div>
             </div>
@@ -1041,13 +1041,13 @@ const AdminKnowledgeGraphPage = () => {
             {/* ── How it works ── */}
             <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-2xl border border-slate-100 dark:border-white/[0.03] p-5">
                 <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] leading-relaxed">
-                    <strong>How Knowledge Graph works:</strong> The KG is a culinary ontology connecting Cuisines → Dishes → Ingredients. 
-                    The AI bot uses it to understand food context (e.g. "Spanish food" → paella, tapas, saffron). 
-                    <strong>Tabs</strong> let you browse/edit entities manually. 
-                    <strong>Bulk Sync</strong> links KG data to your locations. 
-                    <strong>KG AI Agent</strong> generates new entries via chat. 
-                    <strong>Enrichment Agent</strong> auto-fills empty fields on existing cuisines. 
-                    <strong>Spoonacular</strong> imports from an external food database (requires API key).
+                    <strong>Как работает Knowledge Graph:</strong> KG — это кулинарная онтология, связывающая Кухни → Блюда → Ингредиенты. 
+                    AI бот использует её для понимания контекста еды (напр. "Испанская кухня" → паэлья, тапас, шафран). 
+                    <strong>Вкладки</strong> — просмотр/редактирование записей вручную. 
+                    <strong>Bulk Sync</strong> — привязка KG данных к локациям. 
+                    <strong>KG AI Агент</strong> — генерация новых записей через чат. 
+                    <strong>Enrichment Агент</strong> — автозаполнение пустых полей у кухонь. 
+                    <strong>Spoonacular</strong> — импорт из внешней базы (требует API ключ).
                 </p>
             </div>
 
@@ -1083,7 +1083,7 @@ const AdminKnowledgeGraphPage = () => {
             {/* ── AI Agent ── */}
             <div className="space-y-2">
                 <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
-                    💬 <strong>KG AI Agent</strong> — Chat-based interface. Write a request like "add Italian cuisine with its dishes" and the AI generates structured KG entries (cuisines, dishes, ingredients). You preview and select which to save.
+                    💬 <strong>KG AI Агент</strong> — Чат-интерфейс. Напиши запрос вроде "добавь итальянскую кухню с блюдами" и AI сгенерирует структурированные записи (кухни, блюда, ингредиенты). Ты просматриваешь и выбираешь что сохранить.
                 </p>
                 <KGAIAgent
                     cuisines={cuisines}
@@ -1097,7 +1097,7 @@ const AdminKnowledgeGraphPage = () => {
             {/* ── KG Enrichment ── */}
             <div className="space-y-2">
                 <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
-                    ⚡ <strong>Enrichment Agent</strong> — Automatically scans all cuisines for empty fields (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) and fills them via AI. Shows "System Optimized" when all cuisines are fully enriched.
+                    ⚡ <strong>Enrichment Агент</strong> — Автоматически сканирует все кухни на пустые поля (origin_country, flavor_profile, aliases, typical_dishes, key_ingredients) и заполняет их через AI. Показывает "System Optimized" когда все кухни полностью заполнены.
                 </p>
                 <KGEnrichmentAgent
                     cuisines={cuisines}
@@ -1108,7 +1108,7 @@ const AdminKnowledgeGraphPage = () => {
             {/* ── Spoonacular ── */}
             <div className="space-y-2">
                 <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)] px-1">
-                    🍽️ <strong>Spoonacular Enricher</strong> — Import dishes & ingredients from the external Spoonacular food database. Requires API key (VITE_SPOONACULAR_API_KEY in Vercel env vars). Free tier: 150 requests/day.
+                    🍽️ <strong>Spoonacular Enricher</strong> — Импорт блюд и ингредиентов из внешней базы данных Spoonacular. Требует API ключ (VITE_SPOONACULAR_API_KEY в переменных Vercel). Бесплатный тариф: 150 запросов/день.
                 </p>
                 <SpoonacularEnricher
                     existingDishes={dishes}

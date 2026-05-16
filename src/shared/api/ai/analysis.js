@@ -191,13 +191,14 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 intent,
             }
         } catch (err) {
-            console.warn('[GastroAI] OpenRouter streaming error, falling back to local engine:', err.message)
-            // Notify caller that we're switching to fallback
-            if (onChunk) onChunk('')
+            console.error('[GastroAI] OpenRouter streaming error:', err.message, err.stack?.split('\n')[1])
+            // Instead of silently falling back to useless local engine,
+            // re-throw so the caller (useAIChat) can show a proper error message
+            throw err
         }
     }
 
-    // Fallback: run local engine and simulate streaming so onChunk is always called
+    // Fallback: only reached when useProxy is false (dev mode without server)
     const result = await analyzeQuery(message, context)
     // Validate: only return locations that exist in the store
     const validMatches = (result.matches ?? []).filter(loc =>

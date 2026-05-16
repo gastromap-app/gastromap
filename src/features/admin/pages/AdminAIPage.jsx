@@ -1001,6 +1001,25 @@ const AdminAIPage = () => {
                             {scanLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
                             {scanLoading ? 'Scanning...' : 'Scan OpenRouter Models'}
                         </button>
+                        {/* Manual model ID input */}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <input
+                                type="text"
+                                placeholder="Add model ID (e.g. google/gemini-2.5-flash-lite)"
+                                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[hsl(220,20%,6%)] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && e.target.value.trim()) {
+                                        const id = e.target.value.trim()
+                                        if (!cascadeModels.includes(id)) {
+                                            setCascadeModels(prev => [...prev, id])
+                                            setCascadeEnabled(prev => { const next = new Set(prev); next.add(id); return next })
+                                        }
+                                        e.target.value = ''
+                                    }
+                                }}
+                            />
+                            <span className="text-[10px] text-slate-400 shrink-0">Enter ↵</span>
+                        </div>
                     </div>
 
                     {/* Model Scanner Modal — rendered via portal to escape transform context */}

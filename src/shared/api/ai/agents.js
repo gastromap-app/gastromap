@@ -132,6 +132,8 @@ export async function runAgentPass(messages, ctx = {}) {
     let adminMaxTokens = 1024
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
+        // Ensure Supabase config is loaded (no-op if already loaded)
+        await useAppConfigStore.getState().loadFromDB()
         const cfg = useAppConfigStore.getState()
         adminCascade = cfg.aiModelCascade || []
         adminTemp = cfg.aiGuideTemp ?? 0.7
@@ -274,49 +276,25 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
             })
         } else {
             // XML mode: model doesn't understand the 'tool' role — inject results as user message
-            const stripped = `[Search results for ${toolCall.function.name}]\n${JSON.stringify(result, null, 2)}\n\nNow please answer the user's question naturally based on these results. Do not show raw JSON.`
+            const stripped = `[Search results for ${toolCall.function.name}]\n${JSON.stringify(result, null, 2)}\n\nNow please answer the user's question naturally based on these results. Do not show raw JSON.\nIMPORTANT: Answer in the SAME language the user wrote their last message in.`
             toolResults.push({ role: 'user', content: stripped })
         }
 
         // Collect full location objects for UI cards.
         // search_locations + search_nearby → array of mapLocation results.
-        // We now handle both array and object { results: [] } formats.
+        // We use resultList directly — after data-loading-architecture migration,
+        // useLocationsStore may be empty (shim). Tool results already contain full data.
         if (toolCall.function.name === 'search_locations' || toolCall.function.name === 'search_nearby') {
             const resultList = Array.isArray(result) ? result : (result?.results || [])
-            
             if (resultList.length > 0) {
-                let activeLocations = locations
-                if (!activeLocations?.length) {
-                    try {
-                        const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                        activeLocations = useLocationsStore.getState().locations
-                    } catch { activeLocations = [] }
-                }
-                usedLocations = resultList
-                    .map(r => activeLocations.find(l => l.id === r.id) || r)
-                    .filter(Boolean)
-                    .slice(0, 5)
+                usedLocations = resultList.slice(0, 5)
             }
         }
         if (toolCall.function.name === 'get_location_details' && result?.id) {
-            let activeLocations = locations
-            if (!activeLocations?.length) {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                activeLocations = useLocationsStore.getState().locations
-            }
-            const loc = activeLocations.find(l => l.id === result.id)
-            if (loc) usedLocations = [loc]
-            else usedLocations = [result]
+            usedLocations = [result]
         }
         if (toolCall.function.name === 'compare_locations' && result?.items?.length) {
-            let activeLocations = locations
-            if (!activeLocations?.length) {
-                const { useLocationsStore } = await import('@/shared/store/useLocationsStore')
-                activeLocations = useLocationsStore.getState().locations
-            }
             usedLocations = result.items
-                .map(r => activeLocations.find(l => l.id === r.id) || r)
-                .filter(Boolean)
         }
     }
 

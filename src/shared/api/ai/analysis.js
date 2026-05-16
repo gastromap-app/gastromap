@@ -121,18 +121,21 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().useProxy) {
         try {
+            // Only include the last 1 exchange (user+assistant) for minimal follow-up context.
+            // Full history is NOT sent — it confuses free models and wastes tokens.
+            // The bot can still reference previously shown locations via session_locations
+            // and the [RECENT CONTEXT] block in the system prompt.
             const historyMessages = (context.history ?? [])
-                .slice(-10)
+                .slice(-2)  // Only last 1 pair (user + assistant)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .filter(m => {
-                    // Filter out garbage messages that confuse the model
                     const c = m.content?.trim()
                     if (!c || c === '…' || c === '...') return false
                     if (c.startsWith('An error occurred') || c === 'I found some places for you:') return false
                     if (c.includes('All AI models are busy')) return false
                     return true
                 })
-                .map(m => ({ role: m.role, content: m.content }))
+                .map(m => ({ role: m.role, content: m.content?.slice(0, 500) })) // Cap each message at 500 chars
 
             let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
             

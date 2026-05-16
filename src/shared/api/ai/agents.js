@@ -376,24 +376,28 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         : lastUserMsg?.content && /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(lastUserMsg.content) ? 'Polish'
         : null
 
-    // Build a response instruction that reminds the model to write a proper answer
-    // Also include a COMPACT summary of results (not full JSON) to reduce tokens
-    const compactResults = usedLocations.slice(0, 5).map((l, i) => {
-        const parts = [`${i + 1}. ${l.title || l.name}`]
-        if (l.category) parts.push(l.category)
-        if (l.city) parts.push(l.city)
-        if (l.google_rating || l.rating) parts.push(`⭐${l.google_rating || l.rating}`)
-        if (l.price_range) parts.push(l.price_range)
-        if (l.ai_summary) parts.push(l.ai_summary)
-        else if (l.description) parts.push(l.description?.slice(0, 120))
-        if (l.vibe?.length) parts.push(`Vibe: ${l.vibe.slice(0, 3).join(', ')}`)
-        if (l.insider_tip) parts.push(`Tip: ${l.insider_tip.slice(0, 80)}`)
-        return parts.join(' | ')
-    }).join('\n')
-
-    const responseInstruction = usedLocations.length > 0
-        ? `Here are the search results:\n${compactResults}\n\nNow write a warm, expert recommendation for the user. For each place: **bold the name**, write 2-3 sentences about why it fits their request. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Be like a knowledgeable friend, not a search engine.`
-        : `No places found matching the criteria. ${userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'} Suggest the user try a different search (broader category, different city, wider radius).`
+    // Build a response instruction with FULL tool results (not compressed)
+    // Models need the actual data (insider_tip, vibe, description) to write good responses
+    const userLangNote = userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'
+    
+    let responseInstruction
+    if (usedLocations.length > 0) {
+        // Send full location data so model can reference insider_tip, vibe, what_to_try
+        const locationData = usedLocations.slice(0, 5).map((l, i) => {
+            const obj = { name: l.title || l.name, category: l.category, city: l.city }
+            if (l.google_rating || l.rating) obj.rating = l.google_rating || l.rating
+            if (l.price_range) obj.price = l.price_range
+            if (l.description) obj.description = l.description.slice(0, 200)
+            if (l.vibe?.length) obj.vibe = l.vibe.slice(0, 3)
+            if (l.insider_tip) obj.insider_tip = l.insider_tip
+            if (l.ai_summary) obj.summary = l.ai_summary
+            if (l.what_to_try?.length) obj.must_try = l.what_to_try.slice(0, 3)
+            return obj
+        })
+        responseInstruction = `Here are the places I found:\n${JSON.stringify(locationData, null, 1)}\n\nWrite a warm, expert recommendation. For each place: **bold the name**, 2-3 sentences about why it fits and mention insider_tip or must_try if available. ${userLangNote}`
+    } else {
+        responseInstruction = `No places found matching the exact criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging. ${userLangNote}`
+    }
 
     let finalMessages
     if (mode === 'native') {

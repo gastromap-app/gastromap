@@ -479,7 +479,6 @@ const AdminLocationsPage = () => {
                         onClose={() => setEnrichLocation(null)}
                         onApplyChanges={(updates) => {
                             updateLocMutation.mutate({ id: enrichLocation.id, updates })
-                            setEnrichLocation(null)
                         }}
                     />
                 )}

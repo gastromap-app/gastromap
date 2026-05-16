@@ -124,6 +124,14 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
             const historyMessages = (context.history ?? [])
                 .slice(-10)
                 .filter(m => m.role === 'user' || m.role === 'assistant')
+                .filter(m => {
+                    // Filter out garbage messages that confuse the model
+                    const c = m.content?.trim()
+                    if (!c || c === '…' || c === '...') return false
+                    if (c.startsWith('An error occurred') || c === 'I found some places for you:') return false
+                    if (c.includes('All AI models are busy')) return false
+                    return true
+                })
                 .map(m => ({ role: m.role, content: m.content }))
 
             let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)

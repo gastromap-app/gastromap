@@ -392,9 +392,10 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
             if (l.insider_tip) obj.insider_tip = l.insider_tip
             if (l.ai_summary) obj.summary = l.ai_summary
             if (l.what_to_try?.length) obj.must_try = l.what_to_try.slice(0, 3)
+            if (l.image) obj.image = l.image
             return obj
         })
-        responseInstruction = `Here are the places I found:\n${JSON.stringify(locationData, null, 1)}\n\nWrite a warm, expert recommendation. For each place: **bold the name**, 2-3 sentences about why it fits and mention insider_tip or must_try if available. ${userLangNote}`
+        responseInstruction = `Here are the places I found:\n${JSON.stringify(locationData, null, 1)}\n\nWrite a warm, expert recommendation. For each place: **bold the name**, 2-3 sentences why it fits, and *insider tip* if available. Keep total response under 400 words. ${userLangNote}`
     } else {
         responseInstruction = `No places found matching the exact criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging. ${userLangNote}`
     }

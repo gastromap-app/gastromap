@@ -124,11 +124,25 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().useProxy) {
         try {
-            // NO history messages sent to the model.
-            // Each request is clean — only system prompt + current user message.
-            // The bot knows about previously shown locations via [RECENT CONTEXT]
-            // block in the system prompt (built from buildRecentContext).
-            const historyMessages = []
+            // Include last 2 user messages + 2 compressed bot responses for context continuity
+            // Each message includes timestamp so the model knows if it's recent or old
+            const recentHistory = (context.history ?? [])
+                .slice(-4)  // Last 4 messages (2 user + 2 assistant)
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .filter(m => {
+                    const c = m.content?.trim()
+                    if (!c || c === '…' || c === '...') return false
+                    if (c.startsWith('An error occurred') || c === 'I found some places for you:') return false
+                    return true
+                })
+                .map(m => {
+                    const time = m.timestamp || m.created_at ? new Date(m.timestamp || m.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }) : ''
+                    // Compress assistant messages to max 150 chars (just the gist)
+                    const content = m.role === 'assistant'
+                        ? (m.content?.slice(0, 150) + (m.content?.length > 150 ? '...' : ''))
+                        : m.content?.slice(0, 300)
+                    return { role: m.role, content: time ? `[${time}] ${content}` : content }
+                })
 
             let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
             
@@ -139,7 +153,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
             const messages = [
                 { role: 'system', content: systemPrompt },
-                ...historyMessages,
+                ...recentHistory,
                 { role: 'user', content: message },
             ]
 

@@ -475,12 +475,16 @@ const AdminAIPage = () => {
     const [showFallbackPicker, setShowFallbackPicker] = useState(false)
 
     // ── Model Cascade Editor
+    // Track whether we've received the initial Supabase load
+    const [cascadeInitialized, setCascadeInitialized] = useState(() => {
+        return appConfig.aiModelCascade?.length > 0
+    })
     const [cascadeModels, setCascadeModels] = useState(() => {
         const saved = appConfig.aiModelCascade
         if (saved?.length > 0) {
             return saved
         }
-        // First-time fallback: use MODEL_CASCADE from constants (no auto-adding paid models)
+        // First-time fallback: use MODEL_CASCADE from constants
         return [...MODEL_CASCADE]
     })
     const [cascadeEnabled, setCascadeEnabled] = useState(() => {
@@ -488,14 +492,16 @@ const AdminAIPage = () => {
         return new Set(saved?.length > 0 ? saved : MODEL_CASCADE)
     })
 
-    // Sync cascade state when appConfig loads from Supabase (may happen after initial render)
+    // Sync cascade state ONLY on initial Supabase load (not on every save)
     useEffect(() => {
+        if (cascadeInitialized) return // Already got data, don't overwrite user edits
         const saved = appConfig.aiModelCascade
         if (saved?.length > 0) {
             setCascadeModels(saved)
             setCascadeEnabled(new Set(saved))
+            setCascadeInitialized(true)
         }
-    }, [appConfig.aiModelCascade])
+    }, [appConfig.aiModelCascade, cascadeInitialized])
 
     // Auto-correct Primary/Fallback if they no longer exist in the cascade list
     useEffect(() => {

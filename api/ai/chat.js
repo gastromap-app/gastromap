@@ -15,15 +15,14 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // (which reads it from AdminAIPage → useAppConfigStore). This list kicks in
 // only if the primary model fails. Updated 2026-04-14.
 const MODEL_CASCADE = [
-    'openai/gpt-oss-120b:free',               // ✅ best JSON quality
-    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG
-    'arcee-ai/trinity-large-preview:free',    // ✅ stable
-    'liquid/lfm-2.5-1.2b-instruct:free',      // ✅ fast
-    'liquid/lfm-2.5-1.2b-thinking:free',
-    'meta-llama/llama-3.3-70b-instruct:free', // sometimes 429
-    'google/gemma-4-31b-it:free',             // sometimes 429
-    'google/gemma-3-27b-it:free',             // sometimes 429
-    'nousresearch/hermes-3-llama-3.1-405b:free',
+    'google/gemma-4-31b-it:free',             // ✅ tool calling, 262K ctx, 140+ languages
+    'nvidia/nemotron-3-super-120b-a12b:free', // ✅ 262K ctx, best RAG, XML tool calls
+    'google/gemma-3-27b-it:free',             // ✅ tool calling, 128K ctx
+    'z-ai/glm-4.5-air:free',                  // ✅ 131K ctx, fast
+    'openai/gpt-oss-120b:free',               // ⚠️ may not support native tools
+    'meta-llama/llama-3.3-70b-instruct:free', // ✅ tool calling
+    'openai/gpt-oss-20b:free',                // fast fallback
+    'nousresearch/hermes-3-llama-3.1-405b:free', // XML tool calls
 ]
 
 // Keywords that trigger semantic search enrichment

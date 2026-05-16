@@ -972,7 +972,8 @@ const AdminAIPage = () => {
                     {showModelScanner && typeof document !== 'undefined' && createPortal(
                         <AnimatePresence>
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModelScanner(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]" />
-                            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed inset-3 sm:inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] z-[210] flex flex-col overflow-hidden">
+                            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed inset-0 z-[210] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+                                <div className="w-full max-w-[600px] max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] flex flex-col overflow-hidden pointer-events-auto">
                                 <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
                                     <div>
                                         <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Available Free Models</h3>
@@ -1006,6 +1007,7 @@ const AdminAIPage = () => {
                                     <button onClick={addSelectedModels} disabled={selectedNewModels.size === 0} className="px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/20">
                                         Add to Cascade ({selectedNewModels.size})
                                     </button>
+                                </div>
                                 </div>
                             </motion.div>
                         </AnimatePresence>,

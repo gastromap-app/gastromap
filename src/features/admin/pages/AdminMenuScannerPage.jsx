@@ -14,6 +14,9 @@ import {
     getLocations, getLocationMenu, saveScannedMenu,
     deleteLocationDish, updateLocationDish
 } from '@/shared/api/locations.api'
+import { enrichCulinaryTerm, isSpoonacularAvailable } from '@/shared/api/spoonacular.api'
+import { reindexLocationSemantic } from '@/shared/api/ai-assistant.service'
+import { syncKGForLocation } from '@/shared/api/knowledge-graph.api'
 
 const DISH_CATEGORIES = [
     'appetizer', 'main', 'dessert', 'drink', 'snack', 'soup', 'salad', 'side', 'other'
@@ -35,6 +38,10 @@ const AdminMenuScannerPage = () => {
     const [isLoadingMenu, setIsLoadingMenu] = useState(false)
     const [isSavingScan, setIsSavingScan] = useState(false)
     const [toast, setToast] = useState(null)
+    const [enriching, setEnriching] = useState(false)
+    const [embedding, setEmbedding] = useState(false)
+    const [fullPipeline, setFullPipeline] = useState(false)
+    const [pipelineStatus, setPipelineStatus] = useState('')
 
     const isAuthorized = !!user && user.role === 'admin'
 
@@ -164,6 +171,77 @@ const AdminMenuScannerPage = () => {
         ))
     }
 
+    // ─── Enrichment actions ─────────────────────────────────────────────────
+    const handleSpoonacularEnrich = async () => {
+        if (!selectedLocation || !menu.length || enriching) return
+        setEnriching(true)
+        setPipelineStatus('Enriching dishes with Spoonacular...')
+        try {
+            let enriched = 0
+            for (const dish of menu.slice(0, 10)) { // limit to 10 to avoid quota
+                try {
+                    const result = await enrichCulinaryTerm(dish.name)
+                    if (result) enriched++
+                } catch { /* skip failed */ }
+                await new Promise(r => setTimeout(r, 1000)) // rate limit
+            }
+            setToast({ type: 'success', message: `Spoonacular enriched ${enriched}/${Math.min(menu.length, 10)} dishes` })
+        } catch (err) {
+            setToast({ type: 'error', message: 'Spoonacular enrichment failed: ' + err.message })
+        } finally {
+            setEnriching(false)
+            setPipelineStatus('')
+            setTimeout(() => setToast(null), 4000)
+        }
+    }
+
+    const handleGenerateEmbeddings = async () => {
+        if (!selectedLocation || embedding) return
+        setEmbedding(true)
+        setPipelineStatus('Generating AI context + embeddings...')
+        try {
+            await reindexLocationSemantic(selectedLocation.id)
+            setToast({ type: 'success', message: 'AI reindex + embeddings generated successfully' })
+        } catch (err) {
+            setToast({ type: 'error', message: 'Embedding generation failed: ' + err.message })
+        } finally {
+            setEmbedding(false)
+            setPipelineStatus('')
+            setTimeout(() => setToast(null), 4000)
+        }
+    }
+
+    const handleFullPipeline = async () => {
+        if (!selectedLocation || fullPipeline) return
+        setFullPipeline(true)
+        try {
+            // Step 1: Spoonacular
+            setPipelineStatus('Step 1/3: Enriching with Spoonacular...')
+            if (isSpoonacularAvailable() && menu.length > 0) {
+                for (const dish of menu.slice(0, 5)) {
+                    try { await enrichCulinaryTerm(dish.name) } catch {}
+                    await new Promise(r => setTimeout(r, 1000))
+                }
+            }
+
+            // Step 2: AI Reindex (generates ai_context + ai_keywords + embedding)
+            setPipelineStatus('Step 2/3: AI Reindex + Embeddings...')
+            await reindexLocationSemantic(selectedLocation.id)
+
+            // Step 3: KG Sync (matches KG entities to location)
+            setPipelineStatus('Step 3/3: Syncing with Knowledge Graph...')
+            await syncKGForLocation(selectedLocation.id)
+
+            setToast({ type: 'success', message: 'Full pipeline complete! Location fully enriched.' })
+        } catch (err) {
+            setToast({ type: 'error', message: 'Pipeline failed at: ' + pipelineStatus + ' — ' + err.message })
+        } finally {
+            setFullPipeline(false)
+            setPipelineStatus('')
+            setTimeout(() => setToast(null), 5000)
+        }
+    }
+
     // ─── Render helpers ─────────────────────────────────────────────────────
     const textStyle = isDark ? 'text-white' : 'text-gray-900'
     const subText = isDark ? 'text-white/50' : 'text-gray-500'
@@ -291,6 +369,72 @@ const AdminMenuScannerPage = () => {
                         </div>
                     )}
                     <MenuScanner onDishesExtracted={handleDishesExtracted} />
+                </div>
+            )}
+
+            {/* ── Enrichment Actions (shown when location has menu) ── */}
+            {selectedLocation && menu.length > 0 && (
+                <div className="bg-white dark:bg-[hsl(220,20%,6%)]/50 rounded-[24px] border border-slate-100 dark:border-white/[0.03] shadow-sm p-6 lg:p-8">
+                    <h2 className={cn('text-sm font-medium uppercase tracking-wider mb-2', subText)}>
+                        Enrichment Pipeline
+                    </h2>
+                    <p className={cn('text-xs mb-4', subText)}>
+                        Обогатите данные локации: Spoonacular добавит ингредиенты к блюдам, AI Reindex создаст контекст и эмбеддинги, KG Sync привяжет кулинарные теги.
+                    </p>
+
+                    {pipelineStatus && (
+                        <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                            <Loader2 size={16} className="animate-spin text-indigo-500" />
+                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{pipelineStatus}</span>
+                        </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={handleSpoonacularEnrich}
+                            disabled={enriching || fullPipeline || !isSpoonacularAvailable()}
+                            className={cn(
+                                'flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95',
+                                'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
+                                'hover:bg-amber-100 dark:hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed'
+                            )}
+                        >
+                            {enriching ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                            {enriching ? 'Enriching...' : 'Enrich with Spoonacular'}
+                        </button>
+
+                        <button
+                            onClick={handleGenerateEmbeddings}
+                            disabled={embedding || fullPipeline}
+                            className={cn(
+                                'flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95',
+                                'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20',
+                                'hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed'
+                            )}
+                        >
+                            {embedding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                            {embedding ? 'Generating...' : 'Generate Embeddings'}
+                        </button>
+
+                        <button
+                            onClick={handleFullPipeline}
+                            disabled={enriching || embedding || fullPipeline}
+                            className={cn(
+                                'flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95',
+                                'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20',
+                                'hover:bg-emerald-100 dark:hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed'
+                            )}
+                        >
+                            {fullPipeline ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                            {fullPipeline ? 'Running...' : 'Full Pipeline (All 3)'}
+                        </button>
+                    </div>
+
+                    {!isSpoonacularAvailable() && (
+                        <p className={cn('text-[10px] mt-3', subText)}>
+                            ⚠️ Spoonacular недоступен — добавьте VITE_SPOONACULAR_API_KEY в Vercel для активации.
+                        </p>
+                    )}
                 </div>
             )}
 

@@ -71,16 +71,27 @@ async function loadFromSupabase() {
 /** Persist AI config fields to Supabase (upsert). Returns true on success. */
 async function saveToSupabase(aiFields) {
     try {
-        const { error, status } = await supabase
+        console.log('[AppConfig] Saving to Supabase…', { cascadeLength: aiFields.aiModelCascade?.length, primary: aiFields.aiPrimaryModel })
+        const { data, error, status } = await supabase
             .from('app_settings')
             .upsert(
                 { key: 'ai_config', value: aiFields, updated_at: new Date().toISOString() },
                 { onConflict: 'key' }
             )
+            .select()
+
         if (error) {
             console.error('[AppConfig] Supabase save failed:', { code: error.code, message: error.message, status })
             return false
         }
+
+        // RLS can silently block writes — PostgREST returns 200 + empty array
+        if (!data || data.length === 0) {
+            console.error('[AppConfig] Supabase save BLOCKED by RLS — 0 rows returned. User likely not admin or policy misconfigured.')
+            return false
+        }
+
+        console.log('[AppConfig] Supabase save OK. Cascade saved:', data[0]?.value?.aiModelCascade?.length, 'models')
         return true
     } catch (err) {
         console.error('[AppConfig] Supabase save threw:', err?.message || err)
@@ -142,16 +153,13 @@ export const useAppConfigStore = create(
                     if (remote) {
                         // Strip aiApiKey — keys are now server-side only
                         delete remote.aiApiKey
+                        console.log('[AppConfig] Loaded from Supabase. Cascade:', remote.aiModelCascade?.length, 'models. Primary:', remote.aiPrimaryModel)
                         // Supabase wins — override whatever was in localStorage
                         set({ ...remote, _supabaseLoaded: true })
-                        console.log('[AppConfig] Loaded from Supabase')
                     } else {
                         // No row yet or table missing
                         set({ _supabaseLoaded: true })
                         console.log('[AppConfig] Using local defaults (Supabase entry not found or inaccessible)')
-                        
-                        // Try to seed ONLY if we didn't get a 401/404/406 (best effort)
-                        // This might still fail with 401 if RLS is not set, but loadFromSupabase already failed
                     }
                 } catch (err) {
                     set({ _supabaseLoaded: true })

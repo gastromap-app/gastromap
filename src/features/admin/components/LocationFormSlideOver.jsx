@@ -408,9 +408,25 @@ const LocationFormSlideOver = ({
     }
 
     const removePhoto = (idx) => {
+        // The rendered photos array combines image_url + formData.photos
+        // We need to figure out which actual field to update
+        const gallery = Array.isArray(formData.photos) ? formData.photos.filter(Boolean) : []
+        const mainImage = formData.image_url || formData.image || ''
+        const combined = mainImage && !gallery.includes(mainImage) ? [mainImage, ...gallery] : (gallery.length > 0 ? gallery : (mainImage ? [mainImage] : []))
+        
+        const urlToRemove = combined[idx]
+        if (!urlToRemove) return
+
         setFormData(prev => {
-            const photos = (Array.isArray(prev.photos) ? prev.photos : []).filter((_, i) => i !== idx)
-            return { ...prev, photos, image: prev.image === (prev.photos || [])[idx] ? (photos[0] || '') : prev.image }
+            const newPhotos = (Array.isArray(prev.photos) ? prev.photos : []).filter(p => p !== urlToRemove)
+            const newImageUrl = (prev.image_url === urlToRemove || prev.image === urlToRemove) ? (newPhotos[0] || '') : (prev.image_url || prev.image || '')
+            return { 
+                ...prev, 
+                photos: newPhotos, 
+                image_url: newImageUrl,
+                image: newImageUrl,
+                google_photos: newPhotos,
+            }
         })
     }
 

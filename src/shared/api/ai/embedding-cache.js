@@ -59,20 +59,20 @@ export async function getOrComputeEmbedding(text, opts = {}) {
   const cached = lru.get(cacheKey)
   if (cached) return { embedding: cached, source: 'lru' }
 
-  // Layer 2: Supabase
+  // Layer 2: Supabase (skip if table not available — 406/403 means migration not applied)
   if (supabase) {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('embedding_cache')
         .select('embedding, hit_count')
         .eq('query_hash', queryHash)
         .eq('provider', provider)
         .eq('model', model)
         .eq('dimensions', dimensions)
-        .single()
-      if (data?.embedding) {
+        .maybeSingle()
+      if (!error && data?.embedding) {
         lru.set(cacheKey, data.embedding)
-        // Update hit_count + last_used_at (fire-and-forget)
+        // Update hit_count (fire-and-forget, ignore errors)
         supabase.from('embedding_cache')
           .update({ hit_count: (data.hit_count || 0) + 1, last_used_at: new Date().toISOString() })
           .eq('query_hash', queryHash).eq('provider', provider).eq('model', model).eq('dimensions', dimensions)

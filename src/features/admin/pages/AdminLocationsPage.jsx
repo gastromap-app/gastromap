@@ -236,7 +236,7 @@ const AdminLocationsPage = () => {
                                     <span className="hidden lg:inline ml-1">{bulkReindexMutation.isPending ? t('admin.reindexing') : t('admin.ai_reindex')}</span>
                                 </button>
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg max-w-[220px] text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
-                                    Generate AI descriptions & keywords for up to 50 locations (ai_context + ai_keywords)
+                                    AI Context: генерирует описание + ключевые слова (ai_context, ai_keywords) для до 50 локаций. Запускай после изменений в карточках.
                                 </div>
                             </div>
                             <div className="relative group">
@@ -263,8 +263,8 @@ const AdminLocationsPage = () => {
                                     </svg>
                                     <span className="hidden lg:inline ml-1">{bulkEmbeddingMutation.isPending ? t('admin.embedding') : t('admin.embeddings')}</span>
                                 </button>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg max-w-[220px] text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
-                                    Generate vector embeddings for semantic search (OK = only missing, Cancel = regenerate all)
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-medium rounded-lg max-w-[240px] text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg z-50">
+                                    Embedding: создаёт вектор для семантического поиска из всех полей (включая меню, tips, KG теги). OK = только пустые, Cancel = пересоздать все.
                                 </div>
                             </div>
                         </div>

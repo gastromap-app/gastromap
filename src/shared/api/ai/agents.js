@@ -369,12 +369,21 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     }
 
     // Second call: get final text with tool results (no tools needed)
+    // Detect user language from the last user message for language reminder
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    const userLangHint = lastUserMsg?.content && /[а-яёА-ЯЁ]/.test(lastUserMsg.content) ? 'Russian'
+        : lastUserMsg?.content && /[а-яіїєґА-ЯІЇЄҐ]/.test(lastUserMsg.content) ? 'Ukrainian'
+        : lastUserMsg?.content && /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(lastUserMsg.content) ? 'Polish'
+        : null
+
     let finalMessages
     if (mode === 'native') {
         finalMessages = [
             ...messages,
             assistantMsg,   // assistant message that contained tool_calls
             ...toolResults, // tool result messages
+            // Language reminder for native mode (some models forget after tool results)
+            ...(userLangHint ? [{ role: 'user', content: `[System note: respond in ${userLangHint}]` }] : []),
         ]
     } else {
         // XML mode: strip the raw XML from the assistant turn, then inject results

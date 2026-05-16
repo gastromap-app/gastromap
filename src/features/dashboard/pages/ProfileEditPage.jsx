@@ -96,8 +96,8 @@ const ProfileEditPage = () => {
         <div className="w-full min-h-[100dvh] relative z-10 pb-32">
             {/* Header */}
             <div
-                className="sticky top-[56px] md:top-0 z-20 px-4 sm:px-6 mb-6 flex items-center gap-3 backdrop-blur-xl"
-                style={{ paddingTop: '1rem', paddingBottom: '0.75rem' }}
+                className="px-4 sm:px-6 mb-6 flex items-center gap-3"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}
             >
                 <button
                     onClick={() => navigate('/profile')}

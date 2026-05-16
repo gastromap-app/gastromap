@@ -840,24 +840,25 @@ export async function getAIContextForQuery(query, opts = {}) {
 async function _searchDishes(query, limit = 5) {
     if (!query?.trim() || !supabase) return []
     try {
-        const { data } = await supabase.from('dishes').select('name, cuisines').ilike('name', `%${query}%`).limit(limit)
-        return data || []
+        const { data } = await supabase.from('dishes').select('name').ilike('name', `%${query}%`).limit(limit)
+        return (data || []).map(d => ({ name: d.name, cuisines: [] }))
     } catch { return [] }
 }
 
 async function _searchIngredients(query, limit = 3) {
     if (!query?.trim() || !supabase) return []
     try {
-        const { data } = await supabase.from('ingredients').select('name, cuisines, dishes').ilike('name', `%${query}%`).limit(limit)
-        return data || []
+        const { data } = await supabase.from('ingredients').select('name').ilike('name', `%${query}%`).limit(limit)
+        return (data || []).map(i => ({ name: i.name, cuisines: [], dishes: [] }))
     } catch { return [] }
 }
 
 async function _searchAllergens(query, limit = 3) {
     if (!query?.trim() || !supabase) return []
     try {
-        const { data } = await supabase.from('allergens').select('name, free_of_cuisines, common_in_cuisines').ilike('name', `%${query}%`).limit(limit)
-        return data || []
+        // allergens table may not have these columns yet — just search by name
+        const { data } = await supabase.from('allergens').select('name').ilike('name', `%${query}%`).limit(limit)
+        return (data || []).map(a => ({ name: a.name, free_of_cuisines: [], common_in_cuisines: [] }))
     } catch { return [] }
 }
 

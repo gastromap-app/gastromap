@@ -15,7 +15,7 @@ import {
     deleteLocationDish, updateLocationDish
 } from '@/shared/api/locations.api'
 import { enrichCulinaryTerm, isSpoonacularAvailable } from '@/shared/api/spoonacular.api'
-import { reindexLocationSemantic } from '@/shared/api/ai-assistant.service'
+import { reindexLocationSemantic, updateLocationEmbedding } from '@/shared/api/ai-assistant.service'
 import { syncKGForLocation } from '@/shared/api/knowledge-graph.api'
 
 const DISH_CATEGORIES = [
@@ -198,10 +198,12 @@ const AdminMenuScannerPage = () => {
     const handleGenerateEmbeddings = async () => {
         if (!selectedLocation || embedding) return
         setEmbedding(true)
-        setPipelineStatus('Generating AI context + embeddings...')
+        setPipelineStatus('Step 1/2: Generating AI context...')
         try {
             await reindexLocationSemantic(selectedLocation.id)
-            setToast({ type: 'success', message: 'AI reindex + embeddings generated successfully' })
+            setPipelineStatus('Step 2/2: Generating embedding vector...')
+            await updateLocationEmbedding(selectedLocation.id)
+            setToast({ type: 'success', message: 'AI context + embedding vector generated successfully' })
         } catch (err) {
             setToast({ type: 'error', message: 'Embedding generation failed: ' + err.message })
         } finally {
@@ -216,7 +218,7 @@ const AdminMenuScannerPage = () => {
         setFullPipeline(true)
         try {
             // Step 1: Spoonacular
-            setPipelineStatus('Step 1/3: Enriching with Spoonacular...')
+            setPipelineStatus('Step 1/4: Enriching with Spoonacular...')
             if (isSpoonacularAvailable() && menu.length > 0) {
                 for (const dish of menu.slice(0, 5)) {
                     try { await enrichCulinaryTerm(dish.name) } catch {}
@@ -224,12 +226,16 @@ const AdminMenuScannerPage = () => {
                 }
             }
 
-            // Step 2: AI Reindex (generates ai_context + ai_keywords + embedding)
-            setPipelineStatus('Step 2/3: AI Reindex + Embeddings...')
+            // Step 2: AI Reindex (generates ai_context + ai_keywords)
+            setPipelineStatus('Step 2/4: AI Reindex...')
             await reindexLocationSemantic(selectedLocation.id)
 
-            // Step 3: KG Sync (matches KG entities to location)
-            setPipelineStatus('Step 3/3: Syncing with Knowledge Graph...')
+            // Step 3: Generate Embedding vector
+            setPipelineStatus('Step 3/4: Generating embedding vector...')
+            await updateLocationEmbedding(selectedLocation.id)
+
+            // Step 4: KG Sync (matches KG entities to location)
+            setPipelineStatus('Step 4/4: Syncing with Knowledge Graph...')
             await syncKGForLocation(selectedLocation.id)
 
             setToast({ type: 'success', message: 'Full pipeline complete! Location fully enriched.' })
@@ -379,7 +385,11 @@ const AdminMenuScannerPage = () => {
                         Enrichment Pipeline
                     </h2>
                     <p className={cn('text-xs mb-4', subText)}>
-                        Обогатите данные локации: Spoonacular добавит ингредиенты к блюдам, AI Reindex создаст контекст и эмбеддинги, KG Sync привяжет кулинарные теги.
+                        Обогатите данные локации после сканирования меню:<br/>
+                        • <strong>Spoonacular</strong> — добавит ингредиенты и категории к блюдам из внешней базы<br/>
+                        • <strong>AI Context + Embedding</strong> — AI проанализирует ВСЕ поля карточки (включая меню, insider tip, must try) и создаст семантическое описание + вектор для поиска по смыслу<br/>
+                        • <strong>Full Pipeline</strong> — выполнит все 4 шага последовательно: Spoonacular → AI Context → Embedding → KG Sync<br/>
+                        <em>Запускайте после любых изменений в карточке (добавление меню, обновление описания, новые теги).</em>
                     </p>
 
                     {pipelineStatus && (
@@ -413,7 +423,7 @@ const AdminMenuScannerPage = () => {
                             )}
                         >
                             {embedding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            {embedding ? 'Generating...' : 'Generate Embeddings'}
+                            {embedding ? 'Generating...' : 'AI Context + Embedding'}
                         </button>
 
                         <button
@@ -426,7 +436,7 @@ const AdminMenuScannerPage = () => {
                             )}
                         >
                             {fullPipeline ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                            {fullPipeline ? 'Running...' : 'Full Pipeline (All 3)'}
+                            {fullPipeline ? 'Running...' : 'Full Pipeline (All 4)'}
                         </button>
                     </div>
 

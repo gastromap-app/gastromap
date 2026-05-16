@@ -113,6 +113,17 @@ function buildEmbedText(loc) {
         if (Array.isArray(v) && v.length) parts.push(`${field.replace('kg_', '')}: ${v.join(', ')}`)
     }
 
+    // Insider tips and must-try dishes — critical for semantic search
+    if (loc.insider_tip) parts.push(`insider tip: ${loc.insider_tip}`)
+    if (Array.isArray(loc.what_to_try) && loc.what_to_try.length) parts.push(`must try: ${loc.what_to_try.join(', ')}`)
+    if (Array.isArray(loc.must_try) && loc.must_try.length) parts.push(`must try: ${loc.must_try.join(', ')}`)
+    
+    // Menu dishes (from scanned menu)
+    if (Array.isArray(loc.menu_dishes) && loc.menu_dishes.length) {
+        const dishNames = loc.menu_dishes.slice(0, 15).map(d => typeof d === 'string' ? d : d.name).filter(Boolean)
+        if (dishNames.length) parts.push(`menu: ${dishNames.join(', ')}`)
+    }
+
     if (loc.ai_context) parts.push(loc.ai_context.slice(0, 500))
     return parts.filter(Boolean).join(' | ')
 }

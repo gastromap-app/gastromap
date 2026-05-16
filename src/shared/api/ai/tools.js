@@ -342,8 +342,13 @@ export async function executeTool(name, args, ctx = {}) {
         } = args
 
         // Normalize city name: "Краков"/"Кракове"/"Kraków" → "Krakow"
+        // Priority: 1) user specified in query, 2) GPS/IP geolocation city
         if (city) {
             city = normalizeCityName(city) || city
+        } else if (ctx?.geoCity) {
+            // Fallback to detected city from GPS or IP geolocation
+            city = normalizeCityName(ctx.geoCity) || ctx.geoCity
+            console.log(`[ai.tools] No city in query, using geo city: ${city}`)
         }
 
         console.log(`[ai.tools] 🔎 Executing search_locations:`, {

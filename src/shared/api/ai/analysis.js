@@ -64,7 +64,10 @@ export async function analyzeQuery(message, context = {}) {
             const agentCtx = {
                 locations,
                 geo: context.geo || null,
+                geoCity: context.userData?.userCity || null,
                 userId: context.userId || null,
+                sessionId: context.sessionId || null,
+                dietary: context.dietary || [],
             }
             const agentResult = await runAgentPass(messages, agentCtx)
 
@@ -152,7 +155,10 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
             const agentCtx = {
                 locations,
                 geo: context.geo || null,
+                geoCity: context.userData?.userCity || null,
                 userId: context.userId || null,
+                sessionId: context.sessionId || null,
+                dietary: context.dietary || [],
             }
 
             // Global timeout: abort if runAgentPass takes longer than 20s

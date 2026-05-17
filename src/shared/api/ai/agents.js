@@ -435,6 +435,89 @@ export async function runAgentPass(messages, ctx = {}) {
     // Tracked tool calls for enhanced metadata
     const trackedToolCalls = []
 
+    // ── RAG-FIRST MODE: Single LLM call (search first, then generate) ───────
+    // When aiBotMode === 'rag', skip tool calling entirely.
+    // Search DB programmatically, then ask LLM to format the results in 1 call.
+    // This fits within Vercel Hobby 10s limit (1 LLM call instead of 2).
+    const botMode = cfg?.aiBotMode ?? 'agentic' // 'rag' | 'agentic'
+
+    if (botMode === 'rag') {
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+        const userText = lastUserMsg?.content || ''
+        const intent = detectIntent(userText)
+
+        // For non-gastro intents in RAG mode, still do a single LLM call without tools
+        if (intent === 'meta' || intent === 'off_topic') {
+            const { response: res, modelUsed } = await fetchOpenRouter(messages, {
+                stream: false,
+                withTools: false,
+                temperature: adminTemp,
+                maxTokens: adminMaxTokens,
+                cascade,
+            })
+            const data = await res.json()
+            const text = cleanModelOutput(data.choices?.[0]?.message?.content ?? '')
+            return {
+                text: text || "I'm GastroGuide — I help you find great food spots! What are you in the mood for?",
+                usedLocations: [], attachments: [], modelUsed,
+                toolCalls: [], timing: { startMs: startTime, toolExecutionMs: 0, totalMs: Date.now() - startTime },
+            }
+        }
+
+        // Gastro intent → search DB first, then 1 LLM call
+        const fallbackArgs = buildFallbackToolArgs(intent, userText, ctx)
+        const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby) ? 'search_nearby' : 'search_locations'
+
+        const toolStart = Date.now()
+        let result
+        try {
+            result = await executeTool(toolName, fallbackArgs, ctx)
+        } catch { result = { results: [] } }
+        const toolTime = Date.now() - toolStart
+
+        const resultList = result?.results || (Array.isArray(result) ? result : [])
+        trackedToolCalls.push({ name: toolName, args: fallbackArgs, resultCount: resultList.length, source: 'rag_mode' })
+
+        if (result?.needs_geo) {
+            return { text: '', usedLocations: [], attachments: [], needsGeo: true, pendingTool: { name: toolName, args: fallbackArgs }, modelUsed: 'rag', toolCalls: trackedToolCalls, timing: { startMs: startTime, toolExecutionMs: toolTime, totalMs: Date.now() - startTime } }
+        }
+
+        const usedLocations = resultList.slice(0, 5)
+        const responseMessages = buildResponseMessages(usedLocations, userText)
+
+        const { response: finalRes, modelUsed } = await fetchOpenRouter(responseMessages, {
+            stream: false,
+            withTools: false,
+            temperature: adminTemp,
+            maxTokens: adminMaxTokens,
+            cascade,
+        })
+        const finalData = await finalRes.json()
+        let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+
+        if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
+            finalContent = buildTemplateResponse(usedLocations, userText) || ''
+        }
+        if (!finalContent && usedLocations.length > 0) {
+            finalContent = buildTemplateResponse(usedLocations, userText) || usedLocations.map(l => `**${l.title || l.name}**`).join(', ')
+        }
+        if (!finalContent) {
+            finalContent = 'I couldn\'t find places matching your criteria. Try a broader search!'
+        }
+
+        if (ctx?.sessionId && ctx?.userId && usedLocations.length) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, usedLocations, ctx.userId).catch(() => {})
+            }).catch(() => {})
+        }
+
+        return {
+            text: finalContent, usedLocations, attachments: usedLocations, modelUsed,
+            toolCalls: trackedToolCalls, timing: { startMs: startTime, toolExecutionMs: toolTime, totalMs: Date.now() - startTime },
+        }
+    }
+
+    // ── AGENTIC MODE: Two LLM calls (tool calling + response generation) ────
     // First call: detect tool calls
     const { response: res, modelUsed } = await fetchOpenRouter(messages, {
         stream: false,

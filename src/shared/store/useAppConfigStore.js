@@ -44,6 +44,7 @@ const DEFAULTS = {
     // AI Bot Improvements v2 — feature flag + guardrail config
     aiBotImprovementsV2: false,   // gates all new AI orchestration code paths
     guardThreshold:      0.6,     // Stage 1 input guardrail confidence cutoff
+    aiBotMode:           'rag',   // 'rag' = 1 LLM call (fast, Hobby-safe) | 'agentic' = 2 calls (tool calling)
 }
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ const AI_FIELDS = [
     'aiModelCascade', 'aiGuideMaxTokens', 'aiAssistantMaxTokens',
     'aiGuideTone', 'aiGuideSystemPrompt', 'aiAssistantSystemPrompt',
     'aiKGAgentSystemPrompt', 'braveSearchApiKey',
-    'aiBotImprovementsV2', 'guardThreshold',
+    'aiBotImprovementsV2', 'guardThreshold', 'aiBotMode',
 ]
 
 function pickAIFields(state) {

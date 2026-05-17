@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
 
     try {
-        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag, _cascade, _session_id, _user_id } = req.body
+        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag, _cascade, _session_id, _user_id, stream } = req.body
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'messages array is required' })
@@ -56,6 +56,60 @@ export default async function handler(req, res) {
 
         // Cap max_tokens at 4096 for all chat modes
         const cappedMaxTokens = Math.min(max_tokens || 1024, 4096)
+
+        // ── SSE Stream mode — proxy OpenRouter stream directly to client ──────
+        if (stream) {
+            const streamModel = model || 'google/gemini-2.5-flash-lite'
+            const body = { model: streamModel, messages, max_tokens: cappedMaxTokens, stream: true }
+            if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
+            if (_session_id) body.session_id = _session_id
+            if (_user_id) body.user = _user_id
+
+            try {
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 30000)
+                const response = await fetch(OPENROUTER_URL, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'https://gastromap.app', 'X-Title': 'GastroMap', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                })
+                clearTimeout(timeoutId)
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}))
+                    return res.status(response.status).json({ error: errData.error?.message || `Stream failed: ${response.status}` })
+                }
+
+                // Set SSE headers and pipe the stream
+                res.setHeader('Content-Type', 'text/event-stream')
+                res.setHeader('Cache-Control', 'no-cache')
+                res.setHeader('Connection', 'keep-alive')
+                res.setHeader('X-Model-Used', streamModel)
+
+                const reader = response.body.getReader()
+                const decoder = new TextDecoder()
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read()
+                        if (done) break
+                        const chunk = decoder.decode(value, { stream: true })
+                        res.write(chunk)
+                    }
+                } catch (streamErr) {
+                    // Client disconnected or stream error — just end
+                } finally {
+                    res.end()
+                }
+                return
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return res.status(504).json({ error: 'Stream timeout' })
+                }
+                return res.status(502).json({ error: 'Stream proxy error: ' + err.message })
+            }
+        }
 
         // ── Direct model mode (paid model — skip cascade, but fall through to free on failure) ──
         if (_direct_model && model) {

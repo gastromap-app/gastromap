@@ -78,3 +78,77 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
     }
     throw new Error('All AI proxy endpoints failed (503). Check that OPENROUTER_API_KEY is configured on the server and the model has available credits.')
 }
+
+/**
+ * Stream a chat completion via SSE through the server proxy.
+ * Returns an async generator that yields text chunks as they arrive.
+ *
+ * @param {Array} messages - Chat messages array
+ * @param {Object} options - Same as fetchOpenRouter options
+ * @param {(chunk: string) => void} onChunk - Callback for each text chunk
+ * @returns {Promise<{ fullText: string, modelUsed: string }>}
+ */
+export async function fetchOpenRouterStream(messages, { temperature, maxTokens = 2048, modelOverride } = {}, onChunk) {
+    const { model: activeModel } = getActiveAIConfig()
+    const preferredModel = modelOverride ?? activeModel
+
+    const body = {
+        messages,
+        model: preferredModel,
+        max_tokens: maxTokens,
+        stream: true,
+    }
+    if (temperature != null) body.temperature = temperature
+
+    const proxyUrl = config.ai?.proxyUrl || '/api/ai/chat'
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+    try {
+        const res = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || `Stream failed: ${res.status}`)
+        }
+
+        const modelUsed = res.headers.get('X-Model-Used') || preferredModel
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let fullText = ''
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value, { stream: true })
+            // Parse SSE lines: "data: {...}\n\n"
+            const lines = chunk.split('\n')
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue
+                const data = line.slice(6).trim()
+                if (data === '[DONE]') continue
+                try {
+                    const parsed = JSON.parse(data)
+                    const delta = parsed.choices?.[0]?.delta?.content || ''
+                    if (delta) {
+                        fullText += delta
+                        onChunk(delta)
+                    }
+                } catch { /* skip unparseable lines */ }
+            }
+        }
+
+        return { fullText, modelUsed }
+    } catch (err) {
+        clearTimeout(timeoutId)
+        throw err
+    }
+}

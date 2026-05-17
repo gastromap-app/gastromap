@@ -213,8 +213,8 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 for (let i = 0; i < words.length; i++) {
                     const chunk = (i === 0 ? '' : ' ') + words[i]
                     onChunk(chunk)
-                    // Small delay between words for natural typing feel
-                    await new Promise(r => setTimeout(r, 15))
+                    // Minimal delay for smooth rendering without blocking
+                    await new Promise(r => setTimeout(r, 5))
                 }
             }
 
@@ -243,7 +243,7 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
         const words = result.content.split(' ')
         for (let i = 0; i < words.length; i++) {
             onChunk((i === 0 ? '' : ' ') + words[i])
-            await new Promise(r => setTimeout(r, 18))
+            await new Promise(r => setTimeout(r, 5))
         }
     }
     return validatedResult

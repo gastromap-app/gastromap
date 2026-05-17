@@ -488,7 +488,7 @@ export async function runAgentPass(messages, ctx = {}) {
     // When aiBotMode === 'rag', skip tool calling entirely.
     // Search DB programmatically, then ask LLM to format the results in 1 call.
     // This fits within Vercel Hobby 10s limit (1 LLM call instead of 2).
-    const botMode = cfg?.aiBotMode ?? 'agentic' // 'rag' | 'agentic'
+    const botMode = cfg?.aiBotMode ?? 'rag' // 'rag' | 'agentic' — default 'rag' for Vercel Hobby compatibility
 
     if (botMode === 'rag') {
         const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')

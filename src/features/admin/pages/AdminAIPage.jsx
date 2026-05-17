@@ -542,20 +542,28 @@ const AdminAIPage = () => {
         setScanLoading(true)
         try {
             const resp = await fetch('https://openrouter.ai/api/v1/models')
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
             const data = await resp.json()
             const models = (data.data || [])
-                .filter(m => {
-                    const isFree = m.pricing?.prompt === '0' && m.pricing?.completion === '0'
-                    const notInCascade = !cascadeModels.includes(m.id)
-                    return isFree && notInCascade
+                .filter(m => !cascadeModels.includes(m.id)) // exclude already-added models
+                .map(m => {
+                    const promptPrice = parseFloat(m.pricing?.prompt || '0')
+                    const completionPrice = parseFloat(m.pricing?.completion || '0')
+                    const isFree = promptPrice === 0 && completionPrice === 0
+                    return {
+                        id: m.id,
+                        name: m.name,
+                        contextLength: m.context_length,
+                        hasToolCalling: m.supported_parameters?.includes('tools') || m.supported_parameters?.includes('tool_choice'),
+                        isFree,
+                        // Convert OpenRouter price (per token) to per 1M tokens for display
+                        pricePromptPer1M: promptPrice > 0 ? (promptPrice * 1_000_000).toFixed(2) : null,
+                        priceCompletionPer1M: completionPrice > 0 ? (completionPrice * 1_000_000).toFixed(2) : null,
+                    }
                 })
-                .map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    contextLength: m.context_length,
-                    hasToolCalling: m.supported_parameters?.includes('tools') || m.supported_parameters?.includes('tool_choice'),
-                }))
                 .sort((a, b) => {
+                    // Free first, then by tool calling, then by context length
+                    if (a.isFree !== b.isFree) return a.isFree ? -1 : 1
                     if (a.hasToolCalling !== b.hasToolCalling) return b.hasToolCalling ? 1 : -1
                     return (b.contextLength || 0) - (a.contextLength || 0)
                 })
@@ -563,6 +571,7 @@ const AdminAIPage = () => {
             setShowModelScanner(true)
         } catch (err) {
             console.error('Failed to scan models:', err)
+            setSaveError('Failed to fetch models from OpenRouter: ' + err.message)
         } finally {
             setScanLoading(false)
         }
@@ -998,8 +1007,8 @@ const AdminAIPage = () => {
                                 <div className="w-full max-w-[600px] max-h-[80vh] bg-white dark:bg-[hsl(220,20%,6%)] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.06] flex flex-col overflow-hidden pointer-events-auto">
                                 <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
                                     <div>
-                                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Available Free Models</h3>
-                                        <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{availableModels.length} free models found • {availableModels.filter(m => m.hasToolCalling).length} with tool calling</p>
+                                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Available OpenRouter Models</h3>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{availableModels.length} models • {availableModels.filter(m => m.isFree).length} free • {availableModels.filter(m => m.hasToolCalling).length} with tool calling</p>
                                     </div>
                                     <button onClick={() => setShowModelScanner(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 min-w-[44px] min-h-[44px] flex items-center justify-center">
                                         <X size={18} />
@@ -1012,8 +1021,18 @@ const AdminAIPage = () => {
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{model.name || model.id}</div>
                                                 <div className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate">{model.id}</div>
+                                                {!model.isFree && model.pricePromptPer1M && (
+                                                    <div className="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                                                        ${model.pricePromptPer1M}/1M in · ${model.priceCompletionPer1M}/1M out
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                                {model.isFree ? (
+                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-[8px] sm:text-[9px] font-bold uppercase">Free</span>
+                                                ) : (
+                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[8px] sm:text-[9px] font-bold uppercase">Paid</span>
+                                                )}
                                                 {model.hasToolCalling && (
                                                     <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[8px] sm:text-[9px] font-bold uppercase">Tools</span>
                                                 )}

@@ -216,15 +216,7 @@ export async function updatePassword(newPassword) {
     }
 
     // ── Supabase ──
-    const updatePromise = supabase.auth.updateUser({ password: newPassword })
-
-    // Timeout safety: prevent infinite spinner on network stall / Web Locks deadlock
-    const timeoutMs = 15_000
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new ApiError('Password update timed out. Please check your connection and try again.', 408, 'TIMEOUT')), timeoutMs)
-    )
-
-    const { error } = await Promise.race([updatePromise, timeoutPromise])
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR')
     return { success: true, message: 'Password updated' }
 }

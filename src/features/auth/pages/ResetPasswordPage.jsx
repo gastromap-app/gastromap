@@ -61,10 +61,19 @@ const ResetPasswordPage = () => {
         }
 
         setIsSubmitting(true)
-        const result = await setNewPassword(password)
-        setIsSubmitting(false)
-        if (result.success) {
-            setSuccess(true)
+        try {
+            const result = await setNewPassword(password)
+            setIsSubmitting(false)
+            if (result?.success !== false) {
+                // Success — show confirmation and redirect
+                setSuccess(true)
+            }
+        } catch (err) {
+            setIsSubmitting(false)
+            // If error is not set by the store, set it manually
+            if (!useAuthStore.getState().error) {
+                useAuthStore.getState().setError(err?.message || 'Failed to update password. Please try again.')
+            }
         }
     }
 
@@ -220,7 +229,7 @@ const ResetPasswordPage = () => {
                                 {isSubmitting ? (
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 ) : (
-                                    <>Reset password <ChevronRight size={18} /></>
+                                    <>Save new password <ChevronRight size={18} /></>
                                 )}
                             </motion.button>
                         </form>

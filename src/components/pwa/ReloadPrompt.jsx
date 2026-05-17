@@ -15,6 +15,9 @@ function ReloadPrompt() {
             if (!r) return
             swRegRef.current = r
 
+            // Immediately check for updates on registration
+            r.update()
+
             // Check for updates every 5 minutes (not 1 hour — faster detection)
             const intervalId = setInterval(() => r.update(), 5 * 60 * 1000)
             swRegRef.current.__intervalId = intervalId

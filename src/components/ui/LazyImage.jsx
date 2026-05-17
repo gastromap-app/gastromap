@@ -152,6 +152,15 @@ export function LazyImage({
         setUseOriginal(false)
     }, [src])
 
+    // Timeout: if image hasn't loaded in 10s, show error state (prevents infinite shimmer)
+    useEffect(() => {
+        if (isLoaded || hasError || !isVisible) return
+        const timer = setTimeout(() => {
+            if (!isLoaded && !hasError) setHasError(true)
+        }, 10000)
+        return () => clearTimeout(timer)
+    }, [isVisible, isLoaded, hasError, src])
+
     function handleError() {
         if (canFallbackToOriginal) {
             // First failure: retry with the original URL (no transform params)

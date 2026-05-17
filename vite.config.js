@@ -119,10 +119,10 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-rest-cache',
-              networkTimeoutSeconds: 3,
+              networkTimeoutSeconds: 8,
               expiration: {
-                maxEntries: 30,               // ~30 запросов, небольшие JSON
-                maxAgeSeconds: 60 * 60 * 2,   // 2 часа
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 5,   // 5 minutes (was 2 hours)
                 purgeOnQuotaError: true
               },
               cacheableResponse: { statuses: [200] }

@@ -371,7 +371,10 @@ const MapTab = ({ activeFilter, focusLocation, onDineModeChange }) => {
         )
         : locations
 
-    const mapCenter = userLocation ? [userLocation.lat, userLocation.lng] : [41.0082, 28.9784]
+    const mapCenter = userLocation ? [userLocation.lat, userLocation.lng]
+        : useGeoStore.getState().lat && useGeoStore.getState().lng
+            ? [useGeoStore.getState().lat, useGeoStore.getState().lng]
+            : [52.2297, 21.0122] // Warsaw fallback
 
     return (
         <div className="w-full h-full overflow-hidden relative z-0">

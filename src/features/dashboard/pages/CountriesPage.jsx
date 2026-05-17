@@ -117,7 +117,7 @@ const CountriesPage = () => {
     const { theme } = useTheme()
     const isDark = theme === 'dark'
     const { t } = useTranslation()
-    const { data: locationsResult = [], isLoading } = useLocations()
+    const { data: locationsResult = [], isLoading, isError, refetch } = useLocations({ limit: 2000 })
     const locations = Array.isArray(locationsResult) ? locationsResult : (locationsResult?.data ?? [])
 
     // Geo cover images from DB (admin-uploaded)
@@ -212,6 +212,11 @@ const CountriesPage = () => {
                 {isLoading ? (
                     <div className="space-y-4">
                         {Array.from({ length: 4 }).map((_, i) => <CityCardSkeleton key={i} />)}
+                    </div>
+                ) : isError ? (
+                    <div className="flex flex-col items-center py-12 text-center gap-4">
+                        <p className={`text-sm font-medium ${textStyle}`}>Failed to load countries</p>
+                        <button onClick={() => refetch()} className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95">Retry</button>
                     </div>
                 ) : filtered.length === 0 ? (
                     <NoResults searchQuery={searchQuery} textStyle={textStyle} navigate={navigate} />

@@ -24,8 +24,15 @@ function isGarbageResponse(text) {
     if (/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(text) && /[а-яА-Я]/.test(text)) return true
     // Contains CJK in a response that should be purely Latin/Cyrillic
     if (/[\u4e00-\u9fff]{3,}/.test(text)) return true
-    // Response doesn't mention any place name from the data (completely off-topic)
-    // We'll check this at the call site where we have usedLocations
+    // Contains code-like patterns (function declarations, brackets soup) — model outputting code
+    if (/\bfunction\b.*\{|void\s+\w+\(|#include|#endif|\.map\(\)/.test(text)) return true
+    // High ratio of special characters (>30%) — gibberish/noise
+    const specialChars = text.replace(/[\w\sа-яА-ЯёЁіїєґІЇЄҐąćęłńóśźżĄĆĘŁŃÓŚŹŻ.,!?:;'"()\-—–]/g, '')
+    if (specialChars.length / text.length > 0.3) return true
+    // Excessive repetition of ) or other single chars (model stuck in loop)
+    if (/(.)\1{10,}/.test(text) || /(\)\s*){8,}/.test(text)) return true
+    // Contains Arabic/Hebrew mixed with Cyrillic (hallucination pattern)
+    if (/[\u0600-\u06FF\u0590-\u05FF]/.test(text) && /[а-яА-Я]/.test(text)) return true
     return false
 }
 

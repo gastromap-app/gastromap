@@ -193,6 +193,7 @@ export function useDeleteLocationMutation() {
             // No Zustand store sync needed (R5.2).
             qc.removeQueries({ queryKey: queryKeys.locations.detail(id) })
             qc.invalidateQueries({ queryKey: queryKeys.locations.all })
+            qc.invalidateQueries({ queryKey: ['admin', 'locations'] })
             qc.invalidateQueries({ queryKey: ['favorites'] })
             qc.invalidateQueries({ queryKey: queryKeys.admin.stats })
         },

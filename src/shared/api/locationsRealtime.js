@@ -37,7 +37,6 @@ function handleInsert(payload) {
   // Optimistically prepend to list caches so UI updates instantly.
   queryClientRef.setQueriesData({ queryKey: ['locations'] }, (old) => {
     if (!old) return old
-    // For paginated/infinite queries the shape varies — only touch arrays.
     if (Array.isArray(old)) return [loc, ...old]
     if (old.data && Array.isArray(old.data)) {
       return { ...old, data: [loc, ...old.data] }
@@ -47,6 +46,7 @@ function handleInsert(payload) {
 
   // Invalidate all list/bounds queries so they refetch with the new row.
   queryClientRef.invalidateQueries({ queryKey: ['locations'] })
+  queryClientRef.invalidateQueries({ queryKey: ['admin', 'locations'] })
 }
 
 function handleUpdate(payload) {
@@ -81,6 +81,7 @@ function handleUpdate(payload) {
 
   // Invalidate list queries so they refetch with the updated row.
   queryClientRef.invalidateQueries({ queryKey: ['locations'] })
+  queryClientRef.invalidateQueries({ queryKey: ['admin', 'locations'] })
 }
 
 function handleDelete(payload) {
@@ -103,8 +104,21 @@ function handleDelete(payload) {
     return old
   })
 
+  // Also remove from admin list caches
+  queryClientRef.setQueriesData({ queryKey: ['admin', 'locations'] }, (old) => {
+    if (!old) return old
+    if (Array.isArray(old)) {
+      return old.filter((item) => item?.id !== targetId)
+    }
+    if (old.data && Array.isArray(old.data)) {
+      return { ...old, data: old.data.filter((item) => item?.id !== targetId) }
+    }
+    return old
+  })
+
   // Invalidate list queries so they refetch without the deleted row.
   queryClientRef.invalidateQueries({ queryKey: ['locations'] })
+  queryClientRef.invalidateQueries({ queryKey: ['admin', 'locations'] })
 }
 
 // ─── Subscription lifecycle ──────────────────────────────────────────────

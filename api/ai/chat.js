@@ -149,15 +149,16 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
     let lastError = null
     const maxTokens = max_tokens || 1024
     let currentKeyIdx = 0
+    const maxAttempts = 2 // Vercel Hobby: 10s limit → max 2 models × 4.5s each
 
-    for (let i = startIdx; i < cascade.length; i++) {
+    for (let i = startIdx; i < cascade.length && (i - startIdx) < maxAttempts; i++) {
         const currentModel = cascade[i]
         const body = { model: currentModel, messages, max_tokens: maxTokens }
         if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
 
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 6000) // 6s per model max
+            const timeoutId = setTimeout(() => controller.abort(), 4500) // 4.5s per model — must fit in Vercel Hobby 10s limit
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {
@@ -182,7 +183,6 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
             if (response.status === 429) {
                 lastError = { error: { message: `429 on ${currentModel}` } }
                 console.warn(`[ai/chat] 429 on ${currentModel}, trying next model...`)
-                await new Promise(r => setTimeout(r, 500))
                 continue
             }
 
@@ -190,7 +190,6 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
             if (response.status >= 500) {
                 lastError = { error: { message: `${response.status} on ${currentModel}` } }
                 console.warn(`[ai/chat] ${response.status} on ${currentModel}, trying next model...`)
-                await new Promise(r => setTimeout(r, 300))
                 continue
             }
 

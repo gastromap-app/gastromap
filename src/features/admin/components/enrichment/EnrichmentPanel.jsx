@@ -123,13 +123,13 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
             />
 
             {/* Panel */}
-            <div className="fixed inset-y-0 right-0 z-[110] pointer-events-none flex">
+            <div className="fixed inset-y-0 right-0 z-[110] flex w-full sm:w-auto">
                 <motion.div
                     initial={{ x: '100%', opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: '100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 35, stiffness: 250 }}
-                    className="ml-auto w-full max-w-lg bg-background pointer-events-auto flex flex-col overflow-hidden shadow-2xl border-l border-border"
+                    className="ml-auto w-full max-w-lg bg-background flex flex-col overflow-hidden shadow-2xl border-l border-border"
                 >
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-border flex items-center gap-4 shrink-0 bg-background/80 backdrop-blur-xl">

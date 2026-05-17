@@ -21,11 +21,16 @@ const persistOptions = {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours — cache up to 1 day
     // Bust cache when app version changes (key includes build hash)
     buster: import.meta.env.VITE_BUILD_ID || 'v1',
-    // Don't persist failed queries
+    // Don't persist failed queries or infinite queries (they have pagination state
+    // that doesn't restore cleanly — better to re-fetch fresh on reload)
     dehydrateOptions: {
         shouldDehydrateQuery: (query) => {
             // Persist only successful queries
-            return query.state.status === 'success'
+            if (query.state.status !== 'success') return false
+            // Skip infinite queries — they cause stale pagination state on restore
+            const queryKey = Array.isArray(query.queryKey) ? query.queryKey : []
+            if (queryKey.includes('infinite')) return false
+            return true
         },
     },
 }

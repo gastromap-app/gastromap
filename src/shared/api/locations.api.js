@@ -280,7 +280,7 @@ export async function getLocation(id, { isAuthed = false, adminMode = false } = 
 
     // Widen ANON_COLS for detail page (Q2 recommendation) — includes fields
     // that the existing /api/locations/[id] endpoint already exposes publicly.
-    const DETAIL_ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at,opening_hours,opening_hours_structured,phone,website,tags,vibe,must_try,insider_tip,booking_url'
+    const DETAIL_ANON_COLS = 'id,title,description,address,city,country,lat,lng,category,image_url,google_photos,google_rating,price_range,status,created_at,opening_hours,phone,website,tags,vibe,must_try,insider_tip,booking_url'
 
     const selectCols = (adminMode || isAuthed) ? '*' : DETAIL_ANON_COLS
 

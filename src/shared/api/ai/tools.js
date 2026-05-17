@@ -92,7 +92,7 @@ function mapLocation(l) {
         id:             l.id,
         name:           l.title,     // for internal AI logic
         title:          l.title,     // for UI consistency
-        image:          l.image_url, // for UI cards
+        image:          l.image_url || l.image || null, // image_url from DB, image from RPC
         category:       l.category,
         city:           l.city,
         country:        l.country ?? null,

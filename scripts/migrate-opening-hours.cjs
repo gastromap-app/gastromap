@@ -64,10 +64,25 @@ function to24Hour(hours, minutes, ampm) {
 }
 
 function convertAmPmRange(timeStr) {
-    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–—]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-    if (!match) return normalizeTimeRange(timeStr)
-    const [, h1, m1, ap1, h2, m2, ap2] = match
-    return `${to24Hour(parseInt(h1), parseInt(m1), ap1.toUpperCase())}-${to24Hour(parseInt(h2), parseInt(m2), ap2.toUpperCase())}`
+    // Full format: "8:00 AM – 6:00 PM"
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–—‑]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+    if (match) {
+        const [, h1, m1, ap1, h2, m2, ap2] = match
+        return `${to24Hour(parseInt(h1), parseInt(m1), ap1.toUpperCase())}-${to24Hour(parseInt(h2), parseInt(m2), ap2.toUpperCase())}`
+    }
+    // Short format without minutes: "8AM-5PM", "5PM-12AM"
+    const shortMatch = timeStr.match(/(\d{1,2})\s*(AM|PM)\s*[-–—‑]\s*(\d{1,2})\s*(AM|PM)/i)
+    if (shortMatch) {
+        const [, h1, ap1, h2, ap2] = shortMatch
+        return `${to24Hour(parseInt(h1), 0, ap1.toUpperCase())}-${to24Hour(parseInt(h2), 0, ap2.toUpperCase())}`
+    }
+    // Mixed: "6:30AM-8PM"
+    const mixedMatch = timeStr.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*[-–—‑]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i)
+    if (mixedMatch) {
+        const [, h1, m1 = '0', ap1, h2, m2 = '0', ap2] = mixedMatch
+        return `${to24Hour(parseInt(h1), parseInt(m1), ap1.toUpperCase())}-${to24Hour(parseInt(h2), parseInt(m2), ap2.toUpperCase())}`
+    }
+    return normalizeTimeRange(timeStr)
 }
 
 function expandDayRange(startDay, endDay) {
@@ -125,32 +140,92 @@ function parseOpeningHours(input) {
     }
 
     // 4. Pipe-separated: "Monday: 09:00–22:00 | Tuesday: 09:00–22:00 | ..."
+    //    Also handles: "Mon-Thu & Sun: 5PM-12AM | Fri-Sat: 5PM-2AM"
     if (str.includes('|')) {
-        return parseWeekdayTextArray(str.split('|').map(s => s.trim()))
+        const segments = str.split('|').map(s => s.trim())
+        const result = {}
+        for (const segment of segments) {
+            // Try to parse as "DayRange: Hours"
+            const segMatch = segment.match(/^(.+?):\s*(.+)$/i)
+            if (!segMatch) continue
+            const dayPart = segMatch[1].toLowerCase().trim()
+            const hoursPart = segMatch[2].trim()
+            
+            let hours
+            const lowerHours = hoursPart.toLowerCase()
+            if (lowerHours === 'closed') { hours = 'closed' }
+            else if (/am|pm/i.test(hoursPart)) { hours = convertAmPmRange(hoursPart) }
+            else { hours = normalizeTimeRange(hoursPart) }
+            if (!hours) continue
+
+            // Handle "&" in day part: "Mon-Thu & Sun"
+            const andParts = dayPart.split(/\s*&\s*/)
+            for (const part of andParts) {
+                const rangeParts = part.trim().split(/\s*[-–]\s*/)
+                if (rangeParts.length === 2) {
+                    const startDay = DAY_ALIASES[rangeParts[0]]
+                    const endDay = DAY_ALIASES[rangeParts[1]]
+                    if (startDay && endDay) {
+                        expandDayRange(startDay, endDay).forEach(d => { result[d] = hours })
+                    }
+                } else {
+                    const day = DAY_ALIASES[rangeParts[0]]
+                    if (day) result[day] = hours
+                }
+            }
+        }
+        if (Object.keys(result).length > 0) return result
+        // If pipe parsing failed, try as weekday text
+        return parseWeekdayTextArray(segments)
     }
 
     // 5. Day-range with commas: "Mon-Fri: 10:00-22:00, Sat-Sun: 11:00-23:00"
     //    or "Mon-Fri 10:00-22:00, Sat 10:00-23:00, Sun closed"
-    const dayRangePattern = /([a-zа-яё]{2,9}(?:\s*[-–]\s*[a-zа-яё]{2,9})?)\s*:?\s*(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|closed|закрыто|zamknięte|зачинено)/gi
+    //    or "Mon-Thu & Sun: 5PM-12AM | Fri-Sat: 5PM-2AM"
+    //    or "Mon-Fri: 8AM-5PM, Sat-Sun: 9AM-4PM"
+    //    or "Daily: 9AM-8PM"
+    const dayRangePattern = /([a-zа-яё]{2,9}(?:\s*[-–&]\s*[a-zа-яё]{2,9})?|daily)\s*:?\s*(.+?)(?=[,|]|$)/gi
     const dayRangeMatches = [...str.matchAll(dayRangePattern)]
     if (dayRangeMatches.length > 0) {
         const result = {}
         for (const match of dayRangeMatches) {
             const dayPart = match[1].toLowerCase().trim()
             const hoursPart = match[2].trim()
-            const hours = normalizeTimeRange(hoursPart)
+            
+            // Parse hours (handle AM/PM, 24h, and "closed")
+            let hours
+            const lowerHours = hoursPart.toLowerCase()
+            if (lowerHours === 'closed' || lowerHours === 'закрыто' || lowerHours === 'zamknięte' || lowerHours === 'зачинено') {
+                hours = 'closed'
+            } else if (/am|pm/i.test(hoursPart)) {
+                hours = convertAmPmRange(hoursPart)
+            } else {
+                hours = normalizeTimeRange(hoursPart)
+            }
+            
+            if (!hours) continue
+
+            // Handle "Daily"
+            if (dayPart === 'daily') {
+                DAYS_ORDER.forEach(d => { result[d] = hours })
+                continue
+            }
 
             // Check if it's a range (Mon-Fri) or single day (Mon)
-            const rangeParts = dayPart.split(/\s*[-–]\s*/)
-            if (rangeParts.length === 2) {
-                const startDay = DAY_ALIASES[rangeParts[0]]
-                const endDay = DAY_ALIASES[rangeParts[1]]
-                if (startDay && endDay) {
-                    expandDayRange(startDay, endDay).forEach(d => { result[d] = hours })
+            // Also handle "&" separator: "Mon-Thu & Sun"
+            const andParts = dayPart.split(/\s*&\s*/)
+            for (const part of andParts) {
+                const rangeParts = part.trim().split(/\s*[-–]\s*/)
+                if (rangeParts.length === 2) {
+                    const startDay = DAY_ALIASES[rangeParts[0]]
+                    const endDay = DAY_ALIASES[rangeParts[1]]
+                    if (startDay && endDay) {
+                        expandDayRange(startDay, endDay).forEach(d => { result[d] = hours })
+                    }
+                } else {
+                    const day = DAY_ALIASES[rangeParts[0]]
+                    if (day) result[day] = hours
                 }
-            } else {
-                const day = DAY_ALIASES[dayPart]
-                if (day) result[day] = hours
             }
         }
         if (Object.keys(result).length > 0) return result
@@ -172,8 +247,8 @@ function parseOpeningHours(input) {
         return result
     }
 
-    // 8. AM/PM simple range: "8:00 AM – 10:00 PM"
-    const ampmMatch = str.match(/(\d{1,2}:\d{2})\s*(AM|PM)\s*[-–—]\s*(\d{1,2}:\d{2})\s*(AM|PM)/i)
+    // 8. AM/PM simple range: "8:00 AM – 10:00 PM" or "8AM-8PM" or "8AM‑8PM (daily)"
+    const ampmMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*[-–—‑]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i)
     if (ampmMatch) {
         const range = convertAmPmRange(str)
         const result = {}

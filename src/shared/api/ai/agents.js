@@ -30,6 +30,52 @@ function isGarbageResponse(text) {
 }
 
 /**
+ * Validate that the LLM response only mentions places from the provided data.
+ * If the response contains bold names (**Name**) not in usedLocations, it's hallucinating.
+ * Returns the template response if hallucination detected, otherwise returns the original.
+ */
+function validateGrounding(text, usedLocations) {
+    if (!text || !usedLocations?.length) return text
+
+    // Extract all bold names from the response: **Name** → Name
+    const boldNames = []
+    const boldRe = /\*\*([^*]+)\*\*/g
+    let match
+    while ((match = boldRe.exec(text)) !== null) {
+        boldNames.push(match[1].trim().toLowerCase())
+    }
+
+    if (boldNames.length === 0) return text // No bold names — can't validate
+
+    // Build set of allowed names from usedLocations
+    const allowedNames = new Set()
+    for (const loc of usedLocations) {
+        if (loc.title) allowedNames.add(loc.title.toLowerCase())
+        if (loc.name) allowedNames.add(loc.name.toLowerCase())
+        // Also add partial matches (first 3 words) for flexibility
+        const title = (loc.title || loc.name || '').toLowerCase()
+        const words = title.split(/\s+/)
+        if (words.length > 2) allowedNames.add(words.slice(0, 3).join(' '))
+    }
+
+    // Check if any bold name is NOT in allowed set
+    const hallucinated = boldNames.filter(name => {
+        // Check exact match or substring match
+        for (const allowed of allowedNames) {
+            if (allowed.includes(name) || name.includes(allowed)) return false
+        }
+        return true
+    })
+
+    if (hallucinated.length > 0) {
+        console.warn('[Agent] Hallucinated places detected:', hallucinated, '— using template response')
+        return null // Signal to use template
+    }
+
+    return text
+}
+
+/**
  * Generate a template response from location data when LLM produces garbage.
  * This ensures the user always gets useful info even with bad models.
  */
@@ -503,6 +549,15 @@ export async function runAgentPass(messages, ctx = {}) {
         if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
             finalContent = buildTemplateResponse(usedLocations, userText) || ''
         }
+        // Validate grounding — reject hallucinated place names
+        if (finalContent && usedLocations.length > 0) {
+            const validated = validateGrounding(finalContent, usedLocations)
+            if (validated === null) {
+                finalContent = buildTemplateResponse(usedLocations, userText) || ''
+            } else {
+                finalContent = validated
+            }
+        }
         if (!finalContent && usedLocations.length > 0) {
             finalContent = buildTemplateResponse(usedLocations, userText) || usedLocations.map(l => `**${l.title || l.name}**`).join(', ')
         }
@@ -630,6 +685,16 @@ export async function runAgentPass(messages, ctx = {}) {
         if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
             console.warn('[Agent] Garbage response detected, using template fallback')
             finalContent = buildTemplateResponse(usedLocations, userText) || ''
+        }
+        // Validate grounding — reject hallucinated place names
+        if (finalContent && usedLocations.length > 0) {
+            const validated = validateGrounding(finalContent, usedLocations)
+            if (validated === null) {
+                console.warn('[Agent] Hallucinated places in Path C fallback — using template')
+                finalContent = buildTemplateResponse(usedLocations, userText) || ''
+            } else {
+                finalContent = validated
+            }
         }
 
         // Minimal fallback if model still returns empty
@@ -843,6 +908,16 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
         console.warn('[Agent] Garbage response detected in runToolCalls, using template fallback')
         finalContent = buildTemplateResponse(usedLocations) || ''
+    }
+    // Validate grounding — reject hallucinated place names
+    if (finalContent && usedLocations.length > 0) {
+        const validated = validateGrounding(finalContent, usedLocations)
+        if (validated === null) {
+            console.warn('[Agent] Hallucinated places in runToolCalls — using template')
+            finalContent = buildTemplateResponse(usedLocations) || ''
+        } else {
+            finalContent = validated
+        }
     }
 
     // If model returned empty text but we have locations, generate a minimal response

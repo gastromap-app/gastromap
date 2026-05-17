@@ -1,11 +1,34 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { queryClient } from '@/shared/config/queryClient'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import SmoothScroll from '@/components/ui/smooth-scroll'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { startLocationsRealtime } from '@/shared/api/locationsRealtime'
+
+// Persist React Query cache to localStorage — instant load on return visits.
+// Cache survives page reloads and PWA updates → no skeleton flash.
+const persister = createSyncStoragePersister({
+    storage: window.localStorage,
+    key: 'GASTROMAP_QUERY_CACHE',
+    throttleTime: 1000, // Batch writes to localStorage
+})
+
+const persistOptions = {
+    persister,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours — cache up to 1 day
+    // Bust cache when app version changes (key includes build hash)
+    buster: import.meta.env.VITE_BUILD_ID || 'v1',
+    // Don't persist failed queries
+    dehydrateOptions: {
+        shouldDehydrateQuery: (query) => {
+            // Persist only successful queries
+            return query.state.status === 'success'
+        },
+    },
+}
 
 /**
  * AppProviders — top-level context tree.
@@ -47,13 +70,13 @@ function RealtimeBootstrap() {
 export const AppProviders = ({ children, includeRouter = true }) => {
     const content = (
         <ErrorBoundary>
-            <QueryClientProvider client={queryClient}>
+            <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
                 <AppConfigBootstrap />
                 <RealtimeBootstrap />
                 <SmoothScroll>
                     {children}
                 </SmoothScroll>
-            </QueryClientProvider>
+            </PersistQueryClientProvider>
         </ErrorBoundary>
     )
 

@@ -7,6 +7,7 @@ import { QueryClient, MutationCache } from '@tanstack/react-query'
  * - staleTime: 5 min — avoids redundant network requests
  * - refetchOnReconnect: true — auto-retry when network comes back
  * - networkMode: 'always' — don't pause queries when offline
+ * - Cache persisted to localStorage — instant load on return visits
  */
 export const queryClient = new QueryClient({
     mutationCache: new MutationCache({

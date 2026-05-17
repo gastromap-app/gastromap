@@ -4,8 +4,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+// Build ID for cache busting — changes on every build
+const BUILD_ID = `build-${Date.now()}`
+
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID),
+  },
   plugins: [
     react(),
     VitePWA({

@@ -17,7 +17,10 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { trackUserLocation } from '@/shared/api/user.api'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
-const IP_API_URL = 'https://ipapi.co/json/'
+const IP_API_URLS = [
+    'https://ipapi.co/json/',
+    'https://ip-api.com/json/?fields=status,city,country,lat,lon,regionName',
+]
 
 /**
  * Reverse geocode lat/lng to a human-readable location using Nominatim.
@@ -46,24 +49,39 @@ async function reverseGeocode(lat, lng) {
 
 /**
  * Fallback geolocation using IP address (free, no API key).
+ * Tries multiple providers in order — handles rate limits gracefully.
  * @returns {Promise<{lat: number, lng: number, city: string, country: string, address: string}>}
  */
 async function fetchGeoByIP() {
-    const res = await fetch(IP_API_URL, {
-        headers: { 'User-Agent': 'GastroMapApp/1.0' },
-    })
-    if (!res.ok) throw new Error('IP geolocation request failed')
-    const data = await res.json()
+    // Provider 1: ipapi.co (1000 req/day free)
+    try {
+        const res = await fetch(IP_API_URLS[0], {
+            headers: { 'User-Agent': 'GastroMapApp/1.0' },
+        })
+        if (res.ok) {
+            const data = await res.json()
+            if (data.latitude && data.longitude) {
+                const city = data.city || data.region || 'Unknown'
+                const country = data.country_name || ''
+                return { lat: data.latitude, lng: data.longitude, city, country, address: `${city}, ${country}` }
+            }
+        }
+    } catch { /* try next provider */ }
 
-    const city = data.city || data.region || 'Unknown'
-    const country = data.country_name || ''
-    return {
-        lat: data.latitude,
-        lng: data.longitude,
-        city,
-        country,
-        address: `${city}, ${country}`,
-    }
+    // Provider 2: ip-api.com (45 req/min free, no HTTPS on free — use HTTP)
+    try {
+        const res = await fetch(IP_API_URLS[1])
+        if (res.ok) {
+            const data = await res.json()
+            if (data.status === 'success' && data.lat && data.lon) {
+                const city = data.city || data.regionName || 'Unknown'
+                const country = data.country || ''
+                return { lat: data.lat, lng: data.lon, city, country, address: `${city}, ${country}` }
+            }
+        }
+    } catch { /* all providers failed */ }
+
+    throw new Error('All IP geolocation providers failed or rate-limited')
 }
 
 /**

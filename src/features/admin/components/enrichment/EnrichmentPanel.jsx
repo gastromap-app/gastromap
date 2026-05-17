@@ -8,7 +8,7 @@ import DiffView from './DiffView'
 import PhotoPicker from './PhotoPicker'
 import QuotaIndicator from './QuotaIndicator'
 
-const DAILY_LIMIT = 1000
+const DAILY_LIMIT = 100
 
 /**
  * EnrichmentPanel — Main orchestrator component for location enrichment.
@@ -36,6 +36,10 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
         photos: true,
     })
 
+    // Track which fields the admin has accepted (marked for save)
+    const [acceptedFields, setAcceptedFields] = useState({})
+    const [skippedFields, setSkippedFields] = useState({})
+
     const [showLowQuotaConfirm, setShowLowQuotaConfirm] = useState(false)
 
     // Fetch quota status on mount
@@ -43,8 +47,14 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
         fetchQuotaStatus()
     }, [fetchQuotaStatus])
 
+    // Reset accepted/skipped fields when location changes or new diff arrives
+    useEffect(() => {
+        setAcceptedFields({})
+        setSkippedFields({})
+    }, [location?.id, diff])
+
     const hasFieldsSelected = Object.values(selectedFields).some(Boolean)
-    const isLowQuota = quotaRemaining !== null && quotaRemaining < 50
+    const isLowQuota = quotaRemaining !== null && quotaRemaining < 10
 
     // Handle "Enrich" button click
     const handleEnrich = useCallback(() => {
@@ -56,30 +66,51 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
         fetchEnrichment(location.id, selectedFields)
     }, [isLowQuota, showLowQuotaConfirm, fetchEnrichment, location.id, selectedFields])
 
-    // Handle "Apply" for a single field
+    // Handle "Apply" for a single field — just mark as accepted locally
     const handleApplyField = useCallback((fieldName) => {
-        if (!diff || !diff[fieldName]) return
-        onApplyChanges({ [fieldName]: diff[fieldName].google })
-    }, [diff, onApplyChanges])
-
-    // Handle "Cancel" (skip) for a single field — no-op, just visual
-    const handleCancelField = useCallback(() => {
-        // No action needed — the field is simply skipped
+        setAcceptedFields(prev => ({ ...prev, [fieldName]: true }))
+        setSkippedFields(prev => { const n = { ...prev }; delete n[fieldName]; return n })
     }, [])
 
-    // Handle "Apply All" — apply all non-matching google values
+    // Handle "Cancel" (skip) for a single field — mark as skipped
+    const handleCancelField = useCallback((fieldName) => {
+        setSkippedFields(prev => ({ ...prev, [fieldName]: true }))
+        setAcceptedFields(prev => { const n = { ...prev }; delete n[fieldName]; return n })
+    }, [])
+
+    // Handle "Apply All" — mark all non-matching fields as accepted
     const handleApplyAll = useCallback(() => {
         if (!diff) return
-        const updates = {}
+        const newAccepted = {}
         Object.entries(diff).forEach(([field, data]) => {
             if (!data.match) {
-                updates[field] = data.google
+                newAccepted[field] = true
             }
         })
-        if (Object.keys(updates).length > 0) {
-            onApplyChanges(updates)
+        setAcceptedFields(newAccepted)
+        setSkippedFields({})
+    }, [diff])
+
+    // Handle "Next" — save all accepted fields to DB, then advance
+    const handleNext = useCallback(() => {
+        if (diff && Object.keys(acceptedFields).length > 0) {
+            const updates = {}
+            Object.entries(acceptedFields).forEach(([field]) => {
+                if (diff[field] && !diff[field].match) {
+                    updates[field] = diff[field].google
+                }
+            })
+            if (Object.keys(updates).length > 0) {
+                onApplyChanges(updates)
+            }
         }
-    }, [diff, onApplyChanges])
+        if (onNext) onNext()
+    }, [diff, acceptedFields, onApplyChanges, onNext])
+
+    // Handle "Skip" — advance without saving
+    const handleSkip = useCallback(() => {
+        if (onSkip) onSkip()
+    }, [onSkip])
 
     // Handle photo upload confirmation
     const handlePhotoConfirm = useCallback(async (photoRefs) => {
@@ -257,6 +288,8 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
                             <>
                                 <DiffView
                                     diff={diff}
+                                    acceptedFields={acceptedFields}
+                                    skippedFields={skippedFields}
                                     onApplyField={handleApplyField}
                                     onCancelField={handleCancelField}
                                     onApplyAll={handleApplyAll}
@@ -289,16 +322,39 @@ export default function EnrichmentPanel({ location, onClose, onApplyChanges, que
                                 {onNext && (
                                     <div className="flex gap-2 pt-4 border-t border-border">
                                         <button
-                                            onClick={onSkip}
+                                            onClick={handleSkip}
                                             className="flex-1 py-3 rounded-xl text-xs font-bold text-t-tertiary bg-secondary border border-border hover:bg-secondary/80 transition-colors"
                                         >
                                             Skip
                                         </button>
                                         <button
-                                            onClick={onNext}
+                                            onClick={handleNext}
                                             className="flex-1 py-3 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm"
                                         >
-                                            Next →
+                                            {Object.keys(acceptedFields).length > 0 ? `Save & Next (${Object.keys(acceptedFields).length})` : 'Next →'}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Single location mode (no queue) — show Apply All + Close */}
+                                {!onNext && Object.keys(acceptedFields).length > 0 && (
+                                    <div className="pt-4 border-t border-border">
+                                        <button
+                                            onClick={() => {
+                                                const updates = {}
+                                                Object.entries(acceptedFields).forEach(([field]) => {
+                                                    if (diff[field] && !diff[field].match) {
+                                                        updates[field] = diff[field].google
+                                                    }
+                                                })
+                                                if (Object.keys(updates).length > 0) {
+                                                    onApplyChanges(updates)
+                                                }
+                                                onClose()
+                                            }}
+                                            className="w-full py-3 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm"
+                                        >
+                                            Save {Object.keys(acceptedFields).length} Change{Object.keys(acceptedFields).length !== 1 ? 's' : ''}
                                         </button>
                                     </div>
                                 )}

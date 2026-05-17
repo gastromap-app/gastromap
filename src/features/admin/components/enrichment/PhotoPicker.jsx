@@ -4,8 +4,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * PhotoPicker — Grid for selecting Google Places photos to upload.
- * Shows numbered thumbnails with dimensions (actual previews require API key,
- * so we display metadata and selection controls).
+ * Shows photo previews from Google Places Photo API.
  */
 export default function PhotoPicker({ photos, existingPhotos = [], onConfirmSelection, isUploading }) {
     const [selected, setSelected] = useState([])
@@ -28,7 +27,6 @@ export default function PhotoPicker({ photos, existingPhotos = [], onConfirmSele
     const deselectAll = () => setSelected([])
 
     const isExisting = (reference) => {
-        // Check if this photo reference is already in existing photos
         return existingPhotos.some(url => url && url.includes(reference))
     }
 
@@ -84,43 +82,62 @@ export default function PhotoPicker({ photos, existingPhotos = [], onConfirmSele
                             onClick={() => !existing && !isUploading && togglePhoto(photo.reference)}
                             disabled={existing || isUploading}
                             className={cn(
-                                "relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all aspect-square",
+                                "relative rounded-xl border transition-all aspect-square overflow-hidden",
                                 existing
-                                    ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40 cursor-default"
+                                    ? "border-emerald-200 dark:border-emerald-800/40 cursor-default"
                                     : isSelected
-                                        ? "bg-primary/10 border-primary/40 ring-2 ring-primary/20"
-                                        : "bg-secondary border-border hover:border-primary/20 hover:bg-secondary/80"
+                                        ? "border-primary/40 ring-2 ring-primary/20"
+                                        : "border-border hover:border-primary/20"
                             )}
                         >
-                            {/* Photo number */}
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-1.5",
-                                existing
-                                    ? "bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300"
-                                    : isSelected
-                                        ? "bg-primary text-white"
-                                        : "bg-card border border-border text-t-tertiary"
-                            )}>
+                            {/* Photo preview */}
+                            {photo.previewUrl ? (
+                                <img
+                                    src={photo.previewUrl}
+                                    alt={`Photo ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-secondary flex flex-col items-center justify-center">
+                                    <Image size={20} className="text-t-quaternary mb-1" />
+                                    <span className="text-[9px] text-t-quaternary font-mono">
+                                        {photo.width}×{photo.height}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Overlay for selected/existing state */}
+                            {(isSelected || existing) && (
+                                <div className={cn(
+                                    "absolute inset-0 flex items-center justify-center",
+                                    existing ? "bg-emerald-600/30" : "bg-primary/20"
+                                )}>
+                                    {existing ? (
+                                        <span className="px-2 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase rounded-md shadow">
+                                            Uploaded
+                                        </span>
+                                    ) : (
+                                        <CheckSquare size={24} className="text-white drop-shadow-lg" />
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Photo number badge */}
+                            <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-[9px] font-bold flex items-center justify-center">
                                 {index + 1}
                             </div>
 
-                            {/* Dimensions */}
-                            <span className="text-[9px] text-t-quaternary font-mono">
-                                {photo.width}×{photo.height}
-                            </span>
-
-                            {/* Selection indicator */}
-                            <div className="absolute top-2 right-2">
-                                {existing ? (
-                                    <span className="px-1.5 py-0.5 bg-emerald-600 text-white text-[8px] font-bold uppercase rounded">
-                                        Uploaded
-                                    </span>
-                                ) : isSelected ? (
-                                    <CheckSquare size={14} className="text-primary" />
-                                ) : (
-                                    <Square size={14} className="text-t-quaternary" />
-                                )}
-                            </div>
+                            {/* Selection checkbox */}
+                            {!existing && (
+                                <div className="absolute top-1.5 right-1.5">
+                                    {isSelected ? (
+                                        <CheckSquare size={16} className="text-primary drop-shadow" />
+                                    ) : (
+                                        <Square size={16} className="text-white/70 drop-shadow" />
+                                    )}
+                                </div>
+                            )}
                         </button>
                     )
                 })}
@@ -131,7 +148,7 @@ export default function PhotoPicker({ photos, existingPhotos = [], onConfirmSele
                 <div className="flex items-center justify-center gap-2 py-3 px-4 bg-primary/10 rounded-xl border border-primary/20">
                     <Loader2 size={14} className="animate-spin text-primary" />
                     <span className="text-xs font-medium text-primary">
-                        Uploading photos...
+                        Uploading photos to Cloudflare R2...
                     </span>
                 </div>
             ) : (
@@ -146,7 +163,7 @@ export default function PhotoPicker({ photos, existingPhotos = [], onConfirmSele
                     )}
                 >
                     <Upload size={14} />
-                    Upload {selected.length} Photo{selected.length !== 1 ? 's' : ''}
+                    Upload {selected.length} Photo{selected.length !== 1 ? 's' : ''} to R2
                 </button>
             )}
         </div>

@@ -43,7 +43,7 @@ const s3 = new S3Client({
 
 // ── In-memory quota tracking ──────────────────────────────────────────────────
 const quotaStore = new Map()
-const DAILY_LIMIT = parseInt(process.env.GOOGLE_PLACES_DAILY_QUOTA || '1000', 10)
+const DAILY_LIMIT = parseInt(process.env.GOOGLE_PLACES_DAILY_QUOTA || '100', 10)
 
 /**
  * Track a Google Places API call. Returns updated quota info.
@@ -282,11 +282,12 @@ async function handleEnrich(body) {
     // 7-8. Compute diff (normalization happens inside computeDiff)
     const diff = computeDiff(location, placeDetails, fields)
 
-    // Extract photos array
+    // Extract photos array with preview URLs
     const photos = (placeDetails.photos || []).slice(0, 10).map(p => ({
         reference: p.photo_reference,
         width: p.width,
         height: p.height,
+        previewUrl: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${encodeURIComponent(p.photo_reference)}&key=${GOOGLE_API_KEY}`,
     }))
 
     // 10-11. Update last_enriched_at

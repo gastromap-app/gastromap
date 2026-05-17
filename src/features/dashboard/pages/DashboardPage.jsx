@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useGeoStore } from '@/shared/store/useGeoStore'
@@ -145,7 +145,7 @@ const DashboardPage = () => {
     }
     const { pullDistance, isRefreshing, progress, handlers: pullHandlers } = usePullToRefresh(handleRefresh)
 
-    const countries = useMemo(() => {
+    const countriesComputed = useMemo(() => {
         const countryMap = {}
         // eslint-disable-next-line react-hooks/purity
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -172,6 +172,11 @@ const DashboardPage = () => {
             image: dbCoverMap[c.slug] ?? COUNTRY_IMAGES[c.slug] ?? COUNTRY_IMAGES.poland,
         }))
     }, [locations, dbCoverMap, excludedCitySlugs])
+
+    // Keep last non-empty countries to prevent section from disappearing during refetch
+    const countriesRef = useRef(countriesComputed)
+    if (countriesComputed.length > 0) countriesRef.current = countriesComputed
+    const countries = countriesComputed.length > 0 ? countriesComputed : countriesRef.current
 
     const nearbyLocations = useMemo(() => {
         if (!geoLat || !geoLng) return []

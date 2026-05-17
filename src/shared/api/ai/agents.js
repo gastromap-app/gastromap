@@ -15,15 +15,38 @@ import { getOperationalRules } from './operational-rules'
 import { detectIntent } from './intents'
 
 /**
- * @deprecated Language detection is no longer needed — the system prompt instructs
- * the model to mirror the user's language automatically. This stub exists only for
- * backward compatibility with callers that still pass userLangHint.
- * @param {string} _userText - Unused
- * @returns {null} Always returns null
+ * Check if LLM response is garbage (hallucination, wrong language mix, nonsense).
+ * Returns true if the response should be replaced with a template.
  */
-function detectLanguage(_userText) {
-    return null
+function isGarbageResponse(text) {
+    if (!text || text.length < 10) return true
+    // Contains CJK characters (Chinese/Japanese/Korean) mixed with Cyrillic — clear hallucination
+    if (/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(text) && /[а-яА-Я]/.test(text)) return true
+    // Contains CJK in a response that should be purely Latin/Cyrillic
+    if (/[\u4e00-\u9fff]{3,}/.test(text)) return true
+    // Response doesn't mention any place name from the data (completely off-topic)
+    // We'll check this at the call site where we have usedLocations
+    return false
 }
+
+/**
+ * Generate a template response from location data when LLM produces garbage.
+ * This ensures the user always gets useful info even with bad models.
+ */
+function buildTemplateResponse(usedLocations, userText) {
+    if (!usedLocations?.length) return null
+    const items = usedLocations.slice(0, 5).map(l => {
+        const name = l.title || l.name
+        let desc = ''
+        if (l.description) desc = l.description.slice(0, 100)
+        else if (l.vibe?.length) desc = `Атмосфера: ${l.vibe.slice(0, 2).join(', ')}`
+        const tip = l.insider_tip ? `\n*Совет:* ${l.insider_tip}` : ''
+        const tryThis = l.what_to_try?.length ? `\n*Попробуй:* ${l.what_to_try.slice(0, 2).join(', ')}` : ''
+        return `**${name}**\n${desc}${tip}${tryThis}`
+    })
+    return items.join('\n\n')
+}
+
 
 /**
  * Determine whether the deterministic fallback should activate.
@@ -513,6 +536,12 @@ export async function runAgentPass(messages, ctx = {}) {
         const finalData = await finalRes.json()
         let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
 
+        // Quality check: if model produced garbage, use template response
+        if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
+            console.warn('[Agent] Garbage response detected, using template fallback')
+            finalContent = buildTemplateResponse(usedLocations, userText) || ''
+        }
+
         // Minimal fallback if model still returns empty
         if (!finalContent && usedLocations.length > 0) {
             const names = usedLocations.slice(0, 5).map(l => `**${l.title || l.name}**`).join(', ')
@@ -717,6 +746,12 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     // Clean the final response — some models still emit XML/JSON artifacts
     // even when tools are disabled (withTools: false)
     let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+
+    // Quality check: if model produced garbage, use template response
+    if (isGarbageResponse(finalContent) && usedLocations.length > 0) {
+        console.warn('[Agent] Garbage response detected in runToolCalls, using template fallback')
+        finalContent = buildTemplateResponse(usedLocations) || ''
+    }
 
     // If model returned empty text but we have locations, generate a minimal response
     if (!finalContent && usedLocations.length > 0) {

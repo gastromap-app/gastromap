@@ -90,8 +90,8 @@ const FooterDisclaimer = ({ isDark }) => {
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
-    const { resetFilters: resetLocationFilters, asAPIFilters } = useLocationFilters()
-    const locationsQuery = useLocations({ ...asAPIFilters(), limit: 2000 })
+    const { resetFilters: resetLocationFilters } = useLocationFilters()
+    const locationsQuery = useLocations({ limit: 2000 })
     const locations = locationsQuery.data?.data ?? locationsQuery.data ?? []
     const filteredLocations = locations // React Query result is already server-filtered
     const isLoading = locationsQuery.isPending && locations.length === 0

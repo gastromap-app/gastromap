@@ -158,7 +158,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
 
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 4500) // 4.5s per model — must fit in Vercel Hobby 10s limit
+            const timeoutId = setTimeout(() => controller.abort(), 3500) // 3.5s per model — 2 attempts × 3.5s = 7s + overhead < 10s Vercel limit
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {

@@ -481,6 +481,17 @@ export async function executeTool(name, args, ctx = {}) {
                 console.log(`[ai.tools] ✅ Broad retry found ${broadPool.length} matches, returning top ${results.length}`)
             }
         }
+
+        // FINAL FALLBACK: If still 0 results (no city, vague query) → return top-rated locations
+        // This ensures the bot NEVER returns empty when there are locations in the DB
+        if (results.length === 0) {
+            console.log(`[ai.tools] ⚠️ All filters returned 0, falling back to top-rated locations`)
+            const topRows = await querySupabase({ city: city || null, category: category || null, sort_by: 'rating' })
+            if (topRows?.length) {
+                results = topRows.slice(0, limit).map(mapLocation)
+                console.log(`[ai.tools] ✅ Final fallback: returning top ${results.length} by rating`)
+            }
+        }
         
         console.log(`[ai.tools] ✅ Search complete. Found ${pool.length} matches (narrow), returning ${results.length}. KG Context: ${culinaryContext ? 'Yes' : 'No'}`)
 

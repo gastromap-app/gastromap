@@ -6,7 +6,7 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
 import { useLocations } from '@/shared/api/queries/location.queries'
-import { analyzeQueryStream, analyzeQuery, getActiveAIConfig } from '@/shared/api'
+import { analyzeQueryStream, analyzeQuery } from '@/shared/api'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
 import { getOrCreateSession } from '@/shared/api/chat-history.api'
 import { summarizeSession } from '@/shared/api/ai/summarize-session'
@@ -53,7 +53,6 @@ export function useAIChat() {
         clearError,
         clearHistory,
         trimHistory,
-        _sessionId,
         setSessionId,
         loadHistory,
     } = useAIChatStore()
@@ -65,8 +64,6 @@ export function useAIChat() {
     const { user } = useAuthStore()
     // Request geo silently on chat mount — shared with the Map component via GeoStore
     const { city: userCity, country: userCountry, requestGeo, status } = useUserGeo({ autoRequest: true })
-    // Use centralized AI configuration logic (Runtime Admin key > Env key)
-    const { apiKey: activeApiKey, useProxy } = getActiveAIConfig()
     // hasAIAccess: always true — all requests go through server-side proxy
     const hasAIAccess = true
 

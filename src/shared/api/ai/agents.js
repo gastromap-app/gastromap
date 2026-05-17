@@ -276,13 +276,28 @@ function buildFallbackToolArgs(intent, userText, ctx) {
  *
  * @param {Object[]} usedLocations - Location objects from tool execution
  * @param {string} userQuery - Original user question
+ * @param {Object} [userContext] - Optional soft user context (DNA, dietary, city)
  * @returns {Object[]} - Messages array for fetchOpenRouter
  */
-function buildResponseMessages(usedLocations, userQuery) {
+function buildResponseMessages(usedLocations, userQuery, userContext = null) {
     const rules = getOperationalRules()
 
     // Language-agnostic instruction (model handles ALL languages natively)
     const langInstruction = 'IMPORTANT: Respond in the SAME language the user wrote their message in. Never switch languages.'
+
+    // Soft user context — only include non-empty fields. Bot uses this to
+    // personalize recommendations when relevant, but NEVER references it explicitly.
+    let userBlock = ''
+    if (userContext) {
+        const parts = []
+        if (userContext.city) parts.push(`User city: ${userContext.city}`)
+        if (userContext.foodieDNA) parts.push(`Taste profile: ${userContext.foodieDNA}`)
+        if (userContext.dietary?.length) parts.push(`Dietary: ${userContext.dietary.join(', ')}`)
+        if (userContext.favoriteCuisines?.length) parts.push(`Favorite cuisines: ${userContext.favoriteCuisines.join(', ')}`)
+        if (parts.length > 0) {
+            userBlock = `\n\n[USER CONTEXT — use silently for personalization, NEVER mention explicitly]\n${parts.join('\n')}`
+        }
+    }
 
     let locationBlock = ''
     if (usedLocations && usedLocations.length > 0) {
@@ -305,7 +320,7 @@ function buildResponseMessages(usedLocations, userQuery) {
         locationBlock = '\n\n---\nNo places found matching the criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging.'
     }
 
-    const systemContent = `${rules}\n\n${langInstruction}${locationBlock}`
+    const systemContent = `${rules}\n\n${langInstruction}${userBlock}${locationBlock}`
 
     const messages = [{ role: 'system', content: systemContent }]
 
@@ -540,7 +555,13 @@ export async function runAgentPass(messages, ctx = {}) {
         }
 
         const usedLocations = resultList.slice(0, 5)
-        const responseMessages = buildResponseMessages(usedLocations, userText)
+        const userContext = {
+            city: ctx?.geoCity || null,
+            foodieDNA: ctx?.userData?.foodieDNA || null,
+            dietary: ctx?.dietary || [],
+            favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
+        }
+        const responseMessages = buildResponseMessages(usedLocations, userText, userContext)
 
         const { response: finalRes, modelUsed } = await fetchOpenRouter(responseMessages, {
             stream: false,
@@ -675,7 +696,13 @@ export async function runAgentPass(messages, ctx = {}) {
         const usedLocations = resultList.slice(0, 5)
 
         // Build 2nd call with compact prompt + structured data in system message
-        const responseMessages = buildResponseMessages(usedLocations, userText)
+        const pathCUserContext = {
+            city: ctx?.geoCity || null,
+            foodieDNA: ctx?.userData?.foodieDNA || null,
+            dietary: ctx?.dietary || [],
+            favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
+        }
+        const responseMessages = buildResponseMessages(usedLocations, userText, pathCUserContext)
 
         const { response: finalRes } = await fetchOpenRouter(responseMessages, {
             stream: false,
@@ -886,7 +913,13 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
 
     // Use compact buildResponseMessages — language-agnostic, structured data in system message
-    const finalMessages = buildResponseMessages(usedLocations, lastUserMsg?.content || '')
+    const toolCallsUserContext = {
+        city: ctx?.geoCity || null,
+        foodieDNA: ctx?.userData?.foodieDNA || null,
+        dietary: ctx?.dietary || [],
+        favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
+    }
+    const finalMessages = buildResponseMessages(usedLocations, lastUserMsg?.content || '', toolCallsUserContext)
 
     const { response: finalRes } = await fetchOpenRouter(finalMessages, {
         stream: false,

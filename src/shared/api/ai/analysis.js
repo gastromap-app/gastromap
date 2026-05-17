@@ -68,6 +68,7 @@ export async function analyzeQuery(message, context = {}) {
                 userId: context.userId || null,
                 sessionId: context.sessionId || null,
                 dietary: context.dietary || [],
+                userData: context.userData || null,
             }
             const agentResult = await runAgentPass(messages, agentCtx)
 
@@ -173,12 +174,13 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 userId: context.userId || null,
                 sessionId: context.sessionId || null,
                 dietary: context.dietary || [],
+                userData: context.userData || null,
             }
 
-            // Global timeout: abort if runAgentPass takes longer than 20s
+            // Global timeout: abort if runAgentPass takes longer than 12s
             const agentResult = await Promise.race([
                 runAgentPass(messages, agentCtx),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (20s)')), 20000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (12s)')), 12000))
             ])
 
             // Bubble up needs_geo / ask_clarification signals

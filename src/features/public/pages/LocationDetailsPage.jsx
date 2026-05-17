@@ -345,15 +345,11 @@ const LocationDetailsPage = () => {
                 ].filter(info => !info.hidden).map((info, i) => {
                     const isActionable = info.id === 'directions' || info.id === 'contact'
                     return (
-                    <motion.div
+                    <div
                         key={info.id}
                         role={isActionable ? 'button' : undefined}
                         tabIndex={isActionable ? 0 : undefined}
                         aria-label={info.label}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.05 * i }}
                         onClick={() => {
                             if (info.id === 'directions') openInMaps()
                             if (info.id === 'contact') callNumber()
@@ -374,7 +370,7 @@ const LocationDetailsPage = () => {
                             <p className={`text-[12px] font-bold leading-tight truncate ${textStyle}`}>{info.value}</p>
                             {info.sub && <p className={`text-[10px] opacity-60 ${textStyle}`}>{info.sub}</p>}
                         </div>
-                    </motion.div>
+                    </div>
                 )})}
             </div>
 

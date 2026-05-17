@@ -555,6 +555,7 @@ const AdminAIPage = () => {
                         name: m.name,
                         contextLength: m.context_length,
                         hasToolCalling: m.supported_parameters?.includes('tools') || m.supported_parameters?.includes('tool_choice'),
+                        hasReasoning: m.supported_parameters?.includes('reasoning') || m.supported_parameters?.includes('include_reasoning'),
                         isFree,
                         // Convert OpenRouter price (per token) to per 1M tokens for display
                         pricePromptPer1M: promptPrice > 0 ? (promptPrice * 1_000_000).toFixed(2) : null,
@@ -1032,6 +1033,9 @@ const AdminAIPage = () => {
                                                     <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-[8px] sm:text-[9px] font-bold uppercase">Free</span>
                                                 ) : (
                                                     <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[8px] sm:text-[9px] font-bold uppercase">Paid</span>
+                                                )}
+                                                {model.hasReasoning && (
+                                                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 text-[8px] sm:text-[9px] font-bold uppercase">Reason</span>
                                                 )}
                                                 {model.hasToolCalling && (
                                                     <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[8px] sm:text-[9px] font-bold uppercase">Tools</span>

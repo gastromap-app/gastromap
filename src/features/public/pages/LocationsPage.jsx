@@ -34,11 +34,12 @@ import { useUserGeo } from '@/shared/hooks/useUserGeo'
 // EXPL-3 FIX: was hardcoded 5 items — now uses ESTABLISHMENT_TYPES (single source of truth)
 const CATEGORIES = ESTABLISHMENT_TYPES.map(t => ({ name: t.id === 'all' ? 'All' : t.id, label: t.label, emoji: t.icon }))
 
-const SORT_VALUES = ['google_rating', 'trending', 'recommended', 'price_asc', 'price_desc', 'name']
+const SORT_VALUES = ['google_rating', 'trending', 'recommended', 'newest', 'price_asc', 'price_desc', 'name']
 const SORT_LABEL_KEYS = {
     google_rating: 'explore.top_rated',
     trending:      'explore.trending',
     recommended:   'explore.recommended',
+    newest:        'explore.newest',
     price_asc:     'explore.price_asc',
     price_desc:    'explore.price_desc',
     name:          'explore.a_to_z',

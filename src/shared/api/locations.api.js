@@ -477,7 +477,8 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                     JSON.stringify(updates[field]) !== JSON.stringify(current[field])
                 )
                 
-                const aiTriggerFields = ['title', 'description', 'cuisine_types', 'tags', 'vibe']
+                // Check both canonical and alias field names to detect user edits
+                const aiTriggerFields = ['title', 'description', 'cuisine_types', 'cuisine', 'tags', 'vibe']
                 const shouldEnrichAI = aiTriggerFields.some(field => 
                     updates[field] !== undefined && 
                     JSON.stringify(updates[field]) !== JSON.stringify(current[field])
@@ -495,10 +496,20 @@ export async function updateLocation(id, updates, enableTranslation = null) {
                             if (enriched.ai_context)  bgUpdates.ai_context  = enriched.ai_context
                             if (enriched.embedding)   bgUpdates.embedding   = enriched.embedding
                             
-                            // Taxonomy fields
-                            const aiFields = ['cuisine_types', 'price_range', 'tags', 'vibe', 'best_for', 'dietary_options']
-                            aiFields.forEach(field => {
-                                if (enriched[field] && updates[field] === undefined) {
+                            // Taxonomy fields — only set if user did NOT explicitly edit them.
+                            // Check both canonical DB names AND common form aliases to avoid
+                            // overwriting user edits (form may use 'cuisine' instead of 'cuisine_types').
+                            const aiFieldAliases = {
+                                cuisine_types: ['cuisine_types', 'cuisine'],
+                                price_range: ['price_range', 'price_level', 'priceLevel'],
+                                tags: ['tags'],
+                                vibe: ['vibe'],
+                                best_for: ['best_for'],
+                                dietary_options: ['dietary_options', 'dietary'],
+                            }
+                            Object.entries(aiFieldAliases).forEach(([field, aliases]) => {
+                                const userEdited = aliases.some(alias => updates[alias] !== undefined)
+                                if (enriched[field] && !userEdited) {
                                     bgUpdates[field] = enriched[field]
                                 }
                             })

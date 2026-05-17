@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles } from 'lucide-react'
+import { X, Star, RotateCcw, Sunrise, Sun, Sunset, Sparkles, ArrowUpDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '@/shared/store/useGeoStore'
 import { useLocationFilters } from '@/shared/filters/useLocationFilters'
@@ -21,6 +21,17 @@ import { useCuisineOptions } from '@/shared/hooks/useCuisineOptions'
 // Non-cuisine static labels that stay in the "Cuisine & Menu" group
 const CUISINE_MENU_LABELS = [
     'Signature Cuisine', 'Fusion Cuisine', 'Vegan Options', 'Tasty Desserts', 'All Day Brunch'
+]
+
+// Sort options available in the filter modal (mirrors LocationsPage SORT_VALUES)
+const SORT_OPTIONS = [
+    { value: 'google_rating', labelKey: 'explore.top_rated' },
+    { value: 'trending',      labelKey: 'explore.trending' },
+    { value: 'recommended',   labelKey: 'explore.recommended' },
+    { value: 'newest',        labelKey: 'explore.newest' },
+    { value: 'price_asc',     labelKey: 'explore.price_asc' },
+    { value: 'price_desc',    labelKey: 'explore.price_desc' },
+    { value: 'name',          labelKey: 'explore.a_to_z' },
 ]
 
 
@@ -43,6 +54,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
     const [selectedRating, setSelectedRating] = useState(null)       // null | 4 | 4.5
     const [selectedPriceLevels, setSelectedPriceLevels] = useState([]) // e.g. ['$', '$$']
     const [selectedFeatures, setSelectedFeatures] = useState([])
+    const [selectedSortBy, setSelectedSortBy] = useState('google_rating')
     const [radius, setRadius] = useState(0)
     const [selectedBestTime, setSelectedBestTime] = useState(null)
     const [geoError, setGeoError] = useState(null)
@@ -85,6 +97,7 @@ const FilterModal = ({ isOpen, onClose, theme }) => {
             setSelectedRating(filters.minRating)
             setSelectedPriceLevels(filters.priceLevels)
             setSelectedFeatures(filters.vibes)
+            setSelectedSortBy(filters.sortBy || 'google_rating')
             setSelectedBestTime(null)
             setRadius(filters.radius || 0)
         }
@@ -125,6 +138,7 @@ function normalizeForCompare(str) {
         selectedRating != null,
         selectedPriceLevels.length > 0,
         selectedFeatures.length > 0,
+        selectedSortBy !== 'google_rating',
         selectedBestTime != null,
         radius > 0,
     ].filter(Boolean).length
@@ -150,6 +164,7 @@ function normalizeForCompare(str) {
             minRating: selectedRating,
             priceLevels: selectedPriceLevels,
             vibes: selectedFeatures,
+            sortBy: selectedSortBy,
             radius,
         })
         onClose()
@@ -160,6 +175,7 @@ function normalizeForCompare(str) {
         setSelectedRating(null)
         setSelectedPriceLevels([])
         setSelectedFeatures([])
+        setSelectedSortBy('google_rating')
         setSelectedBestTime(null)
         setRadius(0)
         resetFilters()
@@ -259,6 +275,30 @@ function normalizeForCompare(str) {
                                             >
                                                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{type.icon}</span>
                                                 <span className="text-[11px] font-bold">{displayLabel}</span>
+                                            </motion.button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Sort By */}
+                            <div className="space-y-4 text-left">
+                                <label className={`text-[11px] font-semibold uppercase tracking-widest flex items-center gap-2 ${isDark ? 'text-white/40' : 'text-slate-900'}`}>
+                                    <ArrowUpDown size={14} className="text-blue-500" />
+                                    {t('explore.sort')}
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {SORT_OPTIONS.map(opt => {
+                                        const isActive = selectedSortBy === opt.value
+                                        return (
+                                            <motion.button
+                                                key={opt.value}
+                                                whileHover={{ scale: 1.03 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                onClick={() => setSelectedSortBy(opt.value)}
+                                                className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
+                                            >
+                                                {t(opt.labelKey)}
                                             </motion.button>
                                         )
                                     })}

@@ -11,6 +11,7 @@ const BUILD_ID = `build-${Date.now()}`
 export default defineConfig({
   define: {
     'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   plugins: [
     react(),
@@ -222,9 +223,6 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 600,
-  },
-  define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   resolve: {
     alias: {

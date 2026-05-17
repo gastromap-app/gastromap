@@ -525,7 +525,7 @@ const AdminLocationsPage = () => {
                             if (enrichQueue.length > 1) {
                                 setTimeout(() => handleEnrichNext(), 300)
                             }
-                        }}}
+                        }}
                         queueInfo={enrichQueue.length > 1 ? { current: enrichQueueIndex + 1, total: enrichQueue.length } : null}
                         onNext={enrichQueue.length > 1 ? handleEnrichNext : null}
                         onSkip={enrichQueue.length > 1 ? handleEnrichSkip : null}

@@ -91,7 +91,7 @@ const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
     const { resetFilters: resetLocationFilters, asAPIFilters } = useLocationFilters()
-    const locationsQuery = useLocations(asAPIFilters())
+    const locationsQuery = useLocations({ ...asAPIFilters(), limit: 2000 })
     const locations = locationsQuery.data?.data ?? locationsQuery.data ?? []
     const filteredLocations = locations // React Query result is already server-filtered
     const isLoading = locationsQuery.isPending && locations.length === 0
@@ -398,12 +398,12 @@ const DashboardPage = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                                     {country.newCount > 0 && (
                                         <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                            +{country.newCount} {t('dashboard.new_label', 'new')}
+                                            {t('dashboard.new_badge', { count: country.newCount })}
                                         </div>
                                     )}
                                     <div className="absolute bottom-3.5 left-4">
                                         <h4 className="text-[17px] font-bold text-white">{country.name}</h4>
-                                        <span className="text-[11px] text-white/70 font-medium">{formatLocationCount(country.count)} locations</span>
+                                        <span className="text-[11px] text-white/70 font-medium">{t('dashboard.places_count', { count: formatLocationCount(country.count) })}</span>
                                     </div>
                                 </button>
                             ))}
@@ -731,7 +731,7 @@ const DesktopDashboard = ({
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent group-hover:from-black transition-colors" />
                                     {country.newCount > 0 && (
                                         <div className="absolute top-5 right-5 bg-blue-600 text-white text-[11px] font-black px-4 py-2 rounded-full shadow-lg transform group-hover:scale-110 transition-transform">
-                                            +{country.newCount} new
+                                            {t('dashboard.new_badge', { count: country.newCount })}
                                         </div>
                                     )}
                                     <div className="absolute bottom-8 left-8 right-8">
@@ -740,7 +740,7 @@ const DesktopDashboard = ({
                                         </h4>
                                         <div className="flex items-center gap-2 text-white/70 text-[0.6875rem] font-bold uppercase tracking-[0.14em]">
                                             <MapPin size={12} className="text-blue-500" />
-                                            <span>{formatLocationCount(country.count)} locations</span>
+                                            <span>{t('dashboard.places_count', { count: formatLocationCount(country.count) })}</span>
                                         </div>
                                     </div>
                                 </button>

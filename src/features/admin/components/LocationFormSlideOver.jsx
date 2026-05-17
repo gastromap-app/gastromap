@@ -945,7 +945,10 @@ const LocationFormSlideOver = ({
 
                                                                 <div className="absolute inset-0 bg-black/60 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
                                                                     <button
-                                                                        onClick={() => set('image', url)}
+                                                                        onClick={() => {
+                                                                            set('image', url)
+                                                                            set('image_url', url)
+                                                                        }}
                                                                         className={cn(
                                                                             "p-2.5 rounded-card text-white transition-all",
                                                                             formData.image === url ? "bg-primary shadow-xl shadow-primary/40" : "bg-white/20 hover:bg-white/40"

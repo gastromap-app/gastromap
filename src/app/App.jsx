@@ -6,6 +6,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator'
 import { OnboardingGate } from '@/features/auth/components/OnboardingGate'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const App = ({ includeRouter = true }) => {
     const initAuth = useAuthStore(s => s.initAuth)
@@ -25,6 +26,7 @@ const App = ({ includeRouter = true }) => {
 
             <ReloadPrompt />
             <InstallPrompt />
+            <SpeedInsights />
         </AppProviders>
     )
 }

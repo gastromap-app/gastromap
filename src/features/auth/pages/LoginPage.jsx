@@ -21,20 +21,6 @@ const LoginPage = () => {
     }, [isAuthenticated, user, navigate, redirectAfterLogin])
     const [showPassword, setShowPassword] = useState(false)
 
-    // Form variants
-    const formContainerVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: {
-            opacity: 1, x: 0,
-            transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 }
-        }
-    }
-
-    const itemVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 }
-    }
-
     const handleLogin = async (e) => {
         e.preventDefault()
         clearError()
@@ -116,16 +102,16 @@ const LoginPage = () => {
             }
         >
             <motion.div
-                variants={formContainerVariants}
-                initial="hidden"
-                animate="visible"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
                 className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
-                <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                <div className="text-center mb-5 sm:mb-10">
                     <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
                     <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Welcome back</h2>
                     <p className="text-gray-500 text-sm sm:text-base">Please enter your details to sign in.</p>
-                </motion.div>
+                </div>
 
                 <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
 
@@ -137,7 +123,7 @@ const LoginPage = () => {
                     )}
 
                     {/* Email Input */}
-                    <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="space-y-2">
                         <label htmlFor="email" className="text-sm font-semibold text-gray-900 ml-1">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -150,10 +136,10 @@ const LoginPage = () => {
                                 placeholder="Enter your email"
                             />
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Password Input */}
-                    <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="space-y-2">
                         <label htmlFor="password" className="text-sm font-semibold text-gray-900 ml-1">Password</label>
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -174,14 +160,13 @@ const LoginPage = () => {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    <motion.div variants={itemVariants} className="flex justify-end items-center text-sm">
+                    <div className="flex justify-end items-center text-sm">
                         <Link to="/auth/forgot-password" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</Link>
-                    </motion.div>
+                    </div>
 
                     <motion.button
-                        variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
@@ -196,11 +181,11 @@ const LoginPage = () => {
                     </motion.button>
                 </form>
 
-                <motion.div variants={itemVariants} className="mt-5 sm:mt-8 text-center">
+                <div className="mt-5 sm:mt-8 text-center">
                     <p className="text-gray-500 text-sm">
                         Don't have an account? <Link to="/auth/signup" className="font-bold text-blue-600 hover:text-blue-700">Sign up free</Link>
                     </p>
-                </motion.div>
+                </div>
             </motion.div>
         </AuthLayout>
     )

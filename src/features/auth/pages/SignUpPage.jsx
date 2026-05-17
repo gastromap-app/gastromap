@@ -18,20 +18,6 @@ const SignUpPage = () => {
     const [attemptedEmail, setAttemptedEmail] = useState('')
     const [resendSuccess, setResendSuccess] = useState(false)
 
-    // Form variants
-    const formContainerVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1, y: 0,
-            transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 }
-        }
-    }
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        visible: { opacity: 1, y: 0 }
-    }
-
     const handleSignUp = async (e) => {
         e.preventDefault()
         clearError()
@@ -120,7 +106,7 @@ const SignUpPage = () => {
         }>
             {/* Email confirmation screen */}
             {emailSent ? (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
                     className="w-full max-w-[420px] bg-white p-8 md:p-12 rounded-[40px] shadow-xl border border-gray-100 text-center">
                     <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6">
                         <MailCheck size={32} className="text-blue-600" />
@@ -168,12 +154,12 @@ const SignUpPage = () => {
                 </motion.div>
             ) : (
             <motion.div
-                variants={formContainerVariants}
-                initial="hidden"
-                animate="visible"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
                 className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
-                <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                <div className="text-center mb-5 sm:mb-10">
                     <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
                     <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Create an account</h2>
                     <p className="text-gray-500 text-sm sm:text-base">
@@ -181,7 +167,7 @@ const SignUpPage = () => {
                             ? "Register to add your first place."
                             : "Join the community to unlock all features."}
                     </p>
-                </motion.div>
+                </div>
 
                 <form onSubmit={handleSignUp} className="space-y-4 sm:space-y-5">
                     {/* Error message */}
@@ -211,7 +197,7 @@ const SignUpPage = () => {
                     )}
 
                     {/* Name Input */}
-                    <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="space-y-2">
                         <label htmlFor="name" className="text-sm font-semibold text-gray-900 ml-1">Full Name</label>
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -224,10 +210,10 @@ const SignUpPage = () => {
                                 placeholder="Enter your name"
                             />
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Email Input */}
-                    <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="space-y-2">
                         <label htmlFor="email" className="text-sm font-semibold text-gray-900 ml-1">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -240,10 +226,10 @@ const SignUpPage = () => {
                                 placeholder="Enter your email"
                             />
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Password Input */}
-                    <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="space-y-2">
                         <label htmlFor="password" className="text-sm font-semibold text-gray-900 ml-1">Password</label>
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -264,9 +250,9 @@ const SignUpPage = () => {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    <motion.div variants={itemVariants} className="flex items-start gap-3 mt-4 text-sm">
+                    <div className="flex items-start gap-3 mt-4 text-sm">
                         <input
                             id="signup-terms"
                             type="checkbox"
@@ -277,10 +263,9 @@ const SignUpPage = () => {
                         <label htmlFor="signup-terms" className="text-gray-500 leading-tight cursor-pointer">
                             I agree to the <Link to="/terms" className="font-bold text-blue-600 hover:text-blue-700">Terms of Service</Link> and <Link to="/privacy" className="font-bold text-blue-600 hover:text-blue-700">Privacy Policy</Link>.
                         </label>
-                    </motion.div>
+                    </div>
 
                     <motion.button
-                        variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
@@ -295,11 +280,11 @@ const SignUpPage = () => {
                     </motion.button>
                 </form>
 
-                <motion.div variants={itemVariants} className="mt-5 sm:mt-8 text-center">
+                <div className="mt-5 sm:mt-8 text-center">
                     <p className="text-gray-500 text-sm">
                         Already have an account? <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">Sign in here</Link>
                     </p>
-                </motion.div>
+                </div>
             </motion.div>
             )} {/* end emailSent conditional */}
         </AuthLayout>

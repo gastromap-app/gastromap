@@ -93,11 +93,6 @@ const ResetPasswordPage = () => {
         return 'Very Strong'
     }
 
-    const itemVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 }
-    }
-
     return (
         <AuthLayout backTo="/login" leftChildren={
             <>
@@ -123,8 +118,9 @@ const ResetPasswordPage = () => {
             </>
         }>
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
                 className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
                 {success ? (
@@ -147,11 +143,11 @@ const ResetPasswordPage = () => {
                     </motion.div>
                 ) : (
                     <>
-                        <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                        <div className="text-center mb-5 sm:mb-10">
                             <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
                             <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Set new password</h2>
                             <p className="text-gray-500 text-sm sm:text-base">Create a strong password for your account.</p>
-                        </motion.div>
+                        </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                             {error && (
@@ -160,7 +156,7 @@ const ResetPasswordPage = () => {
                                 </div>
                             )}
 
-                            <motion.div variants={itemVariants} className="space-y-2">
+                            <div className="space-y-2">
                                 <label htmlFor="password" className="text-sm font-semibold text-gray-900 ml-1">New Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -193,9 +189,9 @@ const ResetPasswordPage = () => {
                                         <span className="text-xs font-medium text-gray-500">{getStrengthText()}</span>
                                     </div>
                                 )}
-                            </motion.div>
+                            </div>
 
-                            <motion.div variants={itemVariants} className="space-y-2">
+                            <div className="space-y-2">
                                 <label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-900 ml-1">Confirm Password</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -216,10 +212,9 @@ const ResetPasswordPage = () => {
                                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
-                            </motion.div>
+                            </div>
 
                             <motion.button
-                                variants={itemVariants}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"

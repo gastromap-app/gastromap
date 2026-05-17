@@ -26,11 +26,6 @@ const ForgotPasswordPage = () => {
         }
     }
 
-    const itemVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 }
-    }
-
     return (
         <AuthLayout backTo="/login" leftChildren={
             <>
@@ -56,8 +51,9 @@ const ForgotPasswordPage = () => {
             </>
         }>
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
                 className="w-full max-w-[420px] bg-white p-6 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[40px] shadow-xl border border-gray-100"
             >
                 {emailSent ? (
@@ -86,11 +82,11 @@ const ForgotPasswordPage = () => {
                     </motion.div>
                 ) : (
                     <>
-                        <motion.div variants={itemVariants} className="text-center mb-5 sm:mb-10">
+                        <div className="text-center mb-5 sm:mb-10">
                             <img src="/pwa-icon-192.png" alt="GastroMap Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-full mx-auto mb-3 sm:mb-6 lg:hidden" />
                             <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">Forgot password?</h2>
                             <p className="text-gray-500 text-sm sm:text-base">Enter your email to reset your password.</p>
-                        </motion.div>
+                        </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                             {error && (
@@ -103,7 +99,7 @@ const ForgotPasswordPage = () => {
                                 </div>
                             )}
 
-                            <motion.div variants={itemVariants} className="space-y-2">
+                            <div className="space-y-2">
                                 <label htmlFor="email" className="text-sm font-semibold text-gray-900 ml-1">Email</label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={18} />
@@ -116,10 +112,9 @@ const ForgotPasswordPage = () => {
                                         placeholder="Enter your email"
                                     />
                                 </div>
-                            </motion.div>
+                            </div>
 
                             <motion.button
-                                variants={itemVariants}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
@@ -134,11 +129,11 @@ const ForgotPasswordPage = () => {
                             </motion.button>
                         </form>
 
-                        <motion.div variants={itemVariants} className="mt-5 sm:mt-8 text-center">
+                        <div className="mt-5 sm:mt-8 text-center">
                             <p className="text-gray-500 text-sm">
                                 Remember your password? <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">Sign in</Link>
                             </p>
-                        </motion.div>
+                        </div>
                     </>
                 )}
             </motion.div>

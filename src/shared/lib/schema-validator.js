@@ -36,7 +36,7 @@ export const VALID_LOCATION_COLUMNS = new Set([
     'reservations_required',
     
     // Content
-    'opening_hours', 'website', 'phone', 'booking_url',
+    'opening_hours', 'opening_hours_structured', 'website', 'phone', 'booking_url',
     'insider_tip', 'must_try', 'what_to_try',
     
     // Google External Info

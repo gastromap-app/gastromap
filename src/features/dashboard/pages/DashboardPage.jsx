@@ -327,13 +327,12 @@ const DashboardPage = () => {
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
-                                // Reset filters on the dashboard URL, then bake
-                                // radius=1 into the destination URL so that
-                                // useLocationFilters on /explore picks it up.
+                                // Navigate to explore with nearby filter (radius + coordinates)
                                 resetLocationFilters()
                                 const url = buildExploreUrl()
                                 const join = url.includes('?') ? '&' : '?'
-                                navigate(`${url}${join}radius=1`)
+                                const geoParams = geoLat && geoLng ? `&lat=${geoLat}&lng=${geoLng}` : ''
+                                navigate(`${url}${join}radius=1${geoParams}`)
                             }}
                             isDark={isDark}
                         />
@@ -380,7 +379,7 @@ const DashboardPage = () => {
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl()) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate('/explore') }}
                             isDark={isDark}
                         />
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide snap-x snap-mandatory">
@@ -658,13 +657,12 @@ const DesktopDashboard = ({
                             title={t('dashboard.nearby_locations', 'Locations Nearby')}
                             subtitle={t('dashboard.within_distance', 'Within 1 km')}
                             onSeeAll={() => {
-                                // Reset filters on the dashboard URL, then bake
-                                // radius=1 into the destination URL so that
-                                // useLocationFilters on /explore picks it up.
+                                // Navigate to explore with nearby filter (radius + coordinates)
                                 resetLocationFilters()
                                 const url = buildExploreUrl()
                                 const join = url.includes('?') ? '&' : '?'
-                                navigate(`${url}${join}radius=1`)
+                                const geoParams = geoLat && geoLng ? `&lat=${geoLat}&lng=${geoLng}` : ''
+                                navigate(`${url}${join}radius=1${geoParams}`)
                             }}
                             isDark={isDark}
                         />
@@ -713,7 +711,7 @@ const DesktopDashboard = ({
                         <SectionHeader
                             title={t('dashboard.explore_countries')}
                             subtitle={t('dashboard.culinary_traditions')}
-                            onSeeAll={() => { resetLocationFilters(); navigate(buildExploreUrl()) }}
+                            onSeeAll={() => { resetLocationFilters(); navigate('/explore') }}
                             isDark={isDark}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">

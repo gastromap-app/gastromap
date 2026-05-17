@@ -5,6 +5,7 @@ import { RefreshCw, X } from 'lucide-react'
 
 function ReloadPrompt() {
     const swRegRef = useRef(null)
+    const autoReloadTimer = useRef(null)
 
     const {
         needRefresh: [needRefresh, setNeedRefresh],
@@ -14,12 +15,25 @@ function ReloadPrompt() {
             if (!r) return
             swRegRef.current = r
 
-            // Фоновая проверка раз в час (пока приложение открыто)
-            const intervalId = setInterval(() => r.update(), 60 * 60 * 1000)
-            // Store interval ID for cleanup
+            // Check for updates every 5 minutes (not 1 hour — faster detection)
+            const intervalId = setInterval(() => r.update(), 5 * 60 * 1000)
             swRegRef.current.__intervalId = intervalId
         },
     })
+
+    // Auto-reload 3 seconds after update is detected
+    // This prevents the "stale chunks" problem where old JS files are gone
+    // but the page hasn't reloaded yet → skeleton/white screen
+    useEffect(() => {
+        if (needRefresh) {
+            autoReloadTimer.current = setTimeout(() => {
+                updateServiceWorker(true)
+            }, 3000)
+        }
+        return () => {
+            if (autoReloadTimer.current) clearTimeout(autoReloadTimer.current)
+        }
+    }, [needRefresh, updateServiceWorker])
 
     // Cleanup interval on unmount to prevent memory leak
     useEffect(() => {

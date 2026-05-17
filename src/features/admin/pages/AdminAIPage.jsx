@@ -590,6 +590,7 @@ const AdminAIPage = () => {
     // ── AI Bot v2 Feature Flag
     const [botV2Enabled, setBotV2Enabled] = useState(appConfig.aiBotImprovementsV2 ?? false)
     const [guardThreshold, setGuardThreshold] = useState(appConfig.guardThreshold ?? 0.6)
+    const [botMode, setBotMode] = useState(appConfig.aiBotMode ?? 'rag')
 
     // ── Live Prompt Preview
     const [previewPrompt, setPreviewPrompt] = useState('')
@@ -665,6 +666,7 @@ const AdminAIPage = () => {
                 aiGuideTone: guideTone,
                 aiBotImprovementsV2: botV2Enabled,
                 guardThreshold: guardThreshold,
+                aiBotMode: botMode,
             })
             console.log('[AdminAI] updateSettings returned:', result)
             if (result?.ok === false) {
@@ -1301,6 +1303,80 @@ const AdminAIPage = () => {
                                 <span className="text-sm font-bold text-amber-600 dark:text-amber-400 w-10 text-right">{guardThreshold}</span>
                             </div>
                             <p className="text-xs text-slate-400">Lower = more queries treated as "personal" (safer). Higher = more queries classified as "factual" (faster, less context loaded).</p>
+                        </div>
+                    )}
+                </div>
+            </CollapsibleSection>
+
+            {/* 7c. Bot Mode Selector (RAG vs Agentic) */}
+            <CollapsibleSection title="Bot Architecture Mode" icon={Layers} iconColor="text-blue-500" defaultOpen={true}>
+                <div className="p-6 space-y-4">
+                    {/* Current mode indicator */}
+                    <div className={cn(
+                        'p-4 rounded-2xl border',
+                        botMode === 'rag'
+                            ? 'bg-blue-50/70 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20'
+                            : 'bg-purple-50/70 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20'
+                    )}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Activity size={14} className={botMode === 'rag' ? 'text-blue-500' : 'text-purple-500'} />
+                            <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                Current: {botMode === 'rag' ? 'RAG Mode (1 API call)' : 'Agentic Mode (2 API calls)'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">
+                            {botMode === 'rag'
+                                ? '🟢 Fast & reliable. Searches DB first, then asks LLM to describe results. Works on Vercel Hobby (10s limit).'
+                                : '🟣 Higher quality. LLM decides what to search via tool calling, then generates response. Requires Vercel Pro (60s limit).'}
+                        </p>
+                    </div>
+
+                    {/* Mode selector */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => setBotMode('rag')}
+                            className={cn(
+                                'p-4 rounded-2xl border text-left transition-all',
+                                botMode === 'rag'
+                                    ? 'border-blue-400 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-400/30'
+                                    : 'border-slate-200 dark:border-white/[0.06] hover:border-blue-300 dark:hover:border-blue-500/30'
+                            )}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Database size={14} className="text-blue-500" />
+                                <span className="font-bold text-sm text-slate-900 dark:text-white">RAG</span>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">1 API call. Search → LLM formats.</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">✓ Vercel Hobby compatible</p>
+                        </button>
+                        <button
+                            onClick={() => setBotMode('agentic')}
+                            className={cn(
+                                'p-4 rounded-2xl border text-left transition-all',
+                                botMode === 'agentic'
+                                    ? 'border-purple-400 dark:border-purple-500/40 bg-purple-50 dark:bg-purple-500/10 ring-2 ring-purple-400/30'
+                                    : 'border-slate-200 dark:border-white/[0.06] hover:border-purple-300 dark:hover:border-purple-500/30'
+                            )}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <GitBranch size={14} className="text-purple-500" />
+                                <span className="font-bold text-sm text-slate-900 dark:text-white">Agentic</span>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-[hsl(220,10%,55%)]">2 API calls. LLM picks tools → generates.</p>
+                            <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">⚡ Requires Vercel Pro</p>
+                        </button>
+                    </div>
+
+                    {/* Instructions for switching to Agentic */}
+                    {botMode === 'rag' && (
+                        <div className="bg-amber-50/70 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20">
+                            <h4 className="font-bold text-xs text-amber-700 dark:text-amber-400 mb-2">📋 To enable Agentic mode:</h4>
+                            <ol className="text-xs text-slate-600 dark:text-[hsl(220,10%,55%)] space-y-1 list-decimal list-inside">
+                                <li>Upgrade Vercel to Pro plan ($20/month) — gives 60s function timeout</li>
+                                <li>In vercel.json, set <code className="bg-slate-100 dark:bg-white/5 px-1 rounded">maxDuration: 60</code> for api/ai/chat.js</li>
+                                <li>Click "Agentic" above and save settings</li>
+                                <li>Consider adding a paid model (Gemini Flash Lite — $0.05/1M tokens) for faster responses</li>
+                            </ol>
                         </div>
                     )}
                 </div>

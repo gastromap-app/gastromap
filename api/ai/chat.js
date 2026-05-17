@@ -39,8 +39,8 @@ export default async function handler(req, res) {
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY
-    // Fallback key disabled — using single paid model for predictable behavior
-    const apiKeyFallback = null
+    // Fallback key — re-enabled for cascade reliability (admin controls cascade via app_settings)
+    const apiKeyFallback = process.env.OPENROUTER_API_KEY_2 || null
     if (!apiKey?.trim()) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' })
 
     // Route to embedding handler if mode is 'embedding'
@@ -152,7 +152,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
     let lastError = null
     const maxTokens = max_tokens || 1024
     let currentKeyIdx = 0
-    const maxAttempts = 1 // Single paid model — no cascade needed
+    const maxAttempts = 2 // Primary + 1 fallback from admin cascade
 
     for (let i = startIdx; i < cascade.length && (i - startIdx) < maxAttempts; i++) {
         const currentModel = cascade[i]

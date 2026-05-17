@@ -15,8 +15,8 @@ import { supabase } from '../client'
 import { fetchOpenRouter } from './openrouter'
 import { MODEL_CASCADE } from './constants'
 
-const SUMMARIZE_THRESHOLD = 15 // Only summarize when there are 15+ messages
-const REGENERATE_INTERVAL = 20 // Re-summarize every 20 additional messages
+const SUMMARIZE_THRESHOLD = 5 // Summarize after 5+ messages for faster context building
+const REGENERATE_INTERVAL = 10 // Re-summarize every 10 additional messages
 
 // Simple PII patterns to strip before persisting
 const PII_PATTERNS = [

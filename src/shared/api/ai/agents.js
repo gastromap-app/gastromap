@@ -14,6 +14,26 @@ import { normalizeCityName } from '@/utils/normalizeCityName'
 import { getOperationalRules } from './operational-rules'
 import { detectIntent } from './intents'
 
+// ─── Search Result Cache (LRU, 3-min TTL) ────────────────────────────────────
+const _searchCache = new Map()
+const SEARCH_CACHE_TTL = 3 * 60 * 1000 // 3 minutes
+
+function getCachedSearch(key) {
+    const entry = _searchCache.get(key)
+    if (!entry) return null
+    if (Date.now() - entry.ts > SEARCH_CACHE_TTL) { _searchCache.delete(key); return null }
+    return entry.data
+}
+
+function setCachedSearch(key, data) {
+    // LRU: keep max 20 entries
+    if (_searchCache.size >= 20) {
+        const oldest = _searchCache.keys().next().value
+        _searchCache.delete(oldest)
+    }
+    _searchCache.set(key, { data, ts: Date.now() })
+}
+
 /**
  * Check if LLM response is garbage (hallucination, wrong language mix, nonsense).
  * Returns true if the response should be replaced with a template.
@@ -330,12 +350,20 @@ function buildResponseMessages(usedLocations, userQuery, userContext = null, con
     const messages = [{ role: 'system', content: systemContent }]
 
     // Include conversation history for context continuity (last 10 turns)
+    // Optimization: first 6 messages compressed to 1 sentence, last 4 full (500 chars)
     if (conversationHistory && conversationHistory.length > 0) {
-        const historyTurns = conversationHistory
+        const validHistory = conversationHistory
             .filter(m => m.role === 'user' || m.role === 'assistant')
             .filter(m => m.content && m.content.trim() && m.content !== '…')
             .slice(-10)
-            .map(m => ({ role: m.role, content: m.content.slice(0, 500) }))
+
+        const historyTurns = validHistory.map((m, i, arr) => {
+            const isRecent = i >= arr.length - 4 // Last 4 messages: full content
+            const content = isRecent
+                ? m.content.slice(0, 500)
+                : m.content.slice(0, 120) + (m.content.length > 120 ? '...' : '') // Older: compressed
+            return { role: m.role, content }
+        })
         messages.push(...historyTurns)
     }
 
@@ -555,11 +583,20 @@ export async function runAgentPass(messages, ctx = {}) {
         const fallbackArgs = buildFallbackToolArgs(intent, userText, ctx)
         const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby) ? 'search_nearby' : 'search_locations'
 
+        // Check search cache first (3-min TTL)
+        const cacheKey = JSON.stringify({ toolName, args: fallbackArgs })
+        const cached = getCachedSearch(cacheKey)
+
         const toolStart = Date.now()
         let result
-        try {
-            result = await executeTool(toolName, fallbackArgs, ctx)
-        } catch { result = { results: [] } }
+        if (cached) {
+            result = cached
+        } else {
+            try {
+                result = await executeTool(toolName, fallbackArgs, ctx)
+                if (result?.results?.length) setCachedSearch(cacheKey, result)
+            } catch { result = { results: [] } }
+        }
         const toolTime = Date.now() - toolStart
 
         const resultList = result?.results || (Array.isArray(result) ? result : [])

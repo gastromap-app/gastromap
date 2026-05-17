@@ -335,7 +335,7 @@ const LocationDetailsPage = () => {
             {/* ── Compact Info Grid ───────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 {[
-                    { id: 'hours',     icon: Clock,         label: openLabel || t('location.hours_today'), value: formatOpeningHours(location.openingHours || location.opening_hours) || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
+                    { id: 'hours',     icon: Clock,         label: openLabel || 'Hours', value: formatOpeningHours(location.openingHours || location.opening_hours) || '—', color: isOpen ? "text-emerald-500" : isOpen === false ? "text-red-400" : "text-blue-500", bg: isOpen ? "bg-emerald-500/8" : isOpen === false ? "bg-red-500/8" : "bg-blue-500/8" },
                     // Phone and reviews hidden in preview mode
                     ...(!isPreview ? [
                         { id: 'contact',   icon: Phone,         label: t('location.contact'),        value: location.phone || '—', color: "text-green-500", bg: "bg-green-500/8", hidden: !location.phone },
@@ -360,7 +360,7 @@ const LocationDetailsPage = () => {
                                 if (info.id === 'contact') callNumber()
                             }
                         }}
-                        className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all duration-300 group ${isActionable ? 'cursor-pointer' : ''} ${isDark ? `bg-white/[0.03] border-white/5 ${isActionable ? 'hover:bg-white/[0.06]' : ''}` : `bg-white border-gray-100 ${isActionable ? 'hover:border-gray-200 hover:shadow-sm' : ''}`}`}
+                        className={`flex items-center gap-1.5 p-3 rounded-2xl border transition-all duration-300 group ${isActionable ? 'cursor-pointer' : ''} ${isDark ? `bg-white/[0.03] border-white/5 ${isActionable ? 'hover:bg-white/[0.06]' : ''}` : `bg-white border-gray-100 ${isActionable ? 'hover:border-gray-200 hover:shadow-sm' : ''}`}`}
                     >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${info.bg}`}>
                             <info.icon size={15} className={info.color} />

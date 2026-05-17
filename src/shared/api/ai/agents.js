@@ -435,6 +435,9 @@ export async function runAgentPass(messages, ctx = {}) {
     // Tracked tool calls for enhanced metadata
     const trackedToolCalls = []
 
+    // OpenRouter session tracking — shared across all fetchOpenRouter calls
+    const sessionOpts = { sessionId: ctx?.sessionId || null, userId: ctx?.userId || null }
+
     // ── RAG-FIRST MODE: Single LLM call (search first, then generate) ───────
     // When aiBotMode === 'rag', skip tool calling entirely.
     // Search DB programmatically, then ask LLM to format the results in 1 call.
@@ -454,6 +457,7 @@ export async function runAgentPass(messages, ctx = {}) {
                 temperature: adminTemp,
                 maxTokens: adminMaxTokens,
                 cascade,
+                ...sessionOpts,
             })
             const data = await res.json()
             const text = cleanModelOutput(data.choices?.[0]?.message?.content ?? '')
@@ -491,6 +495,7 @@ export async function runAgentPass(messages, ctx = {}) {
             temperature: adminTemp,
             maxTokens: adminMaxTokens,
             cascade,
+            ...sessionOpts,
         })
         const finalData = await finalRes.json()
         let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
@@ -526,6 +531,7 @@ export async function runAgentPass(messages, ctx = {}) {
         temperature: adminTemp,
         maxTokens: adminMaxTokens,
         cascade,
+        ...sessionOpts,
     })
     const data = await res.json()
     const choice = data.choices?.[0]
@@ -615,6 +621,7 @@ export async function runAgentPass(messages, ctx = {}) {
             temperature: adminTemp,
             maxTokens: adminMaxTokens,
             cascade,
+            ...sessionOpts,
         })
         const finalData = await finalRes.json()
         let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
@@ -815,6 +822,8 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         temperature: adminTemp,
         maxTokens: adminMaxTokens,
         cascade,
+        sessionId: ctx?.sessionId || null,
+        userId: ctx?.userId || null,
     })
     const finalData = await finalRes.json()
     

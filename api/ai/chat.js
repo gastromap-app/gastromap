@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     if (applyRateLimit(req, res, 'ai-chat', { maxRequests: 10, windowMs: 60000 })) return
 
     try {
-        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag, _cascade } = req.body
+        let { messages, model, max_tokens, tools, tool_choice, _direct_model, _skip_rag, _cascade, _session_id, _user_id } = req.body
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'messages array is required' })
@@ -66,6 +66,8 @@ export default async function handler(req, res) {
         if (_direct_model && model) {
             const body = { model, messages, max_tokens: cappedMaxTokens }
             if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
+            if (_session_id) body.session_id = _session_id
+            if (_user_id) body.user = _user_id
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'https://gastromap.app', 'X-Title': 'GastroMap', 'Content-Type': 'application/json' },
@@ -143,7 +145,7 @@ async function handleEmbedding(req, res, apiKey) {
 }
 
 async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
-    const { messages, max_tokens, tools, tool_choice } = reqBody
+    const { messages, max_tokens, tools, tool_choice, _session_id, _user_id } = reqBody
     const keys = Array.isArray(apiKeys) ? apiKeys : [apiKeys]
 
     let lastError = null
@@ -155,6 +157,9 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
         const currentModel = cascade[i]
         const body = { model: currentModel, messages, max_tokens: maxTokens }
         if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
+        // OpenRouter session tracking — enables Sessions view in dashboard
+        if (_session_id) body.session_id = _session_id
+        if (_user_id) body.user = _user_id
 
         try {
             const controller = new AbortController()

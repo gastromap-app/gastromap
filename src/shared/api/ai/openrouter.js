@@ -22,7 +22,7 @@ import { MODEL_CASCADE, TOOLS } from './constants'
  * @param {Object}  options - Request options
  * @returns {Promise<{response: Response, modelUsed: string}>}
  */
-export async function fetchOpenRouter(messages, { stream = false, withTools = true, toolChoice = 'required', modelOverride, temperature, maxTokens = 2048, cascade } = {}) {
+export async function fetchOpenRouter(messages, { stream = false, withTools = true, toolChoice = 'required', modelOverride, temperature, maxTokens = 2048, cascade, sessionId, userId } = {}) {
     const { model: activeModel, fallbackModel } = getActiveAIConfig()
     const preferredModel = modelOverride ?? activeModel
 
@@ -39,6 +39,9 @@ export async function fetchOpenRouter(messages, { stream = false, withTools = tr
     if (stream) body.stream = true
     // Pass cascade from admin config so server uses it instead of hardcoded list
     if (cascade?.length) body._cascade = cascade
+    // OpenRouter session tracking — enables Sessions view in OpenRouter dashboard
+    if (sessionId) body._session_id = sessionId
+    if (userId) body._user_id = userId
     // If model is not a free model (no :free suffix), use direct mode to skip cascade
     if (preferredModel && !preferredModel.endsWith(':free')) {
         body._direct_model = true

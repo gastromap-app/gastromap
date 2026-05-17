@@ -3,12 +3,13 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Home, Map, Sparkles, Heart, CheckCircle, Globe,
-    Trophy, User, PlusCircle
+    User, PlusCircle, Shield, Sun, Moon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 import { useClickOutside } from '@/hooks/useClickOutside'
+import { useAuthStore } from '@/shared/store/useAuthStore'
 
 const navItems = [
     { icon: Home,        label: 'Dashboard',   path: '/dashboard' },
@@ -17,7 +18,6 @@ const navItems = [
     { icon: Heart,       label: 'Saved',       path: '/saved' },
     { icon: CheckCircle, label: 'Visited',     path: '/visited' },
     { icon: Globe,       label: 'Explore',     path: '/explore' },
-    { icon: Trophy,      label: 'Leaderboard', path: '/dashboard/leaderboard' },
 ]
 
 const languages = [
@@ -97,9 +97,11 @@ function LanguageSidebarButton() {
 
 export function DesktopSidebar() {
     const location = useLocation()
-    const { theme } = useTheme()
+    const { theme, toggleTheme } = useTheme()
     const isDark = theme === 'dark'
     const [hoveredLabel, setHoveredLabel] = useState(null)
+    const { user } = useAuthStore()
+    const isAdmin = user?.role === 'admin'
 
     const isActive = (path) => {
         if (path === '/explore') {
@@ -199,6 +201,40 @@ export function DesktopSidebar() {
 
             {/* Bottom actions */}
             <div className="flex flex-col items-center gap-2">
+                {/* Theme toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className={cn(
+                        'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200',
+                        isDark
+                            ? 'text-[hsl(220,10%,55%)] hover:bg-white/5 hover:text-white'
+                            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+                    )}
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                    {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+
+                {/* Admin panel — only for admin role */}
+                {isAdmin && (
+                    <Link
+                        to="/admin"
+                        className={cn(
+                            'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200',
+                            location.pathname.startsWith('/admin')
+                                ? isDark
+                                    ? 'bg-blue-500/20 text-blue-400'
+                                    : 'bg-blue-50 text-blue-600'
+                                : isDark
+                                    ? 'text-[hsl(220,10%,55%)] hover:bg-white/5 hover:text-white'
+                                    : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+                        )}
+                        aria-label="Admin Panel"
+                    >
+                        <Shield size={20} />
+                    </Link>
+                )}
+
                 {/* Language selector hidden — English-only mode (Phase 1) */}
                 {/* <LanguageSidebarButton /> */}
                 <Link

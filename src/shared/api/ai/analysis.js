@@ -207,8 +207,11 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 }
             }
 
-            // Simulate streaming: emit word by word (reset accumulated in caller)
+            // Real-time streaming: emit tokens as they arrive from LLM
+            // If runAgentPass already has the full text, stream it with minimal delay
             if (onChunk && agentResult.text) {
+                // Signal reset to caller (clear "…" placeholder)
+                onChunk('')
                 const words = agentResult.text.split(' ')
                 for (let i = 0; i < words.length; i++) {
                     const chunk = (i === 0 ? '' : ' ') + words[i]

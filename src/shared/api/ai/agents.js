@@ -299,7 +299,7 @@ function buildFallbackToolArgs(intent, userText, ctx) {
  * @param {Object} [userContext] - Optional soft user context (DNA, dietary, city)
  * @returns {Object[]} - Messages array for fetchOpenRouter
  */
-function buildResponseMessages(usedLocations, userQuery, userContext = null, conversationHistory = [], sessionSummary = null) {
+export function buildResponseMessages(usedLocations, userQuery, userContext = null, conversationHistory = [], sessionSummary = null) {
     const rules = getOperationalRules()
 
     // Language-agnostic instruction (model handles ALL languages natively)

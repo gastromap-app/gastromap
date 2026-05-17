@@ -90,10 +90,14 @@ const FooterDisclaimer = ({ isDark }) => {
 const DashboardPage = () => {
     const { t } = useTranslation()
     const { user } = useAuthStore()
-    const { resetFilters: resetLocationFilters } = useLocationFilters()
+    const { resetFilters: resetLocationFilters, filters: locationFilters } = useLocationFilters()
     const locationsQuery = useLocations({ limit: 2000 })
     const locations = locationsQuery.data?.data ?? locationsQuery.data ?? []
-    const filteredLocations = locations // React Query result is already server-filtered
+    // Apply category filter from quick filters (client-side)
+    const activeCategories = locationFilters.categories || []
+    const filteredLocations = activeCategories.length > 0
+        ? locations.filter(loc => activeCategories.some(cat => loc.category?.toLowerCase() === cat.toLowerCase()))
+        : locations
     const isLoading = locationsQuery.isPending && locations.length === 0
     const { data: userPrefs = {} } = useUserPreferences(user?.id)
     const navigate = useNavigate()

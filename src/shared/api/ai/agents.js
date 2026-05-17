@@ -279,14 +279,19 @@ function buildFallbackToolArgs(intent, userText, ctx) {
  * @param {Object} [userContext] - Optional soft user context (DNA, dietary, city)
  * @returns {Object[]} - Messages array for fetchOpenRouter
  */
-function buildResponseMessages(usedLocations, userQuery, userContext = null) {
+function buildResponseMessages(usedLocations, userQuery, userContext = null, conversationHistory = [], sessionSummary = null) {
     const rules = getOperationalRules()
 
     // Language-agnostic instruction (model handles ALL languages natively)
     const langInstruction = 'IMPORTANT: Respond in the SAME language the user wrote their message in. Never switch languages.'
 
-    // Soft user context — only include non-empty fields. Bot uses this to
-    // personalize recommendations when relevant, but NEVER references it explicitly.
+    // Session summary — gives model long-term memory of the conversation
+    let summaryBlock = ''
+    if (sessionSummary) {
+        summaryBlock = `\n\n[SESSION SUMMARY — what was discussed earlier]\n${sessionSummary}`
+    }
+
+    // Soft user context — only include non-empty fields.
     let userBlock = ''
     if (userContext) {
         const parts = []
@@ -320,11 +325,21 @@ function buildResponseMessages(usedLocations, userQuery, userContext = null) {
         locationBlock = '\n\n---\nNo places found matching the criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging.'
     }
 
-    const systemContent = `${rules}\n\n${langInstruction}${userBlock}${locationBlock}`
+    const systemContent = `${rules}\n\n${langInstruction}${summaryBlock}${userBlock}${locationBlock}`
 
     const messages = [{ role: 'system', content: systemContent }]
 
-    // Only add user message if userQuery is non-empty
+    // Include conversation history for context continuity (last 10 turns)
+    if (conversationHistory && conversationHistory.length > 0) {
+        const historyTurns = conversationHistory
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .filter(m => m.content && m.content.trim() && m.content !== '…')
+            .slice(-10)
+            .map(m => ({ role: m.role, content: m.content.slice(0, 500) }))
+        messages.push(...historyTurns)
+    }
+
+    // Add current user message
     if (userQuery && userQuery.trim()) {
         messages.push({ role: 'user', content: userQuery })
     }
@@ -561,7 +576,7 @@ export async function runAgentPass(messages, ctx = {}) {
             dietary: ctx?.dietary || [],
             favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
         }
-        const responseMessages = buildResponseMessages(usedLocations, userText, userContext)
+        const responseMessages = buildResponseMessages(usedLocations, userText, userContext, ctx?.conversationHistory || [], ctx?.sessionSummary || null)
 
         const { response: finalRes, modelUsed } = await fetchOpenRouter(responseMessages, {
             stream: false,
@@ -702,7 +717,7 @@ export async function runAgentPass(messages, ctx = {}) {
             dietary: ctx?.dietary || [],
             favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
         }
-        const responseMessages = buildResponseMessages(usedLocations, userText, pathCUserContext)
+        const responseMessages = buildResponseMessages(usedLocations, userText, pathCUserContext, ctx?.conversationHistory || [], ctx?.sessionSummary || null)
 
         const { response: finalRes } = await fetchOpenRouter(responseMessages, {
             stream: false,
@@ -919,7 +934,7 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         dietary: ctx?.dietary || [],
         favoriteCuisines: ctx?.userData?.favoriteCuisines || [],
     }
-    const finalMessages = buildResponseMessages(usedLocations, lastUserMsg?.content || '', toolCallsUserContext)
+    const finalMessages = buildResponseMessages(usedLocations, lastUserMsg?.content || '', toolCallsUserContext, ctx?.conversationHistory || [], ctx?.sessionSummary || null)
 
     const { response: finalRes } = await fetchOpenRouter(finalMessages, {
         stream: false,

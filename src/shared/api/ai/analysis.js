@@ -69,6 +69,8 @@ export async function analyzeQuery(message, context = {}) {
                 sessionId: context.sessionId || null,
                 dietary: context.dietary || [],
                 userData: context.userData || null,
+                conversationHistory: (context.history ?? []).filter(m => m.role === 'user' || m.role === 'assistant').filter(m => m.content?.trim() && m.content !== '…').slice(-10),
+                sessionSummary: null, // non-streaming path doesn't fetch summary for speed
             }
             const agentResult = await runAgentPass(messages, agentCtx)
 
@@ -125,26 +127,18 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
     if (getActiveAIConfig().useProxy) {
         try {
-            // Include last 2 user messages + 2 compressed bot responses for context continuity
-            // Each message includes timestamp so the model knows if it's recent or old
-            const recentHistory = (context.history ?? [])
-                .slice(-4)  // Last 4 messages (2 user + 2 assistant)
+            // Full conversation history for context continuity (last 10 messages, no truncation)
+            const conversationHistory = (context.history ?? [])
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .filter(m => {
                     const c = m.content?.trim()
                     if (!c || c === '…' || c === '...') return false
-                    if (c.startsWith('An error occurred') || c === 'I found some places for you:') return false
+                    if (c.startsWith('An error occurred')) return false
                     return true
                 })
-                .map(m => {
-                    const time = m.timestamp || m.created_at ? new Date(m.timestamp || m.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }) : ''
-                    // Compress assistant messages to max 150 chars (just the gist)
-                    const content = m.role === 'assistant'
-                        ? (m.content?.slice(0, 150) + (m.content?.length > 150 ? '...' : ''))
-                        : m.content?.slice(0, 300)
-                    return { role: m.role, content: time ? `[${time}] ${content}` : content }
-                })
+                .slice(-10)
 
+            // Build system prompt for the 1st LLM call (tool selection in agentic mode)
             let systemPrompt = await buildSystemPrompt(context.preferences, message, 'guide', context.userData, context.history)
             
             // Inject strict off-topic instruction if intent detection flagged it
@@ -152,9 +146,15 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 systemPrompt += '\n\nIMPORTANT: The user message appears to be OFF-TOPIC. Strictly follow the BOUNDARIES & GUARDRAILS and decline this request using the provided template.'
             }
 
+            // Messages for 1st LLM call include full history for tool-selection context
+            const recentForToolCall = conversationHistory.slice(-6).map(m => ({
+                role: m.role,
+                content: m.content?.slice(0, 400) || ''
+            }))
+
             const messages = [
                 { role: 'system', content: systemPrompt },
-                ...recentHistory,
+                ...recentForToolCall,
                 { role: 'user', content: message },
             ]
 
@@ -167,6 +167,15 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 } catch { locations = [] }
             }
 
+            // Fetch session summary for long-term context (non-blocking)
+            let sessionSummary = null
+            if (context.sessionId) {
+                try {
+                    const { fetchSessionSummary } = await import('./summarize-session')
+                    sessionSummary = await fetchSessionSummary(context.sessionId)
+                } catch { /* summary not available — continue without it */ }
+            }
+
             const agentCtx = {
                 locations,
                 geo: context.geo || null,
@@ -175,6 +184,8 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 sessionId: context.sessionId || null,
                 dietary: context.dietary || [],
                 userData: context.userData || null,
+                conversationHistory,
+                sessionSummary,
             }
 
             // Global timeout: abort if runAgentPass takes longer than 12s

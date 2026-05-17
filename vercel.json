@@ -6,19 +6,19 @@
   "framework": "vite",
   "functions": {
     "api/ai/chat.js": {
-      "maxDuration": 10
+      "maxDuration": 60
     },
     "api/telegram/process.js": {
-      "maxDuration": 10
+      "maxDuration": 60
     },
     "api/telegram/webhook.js": {
       "maxDuration": 10
     },
     "api/webhook/stripe.js": {
-      "maxDuration": 10
+      "maxDuration": 30
     },
     "api/locations/enrich.js": {
-      "maxDuration": 10
+      "maxDuration": 60
     }
   },
   "headers": [

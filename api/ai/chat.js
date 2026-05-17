@@ -151,7 +151,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
     let lastError = null
     const maxTokens = max_tokens || 1024
     let currentKeyIdx = 0
-    const maxAttempts = 2 // Vercel Hobby: 10s limit → max 2 models × 4.5s each
+    const maxAttempts = 3 // Vercel Pro: 60s limit → can try more models
 
     for (let i = startIdx; i < cascade.length && (i - startIdx) < maxAttempts; i++) {
         const currentModel = cascade[i]
@@ -163,7 +163,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
 
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 3500) // 3.5s per model — 2 attempts × 3.5s = 7s + overhead < 10s Vercel limit
+            const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s per model — Vercel Pro allows 60s total
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {

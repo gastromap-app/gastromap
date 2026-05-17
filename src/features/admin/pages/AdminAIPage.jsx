@@ -662,13 +662,14 @@ const AdminAIPage = () => {
 
     const handleSaveModels = async () => {
         setSaveError(null)
-        console.log('[AdminAI] handleSaveModels called. Cascade:', cascadeModels.length, 'models. Primary:', primaryModel)
+        // Only save ENABLED models to the cascade (disabled ones are excluded)
+        const enabledCascade = cascadeModels.filter(id => cascadeEnabled.has(id))
+        console.log('[AdminAI] handleSaveModels called. Enabled cascade:', enabledCascade.length, 'of', cascadeModels.length, 'models. Primary:', primaryModel)
         try {
-            // Save ALL models in the cascade list
             const result = await appConfig.updateSettings({
                 aiPrimaryModel: primaryModel,
                 aiFallbackModel: fallbackModel,
-                aiModelCascade: cascadeModels,
+                aiModelCascade: enabledCascade,
                 aiGuideTemp: guideTemp,
                 aiAssistantTemp: assistantTemp,
                 aiGuideMaxTokens: guideMaxTokens,

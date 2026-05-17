@@ -10,6 +10,236 @@
 import { fetchOpenRouter } from './openrouter'
 import { executeTool } from './tools'
 import { MODEL_CASCADE } from './constants'
+import { normalizeCityName } from '@/utils/normalizeCityName'
+import { getOperationalRules } from './operational-rules'
+import { detectIntent } from './intents'
+
+/**
+ * @deprecated Language detection is no longer needed — the system prompt instructs
+ * the model to mirror the user's language automatically. This stub exists only for
+ * backward compatibility with callers that still pass userLangHint.
+ * @param {string} _userText - Unused
+ * @returns {null} Always returns null
+ */
+function detectLanguage(_userText) {
+    return null
+}
+
+/**
+ * Determine whether the deterministic fallback should activate.
+ * Returns true when the model skipped tool calls on a gastro-related query.
+ *
+ * @param {string|null} intent - From detectIntent()
+ * @param {string} assistantContent - Cleaned model output (Path C text)
+ * @returns {boolean}
+ */
+function shouldForceFallback(intent, assistantContent) {
+    // Non-gastro intents: never activate fallback
+    if (intent === 'meta' || intent === 'off_topic') return false
+
+    // Gastro intents (or unknown/null — default-open per Requirement 2.5):
+    // search_nearby, search_by_filter, follow_up, compare, card_request, or any unrecognized value
+
+    // If model returned empty/very short text — definitely needs fallback
+    if (!assistantContent || assistantContent.trim().length < 50) return true
+
+    // If model returned a substantive response with bold place names (**Name**),
+    // it likely answered from its own knowledge — still needs fallback because
+    // those places might not be in our DB. But if it's a conversational response
+    // (e.g., asking clarification), don't force fallback.
+    const hasBoldNames = /\*\*[^*]+\*\*/.test(assistantContent)
+
+    // If the response is long (>200 chars) and doesn't contain bold place names,
+    // it's likely a conversational/clarification response — don't force fallback
+    if (assistantContent.length > 200 && !hasBoldNames) return false
+
+    // Default: activate fallback for gastro queries
+    return true
+}
+
+// ─── Fallback Argument Extraction ────────────────────────────────────────────
+
+/** City extraction patterns (multilingual) */
+const CITY_PATTERNS = [
+    /(?:in|в|w|у|near|около|біля|koło)\s+([A-ZА-ЯЁЇІЄҐa-zа-яёїієґ\u0100-\u024F]{3,}(?:\s[A-ZА-ЯЁ][a-zа-яёїієґ\u0100-\u024F]{2,})?)/i,
+]
+
+/** Category keywords → canonical category */
+const CATEGORY_MAP = [
+    [/restaurant|ресторан|restauracja/i, 'Restaurant'],
+    [/cafe|кафе|kawiarnia|coffee|кофе|кав'ярн/i, 'Cafe'],
+    [/bar|бар|pub|паб/i, 'Bar'],
+    [/fine\s*dining|файн|изысканн/i, 'Fine Dining'],
+    [/street\s*food|стрит|уличн/i, 'Street Food'],
+]
+
+/** Cuisine keywords → canonical cuisine */
+const CUISINE_MAP = [
+    [/italian|итальянск|włosk|італійськ/i, 'Italian'],
+    [/japanese|японск|sushi|суши|japońsk/i, 'Japanese'],
+    [/french|французск|francusk/i, 'French'],
+    [/polish|польск|polsk/i, 'Polish'],
+    [/ukrainian|украинск|українськ/i, 'Ukrainian'],
+    [/asian|азиатск|azjat/i, 'Asian'],
+    [/mexican|мексиканск/i, 'Mexican'],
+    [/indian|индийск/i, 'Indian'],
+    [/georgian|грузинск/i, 'Georgian'],
+    [/chinese|китайск/i, 'Chinese'],
+    [/thai|тайск/i, 'Thai'],
+    [/korean|корейск/i, 'Korean'],
+    [/spanish|испанск/i, 'Spanish'],
+    [/greek|греческ/i, 'Greek'],
+    [/turkish|турецк/i, 'Turkish'],
+    [/vietnamese|вьетнамск/i, 'Vietnamese'],
+    [/pizza|пицц/i, 'Italian'],
+    [/burger|бургер/i, 'American'],
+    [/ramen|рамен/i, 'Japanese'],
+]
+
+/** "What's new" keywords */
+const NEWEST_RE = /новое|новые|новинк|new|nowe|что нового|co nowego|what's new|latest/i
+
+/** Common words that should NOT be treated as city names */
+const COMMON_WORDS = new Set([
+    'the', 'and', 'for', 'with', 'from', 'that', 'this', 'have', 'are', 'was',
+    'good', 'best', 'nice', 'great', 'cool', 'fine', 'cozy',
+    'где', 'что', 'как', 'мне', 'для', 'это', 'там', 'тут', 'еще', 'ещё',
+    'хочу', 'найди', 'покажи', 'дай', 'нужен', 'нужна',
+    'restaurant', 'cafe', 'bar', 'food', 'place', 'spot',
+    'ресторан', 'кафе', 'бар', 'место', 'заведение',
+])
+
+/**
+ * Deterministically extract search parameters from user query text
+ * when the LLM fails to produce a tool call.
+ * Pure function — never mutates inputs.
+ *
+ * @param {'search_nearby'|'search_by_filter'|'follow_up'|'compare'|string} intent
+ * @param {string} userText - Raw user message
+ * @param {Object} ctx - Context with geo, geoCity, sessionId
+ * @returns {Object} FallbackToolArgs
+ */
+function buildFallbackToolArgs(intent, userText, ctx) {
+    const args = {
+        limit: 5,
+        city: null,
+        category: null,
+        cuisine_types: null,
+        keyword: null,
+        sort_by: null,
+        useNearby: false,
+        radius_m: null,
+    }
+
+    if (!userText || !userText.trim()) return args
+
+    const text = userText.trim()
+    const textLower = text.toLowerCase()
+
+    // 1. Extract city (first match wins)
+    for (const pattern of CITY_PATTERNS) {
+        const match = text.match(pattern)
+        if (match?.[1]) {
+            const candidate = match[1].trim()
+            if (candidate.length >= 3 && !COMMON_WORDS.has(candidate.toLowerCase())) {
+                const normalized = normalizeCityName(candidate)
+                if (normalized) {
+                    args.city = normalized
+                    break
+                }
+            }
+        }
+    }
+
+    // 2. Fallback to geo city if no city found in text
+    if (!args.city && ctx?.geoCity) {
+        const normalized = normalizeCityName(ctx.geoCity)
+        if (normalized) args.city = normalized
+    }
+
+    // 3. Extract category (first match wins)
+    for (const [pattern, category] of CATEGORY_MAP) {
+        if (pattern.test(textLower)) {
+            args.category = category
+            break
+        }
+    }
+
+    // 4. Extract cuisine (first match wins)
+    for (const [pattern, cuisine] of CUISINE_MAP) {
+        if (pattern.test(textLower)) {
+            args.cuisine_types = [cuisine]
+            break
+        }
+    }
+
+    // 5. Detect "what's new" intent
+    if (NEWEST_RE.test(textLower)) {
+        args.sort_by = 'newest'
+    }
+
+    // 6. Handle search_nearby intent
+    if (intent === 'search_nearby' && ctx?.geo && typeof ctx.geo.lat === 'number' && typeof ctx.geo.lng === 'number') {
+        args.useNearby = true
+        args.radius_m = 1500
+    }
+
+    // 7. Use full text as keyword ONLY when no structured params were extracted
+    if (!args.city && !args.category && !args.cuisine_types) {
+        args.keyword = text.slice(0, 100)
+    }
+
+    return args
+}
+
+/**
+ * Build the message array for the 2nd LLM call (response generation).
+ * Uses OPERATIONAL_RULES as system prompt and injects tool results as structured
+ * data in the system message. Language handling is fully delegated to the model
+ * via a single language-mirroring instruction — no specific languages are hardcoded.
+ *
+ * @param {Object[]} usedLocations - Location objects from tool execution
+ * @param {string} userQuery - Original user question
+ * @returns {Object[]} - Messages array for fetchOpenRouter
+ */
+function buildResponseMessages(usedLocations, userQuery) {
+    const rules = getOperationalRules()
+
+    // Language-agnostic instruction (model handles ALL languages natively)
+    const langInstruction = 'IMPORTANT: Respond in the SAME language the user wrote their message in. Never switch languages.'
+
+    let locationBlock = ''
+    if (usedLocations && usedLocations.length > 0) {
+        const items = usedLocations.slice(0, 5).map((l, i) => {
+            const name = l.title || l.name || 'Unnamed location'
+            const parts = [`${i + 1}. ${name}`]
+            if (l.category) parts.push(`   Category: ${l.category}`)
+            if (l.city) parts.push(`   City: ${l.city}`)
+            if (l.google_rating || l.rating) parts.push(`   Rating: ${l.google_rating || l.rating}`)
+            if (l.price_range) parts.push(`   Price: ${l.price_range}`)
+            if (l.description) parts.push(`   About: ${l.description.slice(0, 150)}`)
+            if (l.vibe?.length) parts.push(`   Vibe: ${l.vibe.slice(0, 3).join(', ')}`)
+            if (l.insider_tip) parts.push(`   Insider tip: ${l.insider_tip}`)
+            if (l.what_to_try?.length) parts.push(`   Must try: ${l.what_to_try.slice(0, 3).join(', ')}`)
+            if (l.distance) parts.push(`   Distance: ${l.distance}m`)
+            return parts.join('\n')
+        })
+        locationBlock = `\n\n---\nPLACES FOUND (use ONLY these in your response — do NOT invent other places):\n${items.join('\n\n')}`
+    } else {
+        locationBlock = '\n\n---\nNo places found matching the criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging.'
+    }
+
+    const systemContent = `${rules}\n\n${langInstruction}${locationBlock}`
+
+    const messages = [{ role: 'system', content: systemContent }]
+
+    // Only add user message if userQuery is non-empty
+    if (userQuery && userQuery.trim()) {
+        messages.push({ role: 'user', content: userQuery })
+    }
+
+    return messages
+}
 
 /**
  * Remove all tool-call artifacts from a model's text output so the user
@@ -129,7 +359,7 @@ export async function runAgentPass(messages, ctx = {}) {
     // ── Read admin config from store ────────────────────────────────────────
     let adminCascade = []
     let adminTemp = 0.7
-    let adminMaxTokens = 1024
+    let adminMaxTokens = 2048
     let cfg = null
     try {
         const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
@@ -138,7 +368,7 @@ export async function runAgentPass(messages, ctx = {}) {
         cfg = useAppConfigStore.getState()
         adminCascade = cfg.aiModelCascade || []
         adminTemp = cfg.aiGuideTemp ?? 0.7
-        adminMaxTokens = cfg.aiGuideMaxTokens ?? 1024
+        adminMaxTokens = Math.max(2048, Math.min(8192, cfg.aiGuideMaxTokens ?? 2048))
     } catch { /* config store not available — use defaults */ }
 
     // Use admin cascade if set, otherwise fall back to MODEL_CASCADE
@@ -186,6 +416,7 @@ export async function runAgentPass(messages, ctx = {}) {
     const { response: res, modelUsed } = await fetchOpenRouter(messages, {
         stream: false,
         withTools: true,
+        toolChoice: 'required',
         temperature: adminTemp,
         maxTokens: adminMaxTokens,
         cascade,
@@ -213,9 +444,101 @@ export async function runAgentPass(messages, ctx = {}) {
         })
     }
 
-    // ── Path C: No tool calls — return text directly ─────────────────────────
+    // ── Path C: ENHANCED — Deterministic tool fallback ──────────────────────
     // Strip any stray XML/JSON artifacts the model might have left in the text
     const cleanText = cleanModelOutput(assistantMsg.content)
+
+    // Extract user query from last user message
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    const userText = lastUserMsg?.content || ''
+    const intent = detectIntent(userText)
+
+    if (shouldForceFallback(intent, cleanText)) {
+        console.log('[Agent] Path C fallback activated:', { intent, modelUsed })
+
+        // Deterministically derive tool arguments from user query
+        const fallbackArgs = buildFallbackToolArgs(intent, userText, ctx)
+
+        // Decide which tool to call
+        const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby)
+            ? 'search_nearby'
+            : 'search_locations'
+
+        // Execute tool programmatically
+        const toolStart = Date.now()
+        let result
+        try {
+            result = await executeTool(toolName, fallbackArgs, ctx)
+        } catch (err) {
+            console.warn('[Agent] Fallback executeTool error:', err.message)
+            result = { results: [] }
+        }
+        const toolTime = Date.now() - toolStart
+
+        const resultList = result?.results || (Array.isArray(result) ? result : [])
+        trackedToolCalls.push({
+            name: toolName,
+            args: fallbackArgs,
+            resultCount: resultList.length,
+            source: 'deterministic_fallback',
+        })
+
+        // Handle needs_geo signal
+        if (result?.needs_geo) {
+            return {
+                text: '',
+                usedLocations: [],
+                attachments: [],
+                needsGeo: true,
+                pendingTool: { name: toolName, args: fallbackArgs },
+                modelUsed,
+                toolCalls: trackedToolCalls,
+                timing: { startMs: startTime, toolExecutionMs: toolTime, totalMs: Date.now() - startTime },
+            }
+        }
+
+        // Extract locations from result
+        const usedLocations = resultList.slice(0, 5)
+
+        // Build 2nd call with compact prompt + structured data in system message
+        const responseMessages = buildResponseMessages(usedLocations, userText)
+
+        const { response: finalRes } = await fetchOpenRouter(responseMessages, {
+            stream: false,
+            withTools: false,
+            temperature: adminTemp,
+            maxTokens: adminMaxTokens,
+            cascade,
+        })
+        const finalData = await finalRes.json()
+        let finalContent = cleanModelOutput(finalData.choices?.[0]?.message?.content ?? '')
+
+        // Minimal fallback if model still returns empty
+        if (!finalContent && usedLocations.length > 0) {
+            const names = usedLocations.slice(0, 5).map(l => `**${l.title || l.name}**`).join(', ')
+            finalContent = `Here are some places I found: ${names}`
+        }
+        // If no locations and no content, provide a helpful message
+        if (!finalContent && usedLocations.length === 0) {
+            finalContent = 'I couldn\'t find places matching your exact criteria. Try a broader search — different cuisine, area, or price range might help!'
+        }
+
+        // Persist shown locations to session_locations
+        if (ctx?.sessionId && ctx?.userId && usedLocations.length) {
+            import('./session-locations.js').then(({ recordSessionLocations }) => {
+                recordSessionLocations(ctx.sessionId, usedLocations, ctx.userId).catch(() => {})
+            }).catch(() => {})
+        }
+
+        return {
+            text: finalContent,
+            usedLocations,
+            attachments: usedLocations,
+            modelUsed,
+            toolCalls: trackedToolCalls,
+            timing: { startMs: startTime, toolExecutionMs: toolTime, totalMs: Date.now() - startTime },
+        }
+    }
 
     // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
     if (useV2 && cleanText) {
@@ -276,7 +599,7 @@ export async function runAgentPass(messages, ctx = {}) {
  * @param {'native'|'xml'} mode - Whether we're handling native or XML tool calls
  */
 async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, mode, meta = {}) {
-    const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 1024, cascade, useV2 = false } = meta
+    const { startTime = Date.now(), trackedToolCalls = [], adminTemp = 0.7, adminMaxTokens = 2048, cascade, useV2 = false } = meta
     const locations = ctx?.locations || []
     const toolResults = []
     let usedLocations = []
@@ -369,52 +692,10 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     }
 
     // Second call: get final text with tool results (no tools needed)
-    // Detect user language from the last user message for language reminder
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-    const userLangHint = lastUserMsg?.content && /[а-яёА-ЯЁ]/.test(lastUserMsg.content) ? 'Russian'
-        : lastUserMsg?.content && /[а-яіїєґА-ЯІЇЄҐ]/.test(lastUserMsg.content) ? 'Ukrainian'
-        : lastUserMsg?.content && /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(lastUserMsg.content) ? 'Polish'
-        : null
 
-    // Build a response instruction with FULL tool results (not compressed)
-    // Models need the actual data (insider_tip, vibe, description) to write good responses
-    const userLangNote = userLangHint ? `Respond in ${userLangHint}.` : 'Respond in the same language as the user.'
-    
-    let responseInstruction
-    if (usedLocations.length > 0) {
-        // Send full location data so model can reference insider_tip, vibe, what_to_try
-        const locationData = usedLocations.slice(0, 5).map((l, i) => {
-            const obj = { name: l.title || l.name, category: l.category, city: l.city }
-            if (l.google_rating || l.rating) obj.rating = l.google_rating || l.rating
-            if (l.price_range) obj.price = l.price_range
-            if (l.description) obj.description = l.description.slice(0, 200)
-            if (l.vibe?.length) obj.vibe = l.vibe.slice(0, 3)
-            if (l.insider_tip) obj.insider_tip = l.insider_tip
-            if (l.ai_summary) obj.summary = l.ai_summary
-            if (l.what_to_try?.length) obj.must_try = l.what_to_try.slice(0, 3)
-            if (l.image) obj.image = l.image
-            return obj
-        })
-        responseInstruction = `Here are the places I found:\n${JSON.stringify(locationData, null, 1)}\n\nWrite a warm, expert recommendation. For each place: **bold the name**, 2-3 sentences why it fits, and *insider tip* if available. Keep total response under 400 words. ${userLangNote}`
-    } else {
-        responseInstruction = `No places found matching the exact criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging. ${userLangNote}`
-    }
-
-    let finalMessages
-    if (mode === 'native') {
-        // Compact mode: don't send full tool JSON to the model for the response.
-        // Instead, send only the compact summary in responseInstruction.
-        finalMessages = [
-            ...messages,
-            { role: 'user', content: responseInstruction },
-        ]
-    } else {
-        // XML mode: same compact approach
-        finalMessages = [
-            ...messages,
-            { role: 'user', content: responseInstruction },
-        ]
-    }
+    // Use compact buildResponseMessages — language-agnostic, structured data in system message
+    const finalMessages = buildResponseMessages(usedLocations, lastUserMsg?.content || '')
 
     const { response: finalRes } = await fetchOpenRouter(finalMessages, {
         stream: false,

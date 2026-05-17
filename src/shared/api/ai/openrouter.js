@@ -22,18 +22,18 @@ import { MODEL_CASCADE, TOOLS } from './constants'
  * @param {Object}  options - Request options
  * @returns {Promise<{response: Response, modelUsed: string}>}
  */
-export async function fetchOpenRouter(messages, { stream = false, withTools = true, modelOverride, temperature, maxTokens, cascade } = {}) {
+export async function fetchOpenRouter(messages, { stream = false, withTools = true, toolChoice = 'required', modelOverride, temperature, maxTokens = 2048, cascade } = {}) {
     const { model: activeModel, fallbackModel } = getActiveAIConfig()
     const preferredModel = modelOverride ?? activeModel
 
     const body = {
         messages,
         model: preferredModel,
-        max_tokens: maxTokens || 1024,
+        max_tokens: maxTokens,
     }
     if (withTools !== false) {
         body.tools = TOOLS
-        body.tool_choice = 'auto'
+        body.tool_choice = toolChoice
     }
     if (temperature != null) body.temperature = temperature
     if (stream) body.stream = true

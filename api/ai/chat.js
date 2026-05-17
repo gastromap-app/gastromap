@@ -157,7 +157,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKeys, res) {
 
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s per model max
+            const timeoutId = setTimeout(() => controller.abort(), 6000) // 6s per model max
             const response = await fetch(OPENROUTER_URL, {
                 method: 'POST',
                 headers: {

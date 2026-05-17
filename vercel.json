@@ -5,6 +5,9 @@
   "installCommand": "npm install",
   "framework": "vite",
   "functions": {
+    "api/ai/chat.js": {
+      "maxDuration": 60
+    },
     "api/telegram/process.js": {
       "maxDuration": 60
     },

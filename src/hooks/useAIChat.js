@@ -118,6 +118,16 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         const userMsg = addMessage('user', cleanedText)
         setTyping(true)
 
+        // Safety timeout: if typing gets stuck for 30s, force reset
+        const safetyTimeout = setTimeout(() => {
+            const stillTyping = useAIChatStore.getState().isTyping
+            if (stillTyping) {
+                setTyping(false)
+                setError('Request timed out. Please try again.')
+                updateLastMessage('assistant', 'Request timed out. Please try again.', { isError: true })
+            }
+        }, 30000)
+
         // DB Persistence: Ensure session and save user message
         let currentSessionId = useAIChatStore.getState().sessionId || syncSessionRef.current;
         if (user?.id && !currentSessionId) {
@@ -318,7 +328,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 }).catch(() => {});
             }
         } catch (err) {
-            if (err?.message?.includes('rate-limited') || err?.message?.includes('rate_limit') || err?.status === 429) {
+            if (err?.message?.includes('rate-limited') || err?.message?.includes('rate_limit') || err?.status === 429 || err?.message?.includes('All AI models')) {
                 const msg = t ? t('ai.rate_limited_retry') : 'All AI models are busy. Please try again in 1 minute.';
                 setError(msg)
                 updateLastMessage('assistant', msg, { isError: true })
@@ -327,6 +337,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 updateLastMessage('assistant', t('ai.general_error'), { isError: true })
             }
         } finally {
+            clearTimeout(safetyTimeout)
             setTyping(false)
         }
     }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, requestGeo, t, persistMessage])

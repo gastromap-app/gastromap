@@ -37,14 +37,19 @@ export async function semanticSearch(args = {}) {
     embedding = cached?.embedding ?? null
   }
 
-  const { data, error } = await supabase.rpc('search_locations', {
-    query:           query,
-    query_embedding: embedding,
-    city_filter:     city,
-    category_filter: category,
-    cuisine_filter:  cuisine,
+  // Build RPC params — omit query_embedding when null (PostgREST can't cast null to vector)
+  const rpcParams = {
+    query:           query || null,
+    city_filter:     city || null,
+    category_filter: category || null,
+    cuisine_filter:  cuisine || null,
     result_limit:    limit,
-  })
+  }
+  if (embedding) {
+    rpcParams.query_embedding = embedding
+  }
+
+  const { data, error } = await supabase.rpc('search_locations', rpcParams)
 
   if (error) return { ok: false, error: error.message }
   return { ok: true, results: data ?? [] }

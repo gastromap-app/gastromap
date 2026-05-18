@@ -12,13 +12,11 @@ import { applyRateLimit } from '../_shared/rate-limit.js'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // Free fallback models for API Key 2 (no balance needed, tool calling + reasoning)
-// Prioritize reasoning models — they produce significantly better responses
 const FREE_FALLBACK_MODELS = [
-    'deepseek/deepseek-v4-flash-20260423:free', // ✅ 801 reasoning tokens, 2.8s latency, best quality
-    'deepseek/deepseek-r1-0528:free',           // ✅ reasoning model, strong instruction following
-    'google/gemma-4-31b-it:free',               // ✅ tool calling, 262K ctx, good fallback
-    'meta-llama/llama-3.3-70b-instruct:free',   // ✅ tool calling
-    'z-ai/glm-4.5-air:free',                    // ✅ 131K ctx, fast
+    'google/gemma-4-31b-it:free',             // ✅ tool calling, 262K ctx, reasoning
+    'google/gemma-3-27b-it:free',             // ✅ tool calling, 128K ctx
+    'meta-llama/llama-3.3-70b-instruct:free', // ✅ tool calling
+    'z-ai/glm-4.5-air:free',                  // ✅ 131K ctx, fast
 ]
 
 // Keywords and RAG functions removed — client-side search_locations tool handles all retrieval

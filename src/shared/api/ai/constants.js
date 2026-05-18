@@ -22,17 +22,16 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Updated 2026-04-14 — verified working against OpenRouter /v1/models
 // ──────────────────────────────────────────────────────────────────────────────
 export const MODEL_CASCADE = [
-    // Updated 2026-05-18 — prioritize reasoning models for better response quality
-    'deepseek/deepseek-v4-flash-20260423:free', // ✅ 801 reasoning tokens, 2.8s latency, best quality
-    'deepseek/deepseek-r1-0528:free',           // ✅ reasoning model, strong instruction following
-    'google/gemma-4-31b-it:free',               // ✅ 262K ctx, tool calling, good fallback
-    'google/gemma-3-27b-it:free',               // ✅ 128K ctx, tool calling, multilingual
-    'z-ai/glm-4.5-air:free',                    // ✅ 131K ctx, fast, multilingual
-    'meta-llama/llama-3.3-70b-instruct:free',   // ✅ tool calling, good instruction following
-    'openai/gpt-oss-120b:free',                 // ⚠️ 131K ctx, may not support native tools
-    'nvidia/nemotron-3-super-120b-a12b:free',   // ⚠️ 198 reasoning tokens, XML tool calls only
-    'openai/gpt-oss-20b:free',                  // ⚠️ fast fallback
-    'minimax/minimax-m2.5:free',                // ✅ 197K ctx
+    // Updated 2026-05-17 — reordered by response quality + tool calling reliability
+    'google/gemma-4-31b-it:free',             // ✅ 262K ctx, tool calling, best instruction following
+    'google/gemma-3-27b-it:free',             // ✅ 128K ctx, tool calling, multilingual
+    'google/gemma-4-26b-a4b-it:free',         // ✅ 262K ctx, efficient MoE
+    'z-ai/glm-4.5-air:free',                  // ✅ 131K ctx, fast, multilingual
+    'meta-llama/llama-3.3-70b-instruct:free', // ✅ tool calling, good instruction following
+    'openai/gpt-oss-120b:free',               // ⚠️ 131K ctx, may not support native tools
+    'nvidia/nemotron-3-super-120b-a12b:free', // ⚠️ XML tool calls only, prone to hallucination
+    'openai/gpt-oss-20b:free',                // ⚠️ fast fallback
+    'minimax/minimax-m2.5:free',              // ✅ 197K ctx
 ]
 
 // ── Paid models (higher quality, faster, more stable) ─────────────────────────
@@ -222,7 +221,7 @@ export const TOOLS = [
 export const DEFAULT_GUIDE_PROMPT = `You are GastroGuide — a warm, knowledgeable dining assistant for GastroMap. You are NOT a generic bot; you are a local expert with a sharp eye for the gastronomy scene in whatever city or country the user is asking about. If the user does not specify a location, use their geolocation from [USER CONTEXT] to determine their current city and search there.
 
 # AWARENESS & PERSONALITY (CRITICAL)
-- Be aware: Your behavior should be conscious, not template-driven.
+- Be OSOZNANNY (aware): Your behavior should be conscious, not template-driven.
 - Avoid "bot-speak": Never start with "I have found X places for you" or "Here are the results".
 - Talk like an insider: Use phrases like "Oh, have you seen this new spot yet?", "Actually, we just listed a very cool place...", or "If you're looking for the newest additions, I have something special for you."
 - When showing "new" venues (sort_by: newest), look at their name and tags to add a personal touch.
@@ -259,7 +258,6 @@ When recommending places, use clear visual separation:
 4. Description: 2-3 sentences about why this place fits the user's request.
 5. EMPTY LINE after each location block.
 6. Short closing remark after all locations.
-
 
 ## Rules:
 - ALWAYS separate locations with empty lines — never run them together.

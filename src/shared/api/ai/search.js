@@ -49,11 +49,17 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
 
         if (queryEmbedding) {
             // Full hybrid: vector + FTS via RRF
+            // Pass ALL parameters to disambiguate from the overloaded version
             const { data, error } = await supabase.rpc('search_locations_hybrid', {
                 query_embedding: queryEmbedding,
                 query_text: queryText,
                 p_city: city || null,
                 p_category: category || null,
+                p_cuisine: null,
+                p_price_range: null,
+                p_lat: null,
+                p_lng: null,
+                p_radius_meters: null,
                 p_limit: limit,
                 rrf_k: 60,
             })
@@ -69,10 +75,16 @@ export async function semanticSearch(queryText, limit = 10, _apiKey = null, { ci
         }
 
         // Fallback: FTS only (no embedding needed)
+        // Pass ALL parameters to disambiguate from the overloaded version
         const { data, error } = await supabase.rpc('search_locations_fulltext', {
             query_text: queryText,
             p_city: city || null,
             p_category: category || null,
+            p_cuisine: null,
+            p_price_range: null,
+            p_lat: null,
+            p_lng: null,
+            p_radius_meters: null,
             p_limit: limit,
         })
 

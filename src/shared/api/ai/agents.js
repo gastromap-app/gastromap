@@ -885,7 +885,13 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         }
 
         const toolStart = Date.now()
-        const result = await executeTool(toolCall.function.name, args, ctx)
+        let result
+        try {
+            result = await executeTool(toolCall.function.name, args, ctx)
+        } catch (toolErr) {
+            console.error('[runToolCalls] executeTool THREW:', toolErr?.message)
+            result = { results: [] }
+        }
         toolTime += Date.now() - toolStart
 
         // DEBUG: Log tool result to diagnose empty usedLocations

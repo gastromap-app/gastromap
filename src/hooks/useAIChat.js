@@ -268,6 +268,15 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                     .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
                     .trim()
 
+                // DEBUG: Log attachments to diagnose missing cards
+                safeLog('[AI Guide] Result attachments:', {
+                    hasAttachments: !!(result.attachments?.length),
+                    hasMatches: !!(result.matches?.length),
+                    attachmentsCount: result.attachments?.length || 0,
+                    matchesCount: result.matches?.length || 0,
+                    firstAttachment: result.attachments?.[0] ? { id: result.attachments[0].id, title: result.attachments[0].title } : null,
+                })
+
                 const foundMsgText = t('ai.found_places')
                 const finalMsg = updateLastMessage('assistant', cleanContent || foundMsgText, {
                     attachments: result.attachments || result.matches,

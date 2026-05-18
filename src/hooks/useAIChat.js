@@ -6,7 +6,7 @@ import { useFavoritesStore } from '@/shared/store/useFavoritesStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
 
 import { useLocations } from '@/shared/api/queries/location.queries'
-import { analyzeQueryStream, analyzeQuery } from '@/shared/api'
+import { analyzeQueryStream } from '@/shared/api'
 import { fetchChatHistory, createChatSession, saveChatMessage } from '@/shared/api/chat.api'
 import { getOrCreateSession } from '@/shared/api/chat-history.api'
 import { summarizeSession } from '@/shared/api/ai/summarize-session'
@@ -202,9 +202,8 @@ const MAX_CHAT_INPUT_LENGTH = 3000
         }
 
         try {
-            // ── Streaming / Proxy path ───────────────────────────────────────
-            // Uses OpenRouter directly (when apiKey set) OR via Supabase proxy
-            // (no key but PROD). Only falls through to local engine when both fail.
+            // ── Streaming path ────────────────────────────────────────────
+            // Uses OpenRouter via Supabase proxy for real-time token delivery.
             if (hasAIAccess) {
                 // Add an empty assistant message that will fill with streamed chunks
                 addMessage('assistant', '…')
@@ -230,47 +229,6 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                         .trim()
                     updateLastMessage('assistant', display || '…')
                 })
-
-                // Handle needs_geo: prompt for location access and retry once.
-                if (result.needsGeo) {
-                    updateLastMessage('assistant', t('ai.geo_permission_request'))
-                    try {
-                        await requestGeo()
-                        const retryGeo = {
-                            lat: useGeoStore.getState().lat,
-                            lng: useGeoStore.getState().lng,
-                        }
-                        if (retryGeo.lat && retryGeo.lng) {
-                            const retryCtx = { ...context, geo: retryGeo }
-                            accumulated = ''
-                            const retryResult = await analyzeQueryStream(cleanedText, retryCtx, (chunk) => {
-                                if (chunk === '') { accumulated = ''; return }
-                                accumulated += chunk
-                                const display = accumulated
-                                    .replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '')
-                                    .replace(/\{"matches":\[.*?\]\}\s*$/s, '')
-                                    .trim()
-                                updateLastMessage('assistant', display || '…')
-                            })
-                            const retryClean = (retryResult.content || '').replace(/<tool_call[\s\S]*?<\/tool_call>/gi, '').replace(/\{"matches":\[.*?\]\}\s*$/s, '').trim()
-                            const finalMsg = updateLastMessage('assistant', retryClean || t('ai.found_places'), {
-                                attachments: retryResult.attachments || retryResult.matches,
-                                matches: retryResult.matches,
-                                intent: retryResult.intent,
-                            })
-                            if (user?.id && currentSessionId && finalMsg) {
-                                saveChatMessage(currentSessionId, user.id, finalMsg)
-                                persistMessage(currentSessionId, user.id, finalMsg).catch(() => {})
-                            }
-                        } else {
-                            updateLastMessage('assistant', t('ai.geo_failed_with_tip'))
-                        }
-                    } catch {
-                        updateLastMessage('assistant', t('ai.geo_unavailable'))
-                    }
-                    setTyping(false)
-                    return
-                }
 
                 // Final update — parsed content + resolved location cards
                 const cleanContent = (result.content || '')
@@ -299,18 +257,6 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                     intent: result.intent,
                 })
                 
-                if (user?.id && currentSessionId && finalMsg) {
-                    saveChatMessage(currentSessionId, user.id, finalMsg);
-                    persistMessage(currentSessionId, user.id, finalMsg).catch(() => {});
-                }
-            } else {
-                // ── Local engine fallback (no API key, no proxy — dev only) ──
-                const response = await analyzeQuery(cleanedText, context)
-                const finalMsg = addMessage('assistant', response.content, {
-                    attachments: response.attachments || response.matches,
-                    matches: response.matches,
-                    intent: response.intent,
-                })
                 if (user?.id && currentSessionId && finalMsg) {
                     saveChatMessage(currentSessionId, user.id, finalMsg);
                     persistMessage(currentSessionId, user.id, finalMsg).catch(() => {});
@@ -346,7 +292,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
             clearTimeout(safetyTimeout)
             setTyping(false)
         }
-    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, requestGeo, t, persistMessage])
+    }, [isTyping, prefs, messages, user, addMessage, updateLastMessage, setTyping, setError, clearError, trimHistory, favoriteIds, hasAIAccess, locations, setSessionId, userCity, userCountry, t, persistMessage])
 
     return {
         messages,

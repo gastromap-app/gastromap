@@ -78,7 +78,8 @@ async function executeTool(name, args) {
         
         try {
             // Call the hybrid search engine
-            const results = await semanticSearch(queryText, limit, null, { city, category })
+            const searchResult = await semanticSearch({ query: queryText, city, category, limit })
+            const results = searchResult.ok ? searchResult.results : []
             
             if (results && results.length > 0) {
                 return results.map(l => ({

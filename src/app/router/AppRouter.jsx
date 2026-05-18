@@ -5,6 +5,7 @@ import PublicLayout from '@/components/layout/PublicLayout'
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard'
 import { ErrorBoundary, MapErrorFallback, AIChatErrorFallback, RouteErrorFallback } from '@/app/ErrorBoundary'
 import { useAuthStore } from '@/shared/store/useAuthStore'
+import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 
 // ─── Auth guards — must be non-lazy so check runs before chunk loads ──────
 const AuthLoader = () => (
@@ -36,6 +37,7 @@ const PUBLIC_PATHS = new Set(['/', '/login', '/auth/signup', '/auth/callback', '
 
 const AuthRedirect = () => {
     const { isAuthenticated, user, isLoading } = useAuthStore()
+    const appStatus = useAppConfigStore((state) => state.appStatus)
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -44,10 +46,13 @@ const AuthRedirect = () => {
         // /auth/reset-password is a special case — user must stay there to enter
         // a new password even though Supabase has already authenticated them.
         if (location.pathname === '/auth/reset-password') return
+        // During maintenance/down, don't redirect non-admin users away from public pages
+        // — they need access to landing, contact, etc. since the app is blocked.
+        if (appStatus !== 'active' && user?.role !== 'admin') return
         if (isAuthenticated && PUBLIC_PATHS.has(location.pathname)) {
             navigate(user?.role === 'admin' ? '/admin' : '/dashboard', { replace: true })
         }
-    }, [isAuthenticated, isLoading, user, location.pathname, navigate])
+    }, [isAuthenticated, isLoading, user, location.pathname, navigate, appStatus])
 
     return null
 }

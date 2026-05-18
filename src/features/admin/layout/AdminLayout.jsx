@@ -12,6 +12,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore'
 import { useAdminNotifications } from '../hooks/useAdminNotifications'
 import { useTheme } from '@/hooks/useTheme'
 import { ErrorBoundary, RouteErrorFallback } from '@/app/ErrorBoundary'
+import { AdminStatusBanner } from '../components/AdminStatusBanner'
 
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
@@ -338,6 +339,8 @@ export default function AdminLayout() {
                         </div>
                     </div>
                 </header>
+
+                <AdminStatusBanner />
 
                 <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-10 bg-[#FDFDFD] dark:bg-[hsl(220,20%,3%)]">
                     <div className="max-w-[1600px] mx-auto min-h-full">

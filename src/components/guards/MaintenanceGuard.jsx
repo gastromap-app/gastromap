@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Hammer, AlertTriangle, MessageCircle, ArrowLeft, LogOut } from 'lucide-react'
 import { useAppConfigStore } from '@/shared/store/useAppConfigStore'
 import { useAuthStore } from '@/shared/store/useAuthStore'
-import { Link } from 'react-router-dom'
+import { MaintenanceCarousel } from './MaintenanceCarousel'
 // Note: we intentionally use window.location.href instead of useNavigate
 // so a full page reload clears all in-memory state after sign-out.
 
@@ -31,58 +31,60 @@ export const MaintenanceGuard = ({ children }) => {
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-[#FDFDFD] dark:bg-[hsl(220,20%,3%)] flex items-center justify-center p-6 text-center">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="fixed inset-0 z-[9999] flex flex-col md:flex-row">
+            {/* Carousel — full background on mobile, left panel on desktop */}
+            <div className="absolute inset-0 md:relative md:w-1/2 md:h-full">
+                <MaintenanceCarousel />
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="max-w-md w-full"
-            >
-                <div className="w-24 h-24 bg-indigo-600 rounded-[40px] flex items-center justify-center text-white mx-auto mb-10 shadow-2xl shadow-indigo-500/30 animate-pulse">
-                    {isDown ? <AlertTriangle size={40} /> : <Hammer size={40} />}
-                </div>
+            {/* Content panel — glassmorphism overlay on mobile, right panel on desktop */}
+            <div className="relative z-10 flex items-center justify-center w-full h-full md:w-1/2 md:bg-[#FDFDFD] md:dark:bg-[hsl(220,20%,3%)] p-6">
+                {/* Mobile glassmorphism backdrop */}
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm md:hidden" />
 
-                <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-6">
-                    {isDown ? 'System temporarily' : 'Maintenance'} <br />
-                    <span className="text-indigo-600">{isDown ? 'unavailable.' : 'in progress.'}</span>
-                </h1>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative z-10 max-w-md w-full bg-white/80 dark:bg-[hsl(220,20%,6%)]/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-white/[0.06] md:bg-white md:dark:bg-[hsl(220,20%,6%)] md:backdrop-blur-none md:shadow-xl md:border-slate-100 md:dark:border-white/[0.06]"
+                >
+                    <div className="text-center">
+                        <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white mx-auto mb-8 shadow-2xl shadow-indigo-500/30 animate-pulse">
+                            {isDown ? <AlertTriangle size={36} /> : <Hammer size={36} />}
+                        </div>
 
-                <p className="text-slate-500 font-medium text-lg leading-relaxed mb-10 italic">
-                    "{isDown ? downMessage : maintenanceMessage}"
-                </p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-5">
+                            {isDown ? 'System temporarily' : 'Maintenance'} <br />
+                            <span className="text-indigo-600">{isDown ? 'unavailable.' : 'in progress.'}</span>
+                        </h1>
 
-                <div className="space-y-4">
-                    <Link to="/" className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                        <ArrowLeft size={18} /> Back to Home
-                    </Link>
-                    <button className="w-full h-14 bg-white dark:bg-[hsl(220,20%,6%)] border border-slate-200 dark:border-white/[0.06] text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-[hsl(220,20%,12%)] transition-all">
-                        <MessageCircle size={18} /> Contact Support
-                    </button>
-                    {user && (
-                        <button
-                            onClick={handleSignOut}
-                            disabled={signingOut}
-                            className="w-full h-14 bg-white dark:bg-[hsl(220,20%,6%)] border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {signingOut
-                                ? <span className="w-4 h-4 rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
-                                : <LogOut size={18} />
-                            }
-                            {signingOut ? 'Signing out…' : 'Sign Out'}
-                        </button>
-                    )}
-                </div>
-
-                <div className="mt-20 pt-10 border-t border-slate-100 dark:border-white/[0.03]">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">GastroOS System Status</p>
-                    <div className="flex justify-center gap-2">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        ))}
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-base leading-relaxed mb-8 italic">
+                            "{isDown ? downMessage : maintenanceMessage}"
+                        </p>
                     </div>
-                </div>
-            </motion.div>
+
+                    <div className="space-y-3">
+                        <a href="/" className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all no-underline">
+                            <ArrowLeft size={16} /> Back to Home
+                        </a>
+                        <a href="/contact" className="w-full h-12 bg-white/90 dark:bg-[hsl(220,20%,8%)] border border-slate-200 dark:border-white/[0.06] text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-white dark:hover:bg-[hsl(220,20%,12%)] transition-all no-underline">
+                            <MessageCircle size={16} /> Contact Support
+                        </a>
+                        {user && (
+                            <button
+                                onClick={handleSignOut}
+                                disabled={signingOut}
+                                className="w-full h-12 bg-white/90 dark:bg-[hsl(220,20%,8%)] border border-red-100 dark:border-red-900/40 text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {signingOut
+                                    ? <span className="w-4 h-4 rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
+                                    : <LogOut size={16} />
+                                }
+                                {signingOut ? 'Signing out…' : 'Sign Out'}
+                            </button>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
         </div>
     )
 }

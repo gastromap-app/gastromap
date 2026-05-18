@@ -21,8 +21,8 @@ const DEFAULTS = {
     appName: 'GastroMap',
     appDescription: 'Discover the world through taste. Local guides, hidden gems, and the best gastromap for foodies.',
     appStatus: 'active',
-    maintenanceMessage: 'Мы проводим технические работы, чтобы стать лучше. Приложение скоро вернется!',
-    downMessage: 'Приложение временно недоступно. Мы скоро вернемся!',
+    maintenanceMessage: 'We are performing maintenance to improve your experience. The app will be back shortly!',
+    downMessage: 'The app is temporarily unavailable. We will be back soon!',
     seoKeywords: 'food, gastromap, restaurants, local food, travel, foodie',
 
     // AI config — overridden by Supabase on load
@@ -49,14 +49,13 @@ const DEFAULTS = {
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
 
-/** Load AI config from Supabase. Returns null if table missing / no row. */
+/** Load AI config and app status from Supabase. Returns { aiConfig, appStatus } or null on failure. */
 async function loadFromSupabase() {
     try {
         const { data, error, status } = await supabase
             .from('app_settings')
-            .select('value')
-            .eq('key', 'ai_config')
-            .single()
+            .select('key, value')
+            .in('key', ['ai_config', 'app_status'])
 
         if (error) {
             // Log 401/406 softly as they are expected for non-admin users
@@ -67,7 +66,15 @@ async function loadFromSupabase() {
             }
             return null
         }
-        return data?.value
+
+        const rows = data || []
+        const aiConfigRow = rows.find(r => r.key === 'ai_config')
+        const appStatusRow = rows.find(r => r.key === 'app_status')
+
+        return {
+            aiConfig: aiConfigRow?.value || null,
+            appStatus: appStatusRow?.value || null,
+        }
     } catch {
         return null
     }
@@ -100,6 +107,43 @@ async function saveToSupabase(aiFields) {
         return true
     } catch (err) {
         console.error('[AppConfig] Supabase save threw:', err?.message || err)
+        return false
+    }
+}
+
+/** Persist app status to Supabase (upsert). Returns true on success. */
+async function saveStatusToSupabase({ status, maintenanceMessage, downMessage }) {
+    try {
+        const value = {
+            status,
+            maintenanceMessage,
+            downMessage,
+            updatedAt: new Date().toISOString(),
+        }
+        console.log('[AppConfig] Saving app status to Supabase…', { status })
+        const { data, error, status: httpStatus } = await supabase
+            .from('app_settings')
+            .upsert(
+                { key: 'app_status', value, updated_at: new Date().toISOString() },
+                { onConflict: 'key' }
+            )
+            .select()
+
+        if (error) {
+            console.warn('[AppConfig] Supabase status save failed:', { code: error.code, message: error.message, status: httpStatus })
+            return false
+        }
+
+        // RLS can silently block writes — PostgREST returns 200 + empty array
+        if (!data || data.length === 0) {
+            console.warn('[AppConfig] Supabase status save BLOCKED by RLS — 0 rows returned.')
+            return false
+        }
+
+        console.log('[AppConfig] Supabase status save OK:', data[0]?.value?.status)
+        return true
+    } catch (err) {
+        console.warn('[AppConfig] Supabase status save threw:', err?.message || err)
         return false
     }
 }
@@ -145,25 +189,56 @@ export const useAppConfigStore = create(
                 return { ok: true }
             },
 
-            setAppStatus: (status) => set({ appStatus: status }),
+            setAppStatus: async (status) => {
+                // Optimistic update — local state changes immediately
+                set({ appStatus: status })
+
+                // Persist to Supabase so all clients see the new status
+                const { maintenanceMessage, downMessage } = get()
+                const ok = await saveStatusToSupabase({ status, maintenanceMessage, downMessage })
+
+                if (!ok) {
+                    console.warn('[AppConfig] setAppStatus: Supabase persist failed — local state kept, admin can retry')
+                }
+
+                return { ok }
+            },
 
             /**
-             * loadFromDB — fetch AI config from Supabase and merge into store.
+             * loadFromDB — fetch AI config and app status from Supabase and merge into store.
              * Should be called once at app startup (e.g. in AppProviders).
              */
             loadFromDB: async (force = false) => {
                 if (get()._supabaseLoaded && !force) return
 
                 try {
-                    const remote = await loadFromSupabase()
-                    if (remote) {
-                        // Strip aiApiKey — keys are now server-side only
-                        delete remote.aiApiKey
-                        console.log('[AppConfig] Loaded from Supabase. Cascade:', remote.aiModelCascade?.length, 'models. Primary:', remote.aiPrimaryModel)
+                    const result = await loadFromSupabase()
+                    if (result) {
+                        const updates = { _supabaseLoaded: true }
+
+                        // Apply AI config fields if present
+                        if (result.aiConfig) {
+                            const aiConfig = { ...result.aiConfig }
+                            // Strip aiApiKey — keys are now server-side only
+                            delete aiConfig.aiApiKey
+                            Object.assign(updates, aiConfig)
+                            console.log('[AppConfig] AI config loaded. Cascade:', aiConfig.aiModelCascade?.length, 'models. Primary:', aiConfig.aiPrimaryModel)
+                        }
+
+                        // Apply app status fields if present
+                        if (result.appStatus) {
+                            updates.appStatus = result.appStatus.status
+                            updates.maintenanceMessage = result.appStatus.maintenanceMessage
+                            updates.downMessage = result.appStatus.downMessage
+                            console.log('[AppConfig] App status from Supabase:', result.appStatus.status)
+                        } else {
+                            console.log('[AppConfig] No app_status row found — keeping default (active)')
+                        }
+
                         // Supabase wins — override whatever was in localStorage
-                        set({ ...remote, _supabaseLoaded: true })
+                        set(updates)
                     } else {
-                        // No row yet or table missing
+                        // Error case (loadFromSupabase returned null)
                         set({ _supabaseLoaded: true })
                         console.log('[AppConfig] Using local defaults (Supabase entry not found or inaccessible)')
                     }

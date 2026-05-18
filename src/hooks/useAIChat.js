@@ -287,6 +287,11 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                     firstAttachment: result.attachments?.[0] ? { id: result.attachments[0].id, title: result.attachments[0].title } : null,
                 })
 
+                // Expose to console for debugging
+                if (typeof window !== 'undefined') {
+                    window.__lastAIResult = { attachments: result.attachments, matches: result.matches, content: cleanContent?.slice(0, 100) }
+                }
+
                 const foundMsgText = t('ai.found_places')
                 const finalMsg = updateLastMessage('assistant', cleanContent || foundMsgText, {
                     attachments: result.attachments || result.matches,

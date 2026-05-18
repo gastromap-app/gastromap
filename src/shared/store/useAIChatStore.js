@@ -178,7 +178,7 @@ export const useAIChatStore = create(
 
             clearError: () => set({ error: null }),
 
-            clearHistory: () => set({ messages: [], error: null, sessionId: null, userId: null }),
+            clearHistory: () => set({ messages: [], error: null }),
 
             /**
              * Keep only the last N messages to avoid hitting context limits.

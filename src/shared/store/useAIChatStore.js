@@ -80,6 +80,7 @@ export const useAIChatStore = create(
             error: null,
             sessionId: null,
             userId: null,         // Track which user this history belongs to
+            newSessionAt: null,   // Timestamp when "New chat" was pressed — hydration ignores messages before this
             isChatOpen: false,    // UI visibility state
             lastScrollY: 0,       // Persist scroll position for restoration
 
@@ -178,7 +179,7 @@ export const useAIChatStore = create(
 
             clearError: () => set({ error: null }),
 
-            clearHistory: () => set({ messages: [], error: null }),
+            clearHistory: () => set({ messages: [], error: null, newSessionAt: Date.now() }),
 
             /**
              * Keep only the last N messages to avoid hitting context limits.
@@ -199,6 +200,7 @@ export const useAIChatStore = create(
                 messages: state.messages, 
                 sessionId: state.sessionId,
                 userId: state.userId,
+                newSessionAt: state.newSessionAt,
                 isChatOpen: state.isChatOpen,
                 lastScrollY: state.lastScrollY
             }),

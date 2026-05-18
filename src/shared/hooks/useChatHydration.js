@@ -97,9 +97,19 @@ export function useChatHydration(userId, { flushQueue } = {}) {
       if (cancelled) return
 
       // ── Step 4: Load server state as source of truth ──────────────────
+      // If user started a "New chat", only load messages AFTER that timestamp
+      const newSessionAt = useAIChatStore.getState().newSessionAt
+      let messagesToLoad = serverData.messages
+      if (newSessionAt) {
+        messagesToLoad = serverData.messages.filter(m => {
+          const msgTime = new Date(m.timestamp || m.created_at).getTime()
+          return msgTime >= newSessionAt
+        })
+      }
+
       useAIChatStore.getState().loadHistory(
         serverData.sessionId,
-        serverData.messages,
+        messagesToLoad,
         userId
       )
 

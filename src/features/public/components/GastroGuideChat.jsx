@@ -10,6 +10,7 @@ import { AppHeader } from '@/components/layout/AppHeader'
 export default function GastroGuideChat({ isOpen, onClose }) {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const { setLastScrollY } = useAIChatStore()
+    const clearHistory = useAIChatStore((s) => s.clearHistory)
     const navigate = useNavigate()
     const scrollContainerRef = React.useRef(null)
 
@@ -75,6 +76,7 @@ export default function GastroGuideChat({ isOpen, onClose }) {
                             isTyping={isTyping}
                             onSendMessage={sendMessage}
                             onCardClick={handleCardClick}
+                            onClearHistory={clearHistory}
                             geoStatus={geoStatus}
                             requestGeo={requestGeo}
                             scrollContainerRef={scrollContainerRef}

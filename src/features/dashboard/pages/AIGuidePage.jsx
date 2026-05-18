@@ -11,6 +11,7 @@ const HEADER_OFFSET = 'calc(56px + env(safe-area-inset-top))'
 const AIGuidePage = () => {
     const { messages, isTyping, sendMessage, geoStatus, requestGeo } = useGastroAI()
     const { setLastScrollY } = useAIChatStore()
+    const clearHistory = useAIChatStore((s) => s.clearHistory)
     const { setHeaderScrolled } = useUIStore()
     const { theme } = useTheme()
     const isDark = theme === 'dark'
@@ -144,6 +145,7 @@ const AIGuidePage = () => {
                         isTyping={isTyping}
                         onSendMessage={sendMessage}
                         onCardClick={handleCardClick}
+                        onClearHistory={clearHistory}
                         transparent={true}
                         scrollContainerRef={scrollRef}
                         contentClassName=""

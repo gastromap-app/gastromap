@@ -623,10 +623,12 @@ export const useAdminLocations = () => {
                         setSelectedLocation(null)
                         setStatusFilter('pending')
                         setToast({ message: 'Локация создана! Статус: ожидает модерации.', type: 'success' })
+                        createLocMutation.reset()
                     },
                     onError: (err) => {
                         console.error('[useAdminLocations] createLocMutation ERROR callback', err)
                         setToast({ message: 'Ошибка создания: ' + (err?.message || 'Попробуйте ещё раз'), type: 'error' })
+                        createLocMutation.reset()
                     }
                 })
             } else {
@@ -642,12 +644,16 @@ export const useAdminLocations = () => {
                         setFormData(null)
                         setSelectedLocation(null)
                         setToast({ message: 'Изменения сохранены успешно!', type: 'success' })
+                        // Reset mutation state so next save isn't blocked
+                        updateLocMutation.reset()
                     },
                     onError: (err) => {
                         console.error('[useAdminLocations] updateLocMutation ERROR callback', err)
                         const msg = err?.message || JSON.stringify(err) || 'Unknown error'
                         alert('Save error: ' + msg)
                         setToast({ message: `Ошибка сохранения: ${msg}`, type: 'error' })
+                        // Reset mutation state so next save isn't blocked
+                        updateLocMutation.reset()
                     }
                 })
             }

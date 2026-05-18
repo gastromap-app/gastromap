@@ -25,6 +25,8 @@ function formatChatMessage(text) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+    // Headings: ## text → bold larger text (on its own line)
+    safe = safe.replace(/^## (.+)$/gm, '<strong style="font-size:1.05em">$1</strong>')
     // Bold: **text**
     safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // Italic: *text* (but not inside bold)

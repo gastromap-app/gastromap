@@ -340,7 +340,7 @@ export function buildResponseMessages(usedLocations, userQuery, userContext = nu
             if (l.distance) parts.push(`   Distance: ${l.distance}m`)
             return parts.join('\n')
         })
-        locationBlock = `\n\n---\nDATA FROM DATABASE (these are the ONLY places you may mention):\n${items.join('\n\n')}\n\n⚠️ CRITICAL: You MUST ONLY describe places listed above. Do NOT mention, suggest, or invent ANY place not in this list. If you mention a place not listed here, your response is WRONG.`
+        locationBlock = `\n\n---\nDATA FROM DATABASE (these are the ONLY places you may mention):\n${items.join('\n\n')}\n\n⚠️ RULES FOR THIS DATA:\n- You MUST describe places from this list. Do NOT invent places.\n- If the places don't exactly match what the user asked for (e.g., they asked for restaurants but we found cafes), STILL recommend them — explain what you found and why it might interest them.\n- NEVER say "I couldn't find anything" when this DATA section contains places.`
     } else {
         locationBlock = '\n\n---\nNo places found matching the criteria. Suggest the user try a broader search (different area, cuisine type, or price range). Be helpful and encouraging.'
     }

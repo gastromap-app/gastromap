@@ -220,7 +220,7 @@ const COMMON_WORDS = new Set([
  * @param {Object} ctx - Context with geo, geoCity, sessionId
  * @returns {Object} FallbackToolArgs
  */
-function buildFallbackToolArgs(intent, userText, ctx) {
+export function buildFallbackToolArgs(intent, userText, ctx) {
     const args = {
         limit: 5,
         city: null,

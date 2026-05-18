@@ -818,11 +818,7 @@ export async function runAgentPass(messages, ctx = {}) {
     // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
     if (useV2 && cleanText) {
         const { validateResponse } = await import('./guardrails/output.js')
-        const { getSessionLocations } = await import('./session-locations.js')
-        const sessionLocs = ctx?.sessionId ? await getSessionLocations(ctx.sessionId) : []
-        const allowedLocs = [] // Path C has no tool-fetched locations
-        const sessionLocsFormatted = sessionLocs.map(sl => ({ id: sl.id, title: sl.title || '' }))
-        const { sanitizedText, redactions } = validateResponse(cleanText, allowedLocs, sessionLocsFormatted)
+        const { sanitizedText, redactions } = validateResponse(cleanText)
 
         if (redactions.length) {
             const { recordGuardrailEvent } = await import('./guardrails/audit.js')
@@ -837,8 +833,8 @@ export async function runAgentPass(messages, ctx = {}) {
 
         return {
             text: sanitizedText,
-            usedLocations: [],
-            attachments: [],
+            usedLocations,
+            attachments: usedLocations,
             modelUsed,
             toolCalls: trackedToolCalls,
             timing: {
@@ -1026,11 +1022,7 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
     // ── Stage 2: Output Guardrail (V2 only) ─────────────────────────────────
     if (useV2 && finalContent) {
         const { validateResponse } = await import('./guardrails/output.js')
-        const { getSessionLocations } = await import('./session-locations.js')
-        const sessionLocs = ctx?.sessionId ? await getSessionLocations(ctx.sessionId) : []
-        const allowedLocs = usedLocations.map(l => ({ id: l.id, title: l.title || l.name }))
-        const sessionLocsFormatted = sessionLocs.map(sl => ({ id: sl.id, title: sl.title || '' }))
-        const { sanitizedText, redactions } = validateResponse(finalContent, allowedLocs, sessionLocsFormatted)
+        const { sanitizedText, redactions } = validateResponse(finalContent)
 
         if (redactions.length) {
             const { recordGuardrailEvent } = await import('./guardrails/audit.js')

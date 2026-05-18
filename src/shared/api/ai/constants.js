@@ -258,6 +258,7 @@ When recommending places, use clear visual separation:
 4. Description: 2-3 sentences about why this place fits the user's request.
 5. EMPTY LINE after each location block.
 6. Short closing remark after all locations.
+7. Location mini card/s (with photos) — these are attached automatically by the system for EVERY place you mention. You MUST mention each place by its exact **bold name** so the system can match and attach the card.
 
 ## Rules:
 - ALWAYS separate locations with empty lines — never run them together.
@@ -265,7 +266,8 @@ When recommending places, use clear visual separation:
 - Be concise but warm: 2-3 sentences per location.
 - Include distance naturally if search_nearby provided it.
 - Explain WHY you are recommending each place based on the user's specific request.
-- Location cards (with photos) will be attached automatically by the system — you don't need to add links or images.
+- Location cards (with photos) are attached automatically — do NOT add links or images yourself. Just use **bold place names** and the system handles the rest.
+
 
 # SPATIAL AWARENESS
 - If GPS coordinates exist in [USER CONTEXT], pass them to search_nearby.

@@ -7,13 +7,15 @@
  * This utility:
  * 1. Strips diacritics (Kraków → Krakow, Kyïv → Kyiv)
  * 2. Maps known local-name variants to their English canonical form
- * 3. Returns title-case English name
+ * 3. Fuzzy-matches against known DB cities (handles declensions in any language)
+ * 4. Returns title-case English name
  *
  * Used by:
  * - Telegram bot (api/telegram/process.js) before insertLocation()
  * - Google Places proxy (api/places/search.js) normalizePlace()
  * - AI Magic extraction (src/shared/api/ai/location.js)
  * - Admin LocationForm (before save)
+ * - AI chat: buildFallbackToolArgs (city extraction from user queries)
  */
 
 // ─── Canonical city name overrides ──────────────────────────────────────────
@@ -22,25 +24,16 @@
 const CITY_OVERRIDES = {
     // Poland
     'krakow':       'Krakow',      // Kraków → stripped
-    'краков':        'Krakow',      // Russian nominative
-    'кракове':       'Krakow',      // Russian prepositional (в Кракове)
-    'краковe':       'Krakow',      // Typo variant
-    'кракова':       'Krakow',      // Russian genitive
-    'краковом':      'Krakow',      // Russian instrumental
-    'krakowie':      'Krakow',      // Polish locative (w Krakowie)
-    'krakowa':       'Krakow',      // Polish genitive
+    'краков':        'Krakow',      // Russian base form (fuzzy handles кракове, кракова, etc.)
+    'krakowie':      'Krakow',      // Polish locative
     'warszawa':     'Warsaw',
-    'варшава':       'Warsaw',      // Russian
-    'варшаве':       'Warsaw',      // Russian prepositional
+    'варшав':        'Warsaw',      // Russian stem (fuzzy handles варшава, варшаве, etc.)
     'wroclaw':      'Wroclaw',     // Wrocław
     'вроцлав':       'Wroclaw',     // Russian
-    'вроцлаве':      'Wroclaw',     // Russian prepositional
     'gdansk':       'Gdansk',      // Gdańsk
     'гданьск':       'Gdansk',      // Russian
-    'гданьске':      'Gdansk',      // Russian prepositional
     'poznan':       'Poznan',      // Poznań
-    'познань':       'Poznan',      // Russian
-    'познани':       'Poznan',      // Russian prepositional
+    'познан':        'Poznan',      // Russian stem
     'lodz':         'Lodz',        // Łódź
     'лодзь':         'Lodz',        // Russian
     'szczecin':     'Szczecin',
@@ -48,7 +41,6 @@ const CITY_OVERRIDES = {
     'катовице':      'Katowice',    // Russian
     'lublin':       'Lublin',
     'люблин':        'Lublin',      // Russian
-    'люблине':       'Lublin',      // Russian prepositional
     'bydgoszcz':    'Bydgoszcz',
     'bialystok':    'Bialystok',   // Białystok
     'gdynia':       'Gdynia',
@@ -265,7 +257,44 @@ export function normalizeCityName(city) {
         return CITY_OVERRIDES[key]
     }
 
-    // 2. Strip diacritics + title-case as fallback
+    // 2. Fuzzy match: check if input starts with (or is a prefix of) any known city
+    //    This handles declensions in ANY language without hardcoding:
+    //    "кракове" starts with "краков" → Krakow
+    //    "варшаве" starts with "варшав" → Warsaw
+    //    "krakowie" starts with "krakow" → Krakow
+    const inputLower = trimmed.toLowerCase()
+    const inputStripped = key // already stripped + lowercased
+
+    // Build reverse map: canonical → all keys that map to it
+    // Then check if input is a prefix/suffix variant of any key
+    for (const [overrideKey, canonical] of Object.entries(CITY_OVERRIDES)) {
+        // Check if input starts with the override key (e.g., "krakowie" starts with "krakow"? No)
+        // Check if override key starts with input (e.g., "krakow" starts with "krakow"? Yes for exact)
+        // Better: check if they share a common stem (first 4+ chars match)
+        const minLen = Math.min(inputStripped.length, overrideKey.length)
+        if (minLen < 4) continue // too short to fuzzy match
+
+        // Check prefix overlap: at least 4 chars must match from the start
+        const prefixLen = Math.min(inputStripped.length, overrideKey.length, 7)
+        const inputPrefix = inputStripped.slice(0, prefixLen)
+        const keyPrefix = overrideKey.slice(0, prefixLen)
+
+        if (inputPrefix === keyPrefix && Math.abs(inputStripped.length - overrideKey.length) <= 3) {
+            return canonical
+        }
+    }
+
+    // 3. Also check Cyrillic input against Cyrillic keys in overrides
+    //    (handles "кракове" matching "краков" via prefix)
+    for (const [overrideKey, canonical] of Object.entries(CITY_OVERRIDES)) {
+        if (!/[а-яёїієґ]/i.test(overrideKey)) continue // skip non-Cyrillic keys
+        const stem = overrideKey.slice(0, Math.max(4, overrideKey.length - 2))
+        if (inputLower.startsWith(stem) || stem.startsWith(inputLower.slice(0, stem.length))) {
+            return canonical
+        }
+    }
+
+    // 4. Strip diacritics + title-case as fallback
     //    Kraków → Krakow, Kyïv → Kyiv, Białystok → Bialystok
     const stripped = stripDiacritics(trimmed)
     return toTitleCase(stripped)

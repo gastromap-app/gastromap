@@ -128,6 +128,22 @@ const AIGuidePage = () => {
                 </div>
             )}
 
+            {/* New Chat button — fixed under header */}
+            {messages.length > 0 && (
+                <div className="absolute z-20 left-0 right-0 flex justify-center" style={{ top: HEADER_OFFSET }}>
+                    <button
+                        onClick={clearHistory}
+                        className={`mt-2 flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-full backdrop-blur-xl transition-all active:scale-95 ${
+                            isDark
+                                ? 'bg-white/10 border border-white/15 text-white/60 hover:bg-white/20 hover:text-white/80'
+                                : 'bg-black/5 border border-black/10 text-black/50 hover:bg-black/10 hover:text-black/70'
+                        }`}
+                    >
+                        ✨ New chat
+                    </button>
+                </div>
+            )}
+
             {/* Messages scroll area */}
             <div
                 ref={scrollRef}

@@ -324,20 +324,7 @@ export function ChatInterface({
 
             {/* New Chat button — reset session */}
             {messages.length > 0 && onClearHistory && (
-                <div className="flex justify-center py-2">
-                    <button
-                        onClick={onClearHistory}
-                        className={`flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border transition-all ${
-                            transparent
-                                ? isDark
-                                    ? 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
-                                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                                : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                        ✨ New chat
-                    </button>
-                </div>
+                <div className="flex justify-center py-2" />
             )}
 
             {/* Load older messages button */}

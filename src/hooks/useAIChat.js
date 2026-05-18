@@ -333,6 +333,7 @@ const MAX_CHAT_INPUT_LENGTH = 3000
                 setError(msg)
                 updateLastMessage('assistant', msg, { isError: true })
             } else {
+                console.error('[useAIChat] Error details:', { message: err?.message, stack: err?.stack?.split('\n').slice(0, 3).join('\n') })
                 setError(err.message ?? t('ai.response_failed'))
                 updateLastMessage('assistant', t('ai.general_error'), { isError: true })
             }

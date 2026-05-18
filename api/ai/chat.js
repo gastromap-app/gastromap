@@ -111,15 +111,16 @@ export default async function handler(req, res) {
             }
         }
 
-        // ── Direct model mode (paid model — skip cascade, but fall through to free on failure) ──
+        // ── Direct model mode (paid model — try full cascade from client) ──────
         if (_direct_model && model) {
+            // Try the primary model first, then fall through to full cascade
             const body = { model, messages, max_tokens: cappedMaxTokens }
             if (tools) { body.tools = tools; body.tool_choice = tool_choice || 'auto' }
             if (_session_id) body.session_id = _session_id
             if (_user_id) body.user = _user_id
             try {
                 const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), 10000)
+                const timeoutId = setTimeout(() => controller.abort(), 15000)
                 const response = await fetch(OPENROUTER_URL, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}`, 'HTTP-Referer': 'https://gastromap.app', 'X-Title': 'GastroMap', 'Content-Type': 'application/json' },
@@ -134,13 +135,22 @@ export default async function handler(req, res) {
                         return res.status(response.status).json(data)
                     }
                 }
-                // Direct model failed — fall through to free tier below
-                console.warn(`[ai/chat] Direct model ${model} failed (${response.status}), falling back to free tier`)
+                console.warn(`[ai/chat] Direct model ${model} failed (${response.status}), trying cascade...`)
             } catch (err) {
-                console.warn(`[ai/chat] Direct model ${model} error: ${err.message}, falling back to free tier`)
+                console.warn(`[ai/chat] Direct model ${model} error: ${err.message}, trying cascade...`)
             }
-            // Fall through to free fallback models with Key 2
+
+            // Primary model failed — try remaining models from _cascade with Key 1
+            if (Array.isArray(_cascade) && _cascade.length > 1) {
+                // Skip the first model (already tried above), try the rest
+                const remainingCascade = _cascade.slice(1)
+                const cascadeResult = await runCascade(remainingCascade, 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKey, res, true)
+                if (cascadeResult) return
+            }
+
+            // Full cascade with Key 1 failed — try free fallback with Key 2
             if (apiKeyFallback) {
+                console.warn('[ai/chat] Full cascade failed, trying free models with Key 2')
                 const tier2Result = await runCascade(FREE_FALLBACK_MODELS, 0, { ...req.body, messages, max_tokens: cappedMaxTokens }, apiKeyFallback, res, true)
                 if (tier2Result) return
             }
@@ -232,7 +242,7 @@ async function runCascade(cascade, startIdx, reqBody, apiKey, res, isFallbackTie
 
     let lastError = null
     const maxTokens = max_tokens || 1024
-    const maxAttempts = isFallbackTier ? 4 : 2 // Free tier: try all 4, Paid tier: try 2
+    const maxAttempts = isFallbackTier ? cascade.length : 2 // Fallback tier: try ALL models, Paid tier: try 2
 
     for (let i = startIdx; i < cascade.length && (i - startIdx) < maxAttempts; i++) {
         const currentModel = cascade[i]

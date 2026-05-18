@@ -193,39 +193,20 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
 
             // ── Real-time SSE streaming path ─────────────────────────────────────
             // Step 1: Execute tool (search DB) — non-streaming
-            // For follow_up / card_request / compare: reuse locations from conversation history
-            // instead of doing a new search with irrelevant keywords like "покажи карточки"
-            let usedLocations = []
+            const fallbackArgs = buildFallbackToolArgs(intent, message, agentCtx)
+            const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby) ? 'search_nearby' : 'search_locations'
 
-            const isFollowUp = intent === 'follow_up' || intent === 'card_request' || intent === 'compare'
+            let toolResult
+            try {
+                toolResult = await executeTool(toolName, fallbackArgs, agentCtx)
+            } catch { toolResult = { results: [] } }
 
-            if (isFollowUp) {
-                // Extract locations from the last assistant message that had attachments
-                const historyWithCards = conversationHistory
-                    .filter(m => m.role === 'assistant' && Array.isArray(m.attachments) && m.attachments.length > 0)
-                const lastWithCards = historyWithCards[historyWithCards.length - 1]
-                if (lastWithCards?.attachments?.length) {
-                    usedLocations = lastWithCards.attachments.slice(0, 5)
-                }
+            // Handle needs_geo signal
+            if (toolResult?.needs_geo) {
+                return { content: '', matches: [], intent, needsGeo: true, pendingTool: { name: toolName, args: fallbackArgs } }
             }
 
-            // For search intents (or follow_up with no prior cards) — do a fresh DB search
-            if (!isFollowUp || usedLocations.length === 0) {
-                const fallbackArgs = buildFallbackToolArgs(intent, message, agentCtx)
-                const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby) ? 'search_nearby' : 'search_locations'
-
-                let toolResult
-                try {
-                    toolResult = await executeTool(toolName, fallbackArgs, agentCtx)
-                } catch { toolResult = { results: [] } }
-
-                // Handle needs_geo signal
-                if (toolResult?.needs_geo) {
-                    return { content: '', matches: [], intent, needsGeo: true, pendingTool: { name: toolName, args: fallbackArgs } }
-                }
-
-                usedLocations = (toolResult?.results || (Array.isArray(toolResult) ? toolResult : [])).slice(0, 5)
-            }
+            const usedLocations = (toolResult?.results || (Array.isArray(toolResult) ? toolResult : [])).slice(0, 5)
 
             // Step 2: Build response messages with DATA block + history
             const userContext = {

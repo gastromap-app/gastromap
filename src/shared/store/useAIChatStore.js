@@ -113,7 +113,7 @@ export const useAIChatStore = create(
              */
             addMessage: (role, content, extras = {}) => {
                 const message = normalizeMessage({
-                    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${Math.random().toString(36).slice(2, 9)}`,
+                    id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
                     role,
                     content,
                     timestamp: Date.now(),

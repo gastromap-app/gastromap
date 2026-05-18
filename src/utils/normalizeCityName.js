@@ -22,19 +22,39 @@
 const CITY_OVERRIDES = {
     // Poland
     'krakow':       'Krakow',      // Kraków → stripped
+    'краков':        'Krakow',      // Russian nominative
+    'кракове':       'Krakow',      // Russian prepositional (в Кракове)
+    'краковe':       'Krakow',      // Typo variant
+    'кракова':       'Krakow',      // Russian genitive
+    'краковом':      'Krakow',      // Russian instrumental
+    'krakowie':      'Krakow',      // Polish locative (w Krakowie)
+    'krakowa':       'Krakow',      // Polish genitive
     'warszawa':     'Warsaw',
+    'варшава':       'Warsaw',      // Russian
+    'варшаве':       'Warsaw',      // Russian prepositional
     'wroclaw':      'Wroclaw',     // Wrocław
+    'вроцлав':       'Wroclaw',     // Russian
+    'вроцлаве':      'Wroclaw',     // Russian prepositional
     'gdansk':       'Gdansk',      // Gdańsk
+    'гданьск':       'Gdansk',      // Russian
+    'гданьске':      'Gdansk',      // Russian prepositional
     'poznan':       'Poznan',      // Poznań
+    'познань':       'Poznan',      // Russian
+    'познани':       'Poznan',      // Russian prepositional
     'lodz':         'Lodz',        // Łódź
+    'лодзь':         'Lodz',        // Russian
     'szczecin':     'Szczecin',
     'katowice':     'Katowice',
+    'катовице':      'Katowice',    // Russian
     'lublin':       'Lublin',
+    'люблин':        'Lublin',      // Russian
+    'люблине':       'Lublin',      // Russian prepositional
     'bydgoszcz':    'Bydgoszcz',
     'bialystok':    'Bialystok',   // Białystok
     'gdynia':       'Gdynia',
     'sopot':        'Sopot',
     'zakopane':     'Zakopane',
+    'закопане':      'Zakopane',    // Russian
     'torun':        'Torun',       // Toruń
     'silesia':      'Silesia',
 

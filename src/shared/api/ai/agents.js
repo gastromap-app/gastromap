@@ -888,6 +888,17 @@ async function runToolCalls(toolCalls, assistantMsg, messages, ctx, modelUsed, m
         const result = await executeTool(toolCall.function.name, args, ctx)
         toolTime += Date.now() - toolStart
 
+        // DEBUG: Log tool result to diagnose empty usedLocations
+        console.log('[runToolCalls] Tool result:', {
+            tool: toolCall.function.name,
+            args: JSON.stringify(args).slice(0, 200),
+            resultType: typeof result,
+            isArray: Array.isArray(result),
+            hasResults: !!result?.results,
+            resultsLength: result?.results?.length ?? (Array.isArray(result) ? result.length : 0),
+            firstResult: result?.results?.[0]?.title || (Array.isArray(result) ? result[0]?.title : null),
+        })
+
         // Track this tool call for enhanced metadata
         const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0)
         trackedToolCalls.push({ name: toolCall.function.name, args, resultCount })

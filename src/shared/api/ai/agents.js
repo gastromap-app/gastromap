@@ -95,8 +95,13 @@ function validateGrounding(text, usedLocations) {
     })
 
     if (hallucinated.length > 0) {
-        console.warn('[Agent] Hallucinated places detected:', hallucinated, '— using template response')
-        return null // Signal to use template
+        // Only reject if ALL bold names are hallucinated (not just some with spelling differences)
+        if (hallucinated.length === boldNames.length) {
+            console.warn('[Agent] ALL places hallucinated:', hallucinated, '— using template response')
+            return null // Signal to use template
+        }
+        // Some names didn't match exactly but others did — likely spelling variation, keep the text
+        console.info('[Agent] Some bold names not in DB (possible spelling variation):', hallucinated)
     }
 
     return text

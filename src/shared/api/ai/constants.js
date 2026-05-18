@@ -52,17 +52,17 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'search_locations',
-            description: 'Find gastro locations by city, category, cuisine, or natural-language query. Always call this before recommending any place.',
+            description: 'Find gastro locations by semantic search. ALWAYS pass a descriptive query that captures what the user wants — this drives the search relevance. Examples: "cozy cafe with desserts", "Italian restaurant for a date", "trendy new bar with cocktails", "cafe open now for breakfast".',
             parameters: {
                 type: 'object',
                 properties: {
                     query: {
                         type: 'string',
-                        description: 'Free-text natural-language description of what the user wants.',
+                        description: 'REQUIRED. Natural-language description of what the user wants. Be specific — include vibe, food type, occasion, time preferences. This is the primary search driver.',
                     },
                     city: {
                         type: 'string',
-                        description: 'City name (e.g. "Krakow"). Defaults to the user\'s geo city if available.',
+                        description: 'City name (e.g. "Krakow"). Use the user\'s city from context if not specified.',
                     },
                     category: {
                         type: 'string',
@@ -77,6 +77,7 @@ export const TOOLS = [
                         description: 'Max results, default 10, max 25.',
                     },
                 },
+                required: ['query'],
             },
         },
     },

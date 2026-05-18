@@ -75,15 +75,8 @@ function TypingBubble({ transparent, isDark }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center gap-3 px-1 py-1"
+            className="flex items-center px-1 py-1"
         >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                transparent
-                    ? isDark ? 'bg-white/10' : 'bg-black/5'
-                    : 'bg-gray-100 dark:bg-gray-800'
-            }`}>
-                <Sparkles className={`w-4 h-4 ${transparent ? (isDark ? 'text-white' : 'text-indigo-600') : 'text-indigo-500'}`} />
-            </div>
             <div className={`flex items-center p-3 rounded-2xl rounded-bl-none backdrop-blur-md border h-[42px] ${
                 transparent
                     ? isDark

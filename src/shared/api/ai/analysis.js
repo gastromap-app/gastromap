@@ -12,9 +12,6 @@ import { getActiveAIConfig } from '../ai-config.api'
 import { buildSystemPrompt } from './prompts'
 import { detectIntent } from './intents'
 import { runAgentPass, buildResponseMessages } from './agents'
-import { fetchOpenRouterStream } from './openrouter'
-import { executeTool } from './tools'
-import { buildFallbackToolArgs } from './agents'
 
 /**
  * @typedef {Object} AIResponse
@@ -191,82 +188,45 @@ export async function analyzeQueryStream(message, context = {}, onChunk) {
                 sessionSummary,
             }
 
-            // ── Real-time SSE streaming path ─────────────────────────────────────
-            // Step 1: Execute tool (search DB) — non-streaming
-            const fallbackArgs = buildFallbackToolArgs(intent, message, agentCtx)
-            const toolName = (intent === 'search_nearby' && fallbackArgs.useNearby) ? 'search_nearby' : 'search_locations'
+            // ── Agentic path: LLM does tool calling (handles all languages natively) ──
+            // No regex parsing needed — LLM extracts city/category/cuisine from user query
+            // and calls search_locations(city: "Krakow", category: "Cafe") directly.
+            const agentResult = await Promise.race([
+                runAgentPass(messages, agentCtx),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (25s)')), 25000))
+            ])
 
-            let toolResult
-            try {
-                toolResult = await executeTool(toolName, fallbackArgs, agentCtx)
-            } catch { toolResult = { results: [] } }
-
-            // Handle needs_geo signal
-            if (toolResult?.needs_geo) {
-                return { content: '', matches: [], intent, needsGeo: true, pendingTool: { name: toolName, args: fallbackArgs } }
+            // Handle special signals
+            if (agentResult.needsGeo) {
+                return { content: '', matches: [], intent, needsGeo: true, pendingTool: agentResult.pendingTool }
             }
-
-            const usedLocations = (toolResult?.results || (Array.isArray(toolResult) ? toolResult : [])).slice(0, 5)
-
-            // Step 2: Build response messages with DATA block + history
-            const userContext = {
-                city: agentCtx.geoCity || null,
-                foodieDNA: context.userData?.foodieDNA || null,
-                dietary: context.dietary || [],
-                favoriteCuisines: context.userData?.favoriteCuisines || [],
-            }
-            const responseMessages = buildResponseMessages(usedLocations, message, userContext, conversationHistory, sessionSummary)
-
-            // Step 3: Stream response via SSE
-            if (onChunk) {
-                onChunk('') // Reset signal — clear "…" placeholder
-            }
-
-            let streamedText = ''
-            try {
-                const { useAppConfigStore } = await import('@/shared/store/useAppConfigStore')
-                const cfg = useAppConfigStore.getState()
-                const adminTemp = cfg.aiGuideTemp ?? 0.7
-                const adminMaxTokens = Math.max(2048, Math.min(8192, cfg.aiGuideMaxTokens ?? 2048))
-
-                const { fullText, modelUsed } = await fetchOpenRouterStream(
-                    responseMessages,
-                    { temperature: adminTemp, maxTokens: adminMaxTokens },
-                    (chunk) => {
-                        streamedText += chunk
-                        if (onChunk) onChunk(chunk)
-                    }
-                )
-                streamedText = fullText
-            } catch (streamErr) {
-                // SSE failed — fallback to runAgentPass (non-streaming)
-                console.warn('[GastroAI] SSE stream failed, falling back to non-streaming:', streamErr.message)
-                const agentResult = await Promise.race([
-                    runAgentPass(messages, agentCtx),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('AI response timeout (15s)')), 15000))
-                ])
-                if (agentResult.needsGeo) return { content: '', matches: [], intent, needsGeo: true, pendingTool: agentResult.pendingTool }
-                streamedText = agentResult.text || ''
-                if (onChunk && streamedText) {
+            if (agentResult.askClarification) {
+                if (onChunk) {
                     onChunk('')
-                    const words = streamedText.split(' ')
+                    const words = agentResult.text.split(' ')
                     for (let i = 0; i < words.length; i++) {
                         onChunk((i === 0 ? '' : ' ') + words[i])
-                        await new Promise(r => setTimeout(r, 5))
+                        await new Promise(r => setTimeout(r, 8))
                     }
                 }
-                return {
-                    content: streamedText,
-                    matches: agentResult.usedLocations ?? [],
-                    attachments: agentResult.attachments ?? agentResult.usedLocations ?? [],
-                    intent,
+                return { content: agentResult.text, matches: [], intent, askClarification: agentResult.askClarification }
+            }
+
+            // Stream the response text word-by-word for typing effect
+            const responseText = agentResult.text || ''
+            if (onChunk && responseText) {
+                onChunk('') // Reset signal — clear "…" placeholder
+                const words = responseText.split(' ')
+                for (let i = 0; i < words.length; i++) {
+                    onChunk((i === 0 ? '' : ' ') + words[i])
+                    await new Promise(r => setTimeout(r, 8))
                 }
             }
 
             return {
-                content: streamedText,
-                matches: usedLocations,
-                attachments: usedLocations,
+                content: responseText,
+                matches: agentResult.usedLocations ?? [],
+                attachments: agentResult.attachments ?? agentResult.usedLocations ?? [],
                 intent,
             }
         } catch (err) {
